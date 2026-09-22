@@ -78,6 +78,6 @@ Khi Automa Core Daemon chạy ngầm (`pnpm run dev:all` hoặc `cargo run`), c�
 | **Auto-Sanitization** | `sanitize_workflow` | Tiền xử lý JSON workflow để tự động tiêm nanoid hợp lệ, gán `BlockBasic` và sửa edge handles lỗi trước khi nạp vào engine. |
 | **Registry Pattern** | `static ref INSTANCES: Set<...>` | Mẫu quản lý tập trung toàn bộ tiến trình Chromium con để đảm bảo dọn dẹp sạch sẽ (`destroyAll`) ngăn chặn triệt để zombie processes. |
 | **AutomaDb** | `AutomaDb`, `SqliteJobRepository` | Cơ sở dữ liệu SQLite nhúng (`journal_mode = WAL`) lưu trữ metadata jobs, step logs, app settings và browser profiles. |
-| **Storage Workspace** | `automa-vault/` | Thư mục cục bộ phục vụ Git Version Control và Export/Import thủ công (tuân thủ nguyên tắc Zero Folder Scanning; 100% kịch bản runtime được quản lý tập trung qua SQLite Database API). |
+| **Storage Workspace** | `apps/vault/` | Thư mục cục bộ phục vụ Git Version Control và Export/Import thủ công (tuân thủ nguyên tắc Zero Folder Scanning; 100% kịch bản runtime được quản lý tập trung qua SQLite Database API). |
 
 
