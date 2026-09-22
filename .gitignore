@@ -1,0 +1,29 @@
+# Rust Build Outputs
+/target/
+coverage/
+*.profraw
+*.profdata
+
+# SQLite & Runtime Databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+# Local Automation & Browser Cache
+.automa/
+.browser_cache/
+*.log
+
+# Temporary / Scratch Files
+scratch/
+
+# Operating System & IDE Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+
