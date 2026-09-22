@@ -113,7 +113,7 @@ use crate::api::handlers::ws::ws_handler;
         description = "High-performance Rust backend daemon providing REST, SSE, and storage APIs for the Automa automation ecosystem.",
         contact(
             name = "Automa Ecosystem Team",
-            url = "https://github.com/tuquet/automa-ecosystem"
+            url = "https://github.com/tuquet/tuquet-automa"
         ),
         license(
             name = "MIT"
