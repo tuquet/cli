@@ -339,11 +339,25 @@ pub async fn start_browser(
     }
 
     let mut possible_paths = vec![
+        std::path::PathBuf::from("apps/webe/dist/cli-runner"),
+        std::path::PathBuf::from("./apps/webe/dist/cli-runner"),
+        std::path::PathBuf::from("../webe/dist/cli-runner"),
+        std::path::PathBuf::from("../../apps/webe/dist/cli-runner"),
+        std::path::PathBuf::from("../../../apps/webe/dist/cli-runner"),
         std::path::PathBuf::from("automa-webe/dist/cli-runner"),
         std::path::PathBuf::from("./automa-webe/dist/cli-runner"),
         std::path::PathBuf::from("../automa-webe/dist/cli-runner"),
         std::path::PathBuf::from("../../automa-webe/dist/cli-runner"),
     ];
+
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            possible_paths.push(exe_dir.join("apps/webe/dist/cli-runner"));
+            possible_paths.push(exe_dir.join("../webe/dist/cli-runner"));
+            possible_paths.push(exe_dir.join("../../apps/webe/dist/cli-runner"));
+            possible_paths.push(exe_dir.join("automa-webe/dist/cli-runner"));
+        }
+    }
 
     if let Ok(env_ext) = std::env::var("AUTOMA_EXTENSION_PATH") {
         possible_paths.insert(0, std::path::PathBuf::from(env_ext));
@@ -352,7 +366,7 @@ pub async fn start_browser(
     let mut ext_path = possible_paths.into_iter()
         .find(|p| p.exists())
         .and_then(|p| p.canonicalize().ok().map(|c| c.to_string_lossy().to_string()))
-        .unwrap_or_else(|| "automa-webe/dist/cli-runner".to_string());
+        .unwrap_or_else(|| "apps/webe/dist/cli-runner".to_string());
 
     if ext_path.starts_with(r"\\?\") {
         ext_path = ext_path[4..].to_string();
