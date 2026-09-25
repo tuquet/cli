@@ -1,6 +1,7 @@
-# ⚙️ Automa Core (Rust Daemon)
+# ⚙️ Automa Core (`automa-core`)
 
-**Automa Core** là trái tim thực thi (Execution Engine) và máy chủ API (REST/SSE) của toàn bộ hệ sinh thái Automa ngoài trình duyệt. Kiến trúc tuân thủ nghiêm ngặt **Clean Architecture** và nguyên tắc **SOLID** bằng ngôn ngữ **Rust**.
+> **High-performance browser automation & CDP execution plugin for Tuquet Runner (`tqr`)**.
+> Cung cấp khả năng điều khiển trình duyệt chuyên sâu (Chromium sandboxing, profile isolation, CDP bridge và Extension execution) dưới sự giám sát tiến trình cấp kernel của `tqr`.
 
 ---
 
