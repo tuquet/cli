@@ -22,7 +22,7 @@ Thư mục này quản lý các file migration UP và DOWN cho động cơ máy 
 │    - Công nghệ: Supabase / PostgreSQL                       │
 │    - Bản chất: Multi-tenant RBAC, RLS Policy, Quota         │
 │    - Bảng tiền tố: automa_* (automa_workflows, runners...)  │
-│    - Quản lý: tuquet-cloud/supabase/modules/automa/*.sql    │
+│    - Quản lý: tuquet-cloud/supabase/plugins/automa/*.sql    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
