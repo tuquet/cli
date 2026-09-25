@@ -18,12 +18,19 @@ use tracing_subscriber::FmtSubscriber;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
+    if cli.probe || matches!(cli.command, Some(Commands::Probe)) {
+        return print_probe_manifest();
+    }
+
     if let Some(ref path_opt) = cli.export_openapi {
         let output_path = path_opt.clone().unwrap_or_else(|| std::path::PathBuf::from("openapi.json"));
         return export_openapi(&output_path);
     }
 
     match cli.command {
+        Some(Commands::Probe) => {
+            print_probe_manifest()
+        }
         Some(Commands::ExportOpenapi { output }) => {
             export_openapi(&output)
         }
@@ -40,6 +47,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             run_server(None, None, None).await
         }
     }
+}
+
+fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
+    let manifest = serde_json::json!({
+        "protocol": "tuquet.automa.v1",
+        "name": "automa-core",
+        "version": env!("CARGO_PKG_VERSION"),
+        "engine": "chromium-cdp",
+        "status": "ready",
+        "capabilities": [
+            "browser:chromium",
+            "cdp:mv3_extension",
+            "isolation:profile_sandbox",
+            "headless",
+            "automation:workflow_graph"
+        ],
+        "plugin_type": "runner_driver"
+    });
+    println!("{}", serde_json::to_string(&manifest)?);
+    Ok(())
 }
 
 fn export_openapi(output_path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {

@@ -14,6 +14,10 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 
+    /// Active capability negotiation and handshake probe for Tuquet Runner (tqr)
+    #[arg(long)]
+    pub probe: bool,
+
     /// Flag for backward compatibility: export openapi spec
     #[arg(long)]
     pub export_openapi: Option<Option<PathBuf>>,
@@ -21,6 +25,9 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Active discovery probe returning AutomaManifest JSON for Tuquet Runner
+    Probe,
+
     /// Start the Automa Core HTTP/WebSocket daemon server
     Server {
         /// HTTP server listening port
