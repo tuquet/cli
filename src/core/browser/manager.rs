@@ -245,6 +245,9 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
         browser_registry().write().await.clear();
         browser_sessions().write().await.clear();
 
+        #[cfg(target_os = "windows")]
+        tokio::time::sleep(tokio::time::Duration::from_millis(250)).await;
+
         // Clean up all ephemeral temp folders (automa_ext_* and automa_browser_*)
         let temp_dir = get_temp_dir();
         if let Ok(mut entries) = tokio::fs::read_dir(&temp_dir).await {
@@ -252,10 +255,19 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
                 let name = entry.file_name().to_string_lossy().to_string();
                 if name.starts_with("automa_ext_") || name.starts_with("automa_browser_") || name.starts_with("automa_run_") {
                     let p = entry.path();
-                    let _ = tokio::fs::remove_dir_all(&p).await;
+                    remove_dir_all_with_retry(&p).await;
                 }
             }
         }
+    }
+}
+
+async fn remove_dir_all_with_retry(path: &std::path::Path) {
+    for _ in 0..5 {
+        if tokio::fs::remove_dir_all(path).await.is_ok() {
+            return;
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
     }
 }
 use std::future::Future;
