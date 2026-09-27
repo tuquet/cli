@@ -50,9 +50,13 @@ pub enum Commands {
         #[arg(long)]
         browser_id: Option<String>,
 
-        /// Workflow variables in KEY=VALUE format (can be specified multiple times)
-        #[arg(long = "var", value_name = "KEY=VALUE")]
+        /// Workflow variables in KEY=VALUE format (can be specified multiple times, alias: -p, --param)
+        #[arg(short = 'p', long = "var", alias = "param", value_name = "KEY=VALUE")]
         variables: Vec<String>,
+
+        /// Optional workflow execution timeout in seconds
+        #[arg(short, long)]
+        timeout: Option<u64>,
     },
 
     /// Inspect and validate a workflow JSON file without launching a browser

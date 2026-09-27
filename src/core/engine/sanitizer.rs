@@ -9,7 +9,12 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
         let mut new_edges = Vec::new();
         
         if let Some(df) = workflow.drawflow.take() {
-            if let Some(nodes) = df.get("nodes").and_then(|n| n.as_array()) {
+            let df_obj = if let Some(s) = df.as_str() {
+                serde_json::from_str::<serde_json::Value>(s).unwrap_or(serde_json::Value::Null)
+            } else {
+                df
+            };
+            if let Some(nodes) = df_obj.get("nodes").and_then(|n| n.as_array()) {
                 for node_val in nodes {
                     let Ok(mut node) = serde_json::from_value::<WorkflowNode>(node_val.clone()) else { continue };
                     if node.id.is_empty() {
@@ -21,7 +26,7 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
                     new_nodes.push(node);
                 }
             }
-            if let Some(edges) = df.get("edges").and_then(|e| e.as_array()) {
+            if let Some(edges) = df_obj.get("edges").and_then(|e| e.as_array()) {
                 for edge_val in edges {
                     let Ok(mut edge) = serde_json::from_value::<WorkflowEdge>(edge_val.clone()) else { continue };
                     if edge.id.is_empty() {
@@ -117,5 +122,20 @@ mod tests {
         let sanitized = sanitize_workflow(workflow);
         assert!(sanitized.nodes.is_none());
         assert!(sanitized.edges.is_none());
+    }
+
+    #[test]
+    fn test_sanitize_stringified_drawflow() {
+        let json = r#"{
+            "drawflow": "{\"nodes\": [{\"id\": \"s1\", \"data\": {}}], \"edges\": [{\"id\": \"e1\", \"source\": \"s1\", \"target\": \"s2\"}]}"
+        }"#;
+        let workflow: Workflow = serde_json::from_str(json).unwrap();
+        let sanitized = sanitize_workflow(workflow);
+        let nodes = sanitized.nodes.unwrap();
+        let edges = sanitized.edges.unwrap();
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes[0].id, "s1");
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].id, "e1");
     }
 }

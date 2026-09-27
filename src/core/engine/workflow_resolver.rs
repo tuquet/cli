@@ -157,13 +157,22 @@ impl WorkflowResolver {
             .await
             .map_err(|_| WorkflowResolveError::BadRequest("Invalid workflow path (does not exist)".to_string()))?;
 
-        if !canon.is_file() {
+        let mut final_path = canon;
+        #[cfg(target_os = "windows")]
+        {
+            let s = final_path.to_string_lossy().to_string();
+            if s.starts_with(r"\\?\") {
+                final_path = std::path::PathBuf::from(&s[4..]);
+            }
+        }
+
+        if !final_path.is_file() {
             return Err(WorkflowResolveError::BadRequest(
                 "Invalid workflow path (not a file)".to_string(),
             ));
         }
 
-        Self::read_and_validate_file(&canon).await
+        Self::read_and_validate_file(&final_path).await
     }
 
     async fn read_and_validate_file(path: &Path) -> Result<ResolvedWorkflow, WorkflowResolveError> {

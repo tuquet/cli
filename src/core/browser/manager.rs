@@ -36,6 +36,8 @@ pub struct BrowserManagerOptions {
 pub struct BrowserManager {
     options: BrowserManagerOptions,
     launcher: Option<BrowserLauncher>,
+    created_ext_dirs: Vec<String>,
+    resolved_user_data_dir: Option<String>,
 }
 
 impl BrowserManager {
@@ -43,6 +45,8 @@ impl BrowserManager {
         Self {
             options,
             launcher: None,
+            created_ext_dirs: Vec::new(),
+            resolved_user_data_dir: None,
         }
     }
 
@@ -60,6 +64,7 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
                 .to_string_lossy()
                 .to_string()
         });
+        self.resolved_user_data_dir = Some(user_data_dir.clone());
 
         let mut custom_args = self.options.custom_args.clone();
         custom_args.push("--enable-logging".to_string());
@@ -89,6 +94,7 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
                 // Copy the extension to a browser-specific unique temp directory
                 let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis();
                 let browser_ext_dir = get_temp_dir().join(format!("automa_ext_{}_{}", self.options.browser_id, timestamp));
+                self.created_ext_dirs.push(browser_ext_dir.to_string_lossy().to_string());
                 
                 // Copy directory recursively using pure Rust
                 copy_dir_all(original_ext_path.to_path_buf(), browser_ext_dir.clone()).await?;
@@ -154,15 +160,46 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
 
     pub async fn cleanup(&mut self) -> Result<()> {
         if let Some(mut launcher) = self.launcher.take() {
-            if let Some(_pid) = launcher.get_pid() {
+            if let Some(pid) = launcher.get_pid() {
                 let mut registry = browser_registry().write().await;
                 registry.remove(&self.options.browser_id);
 
                 let mut sessions = browser_sessions().write().await;
                 sessions.remove(&self.options.browser_id);
+
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = tokio::process::Command::new("taskkill");
+                    cmd.args(["/F", "/T", "/PID", &pid.to_string()])
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .creation_flags(0x08000000);
+                    let _ = cmd.status().await;
+                }
             }
             launcher.close().await?;
         }
+
+        // Clean up copied extension directories created for this session
+        for ext_dir in &self.created_ext_dirs {
+            let p = std::path::Path::new(ext_dir);
+            if p.exists() {
+                let _ = tokio::fs::remove_dir_all(p).await;
+            }
+        }
+        self.created_ext_dirs.clear();
+
+        // If user_data_dir was ephemeral (created in Temp with automa_browser_), clean it up
+        if let Some(ref dir) = self.resolved_user_data_dir {
+            if dir.contains("automa_browser_") {
+                let p = std::path::Path::new(dir);
+                if p.exists() {
+                    let _ = tokio::fs::remove_dir_all(p).await;
+                }
+            }
+        }
+        self.resolved_user_data_dir = None;
+
         Ok(())
     }
 
@@ -207,6 +244,18 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
         }
         browser_registry().write().await.clear();
         browser_sessions().write().await.clear();
+
+        // Clean up all ephemeral temp folders (automa_ext_* and automa_browser_*)
+        let temp_dir = get_temp_dir();
+        if let Ok(mut entries) = tokio::fs::read_dir(&temp_dir).await {
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("automa_ext_") || name.starts_with("automa_browser_") || name.starts_with("automa_run_") {
+                    let p = entry.path();
+                    let _ = tokio::fs::remove_dir_all(&p).await;
+                }
+            }
+        }
     }
 }
 use std::future::Future;

@@ -21,7 +21,10 @@ pub async fn get_browser_launcher_lock(browser_id: &str) -> Arc<TokioMutex<()>> 
 
 pub fn resolve_cli_runner_extension_path() -> String {
     let mut possible_paths = vec![
+        std::path::PathBuf::from(r"D:\Repository\tuquet-automa\apps\runner\dist"),
+        std::path::PathBuf::from(r"D:\Repository\tuquet-automa\apps\extension\dist"),
         std::path::PathBuf::from(r"C:\Repository\tuquet-automa\apps\runner\dist"),
+        std::path::PathBuf::from(r"C:\Repository\tuquet-automa\apps\extension\dist"),
         std::path::PathBuf::from("apps/runner/dist"),
         std::path::PathBuf::from("./apps/runner/dist"),
         std::path::PathBuf::from("../runner/dist"),
@@ -33,6 +36,12 @@ pub fn resolve_cli_runner_extension_path() -> String {
         std::path::PathBuf::from("../../apps/webe/dist/cli-runner"),
         std::path::PathBuf::from("../../../apps/webe/dist/cli-runner"),
     ];
+
+    if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
+        let home_path = std::path::PathBuf::from(home);
+        possible_paths.push(home_path.join(".automa/extension"));
+        possible_paths.push(home_path.join(".automa/runner"));
+    }
 
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {

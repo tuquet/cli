@@ -38,8 +38,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             browser,
             browser_id,
             variables,
+            timeout,
         }) => {
-            run_workflow(workflow, workflow_json, headless, browser, browser_id, variables).await
+            run_workflow(workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
         }
         Some(Commands::Inspect { workflow }) => {
             inspect_workflow(&workflow)
@@ -294,7 +295,11 @@ async fn run_workflow(
     browser_opt: Option<String>,
     browser_id_opt: Option<String>,
     variables: Vec<String>,
+    timeout_opt: Option<u64>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let timeout_duration = timeout_opt
+        .map(std::time::Duration::from_secs)
+        .unwrap_or(std::time::Duration::from_secs(300));
     let mut config = AppConfig::load();
     let data_dir = std::env::temp_dir().join(format!("automa_run_{}", uuid::Uuid::new_v4()));
     let _ = std::fs::create_dir_all(&data_dir);
@@ -384,22 +389,44 @@ async fn run_workflow(
 
     println!(">> Workflow dispatched [Job ID: {}]. Waiting for worker execution...", job_id);
 
-    // Stream logs to console until job finishes
-    while let Ok(msg) = rx.recv().await {
-        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&msg) {
-            if let Some(event_type) = val.get("type").and_then(|v| v.as_str()) {
-                if event_type == "job_finish" || event_type == "job_completed" || event_type == "job_failed" || event_type == "workflow_finished" {
-                    println!(">> Job finished with event: {}", event_type);
-                    break;
+    // Stream logs to console until job finishes or timeout/ctrl-c occurs
+    let execution_result = tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            eprintln!("\n>> Execution interrupted by user (Ctrl+C). Cleaning up...");
+            Err("Interrupted by user (SIGINT)")
+        }
+        _ = tokio::time::sleep(timeout_duration) => {
+            eprintln!("\n>> Execution timed out after {:?}.", timeout_duration);
+            Err("Workflow execution timed out")
+        }
+        res = async {
+            let mut failed = false;
+            while let Ok(msg) = rx.recv().await {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&msg) {
+                    if let Some(event_type) = val.get("type").and_then(|v| v.as_str()) {
+                        if event_type == "job_failed" {
+                            failed = true;
+                            println!(">> Job finished with event: {}", event_type);
+                            break;
+                        } else if event_type == "job_finish" || event_type == "job_completed" || event_type == "workflow_finished" {
+                            println!(">> Job finished with event: {}", event_type);
+                            break;
+                        }
+                    }
+                    if let Some(log_msg) = val.get("message").and_then(|v| v.as_str()) {
+                        println!("[worker] {}", log_msg);
+                    } else if let Some(data) = val.get("data") {
+                        println!("[worker] {}", data);
+                    }
                 }
             }
-            if let Some(log_msg) = val.get("message").and_then(|v| v.as_str()) {
-                println!("[worker] {}", log_msg);
-            } else if let Some(data) = val.get("data") {
-                println!("[worker] {}", data);
+            if failed {
+                Err("Workflow job failed during execution")
+            } else {
+                Ok(())
             }
-        }
-    }
+        } => res
+    };
 
     // Clean up server and browser child processes
     _server_handle.abort();
@@ -407,8 +434,17 @@ async fn run_workflow(
 
     // Cleanup ephemeral data directory
     let _ = std::fs::remove_dir_all(&data_dir);
-    println!(">> Run completed successfully.");
-    std::process::exit(0);
+
+    match execution_result {
+        Ok(_) => {
+            println!(">> Run completed successfully.");
+            std::process::exit(0);
+        }
+        Err(e) => {
+            eprintln!(">> Run failed: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 async fn run_server(

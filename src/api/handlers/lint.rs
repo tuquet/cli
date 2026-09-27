@@ -45,12 +45,16 @@ pub struct LintRequest {
     #[serde(default)]
     pub target_type: Option<LintTargetType>,
     #[serde(default)]
+    #[schema(value_type = Option<Vec<Object>>)]
     pub nodes: Option<Vec<serde_json::Value>>,
     #[serde(default)]
+    #[schema(value_type = Option<Vec<Object>>)]
     pub edges: Option<Vec<serde_json::Value>>,
     #[serde(default)]
+    #[schema(value_type = Option<Object>)]
     pub drawflow: Option<serde_json::Value>,
     #[serde(default)]
+    #[schema(value_type = Option<Object>)]
     pub content: Option<serde_json::Value>,
 }
 
