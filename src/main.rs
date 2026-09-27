@@ -164,15 +164,23 @@ fn inspect_workflow(workflow_path: &std::path::Path) -> Result<(), Box<dyn std::
     println!("Name:        {}", name);
     println!("Description: {}", description);
 
-    let nodes: Vec<&serde_json::Value> = if let Some(arr) = val.pointer("/drawflow/nodes").and_then(|v| v.as_array()) {
-        arr.iter().collect()
+    let parsed_drawflow_opt = val.get("drawflow")
+        .and_then(|v| v.as_str())
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+
+    let nodes: Vec<serde_json::Value> = if let Some(arr) = val.pointer("/drawflow/nodes").and_then(|v| v.as_array()) {
+        arr.clone()
+    } else if let Some(arr) = parsed_drawflow_opt.as_ref().and_then(|d| d.get("nodes")).and_then(|v| v.as_array()) {
+        arr.clone()
     } else if let Some(arr) = val.get("nodes").and_then(|v| v.as_array()) {
-        arr.iter().collect()
+        arr.clone()
     } else {
         Vec::new()
     };
 
     let edge_count = if let Some(arr) = val.pointer("/drawflow/edges").and_then(|v| v.as_array()) {
+        arr.len()
+    } else if let Some(arr) = parsed_drawflow_opt.as_ref().and_then(|d| d.get("edges")).and_then(|v| v.as_array()) {
         arr.len()
     } else if let Some(arr) = val.get("edges").and_then(|v| v.as_array()) {
         arr.len()

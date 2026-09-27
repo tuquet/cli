@@ -192,11 +192,23 @@ impl WorkflowResolver {
         }
 
         if let Some(drawflow) = val.get("drawflow") {
-            if !drawflow.is_object() {
+            if let Some(s) = drawflow.as_str() {
+                if serde_json::from_str::<serde_json::Value>(s).is_err() {
+                    return Err(WorkflowResolveError::BadRequest(
+                        "Workflow 'drawflow' string is not valid JSON".to_string(),
+                    ));
+                }
+            } else if !drawflow.is_object() {
                 return Err(WorkflowResolveError::BadRequest(
-                    "Workflow 'drawflow' must be an object".to_string(),
+                    "Workflow 'drawflow' must be an object or a JSON string".to_string(),
                 ));
             }
+        }
+
+        if val.get("nodes").is_none() && val.get("drawflow").is_none() {
+            return Err(WorkflowResolveError::BadRequest(
+                "Workflow must contain either 'drawflow' or 'nodes'".to_string(),
+            ));
         }
 
         Ok(())
