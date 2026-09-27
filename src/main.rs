@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
     let manifest = serde_json::json!({
         "protocol": "tuquet.automa.v1",
-        "name": "automa-core",
+        "name": "automa-runner",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",
         "status": "ready",

@@ -1,4 +1,4 @@
-# ⚙️ Tuquet Automa Core (`tuquet-automa-core`)
+# ⚙️ Tuquet Automa Runner (`tuquet-automa-runner`)
 
 > **Lightweight Native Process Launcher, WebSocket Event Hub & SQLite Storage Bridge for Automa WebExtension**.
 > Đóng vai trò là cầu nối (Bridge) khởi chạy Chromium kèm Extension, điều phối kịch bản workflow sang Browser Worker và thu thập log thực thi về SQLite dưới sự giám sát tiến trình của `tqr`.

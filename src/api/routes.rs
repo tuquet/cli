@@ -118,7 +118,7 @@ pub struct ApiDoc;
 
 async fn root_handler() -> impl IntoResponse {
     axum::Json(serde_json::json!({
-        "service": "tuquet-automa-core",
+        "service": "tuquet-automa-runner",
         "version": env!("CARGO_PKG_VERSION"),
         "role": "native-bridge-launcher",
         "status": "running",
