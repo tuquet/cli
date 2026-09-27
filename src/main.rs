@@ -143,6 +143,15 @@ async fn run_workflow(
     let db_path = data_dir.join("automa_run.sqlite");
     let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
 
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let bound_port = listener.local_addr()?.port();
+    config.server_port = bound_port;
+    
+    // Set environment variable so browser extension connects to this ephemeral bridge port
+    unsafe {
+        std::env::set_var("AUTOMA_PORT", bound_port.to_string());
+    }
+
     let (tx, mut rx) = tokio::sync::broadcast::channel(1000);
     let (worker_tx, _) = tokio::sync::broadcast::channel(1000);
 
@@ -155,13 +164,6 @@ async fn run_workflow(
     };
 
     let app = api::routes::create_router(state.clone());
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
-    let bound_port = listener.local_addr()?.port();
-    
-    // Set environment variable so browser extension connects to this ephemeral bridge port
-    unsafe {
-        std::env::set_var("AUTOMA_PORT", bound_port.to_string());
-    }
 
     let _server_handle = tokio::spawn(async move {
         let _ = axum::serve(listener, app).await;
@@ -205,21 +207,27 @@ async fn run_workflow(
     while let Ok(msg) = rx.recv().await {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(&msg) {
             if let Some(event_type) = val.get("type").and_then(|v| v.as_str()) {
-                if event_type == "job_finish" || event_type == "job_completed" || event_type == "job_failed" {
+                if event_type == "job_finish" || event_type == "job_completed" || event_type == "job_failed" || event_type == "workflow_finished" {
                     println!(">> Job finished with event: {}", event_type);
                     break;
                 }
             }
             if let Some(log_msg) = val.get("message").and_then(|v| v.as_str()) {
                 println!("[worker] {}", log_msg);
+            } else if let Some(data) = val.get("data") {
+                println!("[worker] {}", data);
             }
         }
     }
 
+    // Clean up server and browser child processes
+    _server_handle.abort();
+    automa_core::core::browser::manager::BrowserManager::destroy_all().await;
+
     // Cleanup ephemeral data directory
     let _ = std::fs::remove_dir_all(&data_dir);
     println!(">> Run completed successfully.");
-    Ok(())
+    std::process::exit(0);
 }
 
 async fn run_server(

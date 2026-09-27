@@ -21,6 +21,7 @@ pub async fn get_browser_launcher_lock(browser_id: &str) -> Arc<TokioMutex<()>> 
 
 pub fn resolve_cli_runner_extension_path() -> String {
     let mut possible_paths = vec![
+        std::path::PathBuf::from(r"C:\Repository\tuquet-automa\apps\runner\dist"),
         std::path::PathBuf::from("apps/runner/dist"),
         std::path::PathBuf::from("./apps/runner/dist"),
         std::path::PathBuf::from("../runner/dist"),
@@ -148,7 +149,7 @@ pub async fn ensure_browser_worker(
         eprintln!("Failed to launch browser worker (maybe already running): {}", e);
     }
 
-    for _ in 0..10 {
+    for _ in 0..60 {
         let is_connected_now = {
             let browsers = connected_browsers().read().await;
             browsers.contains(&browser_id.to_string())
@@ -156,6 +157,6 @@ pub async fn ensure_browser_worker(
         if is_connected_now {
             break;
         }
-        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     }
 }
