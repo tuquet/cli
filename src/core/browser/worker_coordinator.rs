@@ -21,28 +21,28 @@ pub async fn get_browser_launcher_lock(browser_id: &str) -> Arc<TokioMutex<()>> 
 
 pub fn resolve_cli_runner_extension_path() -> String {
     let mut possible_paths = vec![
+        std::path::PathBuf::from("apps/runner/dist"),
+        std::path::PathBuf::from("./apps/runner/dist"),
+        std::path::PathBuf::from("../runner/dist"),
+        std::path::PathBuf::from("../../apps/runner/dist"),
+        std::path::PathBuf::from("../../../apps/runner/dist"),
         std::path::PathBuf::from("apps/webe/dist/cli-runner"),
         std::path::PathBuf::from("./apps/webe/dist/cli-runner"),
         std::path::PathBuf::from("../webe/dist/cli-runner"),
         std::path::PathBuf::from("../../apps/webe/dist/cli-runner"),
         std::path::PathBuf::from("../../../apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("./automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("../automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../../automa-webe/dist/cli-runner"),
     ];
 
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
+            possible_paths.push(exe_dir.join("apps/runner/dist"));
+            possible_paths.push(exe_dir.join("../runner/dist"));
+            possible_paths.push(exe_dir.join("../../apps/runner/dist"));
+            possible_paths.push(exe_dir.join("../../../apps/runner/dist"));
             possible_paths.push(exe_dir.join("apps/webe/dist/cli-runner"));
             possible_paths.push(exe_dir.join("../webe/dist/cli-runner"));
             possible_paths.push(exe_dir.join("../../apps/webe/dist/cli-runner"));
             possible_paths.push(exe_dir.join("../../../apps/webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("automa-webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../automa-webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../../automa-webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../../../automa-webe/dist/cli-runner"));
         }
     }
 
