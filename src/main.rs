@@ -29,6 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             print_probe_manifest()
         }
         Some(Commands::Run {
+            workflow_pos,
             workflow,
             workflow_json,
             headless,
@@ -37,7 +38,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             variables,
             timeout,
         }) => {
-            run_workflow(workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
+            let target_workflow = workflow.or(workflow_pos);
+            run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
         }
         Some(Commands::Inspect { workflow }) => {
             inspect_workflow(&workflow)

@@ -31,6 +31,10 @@ pub enum Commands {
     /// Execute a workflow directly via browser worker and stream logs to stdout
     Run {
         /// Path to workflow JSON file (.workflow.json)
+        #[arg(value_name = "WORKFLOW_FILE")]
+        workflow_pos: Option<String>,
+
+        /// Path to workflow JSON file (.workflow.json)
         #[arg(short, long)]
         workflow: Option<String>,
 
