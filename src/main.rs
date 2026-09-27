@@ -6,7 +6,7 @@ use automa_core::infrastructure::db::AutomaDb;
 use automa_core::config::AppConfig;
 use automa_core::AppState;
 use automa_core::api;
-use automa_core::cli::{Cli, Commands};
+use automa_core::cli::{Cli, Commands, WorkflowCommands};
 use clap::Parser;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -40,6 +40,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }) => {
             let target_workflow = workflow.or(workflow_pos);
             run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
+        }
+        Some(Commands::Workflow { command }) => {
+            match command {
+                WorkflowCommands::List { search, db_only, vault_only } => {
+                    list_workflows(search, db_only, vault_only).await
+                }
+                WorkflowCommands::Import { file, id, name, description } => {
+                    import_workflow(file, id, name, description).await
+                }
+                WorkflowCommands::Export { id, output } => {
+                    export_workflow(id, output).await
+                }
+                WorkflowCommands::Info { id } => {
+                    inspect_workflow(&id)
+                }
+                WorkflowCommands::Delete { id, vault } => {
+                    delete_workflow(id, vault).await
+                }
+            }
         }
         Some(Commands::Inspect { workflow }) => {
             inspect_workflow(&workflow)
@@ -135,18 +154,442 @@ async fn setup_extension(browser: &str, extension_path: Option<std::path::PathBu
     Ok(())
 }
 
-fn inspect_workflow(workflow_path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+async fn list_workflows(
+    search: Option<String>,
+    db_only: bool,
+    vault_only: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    struct WfInfo {
+        id: String,
+        name: String,
+        version: String,
+        source: String,
+        blocks: usize,
+        updated_at: String,
+    }
+
+    let config = AppConfig::load();
+    let mut workflows: Vec<WfInfo> = Vec::new();
+    let mut seen_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // 1. Fetch from SQLite Database if not vault_only
+    if !vault_only {
+        let db_path = std::path::PathBuf::from(&config.data_dir).join("automa.sqlite");
+        if db_path.exists() {
+            if let Ok(db) = AutomaDb::new(&db_path) {
+                if let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref()) {
+                    for wf in list {
+                        let parsed: Option<serde_json::Value> = serde_json::from_str(&wf.data).ok();
+                        let blocks = parsed.as_ref().map(|v| {
+                            if let Some(nodes) = v.get("nodes").and_then(|n| n.as_array()) {
+                                nodes.len()
+                            } else if let Some(drawflow) = v.get("drawflow") {
+                                if let Some(s) = drawflow.as_str() {
+                                    serde_json::from_str::<serde_json::Value>(s).ok()
+                                        .and_then(|d| d.get("nodes").and_then(|n| n.as_array()).map(|a| a.len()))
+                                        .unwrap_or(0)
+                                } else if let Some(nodes) = drawflow.get("nodes").and_then(|n| n.as_array()) {
+                                    nodes.len()
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            }
+                        }).unwrap_or(0);
+
+                        seen_ids.insert(wf.id.clone());
+                        workflows.push(WfInfo {
+                            id: wf.id,
+                            name: wf.name,
+                            version: wf.version,
+                            source: "Database".to_string(),
+                            blocks,
+                            updated_at: wf.updated_at,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Fetch from Vault if not db_only
+    if !db_only {
+        let home = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_else(|_| ".".to_string());
+        let user_vault = std::path::PathBuf::from(&home).join(".automa").join("workflows");
+        let config_vault = std::path::PathBuf::from(&config.data_dir).join("workflows");
+
+        let vault_dirs = [user_vault, config_vault];
+        for vdir in &vault_dirs {
+            if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    let path = entry.path();
+                    if path.is_file() && (path.extension().map(|e| e == "json").unwrap_or(false)) {
+                        if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                                let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("wf");
+                                let id = val.get("id").and_then(|v| v.as_str()).map(|s| s.to_string())
+                                    .unwrap_or_else(|| stem.trim_end_matches(".workflow").to_string());
+                                let name = val.get("name").and_then(|v| v.as_str()).map(|s| s.to_string())
+                                    .unwrap_or_else(|| id.clone());
+                                let version = val.get("version").and_then(|v| v.as_str()).unwrap_or("1.0.0").to_string();
+                                let desc = val.get("description").and_then(|v| v.as_str()).unwrap_or("");
+
+                                if let Some(ref q) = search {
+                                    let q_lower = q.to_lowercase();
+                                    if !id.to_lowercase().contains(&q_lower)
+                                        && !name.to_lowercase().contains(&q_lower)
+                                        && !desc.to_lowercase().contains(&q_lower) {
+                                        continue;
+                                    }
+                                }
+
+                                if seen_ids.contains(&id) {
+                                    if let Some(item) = workflows.iter_mut().find(|w| w.id == id) {
+                                        item.source = "DB+Vault".to_string();
+                                    }
+                                    continue;
+                                }
+
+                                seen_ids.insert(id.clone());
+
+                                let blocks = if let Some(nodes) = val.get("nodes").and_then(|n| n.as_array()) {
+                                    nodes.len()
+                                } else if let Some(drawflow) = val.get("drawflow") {
+                                    if let Some(s) = drawflow.as_str() {
+                                        serde_json::from_str::<serde_json::Value>(s).ok()
+                                            .and_then(|d| d.get("nodes").and_then(|n| n.as_array()).map(|a| a.len()))
+                                            .unwrap_or(0)
+                                    } else if let Some(nodes) = drawflow.get("nodes").and_then(|n| n.as_array()) {
+                                        nodes.len()
+                                    } else {
+                                        0
+                                    }
+                                } else {
+                                    0
+                                };
+
+                                let updated_at = "Vault File".to_string();
+
+                                workflows.push(WfInfo {
+                                    id,
+                                    name,
+                                    version,
+                                    source: "Vault".to_string(),
+                                    blocks,
+                                    updated_at,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    println!("========================================================================================");
+    println!(" 📂 AUTOMA SAVED WORKFLOWS ({} Workflows Found)", workflows.len());
+    println!("========================================================================================");
+    if workflows.is_empty() {
+        println!(" (No workflows found)");
+        println!("----------------------------------------------------------------------------------------");
+        println!("💡 Import a workflow with:");
+        println!("   automa workflow import <file.json> --id <workflow_id>");
+    } else {
+        println!(" {:<20} {:<24} {:<8} {:<10} {:<8} {}", "ID", "NAME", "VERSION", "SOURCE", "BLOCKS", "UPDATED AT");
+        println!("----------------------------------------------------------------------------------------");
+        for wf in &workflows {
+            let id_display = if wf.id.len() > 19 { format!("{}...", &wf.id[..16]) } else { wf.id.clone() };
+            let name_display = if wf.name.len() > 23 { format!("{}...", &wf.name[..20]) } else { wf.name.clone() };
+            println!(" {:<20} {:<24} {:<8} {:<10} {:<8} {}", id_display, name_display, wf.version, wf.source, wf.blocks, wf.updated_at);
+        }
+        println!("========================================================================================");
+        println!("💡 Run with:  automa run <ID>");
+        if let Some(first) = workflows.first() {
+            println!("   Example:   automa run {} --headless", first.id);
+        }
+    }
+    println!("========================================================================================");
+
+    Ok(())
+}
+
+async fn import_workflow(
+    file: std::path::PathBuf,
+    id_opt: Option<String>,
+    name_opt: Option<String>,
+    desc_opt: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !file.exists() || !file.is_file() {
+        return Err(format!("File does not exist or is not a file: {}", file.display()).into());
+    }
+
+    let content = tokio::fs::read_to_string(&file).await?;
+    let mut val: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse workflow file as JSON: {}", e))?;
+
+    if !val.is_object() {
+        return Err("Workflow file must contain a JSON object".into());
+    }
+
+    let derived_stem = file.file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.trim_end_matches(".workflow").replace(' ', "_"))
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let id = id_opt
+        .or_else(|| val.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .unwrap_or(derived_stem);
+
+    let name = name_opt
+        .or_else(|| val.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .unwrap_or_else(|| id.clone());
+
+    let description = desc_opt
+        .or_else(|| val.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()));
+
+    let version = val.get("version").and_then(|v| v.as_str()).unwrap_or("1.0.0").to_string();
+    let icon = val.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+    // Synchronize ID and Name into JSON data
+    if let Some(obj) = val.as_object_mut() {
+        obj.insert("id".to_string(), serde_json::Value::String(id.clone()));
+        obj.insert("name".to_string(), serde_json::Value::String(name.clone()));
+        if let Some(ref desc) = description {
+            obj.insert("description".to_string(), serde_json::Value::String(desc.clone()));
+        }
+    }
+
+    let serialized = serde_json::to_string_pretty(&val)?;
+
+    let config = AppConfig::load();
+    let db_dir = std::path::PathBuf::from(&config.data_dir);
+    tokio::fs::create_dir_all(&db_dir).await?;
+    let db_path = db_dir.join("automa.sqlite");
+
+    let db = AutomaDb::new(&db_path)?;
+    db.workflows().create_workflow(
+        &id,
+        &name,
+        description.as_deref(),
+        &serialized,
+        Some(&version),
+        icon.as_deref(),
+    )?;
+
+    // Also copy to Vault ~/.automa/workflows/
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_string());
+    let vault_dir = std::path::PathBuf::from(home).join(".automa").join("workflows");
+    let _ = tokio::fs::create_dir_all(&vault_dir).await;
+    let vault_file = vault_dir.join(format!("{}.workflow.json", id));
+    tokio::fs::write(&vault_file, &serialized).await?;
+
+    let block_count = val.get("nodes").and_then(|n| n.as_array()).map(|a| a.len())
+        .or_else(|| val.pointer("/drawflow/nodes").and_then(|n| n.as_array()).map(|a| a.len()))
+        .unwrap_or(0);
+
+    println!("============================================================");
+    println!(" ✔ Workflow Successfully Imported");
+    println!("============================================================");
+    println!(" ID:          {}", id);
+    println!(" Name:        {}", name);
+    println!(" Version:     {}", version);
+    if let Some(ref d) = description {
+        println!(" Description: {}", d);
+    }
+    println!(" Blocks:      {}", block_count);
+    println!(" Vault File:  {}", vault_file.display());
+    println!(" Database:    {}", db_path.display());
+    println!("------------------------------------------------------------");
+    println!(" 💡 Ready to execute:");
+    println!("    automa run {} --headless", id);
+    println!("============================================================");
+
+    Ok(())
+}
+
+async fn export_workflow(
+    id: String,
+    output: Option<std::path::PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    let mut workflow_json: Option<String> = None;
+
+    // 1. Check persistent SQLite DB
+    let db_path = std::path::PathBuf::from(&config.data_dir).join("automa.sqlite");
+    if db_path.exists() {
+        if let Ok(db) = AutomaDb::new(&db_path) {
+            if let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id) {
+                workflow_json = Some(wf.data);
+            }
+        }
+    }
+
+    // 2. Check Vault
+    if workflow_json.is_none() {
+        let home = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_else(|_| ".".to_string());
+        let user_vault = std::path::PathBuf::from(&home).join(".automa").join("workflows");
+        let config_vault = std::path::PathBuf::from(&config.data_dir).join("workflows");
+
+        let candidates = [
+            user_vault.join(format!("{}.workflow.json", id)),
+            user_vault.join(format!("{}.json", id)),
+            config_vault.join(format!("{}.workflow.json", id)),
+            config_vault.join(format!("{}.json", id)),
+        ];
+
+        for c in &candidates {
+            if c.exists() && c.is_file() {
+                if let Ok(content) = tokio::fs::read_to_string(c).await {
+                    workflow_json = Some(content);
+                    break;
+                }
+            }
+        }
+    }
+
+    let raw_data = match workflow_json {
+        Some(d) => d,
+        None => {
+            return Err(format!("Workflow '{}' not found in database or vault.", id).into());
+        }
+    };
+
+    let final_content = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&raw_data) {
+        serde_json::to_string_pretty(&val)?
+    } else {
+        raw_data
+    };
+
+    let dest = output.unwrap_or_else(|| std::path::PathBuf::from(format!("{}.workflow.json", id)));
+    if let Some(parent) = dest.parent() {
+        let _ = tokio::fs::create_dir_all(parent).await;
+    }
+    tokio::fs::write(&dest, final_content).await?;
+
+    println!("✔ Workflow '{}' exported successfully to: {:?}", id, dest);
+    Ok(())
+}
+
+async fn delete_workflow(
+    id: String,
+    delete_from_vault: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    let mut deleted_db = false;
+    let mut deleted_vault = false;
+
+    // 1. Delete from SQLite DB
+    let db_path = std::path::PathBuf::from(&config.data_dir).join("automa.sqlite");
+    if db_path.exists() {
+        if let Ok(db) = AutomaDb::new(&db_path) {
+            if let Ok(res) = db.workflows().delete_workflow(&id) {
+                deleted_db = res;
+            }
+        }
+    }
+
+    // 2. Delete from Vault if requested
+    if delete_from_vault {
+        let home = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_else(|_| ".".to_string());
+        let user_vault = std::path::PathBuf::from(&home).join(".automa").join("workflows");
+        let config_vault = std::path::PathBuf::from(&config.data_dir).join("workflows");
+
+        let candidates = [
+            user_vault.join(format!("{}.workflow.json", id)),
+            user_vault.join(format!("{}.json", id)),
+            config_vault.join(format!("{}.workflow.json", id)),
+            config_vault.join(format!("{}.json", id)),
+        ];
+
+        for c in &candidates {
+            if c.exists() && c.is_file() {
+                if tokio::fs::remove_file(c).await.is_ok() {
+                    deleted_vault = true;
+                }
+            }
+        }
+    }
+
+    if deleted_db || deleted_vault {
+        println!("✔ Workflow '{}' deleted successfully (Database: {}, Vault: {}).", id, deleted_db, deleted_vault);
+    } else {
+        println!("Workflow '{}' was not found in database or vault.", id);
+    }
+
+    Ok(())
+}
+
+fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("============================================================");
     println!(" Automa Workflow Inspector");
     println!("============================================================");
-    println!("File: {}", workflow_path.display());
 
-    if !workflow_path.exists() {
-        eprintln!("Error: Workflow file does not exist at {:?}", workflow_path);
-        std::process::exit(1);
-    }
+    let (content, source_label) = {
+        let target_path = std::path::Path::new(target);
+        if target_path.exists() && target_path.is_file() {
+            (std::fs::read_to_string(target_path)?, format!("File: {}", target_path.display()))
+        } else {
+            // Try resolving from DB or Vault
+            let config = AppConfig::load();
+            let mut resolved = None;
 
-    let content = std::fs::read_to_string(workflow_path)?;
+            // Check SQLite DB
+            let db_path = std::path::PathBuf::from(&config.data_dir).join("automa.sqlite");
+            if db_path.exists() {
+                if let Ok(db) = AutomaDb::new(&db_path) {
+                    if let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target) {
+                        resolved = Some((wf.data, format!("Database (ID: {})", wf.id)));
+                    }
+                }
+            }
+
+            // Check Vault
+            if resolved.is_none() {
+                let home = std::env::var("HOME")
+                    .or_else(|_| std::env::var("USERPROFILE"))
+                    .unwrap_or_else(|_| ".".to_string());
+                let user_vault = std::path::PathBuf::from(&home).join(".automa").join("workflows");
+                let config_vault = std::path::PathBuf::from(&config.data_dir).join("workflows");
+
+                let candidates = [
+                    user_vault.join(format!("{}.workflow.json", target)),
+                    user_vault.join(format!("{}.json", target)),
+                    config_vault.join(format!("{}.workflow.json", target)),
+                    config_vault.join(format!("{}.json", target)),
+                ];
+
+                for c in &candidates {
+                    if c.exists() && c.is_file() {
+                        if let Ok(text) = std::fs::read_to_string(c) {
+                            resolved = Some((text, format!("Vault File: {}", c.display())));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            match resolved {
+                Some(r) => r,
+                None => {
+                    eprintln!("Error: Workflow file or ID '{}' not found in file system, database, or vault.", target);
+                    std::process::exit(1);
+                }
+            }
+        }
+    };
+
+    println!("Target:      {}", target);
+    println!("Source:      {}", source_label);
+
     let val: serde_json::Value = match serde_json::from_str(&content) {
         Ok(v) => v,
         Err(e) => {
@@ -277,7 +720,7 @@ fn inspect_workflow(workflow_path: &std::path::Path) -> Result<(), Box<dyn std::
     println!("============================================================");
     println!("Status: VALID WORKFLOW");
     println!("Execution command:");
-    println!("  automa run -w \"{}\"", workflow_path.display());
+    println!("  automa run \"{}\"", target);
     println!("============================================================");
 
     Ok(())

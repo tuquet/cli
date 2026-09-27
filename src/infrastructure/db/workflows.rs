@@ -126,6 +126,30 @@ impl<'a> SqliteWorkflowRepository<'a> {
         }
     }
 
+    pub fn get_workflow_by_id_or_name(&self, id_or_name: &str) -> Result<Option<DbWorkflow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, description, data, version, icon, created_at, updated_at FROM workflows WHERE id = ?1 OR lower(name) = lower(?1) LIMIT 1"
+        )?;
+        let mut rows = stmt.query_map(params![id_or_name], |row| {
+            Ok(DbWorkflow {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                data: row.get(3)?,
+                version: row.get(4)?,
+                icon: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
+            })
+        })?;
+
+        if let Some(wf) = rows.next() {
+            Ok(Some(wf?))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn update_workflow(
         &self,
         id: &str,
@@ -232,6 +256,10 @@ impl<'a> crate::infrastructure::db::traits::WorkflowRepository for SqliteWorkflo
         self.get_workflow(id)
     }
 
+    fn get_workflow_by_id_or_name(&self, id_or_name: &str) -> Result<Option<DbWorkflow>> {
+        self.get_workflow_by_id_or_name(id_or_name)
+    }
+
     fn update_workflow(
         &self,
         id: &str,
@@ -313,5 +341,41 @@ mod tests {
         let deleted = repo.delete_workflow("wf_search").unwrap();
         assert!(deleted);
         assert!(repo.get_workflow("wf_search").unwrap().is_none());
+    }
+
+    #[test]
+    fn test_get_workflow_by_id_or_name() {
+        let db = AutomaDb::new_in_memory().unwrap();
+        let conn = db.raw_conn();
+        let repo = SqliteWorkflowRepository::new(conn);
+
+        let data = r#"{"nodes":[]}"#;
+        repo.create_workflow(
+            "flow_google_01",
+            "Google Search Bot",
+            None,
+            data,
+            None,
+            None,
+        ).unwrap();
+
+        // Exact ID
+        let by_id = repo.get_workflow_by_id_or_name("flow_google_01").unwrap();
+        assert!(by_id.is_some());
+        assert_eq!(by_id.unwrap().name, "Google Search Bot");
+
+        // Exact Name
+        let by_name = repo.get_workflow_by_id_or_name("Google Search Bot").unwrap();
+        assert!(by_name.is_some());
+        assert_eq!(by_name.unwrap().id, "flow_google_01");
+
+        // Lowercase Name (case-insensitive)
+        let by_name_lower = repo.get_workflow_by_id_or_name("google search bot").unwrap();
+        assert!(by_name_lower.is_some());
+        assert_eq!(by_name_lower.unwrap().id, "flow_google_01");
+
+        // Non-existent
+        let not_found = repo.get_workflow_by_id_or_name("non_existent").unwrap();
+        assert!(not_found.is_none());
     }
 }

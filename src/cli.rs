@@ -63,11 +63,18 @@ pub enum Commands {
         timeout: Option<u64>,
     },
 
-    /// Inspect and validate a workflow JSON file without launching a browser
+    /// Manage stored workflows in local database and vault (alias: wf)
+    #[command(name = "workflow", alias = "wf")]
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommands,
+    },
+
+    /// Inspect and validate a workflow JSON file or stored workflow ID without launching a browser
     Inspect {
-        /// Path to workflow JSON file (.workflow.json)
-        #[arg(value_name = "WORKFLOW_FILE")]
-        workflow: PathBuf,
+        /// Path to workflow JSON file (.workflow.json) or saved workflow ID/Name
+        #[arg(value_name = "WORKFLOW")]
+        workflow: String,
     },
 
     /// Start the Automa Core HTTP/WebSocket daemon server
@@ -110,3 +117,74 @@ pub enum Commands {
         url: String,
     },
 }
+
+#[derive(Subcommand, Debug)]
+pub enum WorkflowCommands {
+    /// List all workflows saved in database and vault (alias: ls)
+    #[command(name = "list", alias = "ls")]
+    List {
+        /// Filter workflows by keyword (name, ID, or description)
+        #[arg(short, long)]
+        search: Option<String>,
+
+        /// Only list workflows from SQLite database
+        #[arg(long)]
+        db_only: bool,
+
+        /// Only list workflows from Vault directory (~/.automa/workflows)
+        #[arg(long)]
+        vault_only: bool,
+    },
+
+    /// Import a workflow file (.json) into SQLite database and vault (alias: add)
+    #[command(name = "import", alias = "add")]
+    Import {
+        /// Path to workflow JSON file (.workflow.json or .json)
+        #[arg(value_name = "FILE")]
+        file: PathBuf,
+
+        /// Custom identifier for the workflow
+        #[arg(long)]
+        id: Option<String>,
+
+        /// Custom display name for the workflow
+        #[arg(short, long)]
+        name: Option<String>,
+
+        /// Custom description for the workflow
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+
+    /// Export a workflow from database or vault to a JSON file
+    Export {
+        /// Workflow ID or Name to export
+        #[arg(value_name = "WORKFLOW_ID")]
+        id: String,
+
+        /// Destination file path (default: <id>.workflow.json)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
+    /// Inspect details, triggers, parameters, and block sequence of a stored workflow (alias: show)
+    #[command(name = "info", alias = "show")]
+    Info {
+        /// Workflow ID or Name
+        #[arg(value_name = "WORKFLOW_ID")]
+        id: String,
+    },
+
+    /// Delete a workflow from database and vault (alias: rm)
+    #[command(name = "delete", alias = "rm")]
+    Delete {
+        /// Workflow ID to delete
+        #[arg(value_name = "WORKFLOW_ID")]
+        id: String,
+
+        /// Also delete from vault directory if present
+        #[arg(long, default_value_t = true)]
+        vault: bool,
+    },
+}
+

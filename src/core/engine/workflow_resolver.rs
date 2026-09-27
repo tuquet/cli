@@ -44,7 +44,24 @@ impl WorkflowResolver {
         } else if let Some(wf_id) = workflow_id {
             Self::resolve_by_id(job_id, data_dir, wf_id, workflow_path, db).await
         } else if let Some(wp) = workflow_path {
-            Self::resolve_by_path(wp).await
+            let trimmed = wp.trim();
+            // Step 1: Check if input is inline JSON string
+            if trimmed.starts_with('{') {
+                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                    if json_val.is_object() && (json_val.get("nodes").is_some() || json_val.get("drawflow").is_some()) {
+                        return Self::resolve_inline_data(job_id, data_dir, &json_val).await;
+                    }
+                }
+            }
+
+            // Step 2: Check if wp is an existing file path directly
+            let path_obj = Path::new(wp);
+            if path_obj.exists() && path_obj.is_file() {
+                Self::resolve_by_path(wp).await
+            } else {
+                // Step 3 & 4: Fallback to ID/Vault/DB resolution
+                Self::resolve_by_id(job_id, data_dir, wp, Some(wp), db).await
+            }
         } else {
             Err(WorkflowResolveError::BadRequest(
                 "Either workflowId, workflowData, or workflowPath must be provided".to_string(),
@@ -88,14 +105,32 @@ impl WorkflowResolver {
         fallback_path: Option<&str>,
         db: &Arc<Mutex<AutomaDb>>,
     ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
-        let db_workflow = {
+        // Step 1: Check active / ephemeral DB
+        let mut db_workflow = {
             let guard = db.lock().await;
-            guard.workflows().get_workflow(wf_id).ok().flatten()
+            guard.workflows().get_workflow_by_id_or_name(wf_id).ok().flatten()
         };
 
+        // Step 2: Check persistent SQLite database if not found in active DB
+        if db_workflow.is_none() {
+            let persistent_config = crate::config::AppConfig::load();
+            let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join("automa.sqlite");
+            if persistent_db_path.exists() {
+                if let Ok(pdb) = AutomaDb::new(&persistent_db_path) {
+                    db_workflow = pdb.workflows().get_workflow_by_id_or_name(wf_id).ok().flatten();
+                }
+            }
+        }
+
         if let Some(wf) = db_workflow {
-            let json_data: serde_json::Value = serde_json::from_str(&wf.data)
+            let mut json_data: serde_json::Value = serde_json::from_str(&wf.data)
                 .map_err(|e| WorkflowResolveError::Internal(format!("Failed to parse database workflow JSON: {}", e)))?;
+
+            if json_data.get("name").is_none() {
+                if let Some(obj) = json_data.as_object_mut() {
+                    obj.insert("name".to_string(), serde_json::Value::String(wf.name.clone()));
+                }
+            }
 
             Self::validate_workflow_structure(&json_data)?;
 
@@ -103,7 +138,10 @@ impl WorkflowResolver {
             let _ = tokio::fs::create_dir_all(&temp_dir).await;
             let file_path = temp_dir.join(format!("{}.workflow.json", job_id));
 
-            tokio::fs::write(&file_path, &wf.data)
+            let content = serde_json::to_string_pretty(&json_data)
+                .unwrap_or(wf.data);
+
+            tokio::fs::write(&file_path, content)
                 .await
                 .map_err(|e| WorkflowResolveError::Internal(format!("Failed to prepare workflow from database: {}", e)))?;
 
@@ -113,12 +151,26 @@ impl WorkflowResolver {
             });
         }
 
-        let vault_root = PathBuf::from(data_dir);
+        // Step 3: Check Vault candidate directories
+        let persistent_config = crate::config::AppConfig::load();
+        let home = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .unwrap_or_else(|_| ".".to_string());
+        let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+        let config_vault = PathBuf::from(&persistent_config.data_dir).join("workflows");
+        let local_vault = PathBuf::from(data_dir).join("workflows");
+
         let candidates = [
-            vault_root.join(format!("workflows/{}.workflow.json", wf_id)),
-            vault_root.join(format!("{}.workflow.json", wf_id)),
-            vault_root.join(format!("workflows/{}.json", wf_id)),
-            vault_root.join(format!("{}.json", wf_id)),
+            user_vault.join(format!("{}.workflow.json", wf_id)),
+            user_vault.join(format!("{}.json", wf_id)),
+            user_vault.join(wf_id),
+            config_vault.join(format!("{}.workflow.json", wf_id)),
+            config_vault.join(format!("{}.json", wf_id)),
+            config_vault.join(wf_id),
+            local_vault.join(format!("{}.workflow.json", wf_id)),
+            local_vault.join(format!("{}.json", wf_id)),
+            PathBuf::from(data_dir).join(format!("{}.workflow.json", wf_id)),
+            PathBuf::from(data_dir).join(format!("{}.json", wf_id)),
             PathBuf::from(wf_id),
         ];
 
@@ -128,20 +180,36 @@ impl WorkflowResolver {
             }
         }
 
+        // Step 4: Case-insensitive / slug search in vaults
+        let target_lower = wf_id.to_lowercase();
+        let vault_dirs = [user_vault, config_vault, local_vault];
+        for vdir in &vault_dirs {
+            if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    let path = entry.path();
+                    if path.is_file() {
+                        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                            let stem_clean = stem.trim_end_matches(".workflow");
+                            if stem_clean.eq_ignore_ascii_case(&target_lower) || stem.eq_ignore_ascii_case(&target_lower) {
+                                return Self::read_and_validate_file(&path).await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 5: Check fallback path if provided
         if let Some(wp) = fallback_path {
             if let Ok(canon) = tokio::fs::canonicalize(wp).await {
                 if canon.is_file() {
                     return Self::read_and_validate_file(&canon).await;
                 }
             }
-            return Err(WorkflowResolveError::BadRequest(format!(
-                "Workflow ID '{}' not found in database or file system",
-                wf_id
-            )));
         }
 
         Err(WorkflowResolveError::NotFound(format!(
-            "Workflow ID '{}' not found in database",
+            "Workflow '{}' not found in database or vault (~/.automa/workflows/). Use 'automa workflow list' to view available workflows.",
             wf_id
         )))
     }
@@ -300,6 +368,106 @@ mod tests {
             }
             _ => panic!("Expected BadRequest error"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_resolve_by_db_id_and_name() {
+        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        {
+            let guard = db.lock().await;
+            guard.workflows().create_workflow(
+                "flow_db_test",
+                "My Database Flow",
+                Some("Test description"),
+                r#"{"nodes":[{"id":"node_1","type":"trigger"}]}"#,
+                Some("1.0.0"),
+                None,
+            ).unwrap();
+        }
+
+        let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
+        let _ = tokio::fs::create_dir_all(&temp_dir).await;
+
+        // Resolve by exact ID via workflow_path (simulating `automa run flow_db_test`)
+        let res_id = WorkflowResolver::resolve(
+            "job_001",
+            &temp_dir.to_string_lossy(),
+            None,
+            Some("flow_db_test"),
+            None,
+            &db,
+        ).await;
+        assert!(res_id.is_ok());
+        let resolved = res_id.unwrap();
+        assert_eq!(resolved.data["name"], "My Database Flow");
+        assert!(resolved.path.exists());
+
+        // Resolve by Name (case-insensitive) via workflow_path (simulating `automa run "my database flow"`)
+        let res_name = WorkflowResolver::resolve(
+            "job_002",
+            &temp_dir.to_string_lossy(),
+            None,
+            Some("my database flow"),
+            None,
+            &db,
+        ).await;
+        assert!(res_name.is_ok());
+        assert_eq!(res_name.unwrap().data["name"], "My Database Flow");
+
+        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+    }
+
+    #[tokio::test]
+    async fn test_resolve_inline_json_string_via_path() {
+        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
+        let _ = tokio::fs::create_dir_all(&temp_dir).await;
+
+        let inline_json = r#"{"name":"Inline Str Flow","nodes":[]}"#;
+        let res = WorkflowResolver::resolve(
+            "job_inline",
+            &temp_dir.to_string_lossy(),
+            None,
+            Some(inline_json),
+            None,
+            &db,
+        ).await;
+
+        assert!(res.is_ok());
+        let resolved = res.unwrap();
+        assert_eq!(resolved.data["name"], "Inline Str Flow");
+        assert!(resolved.path.exists());
+
+        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+    }
+
+    #[tokio::test]
+    async fn test_resolve_vault_file_via_id() {
+        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
+        let vault_dir = temp_dir.join("workflows");
+        let _ = tokio::fs::create_dir_all(&vault_dir).await;
+
+        // Place a workflow file inside vault_dir
+        let vault_file = vault_dir.join("daily_checkin.workflow.json");
+        let file_content = r#"{"name":"Daily Checkin Flow","nodes":[]}"#;
+        tokio::fs::write(&vault_file, file_content).await.unwrap();
+
+        // Resolve by ID "daily_checkin"
+        let res = WorkflowResolver::resolve(
+            "job_vault",
+            &temp_dir.to_string_lossy(),
+            None,
+            Some("daily_checkin"),
+            None,
+            &db,
+        ).await;
+
+        assert!(res.is_ok());
+        let resolved = res.unwrap();
+        assert_eq!(resolved.data["name"], "Daily Checkin Flow");
+
+        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
     }
 }
 

@@ -25,6 +25,7 @@ pub trait WorkflowRepository {
     ) -> Result<Vec<DbWorkflow>>;
 
     fn get_workflow(&self, id: &str) -> Result<Option<DbWorkflow>>;
+    fn get_workflow_by_id_or_name(&self, id_or_name: &str) -> Result<Option<DbWorkflow>>;
 
     fn update_workflow(
         &self,
