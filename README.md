@@ -1,4 +1,4 @@
-# ⚙️ Automa Core (`automa-core`)
+# ⚙️ Tuquet Automa Core (`tuquet-automa-core`)
 
 > **High-performance browser automation & CDP execution plugin for Tuquet Runner (`tqr`)**.
 > Cung cấp khả năng điều khiển trình duyệt chuyên sâu (Chromium sandboxing, profile isolation, CDP bridge và Extension execution) dưới sự giám sát tiến trình cấp kernel của `tqr`.

@@ -3,7 +3,7 @@ name = "automa-core"
 version = "0.1.0"
 edition = "2024"
 description = "High-performance browser automation & CDP execution plugin for Tuquet Runner (tqr)"
-repository = "https://github.com/tuquet/automa-core"
+repository = "https://github.com/tuquet/tuquet-automa-core"
 license = "MIT"
 
 [dependencies]
