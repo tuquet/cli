@@ -63,8 +63,10 @@ impl BrowserLauncher {
 
         #[cfg(target_os = "windows")]
         {
-            // CREATE_NO_WINDOW (0x08000000)
-            cmd.creation_flags(0x08000000);
+            if args.iter().any(|a| a.starts_with("--headless")) {
+                // CREATE_NO_WINDOW (0x08000000)
+                cmd.creation_flags(0x08000000);
+            }
         }
 
         let child = cmd
