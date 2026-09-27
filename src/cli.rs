@@ -1,14 +1,14 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-/// Automa Core CLI - High-performance web automation engine & daemon
+/// Automa Core CLI - High-performance web automation engine & bridge daemon
 #[derive(Parser, Debug)]
 #[command(
     name = "automa",
     author = "Tuquet Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "Automa Core CLI & Web Automation Engine",
-    long_about = "Automa Core is the native Rust engine powering web automation workflows, Chrome extension bridges, and local/cloud storage."
+    about = "Tuquet Automa Core - Native Browser Bridge & Launcher Daemon",
+    long_about = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -27,6 +27,25 @@ pub struct Cli {
 pub enum Commands {
     /// Active discovery probe returning AutomaManifest JSON for Tuquet Runner
     Probe,
+
+    /// Execute a workflow directly via browser worker and stream logs to stdout
+    Run {
+        /// Path to workflow JSON file (.workflow.json)
+        #[arg(short, long)]
+        workflow: Option<String>,
+
+        /// Raw JSON string of the workflow
+        #[arg(long)]
+        workflow_json: Option<String>,
+
+        /// Run browser in headless mode
+        #[arg(long, default_value_t = true)]
+        headless: bool,
+
+        /// Target browser profile identifier
+        #[arg(short, long)]
+        browser_id: Option<String>,
+    },
 
     /// Start the Automa Core HTTP/WebSocket daemon server
     Server {

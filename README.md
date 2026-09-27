@@ -1,7 +1,7 @@
 # ⚙️ Tuquet Automa Core (`tuquet-automa-core`)
 
-> **High-performance browser automation & CDP execution plugin for Tuquet Runner (`tqr`)**.
-> Cung cấp khả năng điều khiển trình duyệt chuyên sâu (Chromium sandboxing, profile isolation, CDP bridge và Extension execution) dưới sự giám sát tiến trình cấp kernel của `tqr`.
+> **Lightweight Native Process Launcher, WebSocket Event Hub & SQLite Storage Bridge for Automa WebExtension**.
+> Đóng vai trò là cầu nối (Bridge) khởi chạy Chromium kèm Extension, điều phối kịch bản workflow sang Browser Worker và thu thập log thực thi về SQLite dưới sự giám sát tiến trình của `tqr`.
 
 ---
 

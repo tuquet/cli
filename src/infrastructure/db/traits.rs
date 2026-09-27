@@ -3,7 +3,6 @@ use serde_json::Value;
 use crate::core::models::settings::AppSettings;
 use crate::core::models::storage::{StorageCredential, StorageTable, StorageVariable, TableRow};
 use crate::infrastructure::db::browsers::Browser;
-use crate::infrastructure::db::campaigns::DbCampaign;
 use crate::infrastructure::db::jobs::{JobDetails, JobHistoryItem, LogItem};
 use crate::infrastructure::db::workflows::DbWorkflow;
 
@@ -48,49 +47,6 @@ pub trait WorkflowRepository {
     ) -> Result<DbWorkflow>;
 
     fn delete_workflow(&self, id: &str) -> Result<bool>;
-}
-
-pub trait CampaignRepository {
-    fn create_campaign(
-        &self,
-        id: &str,
-        name: &str,
-        description: Option<&str>,
-        data: &str,
-        cron: Option<&str>,
-        version: Option<&str>,
-    ) -> Result<DbCampaign>;
-
-    fn get_campaigns(
-        &self,
-        limit: Option<usize>,
-        offset: Option<usize>,
-        search: Option<&str>,
-    ) -> Result<Vec<DbCampaign>>;
-
-    fn get_campaign(&self, id: &str) -> Result<Option<DbCampaign>>;
-
-    fn update_campaign(
-        &self,
-        id: &str,
-        name: Option<&str>,
-        description: Option<&str>,
-        data: Option<&str>,
-        cron: Option<&str>,
-        version: Option<&str>,
-    ) -> Result<Option<DbCampaign>>;
-
-    fn upsert_campaign(
-        &self,
-        id: &str,
-        name: Option<&str>,
-        description: Option<&str>,
-        data: Option<&str>,
-        cron: Option<&str>,
-        version: Option<&str>,
-    ) -> Result<DbCampaign>;
-
-    fn delete_campaign(&self, id: &str) -> Result<bool>;
 }
 
 pub trait BrowserRepository {

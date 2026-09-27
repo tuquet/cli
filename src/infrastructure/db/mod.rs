@@ -8,7 +8,6 @@ pub mod tables;
 pub mod settings;
 pub mod variables_credentials;
 pub mod workflows;
-pub mod campaigns;
 pub mod traits;
 
 pub use jobs::{JobDetails, JobHistoryItem, JobInfo, LogItem, SqliteJobRepository};
@@ -17,7 +16,6 @@ pub use tables::{SqliteTableRepository};
 pub use settings::{SqliteSettingsRepository};
 pub use variables_credentials::{SqliteStorageRepository};
 pub use workflows::{DbWorkflow, SqliteWorkflowRepository};
-pub use campaigns::{DbCampaign, SqliteCampaignRepository};
 pub use traits::*;
 
 pub struct AutomaDb {
@@ -53,10 +51,6 @@ impl AutomaDb {
 
     pub fn workflows(&self) -> SqliteWorkflowRepository<'_> {
         SqliteWorkflowRepository::new(&self.conn)
-    }
-
-    pub fn campaigns(&self) -> SqliteCampaignRepository<'_> {
-        SqliteCampaignRepository::new(&self.conn)
     }
 
     pub fn tables(&self) -> SqliteTableRepository<'_> {

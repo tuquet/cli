@@ -31,6 +31,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Probe) => {
             print_probe_manifest()
         }
+        Some(Commands::Run { workflow, workflow_json, headless, browser_id }) => {
+            run_workflow(workflow, workflow_json, headless, browser_id).await
+        }
         Some(Commands::ExportOpenapi { output }) => {
             export_openapi(&output)
         }
@@ -54,11 +57,11 @@ fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
         "protocol": "tuquet.automa.v1",
         "name": "automa-core",
         "version": env!("CARGO_PKG_VERSION"),
-        "engine": "chromium-cdp",
+        "engine": "chromium-extension-worker",
         "status": "ready",
         "capabilities": [
             "browser:chromium",
-            "cdp:mv3_extension",
+            "mv3_extension_worker",
             "isolation:profile_sandbox",
             "headless",
             "automation:workflow_graph"
@@ -126,6 +129,97 @@ async fn setup_extension(browser: &str, extension_path: Option<std::path::PathBu
     Ok(())
 }
 
+async fn run_workflow(
+    workflow_path_opt: Option<String>,
+    workflow_json_opt: Option<String>,
+    headless: bool,
+    browser_id_opt: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = AppConfig::load();
+    let data_dir = std::env::temp_dir().join(format!("automa_run_{}", uuid::Uuid::new_v4()));
+    let _ = std::fs::create_dir_all(&data_dir);
+    config.data_dir = data_dir.to_string_lossy().to_string();
+
+    let db_path = data_dir.join("automa_run.sqlite");
+    let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
+
+    let (tx, mut rx) = tokio::sync::broadcast::channel(1000);
+    let (worker_tx, _) = tokio::sync::broadcast::channel(1000);
+
+    let state = AppState {
+        db,
+        config: Arc::new(config.clone()),
+        tx: tx.clone(),
+        worker_tx,
+        active_jobs: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
+    };
+
+    let app = api::routes::create_router(state.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let bound_port = listener.local_addr()?.port();
+    
+    // Set environment variable so browser extension connects to this ephemeral bridge port
+    std::env::set_var("AUTOMA_PORT", bound_port.to_string());
+
+    let _server_handle = tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+
+    let workflow_json_val: Option<serde_json::Value> = if let Some(ref raw_json) = workflow_json_opt {
+        serde_json::from_str(raw_json).ok()
+    } else {
+        None
+    };
+
+    let submit_options = automa_core::api::handlers::jobs::SubmitJobOptions {
+        browser_id: browser_id_opt.or_else(|| Some("run_worker".to_string())),
+        headless: Some(headless),
+        default_browser: None,
+        variables: None,
+        debug: Some(true),
+        close_browser_on_finish: Some(true),
+    };
+
+    println!(">> Submitting workflow to browser worker (Bridge Port: {})...", bound_port);
+
+    use automa_core::core::engine::job_coordinator::JobCoordinator;
+    let job_id = match JobCoordinator::submit(
+        &state,
+        None,
+        workflow_path_opt.as_deref(),
+        workflow_json_val.as_ref(),
+        Some(submit_options),
+    ).await {
+        Ok(id) => id,
+        Err(e) => {
+            eprintln!("Error submitting workflow: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    println!(">> Workflow dispatched [Job ID: {}]. Waiting for worker execution...", job_id);
+
+    // Stream logs to console until job finishes
+    while let Ok(msg) = rx.recv().await {
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&msg) {
+            if let Some(event_type) = val.get("type").and_then(|v| v.as_str()) {
+                if event_type == "job_finish" || event_type == "job_completed" || event_type == "job_failed" {
+                    println!(">> Job finished with event: {}", event_type);
+                    break;
+                }
+            }
+            if let Some(log_msg) = val.get("message").and_then(|v| v.as_str()) {
+                println!("[worker] {}", log_msg);
+            }
+        }
+    }
+
+    // Cleanup ephemeral data directory
+    let _ = std::fs::remove_dir_all(&data_dir);
+    println!(">> Run completed successfully.");
+    Ok(())
+}
+
 async fn run_server(
     port_override: Option<u16>,
     data_dir_override: Option<std::path::PathBuf>,
@@ -155,7 +249,7 @@ async fn run_server(
         .finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
-    info!("Automa Core Daemon starting in Clean Architecture mode...");
+    info!("Tuquet Automa Core Bridge starting in Native Launcher mode...");
     info!("Environment: {}", config.environment);
     info!("Data Directory: {}", config.data_dir);
     
