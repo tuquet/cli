@@ -159,7 +159,9 @@ async fn run_workflow(
     let bound_port = listener.local_addr()?.port();
     
     // Set environment variable so browser extension connects to this ephemeral bridge port
-    std::env::set_var("AUTOMA_PORT", bound_port.to_string());
+    unsafe {
+        std::env::set_var("AUTOMA_PORT", bound_port.to_string());
+    }
 
     let _server_handle = tokio::spawn(async move {
         let _ = axum::serve(listener, app).await;

@@ -156,5 +156,20 @@ pub async fn resolve_executable_path(_default_browser: &str) -> Result<String> {
         return Ok(abs_path.to_string_lossy().to_string());
     }
 
+    #[cfg(target_os = "windows")]
+    {
+        let system_browsers = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        ];
+        for p in system_browsers {
+            if std::path::Path::new(p).exists() {
+                return Ok(p.to_string());
+            }
+        }
+    }
+
     download_chromium_runtime().await
 }

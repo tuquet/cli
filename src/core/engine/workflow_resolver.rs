@@ -113,7 +113,7 @@ impl WorkflowResolver {
             });
         }
 
-        let vault_root = crate::api::handlers::vault::get_vault_root();
+        let vault_root = PathBuf::from(data_dir);
         let candidates = [
             vault_root.join(format!("workflows/{}.workflow.json", wf_id)),
             vault_root.join(format!("{}.workflow.json", wf_id)),
