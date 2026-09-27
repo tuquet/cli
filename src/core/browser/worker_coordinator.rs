@@ -22,25 +22,18 @@ pub async fn get_browser_launcher_lock(browser_id: &str) -> Arc<TokioMutex<()>> 
 pub fn resolve_cli_runner_extension_path() -> String {
     let mut possible_paths = vec![
         std::path::PathBuf::from(r"D:\Repository\tuquet-automa\apps\runner\dist"),
-        std::path::PathBuf::from(r"D:\Repository\tuquet-automa\apps\extension\dist"),
         std::path::PathBuf::from(r"C:\Repository\tuquet-automa\apps\runner\dist"),
-        std::path::PathBuf::from(r"C:\Repository\tuquet-automa\apps\extension\dist"),
         std::path::PathBuf::from("apps/runner/dist"),
         std::path::PathBuf::from("./apps/runner/dist"),
         std::path::PathBuf::from("../runner/dist"),
         std::path::PathBuf::from("../../apps/runner/dist"),
         std::path::PathBuf::from("../../../apps/runner/dist"),
-        std::path::PathBuf::from("apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("./apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("../webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../../apps/webe/dist/cli-runner"),
     ];
 
     if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
         let home_path = std::path::PathBuf::from(home);
-        possible_paths.push(home_path.join(".automa/extension"));
         possible_paths.push(home_path.join(".automa/runner"));
+        possible_paths.push(home_path.join(".automa/extension"));
     }
 
     if let Ok(exe_path) = std::env::current_exe() {
@@ -49,10 +42,6 @@ pub fn resolve_cli_runner_extension_path() -> String {
             possible_paths.push(exe_dir.join("../runner/dist"));
             possible_paths.push(exe_dir.join("../../apps/runner/dist"));
             possible_paths.push(exe_dir.join("../../../apps/runner/dist"));
-            possible_paths.push(exe_dir.join("apps/webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../../apps/webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../../../apps/webe/dist/cli-runner"));
         }
     }
 
@@ -64,7 +53,7 @@ pub fn resolve_cli_runner_extension_path() -> String {
         .find(|p| p.exists())
         .and_then(|p| p.canonicalize().ok())
         .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or_else(|| "apps/webe/dist/cli-runner".to_string());
+        .unwrap_or_else(|| "apps/runner/dist".to_string());
 
     if ext_path.starts_with(r"\\?\") {
         ext_path = ext_path[4..].to_string();

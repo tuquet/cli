@@ -115,11 +115,7 @@ async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
 
 async fn setup_extension(browser: &str, extension_path: Option<std::path::PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     let ext_dir = extension_path.unwrap_or_else(|| {
-        std::env::current_dir()
-            .unwrap_or_default()
-            .join("apps")
-            .join("webe")
-            .join("dist")
+        std::path::PathBuf::from(automa_core::core::browser::worker_coordinator::resolve_cli_runner_extension_path())
     });
 
     println!("============================================================");
@@ -130,7 +126,7 @@ async fn setup_extension(browser: &str, extension_path: Option<std::path::PathBu
 
     if !ext_dir.exists() {
         println!("Status: Extension path does not exist yet.");
-        println!("Hint: Build extension first with: pnpm --filter @automa/webe build");
+        println!("Hint: Build extension first with: pnpm --filter @automa/runner build");
     } else {
         println!("Status: Extension directory verified.");
         println!("To launch Chrome manually with extension loaded:");

@@ -91,7 +91,7 @@ pub enum Commands {
         #[arg(short, long, default_value = "chrome")]
         browser: String,
 
-        /// Custom path to unpacked @automa/webe extension directory
+        /// Custom path to unpacked @automa/runner extension directory
         #[arg(short, long)]
         extension_path: Option<PathBuf>,
     },
