@@ -1,5 +1,7 @@
 use anyhow::Result;
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::{Arc, OnceLock};
 use sysinfo::System;
 use tokio::sync::RwLock;
@@ -270,8 +272,6 @@ async fn remove_dir_all_with_retry(path: &std::path::Path) {
         tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
     }
 }
-use std::future::Future;
-use std::pin::Pin;
 
 fn copy_dir_all(src: std::path::PathBuf, dst: std::path::PathBuf) -> Pin<Box<dyn Future<Output = std::io::Result<()>> + Send>> {
     Box::pin(async move {
