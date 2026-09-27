@@ -39,7 +39,7 @@ pub enum Commands {
         workflow_json: Option<String>,
 
         /// Run browser in headless mode
-        #[arg(long, default_value_t = true)]
+        #[arg(long)]
         headless: bool,
 
         /// Target browser profile identifier

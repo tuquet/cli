@@ -29,20 +29,24 @@ impl BrowserLauncher {
 
     /// Khởi chạy trình duyệt dưới dạng tiến trình độc lập
     pub async fn launch(&mut self) -> Result<String> {
+        let is_headless = self.options.custom_args.iter().any(|a| a.starts_with("--headless"));
         let mut args = vec![
             format!("--remote-debugging-port={}", self.options.debugging_port),
             format!("--user-data-dir={}", self.options.user_data_dir),
             "--no-first-run".to_string(),
             "--password-store=basic".to_string(),
-            "--restore-last-session".to_string(),
-            "--disable-gpu".to_string(),
-            "--disable-software-rasterizer".to_string(),
-            "--window-size=1280,720".to_string(),
             "--no-sandbox".to_string(),
             "--disable-setuid-sandbox".to_string(),
             "--log-level=3".to_string(),
             "--test-type".to_string(),
         ];
+
+        if is_headless {
+            args.push("--disable-gpu".to_string());
+            args.push("--disable-software-rasterizer".to_string());
+        } else {
+            args.push("--window-size=1280,720".to_string());
+        }
 
         if !self.options.extension_paths.is_empty() {
             let exts = self.options.extension_paths.join(",");
