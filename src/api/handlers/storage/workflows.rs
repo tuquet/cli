@@ -3,7 +3,7 @@ use axum::{
     response::Response,
     body::Body,
 };
-use std::path::{Path as StdPath, PathBuf};
+use std::path::PathBuf;
 use crate::AppState;
 use crate::core::error::AutomaError;
 use serde::{Deserialize, Serialize};

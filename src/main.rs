@@ -31,8 +31,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Probe) => {
             print_probe_manifest()
         }
-        Some(Commands::Run { workflow, workflow_json, headless, browser_id }) => {
-            run_workflow(workflow, workflow_json, headless, browser_id).await
+        Some(Commands::Run {
+            workflow,
+            workflow_json,
+            headless,
+            browser,
+            browser_id,
+            variables,
+        }) => {
+            run_workflow(workflow, workflow_json, headless, browser, browser_id, variables).await
+        }
+        Some(Commands::Inspect { workflow }) => {
+            inspect_workflow(&workflow)
         }
         Some(Commands::ExportOpenapi { output }) => {
             export_openapi(&output)
@@ -129,11 +139,153 @@ async fn setup_extension(browser: &str, extension_path: Option<std::path::PathBu
     Ok(())
 }
 
+fn inspect_workflow(workflow_path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+    println!("============================================================");
+    println!(" Automa Workflow Inspector");
+    println!("============================================================");
+    println!("File: {}", workflow_path.display());
+
+    if !workflow_path.exists() {
+        eprintln!("Error: Workflow file does not exist at {:?}", workflow_path);
+        std::process::exit(1);
+    }
+
+    let content = std::fs::read_to_string(workflow_path)?;
+    let val: serde_json::Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error: Failed to parse workflow file as valid JSON: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let name = val.get("name").and_then(|v| v.as_str()).unwrap_or("(Unnamed Workflow)");
+    let description = val.get("description").and_then(|v| v.as_str()).unwrap_or("(No description)");
+    println!("Name:        {}", name);
+    println!("Description: {}", description);
+
+    let nodes: Vec<&serde_json::Value> = if let Some(arr) = val.pointer("/drawflow/nodes").and_then(|v| v.as_array()) {
+        arr.iter().collect()
+    } else if let Some(arr) = val.get("nodes").and_then(|v| v.as_array()) {
+        arr.iter().collect()
+    } else {
+        Vec::new()
+    };
+
+    let edge_count = if let Some(arr) = val.pointer("/drawflow/edges").and_then(|v| v.as_array()) {
+        arr.len()
+    } else if let Some(arr) = val.get("edges").and_then(|v| v.as_array()) {
+        arr.len()
+    } else {
+        0
+    };
+
+    println!("Structure:   {} nodes, {} connections", nodes.len(), edge_count);
+    println!("------------------------------------------------------------");
+
+    let mut triggers = Vec::new();
+    let mut block_list = Vec::new();
+
+    for node in &nodes {
+        let node_id = node.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+        let label = node.get("label").or_else(|| node.get("type")).and_then(|v| v.as_str()).unwrap_or("unknown");
+        let data = node.get("data");
+        block_list.push((node_id, label, data));
+
+        if label == "trigger" {
+            let trigger_type = node.pointer("/data/type").and_then(|v| v.as_str()).unwrap_or("manual");
+            triggers.push((node_id, trigger_type, node.pointer("/data/parameters")));
+        }
+    }
+
+    if triggers.is_empty() {
+        println!("Triggers: [!] NO TRIGGER NODE FOUND");
+    } else {
+        println!("Triggers ({}):", triggers.len());
+        for (id, t_type, params) in &triggers {
+            println!("  - [{}] Type: {}", id, t_type);
+            if let Some(param_arr) = params.and_then(|p| p.as_array()) {
+                if !param_arr.is_empty() {
+                    println!("    Parameters:");
+                    for p in param_arr {
+                        let pname = p.get("name").and_then(|v| v.as_str()).unwrap_or("?");
+                        let pval = p.get("defaultValue").map(|v| v.to_string()).unwrap_or_else(|| "null".to_string());
+                        println!("      * {} (default: {})", pname, pval);
+                    }
+                }
+            }
+        }
+    }
+
+    println!("\nBlocks Sequence ({}):", block_list.len());
+    for (i, (id, label, data)) in block_list.iter().enumerate() {
+        let mut detail = String::new();
+        if let Some(d) = data {
+            if let Some(url) = d.get("url").and_then(|v| v.as_str()) {
+                detail = format!("url: {}", url);
+            } else if let Some(time) = d.get("time").and_then(|v| v.as_i64()) {
+                detail = format!("delay: {}ms", time);
+            } else if let Some(sel) = d.get("selector").and_then(|v| v.as_str()) {
+                detail = format!("selector: {}", sel);
+            } else if let Some(code) = d.get("code").and_then(|v| v.as_str()) {
+                let first_line = code.lines().next().unwrap_or("").chars().take(40).collect::<String>();
+                detail = format!("js: {}...", first_line);
+            }
+        }
+        if detail.is_empty() {
+            println!("  {:2}. [{:<16}] id: {}", i + 1, label, id);
+        } else {
+            println!("  {:2}. [{:<16}] id: {} ({})", i + 1, label, id, detail);
+        }
+    }
+
+    println!("\nPredefined Variables:");
+    if let Some(vars) = val.get("variables") {
+        if let Some(obj) = vars.as_object() {
+            for (k, v) in obj {
+                println!("  - {}: {}", k, v);
+            }
+        } else if let Some(arr) = vars.as_array() {
+            for item in arr {
+                println!("  - {}", item);
+            }
+        }
+    } else {
+        println!("  (None)");
+    }
+
+    // Dynamic expressions scan
+    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
+    let mut expressions = std::collections::BTreeSet::new();
+    for cap in re.captures_iter(&content) {
+        if let Some(matched) = cap.get(1) {
+            expressions.insert(matched.as_str().trim().to_string());
+        }
+    }
+
+    if !expressions.is_empty() {
+        println!("\nDynamic Expressions Detected:");
+        for expr in &expressions {
+            println!("  - {{{{ {} }}}}", expr);
+        }
+    }
+
+    println!("============================================================");
+    println!("Status: VALID WORKFLOW");
+    println!("Execution command:");
+    println!("  automa run -w \"{}\"", workflow_path.display());
+    println!("============================================================");
+
+    Ok(())
+}
+
 async fn run_workflow(
     workflow_path_opt: Option<String>,
     workflow_json_opt: Option<String>,
     headless: bool,
+    browser_opt: Option<String>,
     browser_id_opt: Option<String>,
+    variables: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = AppConfig::load();
     let data_dir = std::env::temp_dir().join(format!("automa_run_{}", uuid::Uuid::new_v4()));
@@ -175,11 +327,32 @@ async fn run_workflow(
         None
     };
 
+    let vars_map: Option<serde_json::Value> = if !variables.is_empty() {
+        let mut map = serde_json::Map::new();
+        for var_str in variables {
+            if let Some((k, v)) = var_str.split_once('=') {
+                let key = k.trim().to_string();
+                let val_trimmed = v.trim();
+                let parsed_val = if let Ok(val) = serde_json::from_str::<serde_json::Value>(val_trimmed) {
+                    val
+                } else {
+                    serde_json::Value::String(val_trimmed.to_string())
+                };
+                map.insert(key, parsed_val);
+            } else {
+                eprintln!("Warning: Invalid variable format '{}'. Expected KEY=VALUE", var_str);
+            }
+        }
+        Some(serde_json::Value::Object(map))
+    } else {
+        None
+    };
+
     let submit_options = automa_core::api::handlers::jobs::SubmitJobOptions {
         browser_id: browser_id_opt.or_else(|| Some("run_worker".to_string())),
         headless: Some(headless),
-        default_browser: None,
-        variables: None,
+        default_browser: browser_opt,
+        variables: vars_map,
         debug: Some(true),
         close_browser_on_finish: Some(true),
     };

@@ -42,9 +42,24 @@ pub enum Commands {
         #[arg(long)]
         headless: bool,
 
-        /// Target browser profile identifier
+        /// Target browser executable type (chrome, chromium, edge)
         #[arg(short, long)]
+        browser: Option<String>,
+
+        /// Target browser profile identifier
+        #[arg(long)]
         browser_id: Option<String>,
+
+        /// Workflow variables in KEY=VALUE format (can be specified multiple times)
+        #[arg(long = "var", value_name = "KEY=VALUE")]
+        variables: Vec<String>,
+    },
+
+    /// Inspect and validate a workflow JSON file without launching a browser
+    Inspect {
+        /// Path to workflow JSON file (.workflow.json)
+        #[arg(value_name = "WORKFLOW_FILE")]
+        workflow: PathBuf,
     },
 
     /// Start the Automa Core HTTP/WebSocket daemon server
@@ -83,7 +98,7 @@ pub enum Commands {
     /// Inspect local Automa Core daemon status and health check endpoint
     Status {
         /// Daemon server base URL
-        #[arg(short, long, default_value = "http://127.0.0.1:3000")]
+        #[arg(short, long, default_value = "http://127.0.0.1:8765")]
         url: String,
     },
 }
