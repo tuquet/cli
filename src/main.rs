@@ -431,8 +431,19 @@ async fn run_workflow(
     _server_handle.abort();
     automa_core::core::browser::manager::BrowserManager::destroy_all().await;
 
-    // Cleanup ephemeral data directory
-    let _ = std::fs::remove_dir_all(&data_dir);
+    // Explicitly drop state to release SQLite file handles
+    drop(state);
+
+    #[cfg(target_os = "windows")]
+    tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
+
+    // Cleanup ephemeral data directory with retry
+    for _ in 0..5 {
+        if std::fs::remove_dir_all(&data_dir).is_ok() {
+            break;
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
+    }
 
     match execution_result {
         Ok(_) => {
