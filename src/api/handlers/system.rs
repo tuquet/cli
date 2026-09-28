@@ -246,9 +246,18 @@ pub async fn open_studio(
     State(state): State<crate::AppState>,
 ) -> impl IntoResponse {
     let port = state.config.server_port;
-    let url = std::env::var("AUTOMA_STUDIO_URL").unwrap_or_else(|_| {
-        format!("https://automa-studio.vercel.app?port={}", port)
-    });
+    let url = std::env::var("AUTOMA_STUDIO_URL")
+        .map(|u| {
+            if !u.contains("port=") {
+                let separator = if u.contains('?') { '&' } else { '?' };
+                format!("{}{separator}port={}", u, port)
+            } else {
+                u
+            }
+        })
+        .unwrap_or_else(|_| {
+            format!("https://automa-studio.vercel.app?port={}", port)
+        });
     
     let _ = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]

@@ -6,6 +6,8 @@ use crate::AppState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceCredentials {
+    #[serde(default)]
+    pub cloud_url: Option<String>,
     pub device_id: String,
     pub device_token: String,
     pub tenant_id: Option<String>,
@@ -131,6 +133,7 @@ impl CloudReporter {
         let assigned_name = body.get("name").and_then(|v| v.as_str()).unwrap_or(&hostname).to_string();
 
         let creds = DeviceCredentials {
+            cloud_url: Some(cloud_url.to_string()),
             device_id,
             device_token,
             tenant_id,
@@ -144,10 +147,97 @@ impl CloudReporter {
         Ok(creds)
     }
 
+    pub async fn login(
+        cloud_url: &str,
+        enrollment_token: Option<&str>,
+        custom_name: Option<&str>,
+        data_dir: &str,
+    ) -> Result<DeviceCredentials, Box<dyn std::error::Error + Send + Sync>> {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(15))
+            .build()?;
+
+        let hostname = custom_name.unwrap_or("").trim();
+        let default_host = sysinfo::System::host_name().unwrap_or_else(|| "PC-WORKSTATION".to_string());
+        let device_name = if hostname.is_empty() { default_host } else { hostname.to_string() };
+
+        let fingerprint = Self::generate_machine_fingerprint();
+        let os_info = format!("{} {}", sysinfo::System::name().unwrap_or_default(), sysinfo::System::os_version().unwrap_or_default());
+        let mut sys = sysinfo::System::new_all();
+        sys.refresh_all();
+
+        let cpu_cores = sys.cpus().len().max(1) as i32;
+        let ram_mb = (sys.total_memory() / (1024 * 1024)).max(256) as i32;
+
+        let payload = serde_json::json!({
+            "p_machine_fingerprint": fingerprint,
+            "p_name": device_name,
+            "p_os_info": os_info,
+            "p_cpu_cores": cpu_cores,
+            "p_ram_mb": ram_mb,
+            "p_capabilities": ["chromium", "automa", "gui", "worker", "runner"],
+            "p_metadata": {
+                "automa_version": env!("CARGO_PKG_VERSION"),
+                "architecture": std::env::consts::ARCH,
+                "login_source": "cli_login"
+            },
+            "p_enrollment_token": enrollment_token
+        });
+
+        let target_url = format!("{}/rest/v1/rpc/enroll_device", cloud_url.trim_end_matches('/'));
+        let res = client.post(&target_url)
+            .json(&payload)
+            .send()
+            .await?;
+
+        let status = res.status();
+        if !status.is_success() {
+            let err_text = res.text().await.unwrap_or_default();
+            return Err(format!("Cloud enrollment failed (HTTP {}): {}", status, err_text).into());
+        }
+
+        let body: serde_json::Value = res.json().await?;
+        let device_id = body.get("device_id").and_then(|v| v.as_str()).ok_or("Missing device_id in enrollment response")?.to_string();
+        let device_token = body.get("device_token").and_then(|v| v.as_str()).ok_or("Missing device_token in enrollment response")?.to_string();
+        let tenant_id = body.get("tenant_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let assigned_name = body.get("name").and_then(|v| v.as_str()).unwrap_or(&device_name).to_string();
+
+        let creds = DeviceCredentials {
+            cloud_url: Some(cloud_url.to_string()),
+            device_id,
+            device_token,
+            tenant_id,
+            name: assigned_name,
+            machine_fingerprint: fingerprint,
+            registered_at: Some(chrono_iso_now()),
+        };
+
+        Self::save_credentials(data_dir, &creds).await?;
+        Ok(creds)
+    }
+
+    pub async fn logout(data_dir: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        let path = Self::get_credentials_path(data_dir);
+        if path.exists() {
+            tokio::fs::remove_file(&path).await?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub async fn whoami(data_dir: &str) -> Option<DeviceCredentials> {
+        Self::load_credentials(data_dir).await
+    }
+
     pub async fn sync_inventory_and_heartbeat(
         state: &AppState,
     ) -> Result<CloudSyncResult, Box<dyn std::error::Error + Send + Sync>> {
-        let cloud_url = match state.config.cloud_url.as_deref() {
+        let saved_creds = Self::load_credentials(&state.config.data_dir).await;
+        let cloud_url_owned = state.config.cloud_url.clone()
+            .or_else(|| saved_creds.as_ref().and_then(|c| c.cloud_url.clone()));
+
+        let cloud_url = match cloud_url_owned.as_deref() {
             Some(u) if !u.trim().is_empty() => u.trim(),
             _ => {
                 return Ok(CloudSyncResult {
@@ -277,15 +367,19 @@ impl CloudReporter {
         tokio::spawn(async move {
             let interval_secs = state.config.cloud_heartbeat_interval_secs.max(10);
             
-            if state.config.cloud_url.is_none() {
-                info!("[CloudReporter] No TUQUET_CLOUD_URL configured. Running in offline/standalone mode.");
+            let saved_creds = Self::load_credentials(&state.config.data_dir).await;
+            let active_url = state.config.cloud_url.clone()
+                .or_else(|| saved_creds.as_ref().and_then(|c| c.cloud_url.clone()));
+
+            if active_url.is_none() {
+                info!("[CloudReporter] No TUQUET_CLOUD_URL or saved login found. Running in offline/standalone mode.");
                 return;
             }
 
             info!(
                 "[CloudReporter] Cloud Telemetry Reporter active. Sync interval: {}s. Cloud: {}",
                 interval_secs,
-                state.config.cloud_url.as_deref().unwrap_or("none")
+                active_url.as_deref().unwrap_or("none")
             );
 
             // Initial sync after 3 seconds startup grace period

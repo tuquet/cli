@@ -80,6 +80,10 @@ pub enum Commands {
     /// Start the Automa Core HTTP/WebSocket daemon server (alias: start)
     #[command(name = "server", alias = "start")]
     Server {
+        /// HTTP server listening host IP (e.g. 127.0.0.1, 0.0.0.0)
+        #[arg(short = 'H', long)]
+        host: Option<String>,
+
         /// HTTP server listening port
         #[arg(short, long)]
         port: Option<u16>,
@@ -113,9 +117,9 @@ pub enum Commands {
 
     /// Inspect local Automa Core daemon status and health check endpoint
     Status {
-        /// Daemon server base URL
-        #[arg(short, long, default_value = "http://127.0.0.1:8765")]
-        url: String,
+        /// Daemon server base URL (defaults to http://{AUTOMA_HOST}:{AUTOMA_PORT} or http://127.0.0.1:8765)
+        #[arg(short, long)]
+        url: Option<String>,
     },
 
     /// Manage dedicated isolated browser runtime (install, status, clean, path)
@@ -124,6 +128,61 @@ pub enum Commands {
         #[command(subcommand)]
         command: BrowserCommands,
     },
+
+    /// Authenticate this workstation with Tuquet Cloud (alias: auth login)
+    #[command(name = "login")]
+    Login {
+        /// Tuquet Cloud endpoint URL (e.g. https://cloud.tuquet.com)
+        #[arg(short, long)]
+        url: Option<String>,
+
+        /// Organization / Tenant enrollment token
+        #[arg(short, long)]
+        token: Option<String>,
+
+        /// Custom workstation name (defaults to machine hostname)
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// Log out and disconnect this workstation from Tuquet Cloud (alias: auth logout)
+    #[command(name = "logout")]
+    Logout,
+
+    /// Show current Tuquet Cloud authentication and enrollment status (alias: auth status)
+    #[command(name = "whoami")]
+    Whoami,
+
+    /// Manage Tuquet Cloud authentication (login, logout, status)
+    #[command(name = "auth")]
+    Auth {
+        #[command(subcommand)]
+        command: AuthCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthCommands {
+    /// Authenticate and enroll this workstation with Tuquet Cloud
+    Login {
+        /// Tuquet Cloud endpoint URL (e.g. https://cloud.tuquet.com)
+        #[arg(short, long)]
+        url: Option<String>,
+
+        /// Organization / Tenant enrollment token
+        #[arg(short, long)]
+        token: Option<String>,
+
+        /// Custom workstation name (defaults to machine hostname)
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// Log out and disconnect this workstation from Tuquet Cloud
+    Logout,
+
+    /// Show current Tuquet Cloud authentication and enrollment status
+    Status,
 }
 
 #[derive(Subcommand, Debug)]

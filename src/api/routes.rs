@@ -108,7 +108,7 @@ use crate::api::handlers::ws::ws_handler;
         )
     ),
     servers(
-        (url = "http://127.0.0.1:3000", description = "Local Daemon Bridge Server")
+        (url = "http://127.0.0.1:8765", description = "Local Daemon Bridge Server")
     ),
     tags(
         (name = "Health", description = "System health check endpoints"),

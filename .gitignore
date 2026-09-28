@@ -17,6 +17,7 @@ coverage/
 
 # Temporary / Scratch Files
 scratch/
+*.zip
 
 # Operating System & IDE Files
 .DS_Store

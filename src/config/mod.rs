@@ -4,6 +4,7 @@ use std::env;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
+    pub server_host: String,
     pub server_port: u16,
     pub environment: String,
     pub log_level: String,
@@ -18,18 +19,24 @@ impl AppConfig {
         // Ignore dotenv error if file doesn't exist
         let _ = dotenv();
 
+        let mut server_host = env::var("AUTOMA_HOST")
+            .unwrap_or_else(|_| "127.0.0.1".to_string());
+
         let mut server_port = env::var("AUTOMA_PORT")
             .unwrap_or_else(|_| "8765".to_string())
             .parse()
             .unwrap_or(8765);
 
-        // Check command line arguments for --port or -p
+        // Check command line arguments for --port / -p, --host / -H
         let args: Vec<String> = env::args().collect();
         for i in 0..args.len() {
             if (args[i] == "--port" || args[i] == "-p") && i + 1 < args.len() {
                 if let Ok(p) = args[i + 1].parse::<u16>() {
                     server_port = p;
                 }
+            }
+            if (args[i] == "--host" || args[i] == "-H") && i + 1 < args.len() {
+                server_host = args[i + 1].clone();
             }
         }
 
@@ -51,10 +58,25 @@ impl AppConfig {
             path.to_string_lossy().to_string()
         });
 
-        let cloud_url = env::var("TUQUET_CLOUD_URL")
+        let mut cloud_url = env::var("TUQUET_CLOUD_URL")
             .or_else(|_| env::var("AUTOMA_CLOUD_URL"))
             .ok()
             .filter(|s| !s.trim().is_empty());
+
+        if cloud_url.is_none() {
+            let device_path = std::path::Path::new(&data_dir).join("device.json");
+            if device_path.exists() {
+                if let Ok(content) = std::fs::read_to_string(&device_path) {
+                    if let Ok(creds) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if let Some(u) = creds.get("cloud_url").and_then(|v| v.as_str()) {
+                            if !u.trim().is_empty() {
+                                cloud_url = Some(u.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         let cloud_enrollment_token = env::var("TUQUET_ENROLLMENT_TOKEN")
             .or_else(|_| env::var("AUTOMA_ENROLLMENT_TOKEN"))
@@ -67,6 +89,7 @@ impl AppConfig {
             .unwrap_or(30);
 
         Self {
+            server_host,
             server_port,
             environment,
             log_level,

@@ -103,11 +103,17 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
 
                 // Inject daemon.json
                 let daemon_config_path = browser_ext_dir.join("daemon.json");
+                let loaded_config = crate::config::AppConfig::load();
+                let host = std::env::var("AUTOMA_HOST").unwrap_or(loaded_config.server_host);
                 let port = std::env::var("AUTOMA_PORT")
                     .ok()
                     .and_then(|p| p.parse::<u16>().ok())
-                    .unwrap_or_else(|| crate::config::AppConfig::load().server_port);
-                let config_content = format!("{{\"browserId\": \"{}\", \"port\": {}}}", self.options.browser_id, port);
+                    .unwrap_or(loaded_config.server_port);
+                let base_url = format!("http://{}:{}", host, port);
+                let config_content = format!(
+                    "{{\"browserId\": \"{}\", \"port\": {}, \"host\": \"{}\", \"baseUrl\": \"{}\"}}",
+                    self.options.browser_id, port, host, base_url
+                );
                 tokio::fs::write(daemon_config_path, config_content).await?;
 
                 // Ensure manifest.json exists and has valid version for Chromium

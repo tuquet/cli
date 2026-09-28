@@ -6,7 +6,7 @@ use automa_core::infrastructure::db::AutomaDb;
 use automa_core::config::AppConfig;
 use automa_core::AppState;
 use automa_core::api;
-use automa_core::cli::{BrowserCommands, Cli, Commands, WorkflowCommands};
+use automa_core::cli::{AuthCommands, BrowserCommands, Cli, Commands, WorkflowCommands};
 use clap::Parser;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -67,7 +67,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             export_openapi(&output)
         }
         Some(Commands::Status { url }) => {
-            check_status(&url).await
+            let target_url = url.unwrap_or_else(|| {
+                let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+                let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| "8765".to_string());
+                format!("http://{}:{}", host, port)
+            });
+            check_status(&target_url).await
         }
         Some(Commands::Browser { command }) => {
             match command {
@@ -132,11 +137,98 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::SetupExt { browser, extension_path }) => {
             setup_extension(&browser, extension_path).await
         }
-        Some(Commands::Server { port, data_dir, log_level }) => {
-            run_server(port, data_dir, log_level).await
+        Some(Commands::Server { host, port, data_dir, log_level }) => {
+            run_server(host, port, data_dir, log_level).await
+        }
+        Some(Commands::Login { url, token, name }) => {
+            let config = AppConfig::load();
+            let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
+            let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
+            match automa_core::infrastructure::cloud_reporter::CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
+                Ok(creds) => {
+                    println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
+                    println!("Device ID:   {}", creds.device_id);
+                    println!("Device Name: {}", creds.name);
+                    println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Some(Commands::Logout) => {
+            let config = AppConfig::load();
+            match automa_core::infrastructure::cloud_reporter::CloudReporter::logout(&config.data_dir).await {
+                Ok(true) => {
+                    println!("\x1b[32m[SUCCESS] Logged out and removed local cloud credentials.\x1b[0m");
+                    Ok(())
+                }
+                Ok(false) => {
+                    println!("No active cloud session found.");
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("\x1b[31m[ERROR] Logout failed: {}\x1b[0m", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Some(Commands::Whoami) => {
+            let config = AppConfig::load();
+            if let Some(creds) = automa_core::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await {
+                println!("Device ID:   {}", creds.device_id);
+                println!("Device Name: {}", creds.name);
+                println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+                println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
+            } else {
+                println!("Not logged in to Tuquet Cloud.");
+            }
+            Ok(())
+        }
+        Some(Commands::Auth { command }) => {
+            match command {
+                AuthCommands::Login { url, token, name } => {
+                    let config = AppConfig::load();
+                    let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
+                    let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
+                    match automa_core::infrastructure::cloud_reporter::CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
+                        Ok(creds) => {
+                            println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
+                            println!("Device ID:   {}", creds.device_id);
+                            println!("Device Name: {}", creds.name);
+                            println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+                            Ok(())
+                        }
+                        Err(e) => {
+                            eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                AuthCommands::Logout => {
+                    let config = AppConfig::load();
+                    let _ = automa_core::infrastructure::cloud_reporter::CloudReporter::logout(&config.data_dir).await;
+                    println!("\x1b[32m[SUCCESS] Logged out.\x1b[0m");
+                    Ok(())
+                }
+                AuthCommands::Status => {
+                    let config = AppConfig::load();
+                    if let Some(creds) = automa_core::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await {
+                        println!("Device ID:   {}", creds.device_id);
+                        println!("Device Name: {}", creds.name);
+                        println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+                        println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
+                    } else {
+                        println!("Not logged in to Tuquet Cloud.");
+                    }
+                    Ok(())
+                }
+            }
         }
         None => {
-            run_server(None, None, None).await
+            run_server(None, None, None, None).await
         }
     }
 }
@@ -957,11 +1049,15 @@ async fn run_workflow(
 }
 
 async fn run_server(
+    host_override: Option<String>,
     port_override: Option<u16>,
     data_dir_override: Option<std::path::PathBuf>,
     log_level_override: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = AppConfig::load();
+    if let Some(host) = host_override {
+        config.server_host = host;
+    }
     if let Some(port) = port_override {
         config.server_port = port;
     }
@@ -1010,7 +1106,7 @@ async fn run_server(
     // Start background Cloud Telemetry & Inventory Reporter (runs if TUQUET_CLOUD_URL is configured)
     let _reporter_handle = automa_core::infrastructure::cloud_reporter::CloudReporter::start_background_loop(state.clone());
 
-    let addr = format!("127.0.0.1:{}", config.server_port);
+    let addr = format!("{}:{}", config.server_host, config.server_port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!("Server listening on http://{}", listener.local_addr()?);
     let panic_log_path = std::path::PathBuf::from(&config.data_dir).join("panic.log");
