@@ -57,6 +57,7 @@ pub trait BrowserRepository {
         name: &str,
         user_agent: Option<&str>,
         timezone: Option<&str>,
+        proxy: Option<&str>,
     ) -> Result<()>;
 
     fn get_browsers(
@@ -74,6 +75,7 @@ pub trait BrowserRepository {
         name: &str,
         user_agent: Option<&str>,
         timezone: Option<&str>,
+        proxy: Option<&str>,
     ) -> Result<()>;
 
     fn delete_browser(&self, id: &str) -> Result<()>;
@@ -90,6 +92,7 @@ pub trait JobRepository {
     ) -> bool;
 
     fn update_job_status(&self, job_id: &str, status: &str) -> Result<()>;
+    fn get_job_status(&self, job_id: &str) -> Result<Option<String>>;
 
     fn finish_job(&self, job_id: &str, status: &str, results: &Value, duration: i64) -> Result<()>;
 

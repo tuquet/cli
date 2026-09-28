@@ -50,6 +50,21 @@ pub struct ActiveJobResponse {
     pub job_id: String,
 }
 
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({"success": true, "message": "Job paused successfully", "jobId": "job_123", "status": "paused"}))]
+/// Response after controlling job execution lifecycle (pause, resume)
+pub struct JobControlResponse {
+    /// Operation success status
+    pub success: bool,
+    /// Informational message
+    pub message: String,
+    /// Target job ID
+    pub job_id: String,
+    /// New lifecycle status
+    pub status: String,
+}
+
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
 /// Advanced runtime execution options for a workflow job
@@ -453,6 +468,114 @@ pub async fn kill_job(
             other => AutomaError::Internal(other.to_string()),
         })?;
     Ok(StatusCode::OK)
+}
+
+#[utoipa::path(
+    tag = "Jobs",
+    post,
+    path = "/api/v1/jobs/{job_id}/pause",
+    operation_id = "pause_job",
+    summary = "Pause a running job",
+    description = "Dispatches a pause-workflow signal to the worker, updates job status to 'paused', and broadcasts event via SSE.",
+    params(
+        ("job_id" = String, Path, description = "Unique job identifier")
+    ),
+    responses(
+        (status = 200, description = "Job paused successfully", body = JobControlResponse),
+        (status = 404, description = "Job not found or not active", body = crate::core::error::ApiErrorResponse)
+    )
+)]
+pub async fn pause_job(
+    State(state): State<AppState>,
+    Path(job_id): Path<JobId>,
+) -> Result<Json<JobControlResponse>, AutomaError> {
+    let is_active = state.active_jobs.read().await.contains_key(job_id.as_str());
+    if !is_active {
+        return Err(AutomaError::NotFound(format!("Job '{job_id}' not found or not active")));
+    }
+
+    // 1. Update status in SQLite DB
+    {
+        let db = state.db.lock().await;
+        let _ = db.jobs().update_job_status(job_id.as_str(), "paused");
+    }
+
+    // 2. Dispatch pause event to browser worker
+    let event = JobEvent {
+        job_id: job_id.to_string(),
+        event_type: "pause-workflow".to_string(),
+    };
+    if let Ok(msg) = serde_json::to_string(&event) {
+        let _ = state.worker_tx.send(msg);
+    }
+
+    // 3. Broadcast to global SSE
+    let _ = state.tx.send(serde_json::json!({
+        "type": "job_status_changed",
+        "jobId": job_id.as_str(),
+        "status": "paused"
+    }).to_string());
+
+    Ok(Json(JobControlResponse {
+        success: true,
+        message: format!("Job '{}' paused successfully", job_id),
+        job_id: job_id.to_string(),
+        status: "paused".to_string(),
+    }))
+}
+
+#[utoipa::path(
+    tag = "Jobs",
+    post,
+    path = "/api/v1/jobs/{job_id}/resume",
+    operation_id = "resume_job",
+    summary = "Resume a paused job",
+    description = "Dispatches a resume-workflow signal to the worker, updates job status to 'running', and broadcasts event via SSE.",
+    params(
+        ("job_id" = String, Path, description = "Unique job identifier")
+    ),
+    responses(
+        (status = 200, description = "Job resumed successfully", body = JobControlResponse),
+        (status = 404, description = "Job not found or not active", body = crate::core::error::ApiErrorResponse)
+    )
+)]
+pub async fn resume_job(
+    State(state): State<AppState>,
+    Path(job_id): Path<JobId>,
+) -> Result<Json<JobControlResponse>, AutomaError> {
+    let is_active = state.active_jobs.read().await.contains_key(job_id.as_str());
+    if !is_active {
+        return Err(AutomaError::NotFound(format!("Job '{job_id}' not found or not active")));
+    }
+
+    // 1. Update status in SQLite DB
+    {
+        let db = state.db.lock().await;
+        let _ = db.jobs().update_job_status(job_id.as_str(), "running");
+    }
+
+    // 2. Dispatch resume event to browser worker
+    let event = JobEvent {
+        job_id: job_id.to_string(),
+        event_type: "resume-workflow".to_string(),
+    };
+    if let Ok(msg) = serde_json::to_string(&event) {
+        let _ = state.worker_tx.send(msg);
+    }
+
+    // 3. Broadcast to global SSE
+    let _ = state.tx.send(serde_json::json!({
+        "type": "job_status_changed",
+        "jobId": job_id.as_str(),
+        "status": "running"
+    }).to_string());
+
+    Ok(Json(JobControlResponse {
+        success: true,
+        message: format!("Job '{}' resumed successfully", job_id),
+        job_id: job_id.to_string(),
+        status: "running".to_string(),
+    }))
 }
 
 

@@ -19,3 +19,10 @@ POST {{baseUrl}}/api/v1/browsers/auto-detect
 
 ### 1.6 Xem cau hinh he thong (Settings)
 GET {{baseUrl}}/api/v1/system/settings
+
+### 1.7 Trang thai Cloud Telemetry & Device Enrollment
+GET {{baseUrl}}/api/v1/system/cloud/status
+
+### 1.8 Kich hoat dong bo Cloud ngay lap tuc (Inventory & Heartbeat)
+POST {{baseUrl}}/api/v1/system/cloud/sync
+

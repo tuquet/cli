@@ -8,6 +8,9 @@ pub struct AppConfig {
     pub environment: String,
     pub log_level: String,
     pub data_dir: String,
+    pub cloud_url: Option<String>,
+    pub cloud_enrollment_token: Option<String>,
+    pub cloud_heartbeat_interval_secs: u64,
 }
 
 impl AppConfig {
@@ -48,11 +51,29 @@ impl AppConfig {
             path.to_string_lossy().to_string()
         });
 
+        let cloud_url = env::var("TUQUET_CLOUD_URL")
+            .or_else(|_| env::var("AUTOMA_CLOUD_URL"))
+            .ok()
+            .filter(|s| !s.trim().is_empty());
+
+        let cloud_enrollment_token = env::var("TUQUET_ENROLLMENT_TOKEN")
+            .or_else(|_| env::var("AUTOMA_ENROLLMENT_TOKEN"))
+            .ok()
+            .filter(|s| !s.trim().is_empty());
+
+        let cloud_heartbeat_interval_secs = env::var("AUTOMA_HEARTBEAT_INTERVAL")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(30);
+
         Self {
             server_port,
             environment,
             log_level,
             data_dir,
+            cloud_url,
+            cloud_enrollment_token,
+            cloud_heartbeat_interval_secs,
         }
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "automa-runner"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 description = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension"
 repository = "https://github.com/tuquet/tuquet-automa-runner"

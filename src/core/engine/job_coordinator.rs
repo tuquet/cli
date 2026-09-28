@@ -237,10 +237,13 @@ impl JobCoordinator {
     /// Queries the runtime status of a job
     pub async fn get_status(state: &AppState, job_id: &JobId) -> String {
         let is_active = state.active_jobs.read().await.contains_key(job_id.as_str());
-        if is_active {
-            "running".to_string()
-        } else {
-            "completed".to_string()
+        let db_status = {
+            let db = state.db.lock().await;
+            db.jobs().get_job_status(job_id.as_str()).ok().flatten()
+        };
+        match db_status {
+            Some(st) => st,
+            None => if is_active { "running".to_string() } else { "completed".to_string() },
         }
     }
 }

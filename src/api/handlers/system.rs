@@ -269,3 +269,120 @@ pub async fn open_studio(
         })
     ).into_response()
 }
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Cloud telemetry and device enrollment status
+pub struct CloudStatusResponse {
+    /// Whether cloud telemetry reporting is configured
+    pub enabled: bool,
+    /// Connected Tuquet Cloud URL
+    pub cloud_url: Option<String>,
+    /// Whether this machine is enrolled with a device ID
+    pub enrolled: bool,
+    /// Persistent workstation device ID
+    pub device_id: Option<String>,
+    /// Enrolled workstation name
+    pub device_name: Option<String>,
+    /// Machine hardware fingerprint
+    pub machine_fingerprint: String,
+    /// Heartbeat interval in seconds
+    pub heartbeat_interval_secs: u64,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Cloud sync operation result
+pub struct CloudSyncResponse {
+    /// Whether sync succeeded
+    pub success: bool,
+    /// Whether machine is enrolled
+    pub enrolled: bool,
+    /// Device ID
+    pub device_id: String,
+    /// Number of local browser profiles synced to central hub
+    pub browsers_synced: usize,
+    /// Whether heartbeat telemetry was accepted
+    pub heartbeat_sent: bool,
+    /// Status or error message
+    pub message: String,
+}
+
+#[utoipa::path(
+    tag = "System",
+    get,
+    path = "/api/v1/system/cloud/status",
+    operation_id = "get_cloud_status",
+    summary = "Get Tuquet Cloud reporting and device enrollment status",
+    description = "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
+    responses(
+        (status = 200, description = "Cloud reporting status retrieved successfully", body = CloudStatusResponse)
+    )
+)]
+pub async fn get_cloud_status(
+    State(state): State<crate::AppState>,
+) -> impl IntoResponse {
+    let cloud_url = state.config.cloud_url.clone();
+    let enabled = cloud_url.is_some();
+    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&state.config.data_dir).await;
+    let fingerprint = crate::infrastructure::cloud_reporter::CloudReporter::generate_machine_fingerprint();
+
+    let (enrolled, device_id, device_name) = match creds {
+        Some(c) => (true, Some(c.device_id), Some(c.name)),
+        None => (false, None, None),
+    };
+
+    (
+        StatusCode::OK,
+        Json(CloudStatusResponse {
+            enabled,
+            cloud_url,
+            enrolled,
+            device_id,
+            device_name,
+            machine_fingerprint: fingerprint,
+            heartbeat_interval_secs: state.config.cloud_heartbeat_interval_secs,
+        }),
+    ).into_response()
+}
+
+#[utoipa::path(
+    tag = "System",
+    post,
+    path = "/api/v1/system/cloud/sync",
+    operation_id = "trigger_cloud_sync",
+    summary = "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
+    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
+    responses(
+        (status = 200, description = "Sync completed or attempted", body = CloudSyncResponse)
+    )
+)]
+pub async fn trigger_cloud_sync(
+    State(state): State<crate::AppState>,
+) -> impl IntoResponse {
+    match crate::infrastructure::cloud_reporter::CloudReporter::sync_inventory_and_heartbeat(&state).await {
+        Ok(res) => (
+            StatusCode::OK,
+            Json(CloudSyncResponse {
+                success: res.success,
+                enrolled: res.enrolled,
+                device_id: res.device_id,
+                browsers_synced: res.browsers_synced,
+                heartbeat_sent: res.heartbeat_sent,
+                message: res.message,
+            }),
+        ).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(CloudSyncResponse {
+                success: false,
+                enrolled: false,
+                device_id: "".to_string(),
+                browsers_synced: 0,
+                heartbeat_sent: false,
+                message: e.to_string(),
+            }),
+        ).into_response(),
+    }
+}
+

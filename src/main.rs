@@ -1005,7 +1005,10 @@ async fn run_server(
         active_jobs: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
     };
 
-    let app = api::routes::create_router(state);
+    let app = api::routes::create_router(state.clone());
+
+    // Start background Cloud Telemetry & Inventory Reporter (runs if TUQUET_CLOUD_URL is configured)
+    let _reporter_handle = automa_core::infrastructure::cloud_reporter::CloudReporter::start_background_loop(state.clone());
 
     let addr = format!("127.0.0.1:{}", config.server_port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;

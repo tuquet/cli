@@ -77,7 +77,8 @@ pub enum Commands {
         workflow: String,
     },
 
-    /// Start the Automa Core HTTP/WebSocket daemon server
+    /// Start the Automa Core HTTP/WebSocket daemon server (alias: start)
+    #[command(name = "server", alias = "start")]
     Server {
         /// HTTP server listening port
         #[arg(short, long)]

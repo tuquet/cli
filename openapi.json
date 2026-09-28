@@ -1,0 +1,5072 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tuquet Automa Core Bridge API",
+    "description": "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension.",
+    "contact": {
+      "name": "Tuquet Ecosystem",
+      "url": "https://github.com/tuquet/tuquet-automa"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "Local Daemon Bridge Server"
+    }
+  ],
+  "paths": {
+    "/api/v1/browsers": {
+      "get": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "List all browser profiles",
+        "description": "Retrieves an array of all persisted browser profiles, including their active online/offline connection state.",
+        "operationId": "get_browsers",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of browser profiles to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter browsers by name or ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all browser profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BrowserResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Create a new browser profile",
+        "description": "Persists a new isolated browser profile with custom fingerprint settings (User-Agent, Timezone, Proxy) in SQLite.",
+        "operationId": "create_browser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrowserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Browser profile created successfully",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID or missing name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to create browser profile in database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/auto-detect": {
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Ensure managed default Chromium browser profile",
+        "description": "Ensures standard managed Chromium browser profile is registered in SQLite and configured as default.",
+        "operationId": "auto_detect_browsers",
+        "responses": {
+          "200": {
+            "description": "List of all registered browser profiles after detection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BrowserResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error during auto-detection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/import-csv": {
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Batch import browser profiles from CSV",
+        "description": "Parses a multi-line CSV string and batch inserts new browser profiles into SQLite.",
+        "operationId": "import_browsers_csv",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCsvPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "CSV profiles successfully parsed and imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCsvResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed CSV format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/sessions": {
+      "delete": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Terminate all running browser processes",
+        "description": "Forcefully shuts down all managed browser processes, child workers, and zombie processes across all profiles.",
+        "operationId": "kill_all_browsers",
+        "responses": {
+          "200": {
+            "description": "All managed browser processes terminated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/{id}": {
+      "get": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Get browser profile details",
+        "description": "Retrieves full configuration details and live online status for a specific browser profile.",
+        "operationId": "get_browser_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Browser profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrowserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Browser profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Update a browser profile",
+        "description": "Updates the configuration and metadata of an existing browser profile by ID.",
+        "operationId": "update_browser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBrowserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Browser profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Browser profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database update error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Delete a browser profile",
+        "description": "Permanently removes a browser profile from SQLite storage and cleans up associated session data.",
+        "operationId": "delete_browser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Browser profile deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Browser profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/{id}/extensions": {
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Sideload unpacked extension into browser profile",
+        "description": "Copies and configures an external unpacked extension into the specified browser profile's data directory.",
+        "operationId": "sideload_browser_extension",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SideloadExtensionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Extension sideloaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SideloadExtensionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid extension path or manifest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Browser profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/{id}/session": {
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Launch isolated browser profile instance",
+        "description": "Spawns a new Chromium browser process attached to the specific profile directory with anti-detect flags and extensions loaded.",
+        "operationId": "start_browser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartBrowserSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Browser session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartBrowserSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID or configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Process spawn failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Terminate or stop an active browser session",
+        "description": "Gracefully closes the running browser process (or forcefully if force=true), sanitizes volatile caches, cleans up locks, and syncs profile data.",
+        "operationId": "stop_browser_session",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "description": "If true, forcefully kills the process immediately without graceful closing or saving cache",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Browser session terminated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopBrowserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browsers/{id}/set-default": {
+      "post": {
+        "tags": [
+          "Browsers"
+        ],
+        "summary": "Set a browser profile as system-wide default",
+        "description": "Updates the core daemon settings to mark this profile as default for all automated workflow jobs.",
+        "operationId": "set_default_browser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique browser profile identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default browser updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetDefaultBrowserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid browser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Browser profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Subscribe to global telemetry and logs SSE stream",
+        "description": "Establishes a real-time Server-Sent Events stream for task progression, job lifecycle changes, logs, and matrix events.",
+        "operationId": "subscribe_events_sse",
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream for task logs and progress",
+            "content": {
+              "text/event-stream": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Check daemon health status",
+        "description": "Returns active operational health status, daemon version, and server readiness for clients.",
+        "operationId": "get_health",
+        "responses": {
+          "200": {
+            "description": "Daemon is healthy and accepting requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "summary": "Get paginated job execution history",
+        "description": "Queries previous workflow execution runs and audit logs persisted in the SQLite database.",
+        "operationId": "get_job_history",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of history entries to return (default 50)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter history by workflow name or job ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Optional status filter (e.g. \"completed\", \"failed\", \"running\")",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of past job execution summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobHistoryItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or thread pool failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "History"
+        ],
+        "summary": "Clear entire job execution history",
+        "description": "Permanently truncates the job execution history and purge all logs from the database.",
+        "operationId": "clear_all_job_history",
+        "responses": {
+          "200": {
+            "description": "All job history cleared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryActionResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database purge failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/{job_id}": {
+      "delete": {
+        "tags": [
+          "History"
+        ],
+        "summary": "Delete a single job history item",
+        "description": "Removes a specific job run and its associated logs from the SQLite history store.",
+        "operationId": "delete_job_history_item",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job history entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryActionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/{job_id}/logs": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "summary": "Get execution details and logs for a job",
+        "description": "Retrieves full execution audit trail, timing breakdown, and detailed step logs for a specific job.",
+        "operationId": "get_job_execution_logs",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed job execution record and logs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database query failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/worker/events": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Subscribe to worker event stream (SSE)",
+        "description": "Establishes a long-lived Server-Sent Events (SSE) connection used by browser workers to receive workflow job dispatches and cancellation commands.",
+        "operationId": "worker_sse",
+        "parameters": [
+          {
+            "name": "browserId",
+            "in": "query",
+            "description": "Target browser instance identifier (defaults to 'daemon_worker')",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE Stream for Worker jobs",
+            "content": {
+              "text/event-stream": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "List all active running jobs",
+        "description": "Returns an array of identifiers for all workflow execution jobs currently running in the daemon.",
+        "operationId": "get_active_jobs",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of active jobs to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter active jobs by job ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active running jobs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActiveJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Submit a workflow execution job",
+        "description": "Submits a new automation workflow job to be executed by a browser worker instance. Supports workflowId, inline workflowData, or filesystem workflowPath. Automatically ensures the required browser instance is launched and connected.",
+        "operationId": "submit_job",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitJobPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Job submitted and accepted for execution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJobResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request payload or unreadable workflow file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Maximum concurrent jobs reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJobResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Browser worker unavailable or connection timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "delete": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Terminate a running job",
+        "description": "Cancels execution token for a job, releases the associated browser process, records terminated status, and clears state.",
+        "operationId": "kill_job",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job terminated successfully"
+          },
+          "404": {
+            "description": "Job not found or not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}/logs": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Append execution log entry for a job",
+        "description": "Receives runtime log entries and block execution telemetry from the browser worker, persisting them to the database and broadcasting via SSE.",
+        "operationId": "append_job_log",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobLogPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Log entry received and persisted successfully"
+          },
+          "400": {
+            "description": "Invalid payload or job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}/pause": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Pause a running job",
+        "description": "Dispatches a pause-workflow signal to the worker, updates job status to 'paused', and broadcasts event via SSE.",
+        "operationId": "pause_job",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job paused successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobControlResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found or not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}/resume": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Resume a paused job",
+        "description": "Dispatches a resume-workflow signal to the worker, updates job status to 'running', and broadcasts event via SSE.",
+        "operationId": "resume_job",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job resumed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobControlResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found or not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}/status": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get current status of a job",
+        "description": "Queries the runtime lifecycle status of a specific job by its unique identifier.",
+        "operationId": "get_job_status",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current job execution status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Mark a job as completed",
+        "description": "Signals the completion of a workflow execution job, records the final status in SQLite, releases active tokens, and notifies subscribers.",
+        "operationId": "finish_job",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Unique job identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job marked as completed successfully"
+          },
+          "404": {
+            "description": "Job not found or already finished",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lint": {
+      "post": {
+        "tags": [
+          "Lint"
+        ],
+        "summary": "Validate and lint Automa assets (Bridge Stub)",
+        "description": "Bridge passthrough stub. In the Tuquet architecture, workflow graph validation is performed client-side by Web Studio and runtime blocks are executed by the browser worker.",
+        "operationId": "lint_workflow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LintRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lint diagnostic results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LintResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/backup/export": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Export full Automa backup JSON",
+        "description": "Exports all workflows, storage variables, and storage tables from SQLite into a standardized Automa backup JSON format.",
+        "operationId": "export_storage_backup",
+        "parameters": [
+          {
+            "name": "password",
+            "in": "query",
+            "description": "Optional password to encrypt workflows using AES-256-CBC + HMAC",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full backup exported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportBackupResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/backup/restore": {
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Restore full Automa backup into SQLite",
+        "description": "Restores workflows, storage variables, and storage tables from an Automa backup JSON. Supports protected backups encrypted with AES-256-CBC and HMAC-SHA256.",
+        "operationId": "restore_storage_backup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreBackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Backup restored successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreBackupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid backup format or decryption error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/credentials": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "List all stored credentials",
+        "description": "Retrieves all saved authentication credentials from storage.",
+        "operationId": "get_storage_credentials",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of credentials to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter credentials by name, key or ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageCredential"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Add or update a stored credential",
+        "description": "Persists a new credential or updates an existing credential in storage.",
+        "operationId": "add_storage_credential",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Credential saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageCredential"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid credential payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/credentials/{id}": {
+      "delete": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete a stored credential",
+        "description": "Permanently removes a credential from storage by ID or key.",
+        "operationId": "delete_storage_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Credential ID or unique key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential deleted successfully"
+          },
+          "404": {
+            "description": "Credential not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/tables": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "List all storage tables",
+        "description": "Retrieves schemas for all user data tables stored in SQLite.",
+        "operationId": "get_storage_tables",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of tables to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter tables by name or ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of data tables",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageTable"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Create or update a storage table schema",
+        "description": "Defines a new data table schema or modifies column definitions for an existing table.",
+        "operationId": "add_storage_table",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageTable"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Table schema created or updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageTable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid table schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/tables/{id}": {
+      "delete": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete a storage table",
+        "description": "Drops the specified data table and purges all of its associated rows from SQLite.",
+        "operationId": "delete_storage_table",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique table identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table and rows deleted successfully"
+          },
+          "404": {
+            "description": "Table not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/tables/{id}/rows": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Get rows from a storage table",
+        "description": "Queries paginated row documents belonging to the specified data table.",
+        "operationId": "get_storage_table_rows",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique table identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of rows to return (default 50)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter rows by data content",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of table row objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableRow"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Table not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Insert a row into a storage table",
+        "description": "Appends a new document row into the specified data table.",
+        "operationId": "add_storage_table_row",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique table identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTableRowPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Row inserted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddTableRowResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed row data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Table not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database insertion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/variables": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "List all storage variables",
+        "description": "Retrieves all global and local variables persisted in Automa SQLite storage.",
+        "operationId": "get_storage_variables",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of variables to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter variables by name, key or ID",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of variables",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageVariable"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Add or update a storage variable",
+        "description": "Creates a new variable or updates an existing variable by ID/key in storage.",
+        "operationId": "add_storage_variable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageVariable"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Variable saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageVariable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid variable payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/variables/{id}": {
+      "delete": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete a storage variable",
+        "description": "Permanently removes a variable from storage by ID or key.",
+        "operationId": "delete_storage_variable",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Variable ID or unique key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Variable deleted successfully"
+          },
+          "404": {
+            "description": "Variable not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/workflow": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Read workflow JSON file from filesystem",
+        "operationId": "get_workflow_file",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workflow JSON file read successfully"
+          },
+          "404": {
+            "description": "Workflow file not found on disk"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Save or update workflow JSON file on filesystem",
+        "operationId": "save_workflow_file",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWorkflowFilePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workflow JSON file saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveWorkflowFileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/workflows": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "List all workflows from storage database",
+        "description": "Retrieves all workflow items persisted in the central SQLite database.",
+        "operationId": "get_storage_workflows",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of workflows to return",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 50
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip for pagination (default 0)",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Optional search query to filter workflows by name, ID or description",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of workflows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkflowStorageItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Create or persist a workflow in database",
+        "description": "Creates a new workflow record or updates an existing record in the SQLite database.",
+        "operationId": "create_storage_workflow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkflowStorageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workflow created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStorageItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workflow payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/workflows/import": {
+      "post": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Import a workflow JSON into storage database",
+        "description": "Parses and imports a workflow JSON object (from file or client) into SQLite database.",
+        "operationId": "import_storage_workflow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportWorkflowStorageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workflow imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStorageItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workflow JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage/workflows/{id}": {
+      "get": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Get a workflow by ID from storage database",
+        "description": "Retrieves the full AST and metadata of a workflow by its unique ID from SQLite database.",
+        "operationId": "get_storage_workflow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique workflow identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workflow details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStorageItem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workflow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database read error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Update a workflow in storage database",
+        "description": "Modifies the metadata or graph AST of an existing workflow in SQLite database.",
+        "operationId": "update_storage_workflow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique workflow identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkflowStorageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workflow updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowStorageItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid update payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workflow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete a workflow from storage database",
+        "description": "Removes a workflow record from the central SQLite database by ID.",
+        "operationId": "delete_storage_workflow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique workflow identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workflow deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteWorkflowResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workflow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database deletion error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/browser-binaries": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Download and install Chromium binary",
+        "description": "Downloads and extracts the latest compatible Chromium build into the local cache via `@puppeteer/browsers`.",
+        "operationId": "install_browser_binary",
+        "responses": {
+          "200": {
+            "description": "Chromium binary downloaded and installed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to download browser binary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/cloud/status": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get Tuquet Cloud reporting and device enrollment status",
+        "description": "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
+        "operationId": "get_cloud_status",
+        "responses": {
+          "200": {
+            "description": "Cloud reporting status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/cloud/sync": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
+        "description": "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
+        "operationId": "trigger_cloud_sync",
+        "responses": {
+          "200": {
+            "description": "Sync completed or attempted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudSyncResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/info": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get runner machine identity and system capabilities",
+        "description": "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Tuquet Runner orchestration.",
+        "operationId": "get_system_info",
+        "responses": {
+          "200": {
+            "description": "Runner machine identity information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerIdentityResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/metrics": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get host system performance metrics",
+        "description": "Samples current CPU load, memory utilization, and active browser runner counts.",
+        "operationId": "get_system_metrics",
+        "responses": {
+          "200": {
+            "description": "System performance metrics sampled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemMetricsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get current application and grid settings",
+        "description": "Retrieves current daemon configuration including Grid Matrix layout, default browser preferences, and Runner concurrency settings.",
+        "operationId": "get_app_settings",
+        "responses": {
+          "200": {
+            "description": "Current application and grid settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettings"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database query error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Overwrite application and grid settings",
+        "description": "Replaces the entire application configuration and persists new grid, browser, and runner settings.",
+        "operationId": "update_app_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Application settings replaced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid settings payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Partially update application settings",
+        "description": "Selectively updates specific sections of settings (e.g. grid matrix rows/columns or browser default type) without overwriting other properties.",
+        "operationId": "patch_app_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Application settings patched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid patch payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database update error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/studio/session": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Open Web Studio in default system browser",
+        "description": "Spawns the default OS web browser and navigates to the locally served Automa Web Studio canvas editor.",
+        "operationId": "open_web_studio",
+        "responses": {
+          "200": {
+            "description": "Web Studio opened successfully in system browser",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ws": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Establish WebSocket connection for real-time control",
+        "description": "Low-latency bidirectional WebSocket connection consuming types from @automa/types/ws for PAUSE_JOB, RESUME_JOB, KILL_JOB, and live breakpoints.",
+        "operationId": "ws_handler",
+        "responses": {
+          "101": {
+            "description": "WebSocket Upgrade for 2-way real-time communication"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveJobResponse": {
+        "type": "object",
+        "description": "Active running job descriptor",
+        "required": [
+          "jobId"
+        ],
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "Unique job identifier"
+          }
+        },
+        "example": {
+          "jobId": "job_123abc"
+        }
+      },
+      "AddTableRowPayload": {
+        "allOf": [
+          {
+            "type": "object",
+            "description": "Dynamic column values for the row"
+          }
+        ],
+        "description": "Key-value payload for inserting a new table row",
+        "example": {
+          "age": 30,
+          "name": "John Doe"
+        }
+      },
+      "AddTableRowResponse": {
+        "type": "object",
+        "description": "Response returned after appending a row to a storage table",
+        "required": [
+          "id",
+          "tableId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Newly assigned row identifier"
+          },
+          "tableId": {
+            "type": "string",
+            "description": "Parent table identifier"
+          }
+        },
+        "example": {
+          "id": "row_123",
+          "table_id": "tbl_456"
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "required": [
+          "error",
+          "status"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "AppSettings": {
+        "type": "object",
+        "required": [
+          "grid",
+          "browser",
+          "runner"
+        ],
+        "properties": {
+          "browser": {
+            "$ref": "#/components/schemas/BrowserSettings"
+          },
+          "grid": {
+            "$ref": "#/components/schemas/GridSettings"
+          },
+          "runner": {
+            "$ref": "#/components/schemas/RunnerSettings"
+          }
+        },
+        "example": {
+          "browser": {
+            "default_type": "chromium",
+            "default_user_agent": null,
+            "executable_path": null,
+            "headless": false
+          },
+          "grid": {
+            "behavior": {
+              "auto_recycle_slots": true,
+              "enforce_cdp_bounds": true,
+              "scale_factor": 1.0
+            },
+            "display": {
+              "margin": 8,
+              "monitor_index": 0,
+              "offset_x": 0,
+              "offset_y": 0,
+              "screen_height": 1080,
+              "screen_width": 1920
+            },
+            "enabled": true,
+            "matrix": {
+              "columns": 3,
+              "rows": 2
+            }
+          },
+          "runner": {
+            "auto_clean_history_days": 30,
+            "max_concurrent_jobs": 5,
+            "timeout_ms": 30000
+          }
+        }
+      },
+      "BrowserResponse": {
+        "type": "object",
+        "description": "Browser profile descriptor",
+        "required": [
+          "id",
+          "name",
+          "isDefault",
+          "createdAt",
+          "updatedAt",
+          "isOnline"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO 8601)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique browser profile identifier"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether this profile is currently configured as the system default"
+          },
+          "isOnline": {
+            "type": "boolean",
+            "description": "Whether an active browser process is currently connected"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly profile label"
+          },
+          "proxy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Proxy server string (e.g. socks5://127.0.0.1:1080 or http://user:pass@host:port)"
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Emulated timezone ID"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp (ISO 8601)"
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Custom User-Agent header string"
+          }
+        },
+        "example": {
+          "createdAt": "2026-08-25T00:00:00Z",
+          "id": "profile_1",
+          "isDefault": true,
+          "isOnline": false,
+          "name": "Personal Profile",
+          "proxy": "socks5://127.0.0.1:1080",
+          "timezone": "Asia/Ho_Chi_Minh",
+          "updatedAt": "2026-08-25T00:00:00Z",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      },
+      "BrowserSettings": {
+        "type": "object",
+        "required": [
+          "default_type",
+          "headless"
+        ],
+        "properties": {
+          "default_profile_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "default_type": {
+            "type": "string"
+          },
+          "default_user_agent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "executable_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headless": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CloudStatusResponse": {
+        "type": "object",
+        "description": "Cloud telemetry and device enrollment status",
+        "required": [
+          "enabled",
+          "enrolled",
+          "machineFingerprint",
+          "heartbeatIntervalSecs"
+        ],
+        "properties": {
+          "cloudUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Connected Tuquet Cloud URL"
+          },
+          "deviceId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Persistent workstation device ID"
+          },
+          "deviceName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Enrolled workstation name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether cloud telemetry reporting is configured"
+          },
+          "enrolled": {
+            "type": "boolean",
+            "description": "Whether this machine is enrolled with a device ID"
+          },
+          "heartbeatIntervalSecs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Heartbeat interval in seconds",
+            "minimum": 0
+          },
+          "machineFingerprint": {
+            "type": "string",
+            "description": "Machine hardware fingerprint"
+          }
+        }
+      },
+      "CloudSyncResponse": {
+        "type": "object",
+        "description": "Cloud sync operation result",
+        "required": [
+          "success",
+          "enrolled",
+          "deviceId",
+          "browsersSynced",
+          "heartbeatSent",
+          "message"
+        ],
+        "properties": {
+          "browsersSynced": {
+            "type": "integer",
+            "description": "Number of local browser profiles synced to central hub",
+            "minimum": 0
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device ID"
+          },
+          "enrolled": {
+            "type": "boolean",
+            "description": "Whether machine is enrolled"
+          },
+          "heartbeatSent": {
+            "type": "boolean",
+            "description": "Whether heartbeat telemetry was accepted"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status or error message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether sync succeeded"
+          }
+        }
+      },
+      "CreateBrowserRequest": {
+        "type": "object",
+        "description": "Request payload for creating a new browser profile",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional custom ID (auto-generated UUID if omitted)"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly profile name"
+          },
+          "proxy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional proxy server URL"
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Emulated timezone ID"
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Custom User-Agent header"
+          }
+        },
+        "example": {
+          "id": "profile_1",
+          "name": "Personal Profile",
+          "proxy": "socks5://127.0.0.1:1080",
+          "timezone": "Asia/Ho_Chi_Minh",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      },
+      "CreateWorkflowStorageRequest": {
+        "type": "object",
+        "description": "Request payload for creating a new workflow in SQLite database",
+        "required": [
+          "name",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Workflow graph AST (nodes, edges, settings)"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional workflow description"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional UI icon name"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional custom identifier (auto-generated if omitted)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Workflow display name"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional version (defaults to 1.0.0)"
+          }
+        },
+        "example": {
+          "data": {
+            "edges": [],
+            "nodes": [
+              {
+                "id": "node_1",
+                "label": "trigger",
+                "type": "trigger"
+              }
+            ]
+          },
+          "description": "Searches Bing and extracts results",
+          "icon": "search",
+          "id": "wf_bing_search",
+          "name": "Bing Search Automation",
+          "version": "1.0.0"
+        }
+      },
+      "DeleteWorkflowResponse": {
+        "type": "object",
+        "description": "Response returned after successfully deleting a workflow",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "True if deletion succeeded"
+          }
+        },
+        "example": {
+          "message": "Workflow 'wf_1' deleted",
+          "success": true
+        }
+      },
+      "DisplaySettings": {
+        "type": "object",
+        "required": [
+          "screen_width",
+          "screen_height",
+          "offset_x",
+          "offset_y",
+          "margin",
+          "monitor_index"
+        ],
+        "properties": {
+          "margin": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "monitor_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "offset_x": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offset_y": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "screen_height": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "screen_width": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ExportBackupResponse": {
+        "type": "object",
+        "description": "Full Automa backup export payload",
+        "required": [
+          "isProtected",
+          "workflows",
+          "storageVariables",
+          "storageTables",
+          "exportedAt"
+        ],
+        "properties": {
+          "exportedAt": {
+            "type": "string",
+            "description": "Export timestamp in milliseconds"
+          },
+          "isProtected": {
+            "type": "boolean",
+            "description": "True if workflows are encrypted with AES-256-CBC"
+          },
+          "storageTables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StorageTable"
+            },
+            "description": "Stored tables with nested items"
+          },
+          "storageVariables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StorageVariable"
+            },
+            "description": "Stored variables"
+          },
+          "workflows": {
+            "description": "Array of workflow objects or encrypted HMAC-SHA256 string"
+          }
+        }
+      },
+      "GridBehavior": {
+        "type": "object",
+        "required": [
+          "auto_recycle_slots",
+          "enforce_cdp_bounds",
+          "scale_factor"
+        ],
+        "properties": {
+          "auto_recycle_slots": {
+            "type": "boolean"
+          },
+          "enforce_cdp_bounds": {
+            "type": "boolean"
+          },
+          "scale_factor": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "GridMatrix": {
+        "type": "object",
+        "required": [
+          "columns",
+          "rows"
+        ],
+        "properties": {
+          "columns": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "GridSettings": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "matrix",
+          "display",
+          "behavior"
+        ],
+        "properties": {
+          "behavior": {
+            "$ref": "#/components/schemas/GridBehavior"
+          },
+          "display": {
+            "$ref": "#/components/schemas/DisplaySettings"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "matrix": {
+            "$ref": "#/components/schemas/GridMatrix"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "description": "Daemon health check response",
+        "required": [
+          "status",
+          "version",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Status message description"
+          },
+          "status": {
+            "type": "string",
+            "description": "Overall operational status (\"ok\", \"degraded\")"
+          },
+          "version": {
+            "type": "string",
+            "description": "Semantic version of the running daemon binary"
+          }
+        },
+        "example": {
+          "message": "Automa Core Daemon is running",
+          "status": "ok",
+          "version": "1.0.0"
+        }
+      },
+      "HistoryActionResponse": {
+        "type": "object",
+        "description": "Response returned after performing a history modification or purge action",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Detailed status message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the history action succeeded"
+          }
+        },
+        "example": {
+          "message": "Job history deleted",
+          "success": true
+        }
+      },
+      "ImportCsvPayload": {
+        "type": "object",
+        "description": "Request payload containing raw CSV formatted browser profiles",
+        "required": [
+          "csv_string"
+        ],
+        "properties": {
+          "csv_string": {
+            "type": "string",
+            "description": "Raw CSV string containing profile headers and rows"
+          }
+        },
+        "example": {
+          "csv_string": "id,name,userAgent,timezone\nprofile1,Main Profile,,UTC"
+        }
+      },
+      "ImportCsvResponse": {
+        "type": "object",
+        "description": "Response after batch importing browser profiles from CSV",
+        "required": [
+          "status",
+          "message",
+          "imported"
+        ],
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "description": "Number of profiles successfully imported",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "Result description message"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status code indicator"
+          }
+        },
+        "example": {
+          "imported": 3,
+          "message": "Imported 3 profiles",
+          "status": "success"
+        }
+      },
+      "ImportWorkflowStorageRequest": {
+        "type": "object",
+        "description": "Request payload for importing a workflow into SQLite database",
+        "required": [
+          "workflow"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional custom ID to assign"
+          },
+          "workflow": {
+            "type": "object",
+            "description": "Raw workflow JSON content"
+          }
+        },
+        "example": {
+          "workflow": {
+            "edges": [],
+            "name": "Imported Google Search",
+            "nodes": []
+          }
+        }
+      },
+      "JobControlResponse": {
+        "type": "object",
+        "description": "Response after controlling job execution lifecycle (pause, resume)",
+        "required": [
+          "success",
+          "message",
+          "jobId",
+          "status"
+        ],
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "Target job ID"
+          },
+          "message": {
+            "type": "string",
+            "description": "Informational message"
+          },
+          "status": {
+            "type": "string",
+            "description": "New lifecycle status"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Operation success status"
+          }
+        },
+        "example": {
+          "jobId": "job_123",
+          "message": "Job paused successfully",
+          "status": "paused",
+          "success": true
+        }
+      },
+      "JobDetails": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "job": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobInfo"
+              }
+            ]
+          },
+          "logs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          },
+          "results": {}
+        }
+      },
+      "JobHistoryItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "JobInfo": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "workflowId",
+          "status",
+          "createdAt",
+          "endedAt"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "duration": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "endedAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "workflowId": {
+            "type": "string"
+          }
+        }
+      },
+      "JobLogPayload": {
+        "type": "object",
+        "description": "Payload containing execution logs and telemetry emitted by a workflow step",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "logs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            },
+            "description": "Array of structured log entries or node execution telemetry",
+            "example": [
+              {
+                "details": "Node 1 finished",
+                "timestamp": 123456789
+              }
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Human-readable log message",
+            "example": "Execution started"
+          },
+          "type": {
+            "type": "string",
+            "description": "Log severity level (\"info\", \"warn\", \"error\", \"debug\")",
+            "example": "info"
+          }
+        },
+        "example": {
+          "logs": null,
+          "message": "Executing node 1",
+          "type": "info"
+        }
+      },
+      "JobStatusResponse": {
+        "type": "object",
+        "description": "Current execution status of a background job",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Status name (\"running\", \"completed\", \"failed\", \"cancelled\")"
+          }
+        },
+        "example": {
+          "status": "running"
+        }
+      },
+      "LintIssue": {
+        "type": "object",
+        "required": [
+          "severity",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "$ref": "#/components/schemas/LintSeverity"
+          }
+        }
+      },
+      "LintMode": {
+        "type": "string",
+        "enum": [
+          "editor",
+          "runner"
+        ]
+      },
+      "LintRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "drawflow": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "edges": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            }
+          },
+          "mode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LintMode"
+              }
+            ]
+          },
+          "nodes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            }
+          },
+          "target_type": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LintTargetType"
+              }
+            ]
+          }
+        }
+      },
+      "LintResponse": {
+        "type": "object",
+        "required": [
+          "valid",
+          "issues"
+        ],
+        "properties": {
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintIssue"
+            }
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LintSeverity": {
+        "type": "string",
+        "enum": [
+          "error",
+          "warning",
+          "info"
+        ]
+      },
+      "LintTargetType": {
+        "type": "string",
+        "enum": [
+          "workflow",
+          "campaign",
+          "browser",
+          "package"
+        ]
+      },
+      "MachineInfo": {
+        "type": "object",
+        "description": "Machine hardware and operating system identity",
+        "required": [
+          "hostname",
+          "os",
+          "osVersion",
+          "cpuArch",
+          "totalMemory"
+        ],
+        "properties": {
+          "cpuArch": {
+            "type": "string",
+            "description": "CPU hardware architecture"
+          },
+          "hostname": {
+            "type": "string",
+            "description": "Machine network hostname"
+          },
+          "os": {
+            "type": "string",
+            "description": "Operating system platform"
+          },
+          "osVersion": {
+            "type": "string",
+            "description": "Operating system kernel/version release"
+          },
+          "totalMemory": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total installed physical RAM in bytes",
+            "minimum": 0
+          }
+        }
+      },
+      "RestoreBackupRequest": {
+        "type": "object",
+        "description": "Request payload to restore a full Automa backup JSON into SQLite",
+        "required": [
+          "backup"
+        ],
+        "properties": {
+          "backup": {
+            "type": "object",
+            "description": "Full Automa backup JSON payload"
+          },
+          "password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional password to decrypt protected workflows"
+          }
+        }
+      },
+      "RestoreBackupResponse": {
+        "type": "object",
+        "description": "Summary response returned after successfully restoring an Automa backup",
+        "required": [
+          "success",
+          "message",
+          "workflowsCount",
+          "variablesCount",
+          "tablesCount"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Human-readable summary message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "True if restore succeeded"
+          },
+          "tablesCount": {
+            "type": "integer",
+            "description": "Number of storage tables imported",
+            "minimum": 0
+          },
+          "variablesCount": {
+            "type": "integer",
+            "description": "Number of storage variables imported",
+            "minimum": 0
+          },
+          "workflowsCount": {
+            "type": "integer",
+            "description": "Number of workflows imported",
+            "minimum": 0
+          }
+        }
+      },
+      "RunnerIdentityResponse": {
+        "type": "object",
+        "description": "Runner service and machine identity response",
+        "required": [
+          "service",
+          "protocol",
+          "version",
+          "status",
+          "machine",
+          "activeRunners",
+          "serverPort",
+          "dataDir"
+        ],
+        "properties": {
+          "activeRunners": {
+            "type": "integer",
+            "description": "Number of connected active browser workers",
+            "minimum": 0
+          },
+          "dataDir": {
+            "type": "string",
+            "description": "Data storage directory path"
+          },
+          "machine": {
+            "$ref": "#/components/schemas/MachineInfo",
+            "description": "Host machine identity"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Protocol contract version for Tuquet Runner"
+          },
+          "serverPort": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Daemon listening port",
+            "minimum": 0
+          },
+          "service": {
+            "type": "string",
+            "description": "Service identifier name"
+          },
+          "status": {
+            "type": "string",
+            "description": "Runner operational lifecycle status"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of automa-runner daemon"
+          }
+        }
+      },
+      "RunnerSettings": {
+        "type": "object",
+        "required": [
+          "max_concurrent_jobs",
+          "timeout_ms",
+          "auto_clean_history_days"
+        ],
+        "properties": {
+          "auto_clean_history_days": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "max_concurrent_jobs": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "SaveWorkflowFilePayload": {
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "properties": {
+          "content": {},
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "SaveWorkflowFileResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetDefaultBrowserResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "defaultProfileId"
+        ],
+        "properties": {
+          "defaultProfileId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SideloadExtensionPayload": {
+        "type": "object",
+        "description": "Payload containing filesystem path to an unpacked browser extension",
+        "required": [
+          "extension_path"
+        ],
+        "properties": {
+          "extension_path": {
+            "type": "string",
+            "description": "Full filesystem path to the unpacked extension directory (containing manifest.json)"
+          }
+        },
+        "example": {
+          "extension_path": "C:/extensions/my-custom-plugin"
+        }
+      },
+      "SideloadExtensionResponse": {
+        "type": "object",
+        "description": "Response after sideloading an extension into a browser profile",
+        "required": [
+          "status",
+          "message",
+          "success"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Detailed result message"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status code indicator"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether sideload succeeded"
+          }
+        },
+        "example": {
+          "message": "Extension sideloaded successfully",
+          "status": "success",
+          "success": true
+        }
+      },
+      "StartBrowserSessionRequest": {
+        "type": "object",
+        "description": "Request options when initiating a browser session",
+        "properties": {
+          "args": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional Chromium CLI flags"
+          },
+          "headless": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Override headless mode (true = background, false = visual GUI window)"
+          },
+          "proxy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional custom Proxy server URL (e.g. socks5://127.0.0.1:1080, http://proxy.example:8080)"
+          },
+          "startUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional URL to open upon browser launch"
+          }
+        },
+        "example": {
+          "args": [
+            "--start-maximized"
+          ],
+          "headless": false,
+          "proxy": "socks5://127.0.0.1:1080",
+          "startUrl": "https://www.google.com"
+        }
+      },
+      "StartBrowserSessionResponse": {
+        "type": "object",
+        "description": "Response descriptor containing active browser session connection parameters",
+        "required": [
+          "status",
+          "message",
+          "browserId"
+        ],
+        "properties": {
+          "browserId": {
+            "type": "string",
+            "description": "Profile identifier"
+          },
+          "debuggingPort": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Remote CDP debugging port",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string",
+            "description": "Informational message"
+          },
+          "pid": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Process ID of the spawned browser",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "description": "Result status (e.g. \"success\")"
+          },
+          "userDataDir": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Path to user data directory"
+          },
+          "wsUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "WebSocket Debugger URL for CDP connection"
+          }
+        },
+        "example": {
+          "browserId": "default",
+          "debuggingPort": 54321,
+          "message": "Browser session launched successfully",
+          "pid": 12345,
+          "status": "success",
+          "userDataDir": "C:\\Users\\user\\.automa\\core-dev\\browsers\\default",
+          "wsUrl": "ws://127.0.0.1:54321/devtools/browser/abc-123"
+        }
+      },
+      "StopBrowserResponse": {
+        "type": "object",
+        "description": "Response payload when a browser process is terminated",
+        "required": [
+          "status",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Detailed message"
+          },
+          "status": {
+            "type": "string",
+            "description": "Result status"
+          }
+        },
+        "example": {
+          "message": "Browser session closed and profile sanitized",
+          "status": "success"
+        }
+      },
+      "StorageCredential": {
+        "type": "object",
+        "description": "Stored authentication credential",
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unique credential identifier"
+          },
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Credential lookup key"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Display name of the credential"
+          },
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Encrypted or plaintext secret value"
+          }
+        },
+        "example": {
+          "id": "cred_1",
+          "name": "Github Auth",
+          "value": "secret"
+        }
+      },
+      "StorageTable": {
+        "type": "object",
+        "description": "User data table schema in Automa storage",
+        "properties": {
+          "columns": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Array of column definitions"
+          },
+          "columnsIndex": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Index mapping for columns"
+          },
+          "createdAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Creation timestamp in milliseconds"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unique table identifier"
+          },
+          "items": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Optional inline items cache"
+          },
+          "modifiedAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Last modification timestamp in milliseconds"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Table display name"
+          }
+        },
+        "example": {
+          "id": "tbl_1",
+          "name": "Users"
+        }
+      },
+      "StorageVariable": {
+        "type": "object",
+        "description": "Global variable stored in Automa SQLite / FS storage",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unique variable identifier"
+          },
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unique variable key used in workflow expressions"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Human-friendly display label"
+          },
+          "value": {
+            "type": "object",
+            "description": "Arbitrary JSON value or primitive stored"
+          }
+        },
+        "example": {
+          "id": "var_1",
+          "name": "API_KEY",
+          "value": "sk_test_123"
+        }
+      },
+      "SubmitJobOptions": {
+        "type": "object",
+        "description": "Advanced runtime execution options for a workflow job",
+        "properties": {
+          "browserId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Target browser instance ID (defaults to \"daemon_worker\")",
+            "example": "daemon_worker"
+          },
+          "closeBrowserOnFinish": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Automatically close browser session when workflow execution finishes",
+            "example": true
+          },
+          "debug": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Enable verbose debugging and DevTools inspection",
+            "example": false
+          },
+          "defaultBrowser": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Browser executable type (\"chromium\", \"chrome\", \"edge\", \"firefox\")",
+            "example": "chromium"
+          },
+          "headless": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Run browser in headless mode (no visible window)",
+            "example": true
+          },
+          "variables": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Dynamic variables to inject into the workflow execution scope"
+          }
+        }
+      },
+      "SubmitJobPayload": {
+        "type": "object",
+        "description": "Request payload for submitting a new workflow execution job",
+        "properties": {
+          "options": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SubmitJobOptions",
+                "description": "Optional execution options and browser configuration"
+              }
+            ]
+          },
+          "workflowData": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Raw inline workflow JSON payload (alternative to workflowPath or workflowId)"
+          },
+          "workflowId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unique identifier of the workflow to execute"
+          },
+          "workflowPath": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Absolute or relative filesystem path to the `.workflow.json` file (deprecated, prefer workflowId)"
+          }
+        },
+        "example": {
+          "options": {
+            "browserId": "daemon_worker",
+            "closeBrowserOnFinish": true,
+            "debug": false,
+            "headless": true,
+            "variables": {
+              "keyword": "automa automation"
+            }
+          },
+          "workflowId": "google_search"
+        }
+      },
+      "SubmitJobResponse": {
+        "type": "object",
+        "description": "Response returned after successfully submitting a workflow job",
+        "required": [
+          "jobId",
+          "status"
+        ],
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "description": "Unique identifier of the created execution job"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional status or error message"
+          },
+          "status": {
+            "type": "string",
+            "description": "Initial lifecycle status (e.g. \"queued\", \"running\")"
+          }
+        },
+        "example": {
+          "jobId": "job_123abc",
+          "message": null,
+          "status": "running"
+        }
+      },
+      "SystemMetricsResponse": {
+        "type": "object",
+        "description": "Real-time CPU, RAM, and browser runner metrics",
+        "required": [
+          "cpuUsage",
+          "memoryFree",
+          "memoryTotal",
+          "activeRunners"
+        ],
+        "properties": {
+          "activeRunners": {
+            "type": "integer",
+            "description": "Number of actively connected browser runner instances",
+            "minimum": 0
+          },
+          "cpuUsage": {
+            "type": "number",
+            "format": "float",
+            "description": "Global CPU utilization percentage (0 - 100)"
+          },
+          "memoryFree": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Free system memory in bytes",
+            "minimum": 0
+          },
+          "memoryTotal": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total system physical memory in bytes",
+            "minimum": 0
+          }
+        },
+        "example": {
+          "activeRunners": 2,
+          "cpuUsage": 12.5,
+          "memoryFree": 8388608,
+          "memoryTotal": 16777216
+        }
+      },
+      "SystemResponse": {
+        "type": "object",
+        "description": "General system action response",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Result description message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the system operation succeeded"
+          }
+        },
+        "example": {
+          "message": "Operation completed successfully",
+          "success": true
+        }
+      },
+      "TableRow": {
+        "type": "object",
+        "description": "Single data row entry belonging to a storage table",
+        "required": [
+          "id",
+          "table_id",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Key-value document payload of row columns"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique row identifier"
+          },
+          "table_id": {
+            "type": "string",
+            "description": "Parent table identifier"
+          }
+        },
+        "example": {
+          "data": {
+            "name": "Alice"
+          },
+          "id": "row_1",
+          "table_id": "tbl_1"
+        }
+      },
+      "UpdateAppSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "browser": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateBrowserSettingsRequest"
+              }
+            ]
+          },
+          "grid": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateGridSettingsRequest"
+              }
+            ]
+          },
+          "runner": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateRunnerSettingsRequest"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateBrowserRequest": {
+        "type": "object",
+        "description": "Request payload for modifying an existing browser profile",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "New profile display name"
+          },
+          "proxy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "New proxy server URL"
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "New emulated timezone ID"
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "New custom User-Agent"
+          }
+        },
+        "example": {
+          "name": "Updated Profile Name",
+          "proxy": "http://10.0.0.1:8080",
+          "timezone": "UTC",
+          "userAgent": null
+        }
+      },
+      "UpdateBrowserSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "default_profile_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "default_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "default_user_agent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "executable_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headless": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "UpdateDisplaySettingsRequest": {
+        "type": "object",
+        "properties": {
+          "margin": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "monitor_index": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "offset_x": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "offset_y": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "screen_height": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "screen_width": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "UpdateGridBehaviorRequest": {
+        "type": "object",
+        "properties": {
+          "auto_recycle_slots": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "enforce_cdp_bounds": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "scale_factor": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "UpdateGridMatrixRequest": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "rows": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "UpdateGridSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "behavior": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateGridBehaviorRequest"
+              }
+            ]
+          },
+          "display": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateDisplaySettingsRequest"
+              }
+            ]
+          },
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "matrix": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UpdateGridMatrixRequest"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateRunnerSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "auto_clean_history_days": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "max_concurrent_jobs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "timeout_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "UpdateWorkflowStorageRequest": {
+        "type": "object",
+        "description": "Request payload for updating an existing workflow in SQLite database",
+        "properties": {
+          "data": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Optional updated workflow graph AST"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional updated description"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional updated icon"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional updated name"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional updated version"
+          }
+        },
+        "example": {
+          "data": {
+            "edges": [],
+            "nodes": [
+              {
+                "id": "node_1",
+                "label": "trigger",
+                "type": "trigger"
+              }
+            ]
+          },
+          "description": "Updated description",
+          "icon": "search",
+          "name": "Updated Bing Search Automation",
+          "version": "1.1.0"
+        }
+      },
+      "WorkflowStorageItem": {
+        "type": "object",
+        "description": "Workflow descriptor stored in central SQLite database",
+        "required": [
+          "id",
+          "name",
+          "data",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO 8601)"
+          },
+          "data": {
+            "type": "object",
+            "description": "Workflow graph AST (nodes, edges, settings)"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional workflow description"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional UI icon identifier"
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique workflow identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Workflow display name"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last modification timestamp (ISO 8601)"
+          },
+          "version": {
+            "type": "string",
+            "description": "Semantic version of the workflow"
+          }
+        },
+        "example": {
+          "createdAt": "2026-08-26T00:00:00Z",
+          "data": {
+            "edges": [],
+            "nodes": [
+              {
+                "id": "node_1",
+                "label": "trigger",
+                "type": "trigger"
+              }
+            ]
+          },
+          "description": "Searches Bing and extracts results",
+          "icon": "search",
+          "id": "wf_bing_search",
+          "name": "Bing Search Automation",
+          "updatedAt": "2026-08-26T00:00:00Z",
+          "version": "1.0.0"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "System health check endpoints"
+    },
+    {
+      "name": "Jobs",
+      "description": "Workflow job dispatching and execution telemetry endpoints"
+    },
+    {
+      "name": "Browsers",
+      "description": "Chromium instance lifecycle and profile isolation endpoints"
+    },
+    {
+      "name": "History",
+      "description": "Execution audit history and log queries"
+    },
+    {
+      "name": "Storage",
+      "description": "Local SQLite variables, tables, and workflow storage endpoints"
+    },
+    {
+      "name": "System",
+      "description": "System metrics and developer studio launcher"
+    },
+    {
+      "name": "Lint",
+      "description": "Workflow static analysis endpoints"
+    },
+    {
+      "name": "Settings",
+      "description": "Core runtime configuration endpoints"
+    }
+  ]
+}

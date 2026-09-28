@@ -166,8 +166,14 @@ GET {{baseUrl}}/api/v1/history?limit=5
 GET {{baseUrl}}/api/v1/events
 Accept: text/event-stream
 
-### 3.8 Dung khan cap Job dang chay
+### 3.8 Tam dung Job dang chay (Pause Job)
+POST {{baseUrl}}/api/v1/jobs/{{targetJobId}}/pause
+
+### 3.9 Tiep tuc Job da tam dung (Resume Job)
+POST {{baseUrl}}/api/v1/jobs/{{targetJobId}}/resume
+
+### 3.10 Dung khan cap Job dang chay (Kill Job)
 DELETE {{baseUrl}}/api/v1/jobs/{{targetJobId}}
 
-### 3.9 Negative Test - Kiem tra Job khong ton tai (Expect 404 Not Found)
+### 3.11 Negative Test - Kiem tra Job khong ton tai (Expect 404 Not Found)
 GET {{baseUrl}}/api/v1/jobs/non-existent-job-uuid/status

@@ -8,11 +8,12 @@ use crate::api::handlers::history::{
 use crate::api::handlers::sse::sse;
 use crate::api::handlers::health::health;
 use crate::api::handlers::jobs::{
-    submit_job, get_job_status, get_active_jobs, kill_job,
+    submit_job, get_job_status, get_active_jobs, kill_job, pause_job, resume_job,
     worker_sse, job_log, job_finish
 };
 use crate::api::handlers::system::{
-    install_browser, open_studio, kill_browsers, get_metrics, get_system_info
+    install_browser, open_studio, kill_browsers, get_metrics, get_system_info,
+    get_cloud_status, trigger_cloud_sync
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::storage::{
@@ -26,7 +27,7 @@ use crate::api::handlers::storage::{
     get_workflow, save_workflow
 };
 use crate::api::handlers::browsers::{
-    get_browsers, create_browser, update_browser, delete_browser, get_browser_detail, start_browser, stop_browser, import_csv, sideload_extension, auto_detect_browsers
+    get_browsers, create_browser, update_browser, delete_browser, get_browser_detail, start_browser, stop_browser, import_csv, sideload_extension, auto_detect_browsers, set_default_browser
 };
 use crate::api::handlers::settings::{get_settings, update_settings, patch_settings};
 use crate::api::handlers::ws::ws_handler;
@@ -38,6 +39,8 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::jobs::get_job_status,
         crate::api::handlers::jobs::get_active_jobs,
         crate::api::handlers::jobs::kill_job,
+        crate::api::handlers::jobs::pause_job,
+        crate::api::handlers::jobs::resume_job,
         crate::api::handlers::jobs::worker_sse,
         crate::api::handlers::jobs::job_log,
         crate::api::handlers::jobs::job_finish,
@@ -52,6 +55,8 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::system::open_studio,
         crate::api::handlers::system::get_metrics,
         crate::api::handlers::system::get_system_info,
+        crate::api::handlers::system::get_cloud_status,
+        crate::api::handlers::system::trigger_cloud_sync,
         crate::api::handlers::lint::lint_workflow,
         crate::api::handlers::storage::get_variables,
         crate::api::handlers::storage::add_variable,
@@ -87,6 +92,7 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::browsers::import_csv,
         crate::api::handlers::browsers::sideload_extension,
         crate::api::handlers::browsers::auto_detect_browsers,
+        crate::api::handlers::browsers::set_default_browser,
         crate::api::handlers::ws::ws_handler
     ),
     info(
@@ -136,11 +142,15 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/studio/session", post(open_studio))
         .route("/system/metrics", get(get_metrics))
         .route("/system/info", get(get_system_info))
+        .route("/system/cloud/status", get(get_cloud_status))
+        .route("/system/cloud/sync", post(trigger_cloud_sync))
         .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))
         .route("/jobs/{job_id}", delete(kill_job))
         .route("/jobs/{job_id}/status", get(get_job_status).patch(job_finish))
+        .route("/jobs/{job_id}/pause", post(pause_job))
+        .route("/jobs/{job_id}/resume", post(resume_job))
         .route("/jobs/{job_id}/logs", post(job_log))
         .route("/internal/worker/events", get(worker_sse))
         .route("/history", get(get_history).delete(clear_history))
@@ -163,6 +173,7 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/browsers/sessions", delete(kill_browsers))
         .route("/browsers/{id}", get(get_browser_detail).put(update_browser).delete(delete_browser))
         .route("/browsers/{id}/session", post(start_browser).delete(stop_browser))
+        .route("/browsers/{id}/set-default", post(set_default_browser))
         .route("/browsers/{id}/extensions", post(sideload_extension))
         .route("/browsers/import-csv", post(import_csv))
         .route("/storage/workflow", get(get_workflow).put(save_workflow))

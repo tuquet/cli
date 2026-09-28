@@ -76,6 +76,14 @@ impl<'a> SqliteJobRepository<'a> {
         Ok(())
     }
 
+    pub fn get_job_status(&self, job_id: &str) -> Result<Option<String>> {
+        self.conn.query_row(
+            "SELECT status FROM jobs WHERE id = ?1",
+            params![job_id],
+            |row| row.get(0),
+        ).optional()
+    }
+
     pub fn finish_job(&self, job_id: &str, status: &str, results: &Value, duration: i64) -> Result<()> {
         let row_res: Result<String> = self.conn.query_row(
             "SELECT data FROM jobs WHERE id = ?1",
@@ -342,6 +350,10 @@ impl<'a> crate::infrastructure::db::traits::JobRepository for SqliteJobRepositor
 
     fn update_job_status(&self, job_id: &str, status: &str) -> Result<()> {
         self.update_job_status(job_id, status)
+    }
+
+    fn get_job_status(&self, job_id: &str) -> Result<Option<String>> {
+        self.get_job_status(job_id)
     }
 
     fn finish_job(&self, job_id: &str, status: &str, results: &Value, duration: i64) -> Result<()> {
