@@ -1,0 +1,113 @@
+### Tuquet Automa Runner - Workflow Storage Management
+@baseUrl = http://127.0.0.1:8765
+@contentType = application/json
+
+### 2.1 Import Workflow vao SQLite (luu va tra ve workflowId)
+# @name importWorkflow
+POST {{baseUrl}}/api/v1/storage/workflows/import
+Content-Type: {{contentType}}
+
+{
+  "id": "wf-google-search",
+  "workflow": {
+    "name": "Google Search Workflow",
+    "description": "Trigger -> Mo Google -> JS nhap tu khoa tim kiem -> Cho 8s",
+    "drawflow": {
+      "nodes": [
+        {
+          "id": "node-trigger",
+          "label": "trigger",
+          "data": {
+            "description": "Khoi dong job va nap tham so tim kiem",
+            "type": "manual",
+            "parameters": [
+              {
+                "name": "searchQuery",
+                "value": "tuquet automa pure open source chromium"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node-new-tab",
+          "label": "new-tab",
+          "data": {
+            "description": "Mo Google tren tab hien tai va cho load trang",
+            "url": "https://www.google.com",
+            "active": true,
+            "updatePrevTab": true,
+            "waitTabLoaded": true
+          }
+        },
+        {
+          "id": "node-js-search",
+          "label": "javascript-code",
+          "data": {
+            "description": "Dien tu khoa vao o tim kiem va submit form",
+            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'tuquet automa'; console.log('Searching:', query); const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); let status = 'notFound'; if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); status = 'submitted'; } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); status = 'redirected'; } if (typeof automaNextBlock === 'function') automaNextBlock({ query, action: status, url: window.location.href });",
+            "context": "webpage",
+            "preloadScripts": [],
+            "timeout": 10000
+          }
+        },
+        {
+          "id": "node-delay",
+          "label": "delay",
+          "data": {
+            "description": "Tam dung 8s quan sat ket qua",
+            "time": 8000
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-trigger",
+          "target": "node-new-tab",
+          "sourceHandle": "node-trigger-output-1",
+          "targetHandle": "node-new-tab-input-1"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-new-tab",
+          "target": "node-js-search",
+          "sourceHandle": "node-new-tab-output-1",
+          "targetHandle": "node-js-search-input-1"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-js-search",
+          "target": "node-delay",
+          "sourceHandle": "node-js-search-output-1",
+          "targetHandle": "node-delay-input-1"
+        }
+      ]
+    }
+  }
+}
+
+### 2.2 Chay Job voi workflowId vua import
+# @name runWithWorkflowId
+@savedWorkflowId = {{importWorkflow.response.body.id}}
+POST {{baseUrl}}/api/v1/jobs
+Content-Type: {{contentType}}
+
+{
+  "workflowId": "{{savedWorkflowId}}",
+  "options": {
+    "headless": false,
+    "closeBrowserOnFinish": false,
+    "variables": {
+      "searchQuery": "tuquet automa runner execution by workflowId"
+    }
+  }
+}
+
+### 2.3 Export Workflow theo workflowId
+GET {{baseUrl}}/api/v1/storage/workflows/{{savedWorkflowId}}
+
+### 2.4 Danh sach tat ca Workflow trong SQLite Storage
+GET {{baseUrl}}/api/v1/storage/workflows
+
+### 2.5 Xoa Workflow khoi Storage SQLite
+DELETE {{baseUrl}}/api/v1/storage/workflows/{{savedWorkflowId}}
