@@ -13,7 +13,7 @@ use crate::api::handlers::jobs::{
 };
 use crate::api::handlers::system::{
     install_browser, open_studio, kill_browsers, get_metrics, get_system_info,
-    get_cloud_status, trigger_cloud_sync
+    get_cloud_status, trigger_cloud_sync, cloud_login, cloud_logout
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::storage::{
@@ -57,6 +57,8 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::system::get_system_info,
         crate::api::handlers::system::get_cloud_status,
         crate::api::handlers::system::trigger_cloud_sync,
+        crate::api::handlers::system::cloud_login,
+        crate::api::handlers::system::cloud_logout,
         crate::api::handlers::lint::lint_workflow,
         crate::api::handlers::storage::get_variables,
         crate::api::handlers::storage::add_variable,
@@ -144,6 +146,8 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/info", get(get_system_info))
         .route("/system/cloud/status", get(get_cloud_status))
         .route("/system/cloud/sync", post(trigger_cloud_sync))
+        .route("/system/cloud/login", post(cloud_login))
+        .route("/system/cloud/logout", post(cloud_logout))
         .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))

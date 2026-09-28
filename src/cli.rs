@@ -1,14 +1,14 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-/// Automa Core CLI - High-performance web automation engine & bridge daemon
+/// Tuquet - Unified CLI & Distributed Automation Engine
 #[derive(Parser, Debug)]
 #[command(
-    name = "automa",
+    name = "tuquet",
     author = "Tuquet Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "Tuquet Automa Core - Native Browser Bridge & Launcher Daemon",
-    long_about = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension."
+    about = "Tuquet - Unified CLI & Distributed Automation Engine",
+    long_about = "Master control CLI, cloud-connected runner daemon, and browser automation engine for the Tuquet Ecosystem."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -77,8 +77,8 @@ pub enum Commands {
         workflow: String,
     },
 
-    /// Start the Automa Core HTTP/WebSocket daemon server (alias: start)
-    #[command(name = "server", alias = "start")]
+    /// Start the Tuquet runner daemon and cloud worker (aliases: start, up, worker)
+    #[command(name = "server", aliases = ["start", "up", "worker"])]
     Server {
         /// HTTP server listening host IP (e.g. 127.0.0.1, 0.0.0.0)
         #[arg(short = 'H', long)]
@@ -159,6 +159,71 @@ pub enum Commands {
         #[command(subcommand)]
         command: AuthCommands,
     },
+
+    /// Automa browser workflow automation engine
+    #[command(name = "automa")]
+    Automa {
+        #[command(subcommand)]
+        command: AutomaSubcommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AutomaSubcommands {
+    /// Execute a workflow directly via browser worker
+    Run {
+        /// Path to workflow JSON file (.workflow.json)
+        #[arg(value_name = "WORKFLOW_FILE")]
+        workflow_pos: Option<String>,
+
+        /// Path to workflow JSON file (.workflow.json)
+        #[arg(short, long)]
+        workflow: Option<String>,
+
+        /// Raw JSON string of the workflow
+        #[arg(long)]
+        workflow_json: Option<String>,
+
+        /// Run browser in headless mode
+        #[arg(long)]
+        headless: bool,
+
+        /// Target browser executable type (chrome, chromium, edge)
+        #[arg(short, long)]
+        browser: Option<String>,
+
+        /// Target browser profile identifier
+        #[arg(long)]
+        browser_id: Option<String>,
+
+        /// Workflow variables in KEY=VALUE format
+        #[arg(short = 'p', long = "var", alias = "param", value_name = "KEY=VALUE")]
+        variables: Vec<String>,
+
+        /// Optional workflow execution timeout in seconds
+        #[arg(short, long)]
+        timeout: Option<u64>,
+    },
+
+    /// Manage stored workflows in local database and vault (alias: wf)
+    #[command(name = "workflow", alias = "wf")]
+    Workflow {
+        #[command(subcommand)]
+        command: WorkflowCommands,
+    },
+
+    /// Inspect and validate a workflow JSON file or stored workflow ID
+    Inspect {
+        /// Path to workflow JSON file (.workflow.json) or saved workflow ID/Name
+        #[arg(value_name = "WORKFLOW")]
+        workflow: String,
+    },
+
+    /// Launch Automa Web Studio in default system browser
+    Studio,
+
+    /// Probe Automa manifest capabilities
+    Probe,
 }
 
 #[derive(Subcommand, Debug)]

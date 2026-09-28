@@ -1,8 +1,8 @@
 [package]
-name = "automa-runner"
+name = "tuquet"
 version = "1.0.0"
 edition = "2024"
-description = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension"
+description = "Tuquet Unified CLI & Distributed Automation Engine"
 repository = "https://github.com/tuquet/tuquet-automa-runner"
 license = "MIT"
 
@@ -11,7 +11,7 @@ name = "automa_core"
 path = "src/lib.rs"
 
 [[bin]]
-name = "automa"
+name = "tuquet"
 path = "src/main.rs"
 
 [dependencies]

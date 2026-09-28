@@ -4,9 +4,9 @@ use tokio::sync::Mutex;
 use std::collections::HashMap;
 use automa_core::infrastructure::db::AutomaDb;
 use automa_core::config::AppConfig;
-use automa_core::AppState;
 use automa_core::api;
-use automa_core::cli::{AuthCommands, BrowserCommands, Cli, Commands, WorkflowCommands};
+use automa_core::AppState;
+use automa_core::cli::{AuthCommands, AutomaSubcommands, BrowserCommands, Cli, Commands, WorkflowCommands};
 use clap::Parser;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -224,6 +224,63 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("Not logged in to Tuquet Cloud.");
                     }
                     Ok(())
+                }
+            }
+        }
+        Some(Commands::Automa { command }) => {
+            match command {
+                AutomaSubcommands::Run {
+                    workflow_pos,
+                    workflow,
+                    workflow_json,
+                    headless,
+                    browser,
+                    browser_id,
+                    variables,
+                    timeout,
+                } => {
+                    let target_workflow = workflow.or(workflow_pos);
+                    run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
+                }
+                AutomaSubcommands::Workflow { command } => {
+                    match command {
+                        WorkflowCommands::List { search, db_only, vault_only } => {
+                            list_workflows(search, db_only, vault_only).await
+                        }
+                        WorkflowCommands::Import { file, id, name, description } => {
+                            import_workflow(file, id, name, description).await
+                        }
+                        WorkflowCommands::Export { id, output } => {
+                            export_workflow(id, output).await
+                        }
+                        WorkflowCommands::Info { id } => {
+                            inspect_workflow(&id)
+                        }
+                        WorkflowCommands::Delete { id, vault } => {
+                            delete_workflow(id, vault).await
+                        }
+                    }
+                }
+                AutomaSubcommands::Inspect { workflow } => {
+                    inspect_workflow(&workflow)
+                }
+                AutomaSubcommands::Studio => {
+                    let config = AppConfig::load();
+                    let port = config.server_port;
+                    let url = std::env::var("AUTOMA_STUDIO_URL").unwrap_or_else(|_| {
+                        format!("https://automa-studio.vercel.app?port={}", port)
+                    });
+                    println!("Opening Automa Web Studio at: {}", url);
+                    #[cfg(target_os = "windows")]
+                    let _ = std::process::Command::new("cmd").args(["/C", "start", &url]).spawn();
+                    #[cfg(target_os = "macos")]
+                    let _ = std::process::Command::new("open").arg(&url).spawn();
+                    #[cfg(target_os = "linux")]
+                    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+                    Ok(())
+                }
+                AutomaSubcommands::Probe => {
+                    print_probe_manifest()
                 }
             }
         }
