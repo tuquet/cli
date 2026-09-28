@@ -158,15 +158,10 @@ pub async fn resolve_executable_path(_default_browser: &str) -> Result<String> {
 
     #[cfg(target_os = "windows")]
     {
-        let system_browsers = [
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        ];
-        for p in system_browsers {
-            if std::path::Path::new(p).exists() {
-                return Ok(p.to_string());
+        if let Ok(home) = env::var("USERPROFILE") {
+            let scoop_chromium = std::path::PathBuf::from(home).join(r"scoop\apps\chromium\current\chrome.exe");
+            if scoop_chromium.exists() {
+                return Ok(scoop_chromium.to_string_lossy().to_string());
             }
         }
     }

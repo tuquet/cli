@@ -103,7 +103,10 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
 
                 // Inject daemon.json
                 let daemon_config_path = browser_ext_dir.join("daemon.json");
-                let port = crate::config::AppConfig::load().server_port;
+                let port = std::env::var("AUTOMA_PORT")
+                    .ok()
+                    .and_then(|p| p.parse::<u16>().ok())
+                    .unwrap_or_else(|| crate::config::AppConfig::load().server_port);
                 let config_content = format!("{{\"browserId\": \"{}\", \"port\": {}}}", self.options.browser_id, port);
                 tokio::fs::write(daemon_config_path, config_content).await?;
 
