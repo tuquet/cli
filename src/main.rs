@@ -6,7 +6,7 @@ use automa_core::infrastructure::db::AutomaDb;
 use automa_core::config::AppConfig;
 use automa_core::AppState;
 use automa_core::api;
-use automa_core::cli::{Cli, Commands, WorkflowCommands};
+use automa_core::cli::{BrowserCommands, Cli, Commands, WorkflowCommands};
 use clap::Parser;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -68,6 +68,65 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::Status { url }) => {
             check_status(&url).await
+        }
+        Some(Commands::Browser { command }) => {
+            match command {
+                BrowserCommands::Install { force, version } => {
+                    match automa_core::core::browser::resolver::download_chromium_runtime(force, version.as_deref()).await {
+                        Ok(path) => {
+                            println!("\x1b[32m[SUCCESS] Dedicated browser runtime ready at: {}\x1b[0m", path);
+                            Ok(())
+                        }
+                        Err(e) => {
+                            eprintln!("\x1b[31m[ERROR] Failed to install browser runtime: {}\x1b[0m", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                BrowserCommands::Status => {
+                    let status = automa_core::core::browser::resolver::get_runtime_status();
+                    println!("============================================================");
+                    println!(" Automa Core - Dedicated Browser Runtime Status");
+                    println!("============================================================");
+                    println!(" Platform:        {}", status.platform);
+                    println!(" Status:          {}", if status.installed { "\x1b[32mINSTALLED\x1b[0m" } else { "\x1b[33mNOT INSTALLED\x1b[0m" });
+                    println!(" Pinned Version:  {}", status.pinned_version);
+                    println!(" Executable Path: {}", status.executable_path);
+                    println!(" Directory:       {}", status.directory);
+                    if let Some(mb) = status.size_mb {
+                        println!(" Disk Usage:      {:.1} MB", mb);
+                    }
+                    println!("============================================================");
+                    if !status.installed {
+                        println!("👉 Run 'automa browser install' to download and setup.");
+                    }
+                    Ok(())
+                }
+                BrowserCommands::Clean => {
+                    match automa_core::core::browser::resolver::clean_runtime() {
+                        Ok(_) => {
+                            println!("\x1b[32m[SUCCESS] Cleaned browser runtime directory.\x1b[0m");
+                            Ok(())
+                        }
+                        Err(e) => {
+                            eprintln!("\x1b[31m[ERROR] Failed to clean runtime: {}\x1b[0m", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                BrowserCommands::Path => {
+                    match automa_core::core::browser::resolver::resolve_executable_path("default").await {
+                        Ok(path) => {
+                            println!("{}", path);
+                            Ok(())
+                        }
+                        Err(e) => {
+                            eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+            }
         }
         Some(Commands::SetupExt { browser, extension_path }) => {
             setup_extension(&browser, extension_path).await

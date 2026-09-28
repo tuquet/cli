@@ -116,6 +116,40 @@ pub enum Commands {
         #[arg(short, long, default_value = "http://127.0.0.1:8765")]
         url: String,
     },
+
+    /// Manage dedicated isolated browser runtime (install, status, clean, path)
+    #[command(name = "browser")]
+    Browser {
+        #[command(subcommand)]
+        command: BrowserCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum BrowserCommands {
+    /// Download and install dedicated Google Chrome for Testing runtime
+    #[command(name = "install")]
+    Install {
+        /// Force re-download even if already installed
+        #[arg(short, long)]
+        force: bool,
+
+        /// Specific Chrome for Testing version (defaults to pinned LTS)
+        #[arg(short, long)]
+        version: Option<String>,
+    },
+
+    /// Display installation status, executable path, and disk usage of dedicated browser
+    #[command(name = "status")]
+    Status,
+
+    /// Delete installed browser runtime to reclaim disk space
+    #[command(name = "clean")]
+    Clean,
+
+    /// Print the absolute executable path of the browser (for scripting / integrations)
+    #[command(name = "path")]
+    Path,
 }
 
 #[derive(Subcommand, Debug)]
