@@ -82,10 +82,34 @@ impl WorkflowResolver {
 
         Self::validate_workflow_structure(data)?;
 
+        let mut sanitized_data = data.clone();
+        if let Ok(mut wf) = serde_json::from_value::<crate::core::models::workflow::Workflow>(data.clone()) {
+            wf = crate::core::engine::sanitizer::sanitize_workflow(wf);
+            if let Ok(mut val) = serde_json::to_value(wf) {
+                if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut()) {
+                    if let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
+                        for edge in edges.iter_mut() {
+                            if let Some(edge_map) = edge.as_object_mut() {
+                                let src = edge_map.get("source").and_then(|s| s.as_str()).unwrap_or("").to_string();
+                                let tgt = edge_map.get("target").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                                if !edge_map.contains_key("sourceHandle") && !src.is_empty() {
+                                    edge_map.insert("sourceHandle".to_string(), serde_json::json!(format!("{}-output-1", src)));
+                                }
+                                if !edge_map.contains_key("targetHandle") && !tgt.is_empty() {
+                                    edge_map.insert("targetHandle".to_string(), serde_json::json!(format!("{}-input-1", tgt)));
+                                }
+                            }
+                        }
+                    }
+                }
+                sanitized_data = val;
+            }
+        }
+
         let temp_dir = PathBuf::from(data_dir).join("temp_workflows");
         let _ = tokio::fs::create_dir_all(&temp_dir).await;
         let file_path = temp_dir.join(format!("{}.workflow.json", job_id));
-        let content = serde_json::to_string_pretty(data)
+        let content = serde_json::to_string_pretty(&sanitized_data)
             .map_err(|e| WorkflowResolveError::Internal(format!("Failed to serialize workflow: {}", e)))?;
 
         tokio::fs::write(&file_path, content)
@@ -94,7 +118,7 @@ impl WorkflowResolver {
 
         Ok(ResolvedWorkflow {
             path: file_path,
-            data: data.clone(),
+            data: sanitized_data,
         })
     }
 
@@ -134,11 +158,35 @@ impl WorkflowResolver {
 
             Self::validate_workflow_structure(&json_data)?;
 
+            let mut sanitized_data = json_data.clone();
+            if let Ok(mut wf_model) = serde_json::from_value::<crate::core::models::workflow::Workflow>(json_data.clone()) {
+                wf_model = crate::core::engine::sanitizer::sanitize_workflow(wf_model);
+                if let Ok(mut val) = serde_json::to_value(wf_model) {
+                    if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut()) {
+                        if let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
+                            for edge in edges.iter_mut() {
+                                if let Some(edge_map) = edge.as_object_mut() {
+                                    let src = edge_map.get("source").and_then(|s| s.as_str()).unwrap_or("").to_string();
+                                    let tgt = edge_map.get("target").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                                    if !edge_map.contains_key("sourceHandle") && !src.is_empty() {
+                                        edge_map.insert("sourceHandle".to_string(), serde_json::json!(format!("{}-output-1", src)));
+                                    }
+                                    if !edge_map.contains_key("targetHandle") && !tgt.is_empty() {
+                                        edge_map.insert("targetHandle".to_string(), serde_json::json!(format!("{}-input-1", tgt)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    sanitized_data = val;
+                }
+            }
+
             let temp_dir = PathBuf::from(data_dir).join("temp_workflows");
             let _ = tokio::fs::create_dir_all(&temp_dir).await;
             let file_path = temp_dir.join(format!("{}.workflow.json", job_id));
 
-            let content = serde_json::to_string_pretty(&json_data)
+            let content = serde_json::to_string_pretty(&sanitized_data)
                 .unwrap_or(wf.data);
 
             tokio::fs::write(&file_path, content)
@@ -147,7 +195,7 @@ impl WorkflowResolver {
 
             return Ok(ResolvedWorkflow {
                 path: file_path,
-                data: json_data,
+                data: sanitized_data,
             });
         }
 

@@ -12,7 +12,7 @@ use crate::api::handlers::jobs::{
     worker_sse, job_log, job_finish
 };
 use crate::api::handlers::system::{
-    install_browser, open_studio, kill_browsers, get_metrics
+    install_browser, open_studio, kill_browsers, get_metrics, get_system_info
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::storage::{
@@ -51,6 +51,7 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::system::kill_browsers,
         crate::api::handlers::system::open_studio,
         crate::api::handlers::system::get_metrics,
+        crate::api::handlers::system::get_system_info,
         crate::api::handlers::lint::lint_workflow,
         crate::api::handlers::storage::get_variables,
         crate::api::handlers::storage::add_variable,
@@ -134,6 +135,7 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/browser-binaries", post(install_browser))
         .route("/system/studio/session", post(open_studio))
         .route("/system/metrics", get(get_metrics))
+        .route("/system/info", get(get_system_info))
         .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))

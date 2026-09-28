@@ -32,6 +32,12 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
                     if edge.id.is_empty() {
                         edge.id = Uuid::new_v4().to_string();
                     }
+                    if edge.source_handle.is_none() && !edge.source.is_empty() {
+                        edge.source_handle = Some(format!("{}-output-1", edge.source));
+                    }
+                    if edge.target_handle.is_none() && !edge.target.is_empty() {
+                        edge.target_handle = Some(format!("{}-input-1", edge.target));
+                    }
                     new_edges.push(edge);
                 }
             }
@@ -56,6 +62,12 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
             for edge in edges.iter_mut() {
                 if edge.id.is_empty() {
                     edge.id = Uuid::new_v4().to_string();
+                }
+                if edge.source_handle.is_none() && !edge.source.is_empty() {
+                    edge.source_handle = Some(format!("{}-output-1", edge.source));
+                }
+                if edge.target_handle.is_none() && !edge.target.is_empty() {
+                    edge.target_handle = Some(format!("{}-input-1", edge.target));
                 }
             }
         }

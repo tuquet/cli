@@ -76,6 +76,100 @@ pub async fn get_metrics() -> impl IntoResponse {
     ).into_response()
 }
 
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Machine hardware and operating system identity
+pub struct MachineInfo {
+    /// Machine network hostname
+    pub hostname: String,
+    /// Operating system platform
+    pub os: String,
+    /// Operating system kernel/version release
+    pub os_version: String,
+    /// CPU hardware architecture
+    pub cpu_arch: String,
+    /// Total installed physical RAM in bytes
+    pub total_memory: u64,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Runner service and machine identity response
+pub struct RunnerIdentityResponse {
+    /// Service identifier name
+    pub service: String,
+    /// Protocol contract version for Tuquet Runner
+    pub protocol: String,
+    /// Version of automa-runner daemon
+    pub version: String,
+    /// Runner operational lifecycle status
+    pub status: String,
+    /// Host machine identity
+    pub machine: MachineInfo,
+    /// Number of connected active browser workers
+    pub active_runners: usize,
+    /// Daemon listening port
+    pub server_port: u16,
+    /// Data storage directory path
+    pub data_dir: String,
+}
+
+#[utoipa::path(
+    tag = "System",
+    get,
+    path = "/api/v1/system/info",
+    operation_id = "get_system_info",
+    summary = "Get runner machine identity and system capabilities",
+    description = "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Tuquet Runner orchestration.",
+    responses(
+        (status = 200, description = "Runner machine identity information", body = RunnerIdentityResponse)
+    )
+)]
+pub async fn get_system_info(
+    State(state): State<crate::AppState>,
+) -> impl IntoResponse {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let hostname = System::host_name().unwrap_or_else(|| "unknown".to_string());
+    let os = System::name().unwrap_or_else(|| std::env::consts::OS.to_string());
+    let os_version = System::os_version().unwrap_or_default();
+    let cpu_arch = {
+        let arch = System::cpu_arch();
+        if arch.is_empty() {
+            std::env::consts::ARCH.to_string()
+        } else {
+            arch
+        }
+    };
+    let total_memory = sys.total_memory();
+
+    let active_runners = {
+        let guard = crate::api::handlers::jobs::connected_browsers().read().await;
+        guard.len()
+    };
+
+    (
+        StatusCode::OK,
+        Json(RunnerIdentityResponse {
+            service: "tuquet-automa-runner".to_string(),
+            protocol: "tuquet.automa.v1".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            status: "ready".to_string(),
+            machine: MachineInfo {
+                hostname,
+                os,
+                os_version,
+                cpu_arch,
+                total_memory,
+            },
+            active_runners,
+            server_port: state.config.server_port,
+            data_dir: state.config.data_dir.clone(),
+        }),
+    ).into_response()
+}
+
 #[utoipa::path(
     tag = "System",
     post,
