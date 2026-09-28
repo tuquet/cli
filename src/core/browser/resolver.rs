@@ -5,8 +5,9 @@ use std::env;
 use std::io::Write;
 use utoipa::ToSchema;
 
-/// Pinned stable Long-Term-Support (LTS) release of official Google Chrome for Testing (CfT)
-pub const PINNED_CHROME_VERSION: &str = "131.0.6778.85";
+/// Pinned stable Long-Term-Support (LTS) release of official Open-Source Chromium
+pub const PINNED_CHROMIUM_REVISION: &str = "1148";
+pub const PINNED_CHROMIUM_VERSION: &str = "131.0.6778.33";
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -30,7 +31,7 @@ pub struct RuntimeStatus {
     pub size_mb: Option<f64>,
 }
 
-/// Target platform identifier matching Chrome for Testing release assets
+/// Target platform identifier
 pub fn get_platform_key() -> &'static str {
     #[cfg(target_os = "windows")]
     {
@@ -53,7 +54,7 @@ pub fn get_platform_key() -> &'static str {
     }
 }
 
-/// Relative path to executable within the unpacked platform archive
+/// Relative path to executable within the unpacked dedicated runtime directory
 pub fn get_platform_exe_rel_path() -> std::path::PathBuf {
     #[cfg(target_os = "windows")]
     {
@@ -61,7 +62,7 @@ pub fn get_platform_exe_rel_path() -> std::path::PathBuf {
     }
     #[cfg(target_os = "macos")]
     {
-        std::path::PathBuf::from("Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing")
+        std::path::PathBuf::from("Chromium.app/Contents/MacOS/Chromium")
     }
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
@@ -69,27 +70,32 @@ pub fn get_platform_exe_rel_path() -> std::path::PathBuf {
     }
 }
 
-/// Dedicated runtime directory path: <data_dir>/runtimes/chrome-<platform>
+/// Dedicated runtime directory path: <data_dir>/runtimes/chromium-<platform>
 pub fn get_runtime_dir() -> std::path::PathBuf {
     let config = crate::config::AppConfig::load();
     let platform = get_platform_key();
     std::path::PathBuf::from(&config.data_dir)
         .join("runtimes")
-        .join(format!("chrome-{}", platform))
+        .join(format!("chromium-{}", platform))
 }
 
-/// Absolute filesystem path to the isolated Chrome for Testing binary
+/// Absolute filesystem path to the isolated Open-Source Chromium binary
 pub fn get_runtime_exe_path() -> std::path::PathBuf {
     get_runtime_dir().join(get_platform_exe_rel_path())
 }
 
-/// Constructs the official Google Cloud storage download URL for Chrome for Testing
-pub fn get_download_url(version: &str) -> String {
-    let platform = get_platform_key();
-    let zip_name = format!("chrome-{}.zip", platform);
+/// Constructs the official high-speed CDN download URL for Open-Source Chromium
+pub fn get_download_url(revision: &str) -> String {
+    let platform_asset = match get_platform_key() {
+        "win64" => "chromium-win64.zip",
+        "linux64" => "chromium-linux.zip",
+        "mac-arm64" => "chromium-mac-arm64.zip",
+        "mac-x64" => "chromium-mac.zip",
+        _ => "chromium-win64.zip",
+    };
     format!(
-        "https://storage.googleapis.com/chrome-for-testing-public/{}/{}/{}",
-        version, platform, zip_name
+        "https://playwright.azureedge.net/builds/chromium/{}/{}",
+        revision, platform_asset
     )
 }
 
@@ -98,7 +104,7 @@ pub fn detect_host_browsers() -> Vec<DetectedHostBrowser> {
     let exe_path = get_runtime_exe_path();
     vec![DetectedHostBrowser {
         browser_type: "chromium".to_string(),
-        name: format!("Chrome for Testing ({})", PINNED_CHROME_VERSION),
+        name: format!("Chromium Open Source (v{})", PINNED_CHROMIUM_VERSION),
         executable_path: exe_path.to_string_lossy().to_string(),
     }]
 }
@@ -119,7 +125,7 @@ pub fn get_runtime_status() -> RuntimeStatus {
         platform: get_platform_key().to_string(),
         executable_path: exe_path.to_string_lossy().to_string(),
         directory: runtime_dir.to_string_lossy().to_string(),
-        pinned_version: PINNED_CHROME_VERSION.to_string(),
+        pinned_version: format!("v{} (rev {})", PINNED_CHROMIUM_VERSION, PINNED_CHROMIUM_REVISION),
         size_mb,
     }
 }
@@ -147,20 +153,30 @@ fn calculate_dir_size(dir: &std::path::Path) -> Option<u64> {
     Some(total)
 }
 
-/// Cleans and removes installed browser runtime to free up storage
+/// Cleans and removes installed browser runtimes to free up storage
 pub fn clean_runtime() -> Result<()> {
+    let config = crate::config::AppConfig::load();
+    let runtimes_dir = std::path::PathBuf::from(&config.data_dir).join("runtimes");
     let runtime_dir = get_runtime_dir();
+
     if runtime_dir.exists() {
         std::fs::remove_dir_all(&runtime_dir)?;
         println!("Successfully removed dedicated runtime directory: {:?}", runtime_dir);
     } else {
         println!("No dedicated runtime found at {:?}", runtime_dir);
     }
+
+    // Clean legacy dirs if present
+    let legacy_cft = runtimes_dir.join(format!("chrome-{}", get_platform_key()));
+    if legacy_cft.exists() {
+        let _ = std::fs::remove_dir_all(&legacy_cft);
+    }
+
     Ok(())
 }
 
-/// Downloads and installs official Google Chrome for Testing into <data_dir>/runtimes/
-pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>) -> Result<String> {
+/// Downloads and installs official Open-Source Chromium into <data_dir>/runtimes/chromium-<platform>/
+pub async fn download_chromium_runtime(force: bool, custom_revision: Option<&str>) -> Result<String> {
     let exe_path = get_runtime_exe_path();
     if !force && exe_path.exists() {
         let abs_path = if !exe_path.is_absolute() {
@@ -171,22 +187,23 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
         return Ok(abs_path.to_string_lossy().to_string());
     }
 
-    let version = custom_version.unwrap_or(PINNED_CHROME_VERSION);
-    let download_url = get_download_url(version);
+    let revision = custom_revision.unwrap_or(PINNED_CHROMIUM_REVISION);
+    let download_url = get_download_url(revision);
     let platform = get_platform_key();
 
     println!("============================================================");
-    println!(" Automa Core - Dedicated Browser Provisioning");
+    println!(" Automa Core - Open-Source Chromium Provisioning");
     println!("============================================================");
-    println!(" Engine:     Google Chrome for Testing (Zero Host Scanning)");
-    println!(" Version:    {}", version);
+    println!(" Engine:     Chromium (Pure Open Source - BSD 3-Clause)");
+    println!(" Version:    v{} (Revision {})", PINNED_CHROMIUM_VERSION, revision);
     println!(" Platform:   {}", platform);
     println!(" URL:        {}", download_url);
     println!(" Target:     {}", exe_path.display());
     println!("------------------------------------------------------------");
 
-    // Configure proxy-aware HTTP client
+    // Configure proxy-aware HTTP client with redirect following
     let mut builder = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(10))
         .timeout(std::time::Duration::from_secs(600));
 
     if let Ok(proxy_url) = env::var("ALL_PROXY")
@@ -218,9 +235,9 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
     let mut stream = response.bytes_stream();
 
     let temp_zip_path = std::env::temp_dir().join(format!(
-        "chrome_cft_{}_{}_{}.zip",
+        "chromium_oss_{}_{}_{}.zip",
         platform,
-        version,
+        revision,
         std::process::id()
     ));
 
@@ -234,7 +251,7 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
     use tokio::io::AsyncWriteExt;
 
     while let Some(chunk_result) = stream.next().await {
-        let chunk = chunk_result.map_err(|e| anyhow!("Network error while streaming browser binary: {}", e))?;
+        let chunk = chunk_result.map_err(|e| anyhow!("Network error while streaming Chromium binary: {}", e))?;
         file.write_all(&chunk)
             .await
             .map_err(|e| anyhow!("Failed to write chunk to disk: {}", e))?;
@@ -246,13 +263,13 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
                 let mb_down = downloaded_bytes as f64 / 1_048_576.0;
                 let mb_tot = total_bytes as f64 / 1_048_576.0;
                 print!(
-                    "\r[BrowserDownloader] {:>5.1}% ({:.1} MB / {:.1} MB)...",
+                    "\r[ChromiumDownloader] {:>5.1}% ({:.1} MB / {:.1} MB)...",
                     percent, mb_down, mb_tot
                 );
                 let _ = std::io::stdout().flush();
             } else {
                 let mb_down = downloaded_bytes as f64 / 1_048_576.0;
-                print!("\r[BrowserDownloader] Downloaded {:.1} MB...", mb_down);
+                print!("\r[ChromiumDownloader] Downloaded {:.1} MB...", mb_down);
                 let _ = std::io::stdout().flush();
             }
             last_reported = std::time::Instant::now();
@@ -262,7 +279,7 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
     drop(file);
 
     println!(
-        "\n[BrowserDownloader] Download completed ({:.1} MB). Extracting archive...",
+        "\n[ChromiumDownloader] Download completed ({:.1} MB). Extracting archive...",
         downloaded_bytes as f64 / 1_048_576.0
     );
 
@@ -286,6 +303,25 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
 
     let _ = tokio::fs::remove_file(&temp_zip_path).await;
 
+    // Open-Source Chromium archives extract to chrome-win, chrome-linux, or chrome-mac
+    let raw_folder_name = match platform {
+        "win64" => "chrome-win",
+        "linux64" => "chrome-linux",
+        _ => "chrome-mac",
+    };
+
+    let raw_extracted_path = runtimes_dir.join(raw_folder_name);
+    let target_dir = get_runtime_dir();
+
+    if target_dir.exists() {
+        let _ = std::fs::remove_dir_all(&target_dir);
+    }
+
+    if raw_extracted_path.exists() {
+        std::fs::rename(&raw_extracted_path, &target_dir)
+            .map_err(|e| anyhow!("Failed to rename extracted folder {:?} to {:?}: {}", raw_extracted_path, target_dir, e))?;
+    }
+
     let target_exe = get_runtime_exe_path();
     if !target_exe.exists() {
         return Err(anyhow!(
@@ -305,7 +341,7 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
     }
 
     println!(
-        "[BrowserDownloader] Dedicated browser successfully provisioned at: {:?}",
+        "[ChromiumDownloader] Dedicated Open-Source Chromium provisioned at: {:?}",
         target_exe
     );
     println!("============================================================");
@@ -324,7 +360,7 @@ pub async fn download_chromium_runtime(force: bool, custom_version: Option<&str>
 ///
 /// Priority (Zero Host Scanning Standard):
 /// 1. AUTOMA_BROWSER_PATH / CHROME_EXECUTABLE_PATH environment variable override.
-/// 2. Dedicated standalone Chrome for Testing in <data_dir>/runtimes/chrome-<platform>/
+/// 2. Dedicated standalone Open-Source Chromium in <data_dir>/runtimes/chromium-<platform>/
 /// 3. Auto-provision dedicated runtime on first execution.
 pub async fn resolve_executable_path(_default_browser: &str) -> Result<String> {
     if let Ok(path) = env::var("AUTOMA_BROWSER_PATH") {
@@ -352,7 +388,7 @@ pub async fn resolve_executable_path(_default_browser: &str) -> Result<String> {
         return Ok(abs_path.to_string_lossy().to_string());
     }
 
-    // Auto-provision dedicated runtime on first run
-    println!("Dedicated automation browser not found. Auto-provisioning Chrome for Testing...");
+    // Auto-provision dedicated Open-Source Chromium on first run
+    println!("Dedicated Open-Source Chromium runtime not found. Auto-provisioning Chromium...");
     download_chromium_runtime(false, None).await
 }

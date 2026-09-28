@@ -127,16 +127,16 @@ pub enum Commands {
 
 #[derive(Subcommand, Debug)]
 pub enum BrowserCommands {
-    /// Download and install dedicated Google Chrome for Testing runtime
+    /// Download and install dedicated Open-Source Chromium runtime (BSD-3-Clause)
     #[command(name = "install")]
     Install {
         /// Force re-download even if already installed
         #[arg(short, long)]
         force: bool,
 
-        /// Specific Chrome for Testing version (defaults to pinned LTS)
+        /// Specific Chromium revision (defaults to pinned LTS revision)
         #[arg(short, long)]
-        version: Option<String>,
+        revision: Option<String>,
     },
 
     /// Display installation status, executable path, and disk usage of dedicated browser
