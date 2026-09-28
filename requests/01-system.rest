@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - System, Health & Machine Identity
+### Tuquet CLI - System, Health & Machine Identity
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 

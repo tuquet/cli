@@ -2,8 +2,8 @@
 name = "tuquet"
 version = "1.0.0"
 edition = "2024"
-description = "Tuquet Unified CLI & Distributed Automation Engine"
-repository = "https://github.com/tuquet/tuquet-automa-runner"
+description = "Tuquet CLI - Unified Master CLI, Cloud Runner Daemon & Distributed Automation Engine"
+repository = "https://github.com/tuquet/tuquet-cli"
 license = "MIT"
 
 [lib]

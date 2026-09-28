@@ -1,7 +1,7 @@
-# ⚙️ Tuquet Automa Runner (`tuquet-automa-runner`)
+# ⚡ Tuquet CLI (`tuquet`)
 
-> **Lightweight Native Process Launcher, WebSocket Event Hub & SQLite Storage Bridge for Automa WebExtension**.
-> Đóng vai trò là cầu nối (Bridge) khởi chạy Chromium kèm Extension, điều phối kịch bản workflow sang Browser Worker và thu thập log thực thi về SQLite dưới sự giám sát tiến trình của `tqr`.
+> **Unified Master Control CLI, Cloud Runner Daemon & Distributed Browser Automation Engine for the Tuquet Ecosystem**.
+> Điều phối quy trình làm việc, quản lý Chromium Profile, tự động hóa luồng duyệt web, đồng bộ đám mây và kết nối lưu trữ SQLite cục bộ.
 
 ---
 
