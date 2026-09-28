@@ -104,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     println!("============================================================");
                     if !status.installed {
-                        println!("👉 Run 'automa browser install' to download and setup.");
+                        println!("👉 Run 'tuquet browser install' to download and setup.");
                     }
                     Ok(())
                 }
@@ -505,7 +505,7 @@ async fn list_workflows(
         println!(" (No workflows found)");
         println!("----------------------------------------------------------------------------------------");
         println!("💡 Import a workflow with:");
-        println!("   automa workflow import <file.json> --id <workflow_id>");
+        println!("   tuquet workflow import <file.json> --id <workflow_id>");
     } else {
         println!(" {:<20} {:<24} {:<8} {:<10} {:<8} {}", "ID", "NAME", "VERSION", "SOURCE", "BLOCKS", "UPDATED AT");
         println!("----------------------------------------------------------------------------------------");
@@ -515,9 +515,9 @@ async fn list_workflows(
             println!(" {:<20} {:<24} {:<8} {:<10} {:<8} {}", id_display, name_display, wf.version, wf.source, wf.blocks, wf.updated_at);
         }
         println!("========================================================================================");
-        println!("💡 Run with:  automa run <ID>");
+        println!("💡 Run with:  tuquet run <ID>");
         if let Some(first) = workflows.first() {
-            println!("   Example:   automa run {} --headless", first.id);
+            println!("   Example:   tuquet run {} --headless", first.id);
         }
     }
     println!("========================================================================================");
@@ -615,7 +615,7 @@ async fn import_workflow(
     println!(" Database:    {}", db_path.display());
     println!("------------------------------------------------------------");
     println!(" 💡 Ready to execute:");
-    println!("    automa run {} --headless", id);
+    println!("    tuquet run {} --headless", id);
     println!("============================================================");
 
     Ok(())
@@ -929,7 +929,7 @@ fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("============================================================");
     println!("Status: VALID WORKFLOW");
     println!("Execution command:");
-    println!("  automa run \"{}\"", target);
+    println!("  tuquet run \"{}\"", target);
     println!("============================================================");
 
     Ok(())
