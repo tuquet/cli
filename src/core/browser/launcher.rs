@@ -55,7 +55,9 @@ impl BrowserLauncher {
         }
 
         args.extend(self.options.custom_args.clone());
-        args.push("about:blank".to_string());
+        if !args.iter().any(|a| a.starts_with("http://") || a.starts_with("https://")) {
+            args.push("about:blank".to_string());
+        }
 
         println!("[BrowserLauncher] Launching: {} {}", self.options.executable_path, args.join(" "));
 

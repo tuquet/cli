@@ -1,8 +1,38 @@
-### Tuquet Automa Runner - Workflow Storage Management
+### Tuquet Automa Runner - Workflow Storage & Static Linting
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
-### 2.1 Import Workflow vao SQLite (luu va tra ve workflowId)
+### 2.1 Kiem tra tinh hop le cua Workflow (Static Analysis / Lint)
+POST {{baseUrl}}/api/v1/lint
+Content-Type: {{contentType}}
+
+{
+  "mode": "runner",
+  "target_type": "workflow",
+  "drawflow": {
+    "nodes": [
+      {
+        "id": "node-trigger",
+        "label": "trigger",
+        "data": { "type": "manual" }
+      },
+      {
+        "id": "node-new-tab",
+        "label": "new-tab",
+        "data": { "url": "https://www.google.com" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "node-trigger",
+        "target": "node-new-tab"
+      }
+    ]
+  }
+}
+
+### 2.2 Import Workflow vao SQLite (luu va tra ve workflowId)
 # @name importWorkflow
 POST {{baseUrl}}/api/v1/storage/workflows/import
 Content-Type: {{contentType}}
@@ -86,7 +116,7 @@ Content-Type: {{contentType}}
   }
 }
 
-### 2.2 Chay Job voi workflowId vua import
+### 2.3 Chay Job voi workflowId vua import
 # @name runWithWorkflowId
 @savedWorkflowId = {{importWorkflow.response.body.id}}
 POST {{baseUrl}}/api/v1/jobs
@@ -103,11 +133,14 @@ Content-Type: {{contentType}}
   }
 }
 
-### 2.3 Export Workflow theo workflowId
+### 2.4 Export Workflow theo workflowId
 GET {{baseUrl}}/api/v1/storage/workflows/{{savedWorkflowId}}
 
-### 2.4 Danh sach tat ca Workflow trong SQLite Storage
-GET {{baseUrl}}/api/v1/storage/workflows
+### 2.5 Danh sach tat ca Workflow trong SQLite Storage
+GET {{baseUrl}}/api/v1/storage/workflows?limit=20
 
-### 2.5 Xoa Workflow khoi Storage SQLite
+### 2.6 Xoa Workflow khoi Storage SQLite
 DELETE {{baseUrl}}/api/v1/storage/workflows/{{savedWorkflowId}}
+
+### 2.7 Negative Test - Lay Workflow khong ton tai (Expect 404 Not Found)
+GET {{baseUrl}}/api/v1/storage/workflows/non-existent-wf-uuid

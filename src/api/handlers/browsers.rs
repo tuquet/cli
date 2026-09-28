@@ -1,4 +1,5 @@
 use axum::extract::{Path, State, Json, Query};
+use axum::body::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use utoipa::{IntoParams, ToSchema};
@@ -303,6 +304,55 @@ pub async fn get_browser_detail(
     }
 }
 
+#[derive(Debug, Deserialize, ToSchema, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "headless": false,
+    "startUrl": "https://www.google.com",
+    "proxy": "socks5://127.0.0.1:1080",
+    "args": ["--start-maximized"]
+}))]
+/// Request options when initiating a browser session
+pub struct StartBrowserSessionRequest {
+    /// Override headless mode (true = background, false = visual GUI window)
+    pub headless: Option<bool>,
+    /// Optional URL to open upon browser launch
+    pub start_url: Option<String>,
+    /// Optional custom Proxy server URL (e.g. socks5://127.0.0.1:1080, http://proxy.example:8080)
+    pub proxy: Option<String>,
+    /// Additional Chromium CLI flags
+    pub args: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "status": "success",
+    "message": "Browser session launched successfully",
+    "browserId": "default",
+    "pid": 12345,
+    "debuggingPort": 54321,
+    "wsUrl": "ws://127.0.0.1:54321/devtools/browser/abc-123",
+    "userDataDir": "C:\\Users\\user\\.automa\\core-dev\\browsers\\default"
+}))]
+/// Response descriptor containing active browser session connection parameters
+pub struct StartBrowserSessionResponse {
+    /// Result status (e.g. "success")
+    pub status: String,
+    /// Informational message
+    pub message: String,
+    /// Profile identifier
+    pub browser_id: String,
+    /// Process ID of the spawned browser
+    pub pid: Option<u32>,
+    /// Remote CDP debugging port
+    pub debugging_port: Option<u16>,
+    /// WebSocket Debugger URL for CDP connection
+    pub ws_url: Option<String>,
+    /// Path to user data directory
+    pub user_data_dir: Option<String>,
+}
+
 use crate::core::browser::manager::{browser_registry, BrowserManager, BrowserManagerOptions};
 
 #[utoipa::path(
@@ -315,8 +365,9 @@ use crate::core::browser::manager::{browser_registry, BrowserManager, BrowserMan
     params(
         ("id" = String, Path, description = "Unique browser profile identifier")
     ),
+    request_body = StartBrowserSessionRequest,
     responses(
-        (status = 200, description = "Browser session started", body = Value),
+        (status = 200, description = "Browser session started", body = StartBrowserSessionResponse),
         (status = 400, description = "Invalid browser ID or configuration error", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Process spawn failure", body = crate::core::error::ApiErrorResponse)
     )
@@ -324,58 +375,82 @@ use crate::core::browser::manager::{browser_registry, BrowserManager, BrowserMan
 pub async fn start_browser(
     State(state): State<crate::AppState>,
     Path(browser_id): Path<String>,
-) -> Result<Json<Value>, AutomaError> {
+    body: Bytes,
+) -> Result<Json<StartBrowserSessionResponse>, AutomaError> {
     if !is_valid_id(&browser_id) {
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
 
-    let is_connected = {
-        let browsers = connected_browsers().read().await;
-        browsers.contains(&browser_id)
+    // Safely parse request body if provided, fallback to defaults if empty
+    let req: StartBrowserSessionRequest = if body.is_empty() {
+        StartBrowserSessionRequest::default()
+    } else {
+        serde_json::from_slice(&body).unwrap_or_default()
     };
 
-    if is_connected {
-        return Ok(Json(json!({"status": "success", "message": "Browser already running"})));
-    }
+    // Edge Case 4: Mutex lock per browser_id to prevent concurrent double-launches
+    let _lock = crate::core::browser::worker_coordinator::get_browser_launcher_lock(&browser_id).await;
 
-    let mut possible_paths = vec![
-        std::path::PathBuf::from("apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("./apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("../webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../../apps/webe/dist/cli-runner"),
-        std::path::PathBuf::from("automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("./automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("../automa-webe/dist/cli-runner"),
-        std::path::PathBuf::from("../../automa-webe/dist/cli-runner"),
-    ];
-
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            possible_paths.push(exe_dir.join("apps/webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("../../apps/webe/dist/cli-runner"));
-            possible_paths.push(exe_dir.join("automa-webe/dist/cli-runner"));
+    // Check if session is already running & verified alive on OS
+    let existing_session = {
+        let registry = browser_registry().read().await;
+        let pid_opt = registry.get(&browser_id).copied();
+        if let Some(pid) = pid_opt {
+            let mut sys = sysinfo::System::new_all();
+            sys.refresh_all();
+            if sys.process(sysinfo::Pid::from_u32(pid)).is_some() {
+                let sessions = crate::core::browser::manager::browser_sessions().read().await;
+                sessions.get(&browser_id).cloned()
+            } else {
+                None
+            }
+        } else {
+            None
         }
+    };
+
+    if let Some(sess) = existing_session {
+        return Ok(Json(StartBrowserSessionResponse {
+            status: "success".to_string(),
+            message: "Browser session already running".to_string(),
+            browser_id: browser_id.clone(),
+            pid: Some(sess.pid),
+            debugging_port: Some(sess.debugging_port),
+            ws_url: Some(sess.ws_url),
+            user_data_dir: Some(sess.user_data_dir),
+        }));
     }
 
-    if let Ok(env_ext) = std::env::var("AUTOMA_EXTENSION_PATH") {
-        possible_paths.insert(0, std::path::PathBuf::from(env_ext));
+    // If an orphan or dead process was registered, clean it up
+    {
+        let mut registry = browser_registry().write().await;
+        registry.remove(&browser_id);
+        let mut sessions = crate::core::browser::manager::browser_sessions().write().await;
+        sessions.remove(&browser_id);
     }
 
-    let mut ext_path = possible_paths.into_iter()
-        .find(|p| p.exists())
-        .and_then(|p| p.canonicalize().ok().map(|c| c.to_string_lossy().to_string()))
-        .unwrap_or_else(|| "apps/webe/dist/cli-runner".to_string());
+    // Edge Case 5: Use canonical runner extension path resolver
+    let ext_path = crate::core::browser::worker_coordinator::resolve_cli_runner_extension_path();
 
-    if ext_path.starts_with(r"\\?\") {
-        ext_path = ext_path[4..].to_string();
-    }
+    // Edge Case 3: Pre-launch sanitization: remove stale SingletonLock, volatile caches and crash dumps
+    let browsers_base_path = get_browsers_base_path(&state.config.data_dir).await;
+    let target_dir = std::path::Path::new(&state.config.data_dir).join(&browsers_base_path).join(&browser_id);
+    crate::core::browser::manager::sanitize_browser_profile(&target_dir, false).await;
 
     if let Err(e) = unzip_browser_folder(&browser_id, &state.config.data_dir).await {
         tracing::error!("Failed to unzip browser folder: {}", e);
         return Err(AutomaError::Internal(format!("Failed to unzip browser: {}", e)));
     }
+
+    // Edge Case 2: Load Profile settings from SQLite database
+    let (db_user_agent, db_timezone) = {
+        let db = state.db.lock().await;
+        if let Ok(Some(profile)) = db.browsers().get_browser(&browser_id) {
+            (profile.user_agent, profile.timezone)
+        } else {
+            (None, None)
+        }
+    };
 
     let app_settings = {
         let db = state.db.lock().await;
@@ -390,34 +465,72 @@ pub async fn start_browser(
         custom_args.push(format!("--window-size={},{}", slot_w, slot_h));
     }
 
-    if let Some(ref ua) = app_settings.browser.default_user_agent {
+    // User-Agent: Profile DB takes precedence, then app_settings
+    let effective_ua = db_user_agent.or(app_settings.browser.default_user_agent);
+    if let Some(ref ua) = effective_ua {
         if !ua.is_empty() {
             custom_args.push(format!("--user-agent={}", ua));
         }
     }
 
+    // Timezone: Profile DB
+    if let Some(ref tz) = db_timezone {
+        if !tz.is_empty() {
+            custom_args.push(format!("--timezone={}", tz));
+        }
+    }
+
+    // Proxy: from request payload
+    if let Some(ref proxy) = req.proxy {
+        if !proxy.is_empty() {
+            custom_args.push(format!("--proxy-server={}", proxy));
+        }
+    }
+
+    // Custom extra CLI flags from request payload
+    if let Some(ref extra_args) = req.args {
+        custom_args.extend(extra_args.clone());
+    }
+
+    // Start URL: from request payload
+    if let Some(ref start_url) = req.start_url {
+        if !start_url.is_empty() {
+            custom_args.push(start_url.clone());
+        }
+    }
+
+    // Edge Case 1: Headless override from request payload takes precedence
+    let headless = req.headless.unwrap_or(app_settings.browser.headless);
+
     let default_browser = if app_settings.browser.default_type.is_empty() {
-        "chrome".to_string()
+        "chromium".to_string()
     } else {
         app_settings.browser.default_type.clone()
     };
 
-    let browsers_base_path = get_browsers_base_path(&state.config.data_dir).await;
-    let target_dir = std::path::Path::new(&state.config.data_dir).join(&browsers_base_path).join(&browser_id);
-    let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-    let target_dir = current_dir.join(target_dir);
     let mut manager = BrowserManager::new(BrowserManagerOptions {
         default_browser,
         browser_id: browser_id.clone(),
-        headless: app_settings.browser.headless,
+        headless,
         extension_paths: vec![ext_path],
         custom_args,
         user_data_dir: Some(target_dir.to_string_lossy().to_string()),
     });
 
-    if let Err(e) = manager.launch().await {
-        return Err(AutomaError::Internal(format!("Failed to launch: {}", e)));
-    }
+    let ws_url = match manager.launch().await {
+        Ok(url) => url,
+        Err(e) => return Err(AutomaError::Internal(format!("Failed to launch browser: {}", e))),
+    };
+
+    let pid = manager.get_pid();
+    let (debugging_port, actual_user_data_dir) = {
+        let sessions = crate::core::browser::manager::browser_sessions().read().await;
+        if let Some(sess) = sessions.get(&browser_id) {
+            (Some(sess.debugging_port), Some(sess.user_data_dir.clone()))
+        } else {
+            (None, Some(target_dir.to_string_lossy().to_string()))
+        }
+    };
 
     // Broadcast real-time browser online event to global SSE stream
     let _ = state.tx.send(json!({
@@ -425,7 +538,16 @@ pub async fn start_browser(
         "id": browser_id
     }).to_string());
 
-    Ok(Json(json!({"status": "success", "message": "Browser launched"})))
+    // Edge Case 6: Return complete session connection details (PID, port, ws_url, user_data_dir)
+    Ok(Json(StartBrowserSessionResponse {
+        status: "success".to_string(),
+        message: "Browser session launched successfully".to_string(),
+        browser_id,
+        pid,
+        debugging_port,
+        ws_url: Some(ws_url),
+        user_data_dir: actual_user_data_dir,
+    }))
 }
 
 #[derive(Debug, Deserialize, IntoParams)]

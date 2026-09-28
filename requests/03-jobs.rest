@@ -149,19 +149,25 @@ Content-Type: {{contentType}}
   }
 }
 
-### 3.3 Xem chi tiet Logs & Context tung node cua Job
-@targetJobId = {{submitVisualJob.response.body.jobId}}
-GET {{baseUrl}}/api/v1/history/{{targetJobId}}/logs
+### 3.3 Danh sach cac Job dang chay (Active Jobs)
+GET {{baseUrl}}/api/v1/jobs
 
-### 3.4 Kiem tra trang thai Job (running / completed / failed)
+### 3.4 Kiem tra trang thai Job theo ID
+@targetJobId = {{submitVisualJob.response.body.jobId}}
 GET {{baseUrl}}/api/v1/jobs/{{targetJobId}}/status
 
-### 3.5 Danh sach 5 lich su chay gan nhat
+### 3.5 Xem chi tiet Logs & Context tung node cua Job
+GET {{baseUrl}}/api/v1/history/{{targetJobId}}/logs
+
+### 3.6 Danh sach 5 lich su chay gan nhat
 GET {{baseUrl}}/api/v1/history?limit=5
 
-### 3.6 Stream Real-Time Logs qua SSE
+### 3.7 Stream Real-Time Logs qua Server-Sent Events (SSE)
 GET {{baseUrl}}/api/v1/events
 Accept: text/event-stream
 
-### 3.7 Dung khan cap Job dang chay
+### 3.8 Dung khan cap Job dang chay
 DELETE {{baseUrl}}/api/v1/jobs/{{targetJobId}}
+
+### 3.9 Negative Test - Kiem tra Job khong ton tai (Expect 404 Not Found)
+GET {{baseUrl}}/api/v1/jobs/non-existent-job-uuid/status

@@ -163,6 +163,10 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
         Ok(ws_url)
     }
 
+    pub fn get_pid(&self) -> Option<u32> {
+        self.launcher.as_ref().and_then(|l| l.get_pid())
+    }
+
     pub async fn cleanup(&mut self) -> Result<()> {
         if let Some(mut launcher) = self.launcher.take() {
             if let Some(pid) = launcher.get_pid() {
