@@ -1,0 +1,215 @@
+###############################################################################
+# TUQUET AUTOMA CORE - BROWSER JOB EXECUTION & CONTROL API TEST
+# Compatible with: VS Code REST Client (humao.rest-client), JetBrains HTTP Client
+###############################################################################
+
+@baseUrl = http://127.0.0.1:8765
+@contentType = application/json
+
+###############################################################################
+# 1. PRE-FLIGHT CHECKS & SYSTEM DIAGNOSTICS
+###############################################################################
+
+### 1.1 Health Check - Verify Automa Core Daemon is Running
+GET {{baseUrl}}/api/v1/health
+
+### 1.2 Dedicated Browser Runtime Detection (Zero Host Scanning - Chromium Open Source)
+POST {{baseUrl}}/api/v1/browsers/auto-detect
+
+### 1.3 List All Browser Profiles
+GET {{baseUrl}}/api/v1/browsers
+
+### 1.4 Get Active Execution Jobs
+GET {{baseUrl}}/api/v1/jobs
+
+###############################################################################
+# 2. CREATE JOB: OPEN BROWSER & PERFORM GOOGLE SEARCH VIA JAVASCRIPT (Visual GUI)
+###############################################################################
+
+### 2.1 Submit Job: Trigger (Params) -> Open Google -> JS Execute Search -> Delay 5s
+# @name submitVisualJob
+POST {{baseUrl}}/api/v1/jobs
+Content-Type: {{contentType}}
+
+{
+  "workflowData": {
+    "name": "Google Search Automation with Custom JavaScript",
+    "description": "Trigger with searchQuery parameter -> Open Google -> Execute JavaScript to fill input & submit search -> Delay 5s",
+    "drawflow": {
+      "nodes": [
+        {
+          "id": "node-trigger",
+          "label": "trigger",
+          "data": {
+            "type": "manual",
+            "parameters": [
+              {
+                "name": "searchQuery",
+                "value": "tuquet automa open source"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node-new-tab",
+          "label": "new-tab",
+          "data": {
+            "url": "https://www.google.com",
+            "active": true
+          }
+        },
+        {
+          "id": "node-js-search",
+          "label": "javascript-code",
+          "data": {
+            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'tuquet automa open source'; console.log('Executing Google search for query:', query); const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); } if (typeof automaNextBlock === 'function') automaNextBlock();",
+            "context": "webpage",
+            "preloadScripts": [],
+            "timeout": 10000
+          }
+        },
+        {
+          "id": "node-delay",
+          "label": "delay",
+          "data": {
+            "time": 5000
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-trigger",
+          "target": "node-new-tab"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-new-tab",
+          "target": "node-js-search"
+        },
+        {
+          "id": "edge-3",
+          "source": "node-js-search",
+          "target": "node-delay"
+        }
+      ]
+    }
+  },
+  "options": {
+    "headless": false,
+    "closeBrowserOnFinish": true,
+    "variables": {
+      "searchQuery": "tuquet automa pure open source chromium"
+    }
+  }
+}
+
+###############################################################################
+# 3. CREATE JOB: OPEN BROWSER IN HEADLESS MODE (Chạy ngầm không mở cửa sổ)
+###############################################################################
+
+### 3.1 Submit Job: Headless Background Navigation
+# @name submitHeadlessJob
+POST {{baseUrl}}/api/v1/jobs
+Content-Type: {{contentType}}
+
+{
+  "workflowData": {
+    "name": "Headless Background Automation Job",
+    "description": "Runs in background using isolated Open-Source Chromium runtime",
+    "drawflow": {
+      "nodes": [
+        {
+          "id": "node-trigger",
+          "label": "trigger",
+          "data": {
+            "type": "manual"
+          }
+        },
+        {
+          "id": "node-new-tab",
+          "label": "new-tab",
+          "data": {
+            "url": "https://httpbin.org/get",
+            "active": true
+          }
+        },
+        {
+          "id": "node-delay",
+          "label": "delay",
+          "data": {
+            "time": 2000
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge-1",
+          "source": "node-trigger",
+          "target": "node-new-tab"
+        },
+        {
+          "id": "edge-2",
+          "source": "node-new-tab",
+          "target": "node-delay"
+        }
+      ]
+    }
+  },
+  "options": {
+    "headless": true,
+    "closeBrowserOnFinish": true
+  }
+}
+
+###############################################################################
+# 4. CREATE JOB: RUN FROM WORKFLOW FILE PATH
+###############################################################################
+
+### 4.1 Submit Job using Existing Workflow File on Disk
+POST {{baseUrl}}/api/v1/jobs
+Content-Type: {{contentType}}
+
+{
+  "workflowPath": "C:\\Users\\ndtu6\\Repository\\tuquet-runner\\fixtures\\test_browser_workflow.json",
+  "options": {
+    "headless": false,
+    "closeBrowserOnFinish": true
+  }
+}
+
+###############################################################################
+# 5. JOB LIFECYCLE, STATUS TRACKING & LOGS
+###############################################################################
+
+### 5.1 Check Status of the Last Submitted Visual Job
+@visualJobId = {{submitVisualJob.response.body.jobId}}
+GET {{baseUrl}}/api/v1/jobs/{{visualJobId}}/status
+
+### 5.2 Stream Real-Time Execution Logs (Server-Sent Events)
+GET {{baseUrl}}/api/v1/events
+Accept: text/event-stream
+
+### 5.3 Query Execution History
+GET {{baseUrl}}/api/v1/history?limit=10
+
+### 5.4 Kill a Running Job (Dừng khẩn cấp tiến trình)
+DELETE {{baseUrl}}/api/v1/jobs/{{visualJobId}}
+
+###############################################################################
+# 6. DIRECT ANTI-DETECT BROWSER PROFILE SESSION (Mở phiên trình duyệt trực tiếp)
+###############################################################################
+
+### 6.1 Launch Direct Browser Session (Default Profile)
+POST {{baseUrl}}/api/v1/browsers/default/session
+Content-Type: {{contentType}}
+
+{
+  "headless": false
+}
+
+### 6.2 Stop Direct Browser Session
+DELETE {{baseUrl}}/api/v1/browsers/default/session
+
+### 6.3 Kill All Running Browser Sessions (Dọn sạch toàn bộ trình duyệt)
+DELETE {{baseUrl}}/api/v1/browsers/sessions
