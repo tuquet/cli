@@ -2,7 +2,7 @@
 name = "tuquet"
 version = "1.0.0"
 edition = "2024"
-description = "Tuquet CLI - Unified Master CLI, Cloud Runner Daemon & Distributed Automation Engine"
+description = "Tuquet - Unified CLI tool for managing and orchestrating Tuquet ecosystem services"
 repository = "https://github.com/tuquet/cli"
 license = "MIT"
 

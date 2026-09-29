@@ -1,7 +1,6 @@
 # ⚡ Tuquet CLI (`tuquet`)
 
-> **Unified Master Control CLI, Cloud Runner Daemon & Distributed Browser Automation Engine for the Tuquet Ecosystem**.  
-> Điều phối quy trình làm việc, quản lý Chromium Profile, tự động hóa luồng duyệt web, đồng bộ đám mây và kết nối lưu trữ SQLite cục bộ.
+> **Tuquet** là bộ công cụ được xây dựng theo phong cách CLI, đóng vai trò giao diện dòng lệnh hợp nhất để quản lý và vận hành các dịch vụ trong hệ sinh thái Tuquet.
 
 ---
 

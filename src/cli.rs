@@ -37,14 +37,14 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   tuquet runner start --port 8765
   tuquet browser install";
 
-/// Tuquet - Unified CLI & Distributed Automation Engine
+/// Tuquet - Unified CLI Tool
 #[derive(Parser, Debug)]
 #[command(
     name = "tuquet",
     author = "Tuquet Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "Tuquet - Unified CLI & Distributed Automation Engine",
-    long_about = "Master control CLI, cloud-connected runner daemon, and browser automation engine for the Tuquet Ecosystem.",
+    about = "Tuquet - Unified CLI Tool",
+    long_about = "Tuquet is a unified CLI tool for managing and orchestrating services in the Tuquet ecosystem.",
     styles = get_styles(),
     help_template = MAIN_HELP_TEMPLATE,
 )]
