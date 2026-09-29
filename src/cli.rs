@@ -23,15 +23,18 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing (alias: auth)
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
 
+\x1b[1;32mInteractive:\x1b[0m
+  \x1b[1;36mshell\x1b[0m           Launch interactive scoped shell session (alias: repl)
+
 \x1b[1;32mOptions:\x1b[0m
   \x1b[1;36m-h, --help\x1b[0m          Print help (see more with '--help')
   \x1b[1;36m-V, --version\x1b[0m       Print version
 
 \x1b[1;32mExamples:\x1b[0m
-  tuquet automa run ./workflow.json --headless
-  tuquet automa workflow list
+  tuquet                          Launch interactive shell
+  tuquet automa                   Launch interactive shell in automa scope
+  tuquet automa run ./wf.json     Execute workflow directly
   tuquet runner start --port 8765
-  tuquet cloud login --token <enrollment-token>
   tuquet browser install";
 
 /// Tuquet - Unified CLI & Distributed Automation Engine
@@ -44,11 +47,10 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
     long_about = "Master control CLI, cloud-connected runner daemon, and browser automation engine for the Tuquet Ecosystem.",
     styles = get_styles(),
     help_template = MAIN_HELP_TEMPLATE,
-    arg_required_else_help = true
 )]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -57,28 +59,36 @@ pub enum Commands {
     #[command(name = "automa")]
     Automa {
         #[command(subcommand)]
-        command: AutomaSubcommands,
+        command: Option<AutomaSubcommands>,
     },
 
     /// Distributed runner daemon worker & cloud execution node
     #[command(name = "runner", aliases = ["daemon", "worker"])]
     Runner {
         #[command(subcommand)]
-        command: RunnerSubcommands,
+        command: Option<RunnerSubcommands>,
     },
 
     /// Tuquet Cloud authentication & multi-tenant pairing
     #[command(name = "cloud", alias = "auth")]
     Cloud {
         #[command(subcommand)]
-        command: CloudSubcommands,
+        command: Option<CloudSubcommands>,
     },
 
     /// Dedicated isolated browser runtime management
     #[command(name = "browser")]
     Browser {
         #[command(subcommand)]
-        command: BrowserCommands,
+        command: Option<BrowserCommands>,
+    },
+
+    /// Launch interactive scoped shell session
+    #[command(name = "shell", alias = "repl")]
+    Shell {
+        /// Optional target service scope to enter (automa, runner, cloud, browser)
+        #[arg(value_name = "SERVICE")]
+        service: Option<String>,
     },
 }
 

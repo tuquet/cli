@@ -1,15 +1,72 @@
+use std::io::IsTerminal;
 use automa_core::cli::{Cli, Commands};
 use automa_core::commands;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Automa { command } => commands::automa::handle(command).await,
-        Commands::Runner { command } => commands::runner::handle(command).await,
-        Commands::Cloud { command } => commands::cloud::handle(command).await,
-        Commands::Browser { command } => commands::browser::handle(command).await,
+        Some(Commands::Automa { command }) => match command {
+            Some(subcmd) => commands::automa::handle(subcmd).await,
+            None => {
+                if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                    commands::shell::run(Some("automa")).await
+                } else {
+                    let mut cmd = Cli::command();
+                    let _ = cmd.find_subcommand_mut("automa").map(|c| c.print_help());
+                    std::process::exit(2);
+                }
+            }
+        },
+        Some(Commands::Runner { command }) => match command {
+            Some(subcmd) => commands::runner::handle(subcmd).await,
+            None => {
+                if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                    commands::shell::run(Some("runner")).await
+                } else {
+                    let mut cmd = Cli::command();
+                    let _ = cmd.find_subcommand_mut("runner").map(|c| c.print_help());
+                    std::process::exit(2);
+                }
+            }
+        },
+        Some(Commands::Cloud { command }) => match command {
+            Some(subcmd) => commands::cloud::handle(subcmd).await,
+            None => {
+                if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                    commands::shell::run(Some("cloud")).await
+                } else {
+                    let mut cmd = Cli::command();
+                    let _ = cmd.find_subcommand_mut("cloud").map(|c| c.print_help());
+                    std::process::exit(2);
+                }
+            }
+        },
+        Some(Commands::Browser { command }) => match command {
+            Some(subcmd) => commands::browser::handle(subcmd).await,
+            None => {
+                if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                    commands::shell::run(Some("browser")).await
+                } else {
+                    let mut cmd = Cli::command();
+                    let _ = cmd.find_subcommand_mut("browser").map(|c| c.print_help());
+                    std::process::exit(2);
+                }
+            }
+        },
+        Some(Commands::Shell { service }) => {
+            commands::shell::run(service.as_deref()).await
+        }
+        None => {
+            if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                commands::shell::run(None).await
+            } else {
+                let mut cmd = Cli::command();
+                let _ = cmd.print_help();
+                std::process::exit(2);
+            }
+        }
     }
 }
