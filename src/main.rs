@@ -17,20 +17,11 @@ use tracing_subscriber::FmtSubscriber;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    if cli.probe || matches!(cli.command, Some(Commands::Probe)) {
-        return print_probe_manifest();
-    }
-
-    if let Some(ref path_opt) = cli.export_openapi {
-        let output_path = path_opt.clone().unwrap_or_else(|| std::path::PathBuf::from("openapi.json"));
-        return export_openapi(&output_path);
-    }
-
     match cli.command {
         // =========================================================
         // 1. Service: Automa (Browser Automation)
         // =========================================================
-        Some(Commands::Automa { command }) => match command {
+        Commands::Automa { command } => match command {
             AutomaSubcommands::Run {
                 workflow_pos,
                 workflow,
@@ -87,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // =========================================================
         // 2. Service: Runner (Daemon & Cloud Node)
         // =========================================================
-        Some(Commands::Runner { command }) => match command {
+        Commands::Runner { command } => match command {
             RunnerSubcommands::Start { host, port, data_dir, log_level } => {
                 run_server(host, port, data_dir, log_level).await
             }
@@ -113,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // =========================================================
         // 3. Service: Cloud (Multi-Tenant Auth & Pairing)
         // =========================================================
-        Some(Commands::Cloud { command }) => match command {
+        Commands::Cloud { command } => match command {
             CloudSubcommands::Login { url, token, name } => {
                 handle_cloud_login(url, token, name).await
             }
@@ -128,89 +119,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // =========================================================
         // 4. Service: Browser (Chromium Runtime Management)
         // =========================================================
-        Some(Commands::Browser { command }) => {
+        Commands::Browser { command } => {
             handle_browser_command(command).await
-        }
-
-        // =========================================================
-        // Backward-Compatibility Root Shortcuts
-        // =========================================================
-        Some(Commands::Run {
-            workflow_pos,
-            workflow,
-            workflow_json,
-            headless,
-            browser,
-            browser_id,
-            variables,
-            timeout,
-        }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet run' is now organized under 'tuquet automa run'\x1b[0m");
-            let target_workflow = workflow.or(workflow_pos);
-            run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
-        }
-        Some(Commands::Workflow { command }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet workflow' is now organized under 'tuquet automa workflow'\x1b[0m");
-            match command {
-                WorkflowCommands::List { search, db_only, vault_only } => {
-                    list_workflows(search, db_only, vault_only).await
-                }
-                WorkflowCommands::Import { file, id, name, description } => {
-                    import_workflow(file, id, name, description).await
-                }
-                WorkflowCommands::Export { id, output } => {
-                    export_workflow(id, output).await
-                }
-                WorkflowCommands::Info { id } => {
-                    inspect_workflow(&id)
-                }
-                WorkflowCommands::Delete { id, vault } => {
-                    delete_workflow(id, vault).await
-                }
-            }
-        }
-        Some(Commands::Inspect { workflow }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet inspect' is now organized under 'tuquet automa inspect'\x1b[0m");
-            inspect_workflow(&workflow)
-        }
-        Some(Commands::Server { host, port, data_dir, log_level }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet server' is now organized under 'tuquet runner start'\x1b[0m");
-            run_server(host, port, data_dir, log_level).await
-        }
-        Some(Commands::SetupExt { browser, extension_path }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet setup-ext' is now organized under 'tuquet runner setup-ext'\x1b[0m");
-            setup_extension(&browser, extension_path).await
-        }
-        Some(Commands::ExportOpenapi { output }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet export-openapi' is now organized under 'tuquet runner export-openapi'\x1b[0m");
-            export_openapi(&output)
-        }
-        Some(Commands::Status { url }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet status' is now organized under 'tuquet runner status'\x1b[0m");
-            let target_url = url.unwrap_or_else(|| {
-                let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-                let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| "8765".to_string());
-                format!("http://{}:{}", host, port)
-            });
-            check_status(&target_url).await
-        }
-        Some(Commands::Login { url, token, name }) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet login' is now organized under 'tuquet cloud login'\x1b[0m");
-            handle_cloud_login(url, token, name).await
-        }
-        Some(Commands::Logout) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet logout' is now organized under 'tuquet cloud logout'\x1b[0m");
-            handle_cloud_logout().await
-        }
-        Some(Commands::Whoami) => {
-            eprintln!("\x1b[33m💡 Hint: 'tuquet whoami' is now organized under 'tuquet cloud whoami'\x1b[0m");
-            handle_cloud_whoami().await
-        }
-        Some(Commands::Probe) => {
-            print_probe_manifest()
-        }
-        None => {
-            run_server(None, None, None, None).await
         }
     }
 }

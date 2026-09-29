@@ -27,10 +27,6 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;36m-h, --help\x1b[0m          Print help (see more with '--help')
   \x1b[1;36m-V, --version\x1b[0m       Print version
 
-\x1b[1;32mCompatibility & Probes:\x1b[0m
-      \x1b[1;36m--probe\x1b[0m                 Active capability negotiation and handshake probe for Tuquet Runner (tqr)
-      \x1b[1;36m--export-openapi\x1b[0m        Export OpenAPI v3 JSON specification to file
-
 \x1b[1;32mExamples:\x1b[0m
   tuquet automa run ./workflow.json --headless
   tuquet automa workflow list
@@ -47,26 +43,16 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
     about = "Tuquet - Unified CLI & Distributed Automation Engine",
     long_about = "Master control CLI, cloud-connected runner daemon, and browser automation engine for the Tuquet Ecosystem.",
     styles = get_styles(),
-    help_template = MAIN_HELP_TEMPLATE
+    help_template = MAIN_HELP_TEMPLATE,
+    arg_required_else_help = true
 )]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Option<Commands>,
-
-    /// Active capability negotiation and handshake probe for Tuquet Runner (tqr)
-    #[arg(long, help_heading = "Compatibility & Probes")]
-    pub probe: bool,
-
-    /// Flag for backward compatibility: export openapi spec
-    #[arg(long, help_heading = "Compatibility & Probes")]
-    pub export_openapi: Option<Option<PathBuf>>,
+    pub command: Commands,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    // ---------------------------------------------------------
-    // Core Services
-    // ---------------------------------------------------------
     /// Automa browser workflow automation engine
     #[command(name = "automa")]
     Automa {
@@ -94,92 +80,6 @@ pub enum Commands {
         #[command(subcommand)]
         command: BrowserCommands,
     },
-
-    // ---------------------------------------------------------
-    // Backward-Compatibility Root Shortcuts (Hidden from help)
-    // ---------------------------------------------------------
-    #[command(hide = true)]
-    Run {
-        #[arg(value_name = "WORKFLOW_FILE")]
-        workflow_pos: Option<String>,
-        #[arg(short, long)]
-        workflow: Option<String>,
-        #[arg(long)]
-        workflow_json: Option<String>,
-        #[arg(long)]
-        headless: bool,
-        #[arg(short, long)]
-        browser: Option<String>,
-        #[arg(long)]
-        browser_id: Option<String>,
-        #[arg(short = 'p', long = "var", alias = "param", value_name = "KEY=VALUE")]
-        variables: Vec<String>,
-        #[arg(short, long)]
-        timeout: Option<u64>,
-    },
-
-    #[command(hide = true, name = "workflow", alias = "wf")]
-    Workflow {
-        #[command(subcommand)]
-        command: WorkflowCommands,
-    },
-
-    #[command(hide = true)]
-    Inspect {
-        #[arg(value_name = "WORKFLOW")]
-        workflow: String,
-    },
-
-    #[command(hide = true, name = "server", aliases = ["start", "up"])]
-    Server {
-        #[arg(short = 'H', long)]
-        host: Option<String>,
-        #[arg(short, long)]
-        port: Option<u16>,
-        #[arg(short, long)]
-        data_dir: Option<PathBuf>,
-        #[arg(short, long)]
-        log_level: Option<String>,
-    },
-
-    #[command(hide = true)]
-    SetupExt {
-        #[arg(short, long, default_value = "chrome")]
-        browser: String,
-        #[arg(short, long)]
-        extension_path: Option<PathBuf>,
-    },
-
-    #[command(hide = true)]
-    ExportOpenapi {
-        #[arg(short, long, default_value = "openapi.json")]
-        output: PathBuf,
-    },
-
-    #[command(hide = true)]
-    Status {
-        #[arg(short, long)]
-        url: Option<String>,
-    },
-
-    #[command(hide = true)]
-    Login {
-        #[arg(short, long)]
-        url: Option<String>,
-        #[arg(short, long)]
-        token: Option<String>,
-        #[arg(short, long)]
-        name: Option<String>,
-    },
-
-    #[command(hide = true)]
-    Logout,
-
-    #[command(hide = true)]
-    Whoami,
-
-    #[command(hide = true)]
-    Probe,
 }
 
 #[derive(Subcommand, Debug)]
