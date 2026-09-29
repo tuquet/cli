@@ -1,8 +1,8 @@
 ### Tuquet Automa Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
 @baseUrl = http://127.0.0.1:8765
-@cloudUrl = http://127.0.0.1:54321
+@cloudUrl = https://dswhacsoaxgpfnkaxnhz.supabase.co
 @contentType = application/json
-@anonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+@anonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd2hhY3NvYXhncGZua2F4bmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTEzMzcsImV4cCI6MjEwNTg2NzMzN30.QRdxE3CPCF8CtliOtSUcSFO-jbKi99uM2AKlJgKt6RQ
 
 # ====================================================================
 # 6.1 TUQUET CLOUD - USER REGISTRATION & AUTO-TENANT PROVISIONING
