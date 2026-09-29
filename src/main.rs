@@ -1,13 +1,15 @@
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use std::collections::HashMap;
-use automa_core::infrastructure::db::AutomaDb;
-use automa_core::config::AppConfig;
 use automa_core::api;
 use automa_core::AppState;
-use automa_core::cli::{AuthCommands, AutomaSubcommands, BrowserCommands, Cli, Commands, WorkflowCommands};
+use automa_core::cli::{
+    AutomaSubcommands, BrowserCommands, Cli, CloudSubcommands, Commands, RunnerSubcommands, WorkflowCommands,
+};
+use automa_core::config::AppConfig;
+use automa_core::infrastructure::db::AutomaDb;
 use clap::Parser;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -25,9 +27,114 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match cli.command {
-        Some(Commands::Probe) => {
-            print_probe_manifest()
+        // =========================================================
+        // 1. Service: Automa (Browser Automation)
+        // =========================================================
+        Some(Commands::Automa { command }) => match command {
+            AutomaSubcommands::Run {
+                workflow_pos,
+                workflow,
+                workflow_json,
+                headless,
+                browser,
+                browser_id,
+                variables,
+                timeout,
+            } => {
+                let target_workflow = workflow.or(workflow_pos);
+                run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
+            }
+            AutomaSubcommands::Workflow { command } => match command {
+                WorkflowCommands::List { search, db_only, vault_only } => {
+                    list_workflows(search, db_only, vault_only).await
+                }
+                WorkflowCommands::Import { file, id, name, description } => {
+                    import_workflow(file, id, name, description).await
+                }
+                WorkflowCommands::Export { id, output } => {
+                    export_workflow(id, output).await
+                }
+                WorkflowCommands::Info { id } => {
+                    inspect_workflow(&id)
+                }
+                WorkflowCommands::Delete { id, vault } => {
+                    delete_workflow(id, vault).await
+                }
+            },
+            AutomaSubcommands::Inspect { workflow } => {
+                inspect_workflow(&workflow)
+            }
+            AutomaSubcommands::Studio => {
+                let config = AppConfig::load();
+                let port = config.server_port;
+                let url = std::env::var("AUTOMA_STUDIO_URL").unwrap_or_else(|_| {
+                    format!("https://automa-studio.vercel.app?port={}", port)
+                });
+                println!("Opening Automa Web Studio at: {}", url);
+                #[cfg(target_os = "windows")]
+                let _ = std::process::Command::new("cmd").args(["/C", "start", &url]).spawn();
+                #[cfg(target_os = "macos")]
+                let _ = std::process::Command::new("open").arg(&url).spawn();
+                #[cfg(target_os = "linux")]
+                let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+                Ok(())
+            }
+            AutomaSubcommands::Probe => {
+                print_probe_manifest()
+            }
+        },
+
+        // =========================================================
+        // 2. Service: Runner (Daemon & Cloud Node)
+        // =========================================================
+        Some(Commands::Runner { command }) => match command {
+            RunnerSubcommands::Start { host, port, data_dir, log_level } => {
+                run_server(host, port, data_dir, log_level).await
+            }
+            RunnerSubcommands::Status { url } => {
+                let target_url = url.unwrap_or_else(|| {
+                    let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+                    let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| "8765".to_string());
+                    format!("http://{}:{}", host, port)
+                });
+                check_status(&target_url).await
+            }
+            RunnerSubcommands::Probe => {
+                print_probe_manifest()
+            }
+            RunnerSubcommands::ExportOpenapi { output } => {
+                export_openapi(&output)
+            }
+            RunnerSubcommands::SetupExt { browser, extension_path } => {
+                setup_extension(&browser, extension_path).await
+            }
+        },
+
+        // =========================================================
+        // 3. Service: Cloud (Multi-Tenant Auth & Pairing)
+        // =========================================================
+        Some(Commands::Cloud { command }) => match command {
+            CloudSubcommands::Login { url, token, name } => {
+                handle_cloud_login(url, token, name).await
+            }
+            CloudSubcommands::Logout => {
+                handle_cloud_logout().await
+            }
+            CloudSubcommands::Whoami => {
+                handle_cloud_whoami().await
+            }
+        },
+
+        // =========================================================
+        // 4. Service: Browser (Chromium Runtime Management)
+        // =========================================================
+        Some(Commands::Browser { command }) => {
+            handle_browser_command(command).await
         }
+
+        // =========================================================
+        // Backward-Compatibility Root Shortcuts
+        // =========================================================
         Some(Commands::Run {
             workflow_pos,
             workflow,
@@ -38,10 +145,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             variables,
             timeout,
         }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet run' is now organized under 'tuquet automa run'\x1b[0m");
             let target_workflow = workflow.or(workflow_pos);
             run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
         }
         Some(Commands::Workflow { command }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet workflow' is now organized under 'tuquet automa workflow'\x1b[0m");
             match command {
                 WorkflowCommands::List { search, db_only, vault_only } => {
                     list_workflows(search, db_only, vault_only).await
@@ -61,12 +170,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Some(Commands::Inspect { workflow }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet inspect' is now organized under 'tuquet automa inspect'\x1b[0m");
             inspect_workflow(&workflow)
         }
+        Some(Commands::Server { host, port, data_dir, log_level }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet server' is now organized under 'tuquet runner start'\x1b[0m");
+            run_server(host, port, data_dir, log_level).await
+        }
+        Some(Commands::SetupExt { browser, extension_path }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet setup-ext' is now organized under 'tuquet runner setup-ext'\x1b[0m");
+            setup_extension(&browser, extension_path).await
+        }
         Some(Commands::ExportOpenapi { output }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet export-openapi' is now organized under 'tuquet runner export-openapi'\x1b[0m");
             export_openapi(&output)
         }
         Some(Commands::Status { url }) => {
+            eprintln!("\x1b[33m💡 Hint: 'tuquet status' is now organized under 'tuquet runner status'\x1b[0m");
             let target_url = url.unwrap_or_else(|| {
                 let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
                 let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| "8765".to_string());
@@ -74,218 +194,134 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             });
             check_status(&target_url).await
         }
-        Some(Commands::Browser { command }) => {
-            match command {
-                BrowserCommands::Install { force, revision } => {
-                    match automa_core::core::browser::resolver::download_chromium_runtime(force, revision.as_deref()).await {
-                        Ok(path) => {
-                            println!("\x1b[32m[SUCCESS] Dedicated Open-Source Chromium runtime ready at: {}\x1b[0m", path);
-                            Ok(())
-                        }
-                        Err(e) => {
-                            eprintln!("\x1b[31m[ERROR] Failed to install Chromium runtime: {}\x1b[0m", e);
-                            std::process::exit(1);
-                        }
-                    }
-                }
-                BrowserCommands::Status => {
-                    let status = automa_core::core::browser::resolver::get_runtime_status();
-                    println!("============================================================");
-                    println!(" Automa Core - Open-Source Chromium Runtime Status");
-                    println!("============================================================");
-                    println!(" Engine:          Chromium (Pure Open Source - BSD 3-Clause)");
-                    println!(" Platform:        {}", status.platform);
-                    println!(" Status:          {}", if status.installed { "\x1b[32mINSTALLED\x1b[0m" } else { "\x1b[33mNOT INSTALLED\x1b[0m" });
-                    println!(" Version/Rev:     {}", status.pinned_version);
-                    println!(" Executable Path: {}", status.executable_path);
-                    println!(" Directory:       {}", status.directory);
-                    if let Some(mb) = status.size_mb {
-                        println!(" Disk Usage:      {:.1} MB", mb);
-                    }
-                    println!("============================================================");
-                    if !status.installed {
-                        println!("👉 Run 'tuquet browser install' to download and setup.");
-                    }
-                    Ok(())
-                }
-                BrowserCommands::Clean => {
-                    match automa_core::core::browser::resolver::clean_runtime() {
-                        Ok(_) => {
-                            println!("\x1b[32m[SUCCESS] Cleaned browser runtime directory.\x1b[0m");
-                            Ok(())
-                        }
-                        Err(e) => {
-                            eprintln!("\x1b[31m[ERROR] Failed to clean runtime: {}\x1b[0m", e);
-                            std::process::exit(1);
-                        }
-                    }
-                }
-                BrowserCommands::Path => {
-                    match automa_core::core::browser::resolver::resolve_executable_path("default").await {
-                        Ok(path) => {
-                            println!("{}", path);
-                            Ok(())
-                        }
-                        Err(e) => {
-                            eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
-                            std::process::exit(1);
-                        }
-                    }
-                }
-            }
-        }
-        Some(Commands::SetupExt { browser, extension_path }) => {
-            setup_extension(&browser, extension_path).await
-        }
-        Some(Commands::Server { host, port, data_dir, log_level }) => {
-            run_server(host, port, data_dir, log_level).await
-        }
         Some(Commands::Login { url, token, name }) => {
-            let config = AppConfig::load();
-            let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
-            let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
-            match automa_core::infrastructure::cloud_reporter::CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
-                Ok(creds) => {
-                    println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
-                    println!("Device ID:   {}", creds.device_id);
-                    println!("Device Name: {}", creds.name);
-                    println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
-                    Ok(())
-                }
-                Err(e) => {
-                    eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
-                    std::process::exit(1);
-                }
-            }
+            eprintln!("\x1b[33m💡 Hint: 'tuquet login' is now organized under 'tuquet cloud login'\x1b[0m");
+            handle_cloud_login(url, token, name).await
         }
         Some(Commands::Logout) => {
-            let config = AppConfig::load();
-            match automa_core::infrastructure::cloud_reporter::CloudReporter::logout(&config.data_dir).await {
-                Ok(true) => {
-                    println!("\x1b[32m[SUCCESS] Logged out and removed local cloud credentials.\x1b[0m");
-                    Ok(())
-                }
-                Ok(false) => {
-                    println!("No active cloud session found.");
-                    Ok(())
-                }
-                Err(e) => {
-                    eprintln!("\x1b[31m[ERROR] Logout failed: {}\x1b[0m", e);
-                    std::process::exit(1);
-                }
-            }
+            eprintln!("\x1b[33m💡 Hint: 'tuquet logout' is now organized under 'tuquet cloud logout'\x1b[0m");
+            handle_cloud_logout().await
         }
         Some(Commands::Whoami) => {
-            let config = AppConfig::load();
-            if let Some(creds) = automa_core::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await {
-                println!("Device ID:   {}", creds.device_id);
-                println!("Device Name: {}", creds.name);
-                println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
-                println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
-            } else {
-                println!("Not logged in to Tuquet Cloud.");
-            }
-            Ok(())
+            eprintln!("\x1b[33m💡 Hint: 'tuquet whoami' is now organized under 'tuquet cloud whoami'\x1b[0m");
+            handle_cloud_whoami().await
         }
-        Some(Commands::Auth { command }) => {
-            match command {
-                AuthCommands::Login { url, token, name } => {
-                    let config = AppConfig::load();
-                    let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
-                    let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
-                    match automa_core::infrastructure::cloud_reporter::CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
-                        Ok(creds) => {
-                            println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
-                            println!("Device ID:   {}", creds.device_id);
-                            println!("Device Name: {}", creds.name);
-                            println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
-                            Ok(())
-                        }
-                        Err(e) => {
-                            eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
-                            std::process::exit(1);
-                        }
-                    }
-                }
-                AuthCommands::Logout => {
-                    let config = AppConfig::load();
-                    let _ = automa_core::infrastructure::cloud_reporter::CloudReporter::logout(&config.data_dir).await;
-                    println!("\x1b[32m[SUCCESS] Logged out.\x1b[0m");
-                    Ok(())
-                }
-                AuthCommands::Status => {
-                    let config = AppConfig::load();
-                    if let Some(creds) = automa_core::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await {
-                        println!("Device ID:   {}", creds.device_id);
-                        println!("Device Name: {}", creds.name);
-                        println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
-                        println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
-                    } else {
-                        println!("Not logged in to Tuquet Cloud.");
-                    }
-                    Ok(())
-                }
-            }
-        }
-        Some(Commands::Automa { command }) => {
-            match command {
-                AutomaSubcommands::Run {
-                    workflow_pos,
-                    workflow,
-                    workflow_json,
-                    headless,
-                    browser,
-                    browser_id,
-                    variables,
-                    timeout,
-                } => {
-                    let target_workflow = workflow.or(workflow_pos);
-                    run_workflow(target_workflow, workflow_json, headless, browser, browser_id, variables, timeout).await
-                }
-                AutomaSubcommands::Workflow { command } => {
-                    match command {
-                        WorkflowCommands::List { search, db_only, vault_only } => {
-                            list_workflows(search, db_only, vault_only).await
-                        }
-                        WorkflowCommands::Import { file, id, name, description } => {
-                            import_workflow(file, id, name, description).await
-                        }
-                        WorkflowCommands::Export { id, output } => {
-                            export_workflow(id, output).await
-                        }
-                        WorkflowCommands::Info { id } => {
-                            inspect_workflow(&id)
-                        }
-                        WorkflowCommands::Delete { id, vault } => {
-                            delete_workflow(id, vault).await
-                        }
-                    }
-                }
-                AutomaSubcommands::Inspect { workflow } => {
-                    inspect_workflow(&workflow)
-                }
-                AutomaSubcommands::Studio => {
-                    let config = AppConfig::load();
-                    let port = config.server_port;
-                    let url = std::env::var("AUTOMA_STUDIO_URL").unwrap_or_else(|_| {
-                        format!("https://automa-studio.vercel.app?port={}", port)
-                    });
-                    println!("Opening Automa Web Studio at: {}", url);
-                    #[cfg(target_os = "windows")]
-                    let _ = std::process::Command::new("cmd").args(["/C", "start", &url]).spawn();
-                    #[cfg(target_os = "macos")]
-                    let _ = std::process::Command::new("open").arg(&url).spawn();
-                    #[cfg(target_os = "linux")]
-                    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
-                    Ok(())
-                }
-                AutomaSubcommands::Probe => {
-                    print_probe_manifest()
-                }
-            }
+        Some(Commands::Probe) => {
+            print_probe_manifest()
         }
         None => {
             run_server(None, None, None, None).await
+        }
+    }
+}
+
+async fn handle_cloud_login(url: Option<String>, token: Option<String>, name: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
+    let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
+    match automa_core::infrastructure::cloud_reporter::CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
+        Ok(creds) => {
+            println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
+            println!("Device ID:   {}", creds.device_id);
+            println!("Device Name: {}", creds.name);
+            println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+async fn handle_cloud_logout() -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    match automa_core::infrastructure::cloud_reporter::CloudReporter::logout(&config.data_dir).await {
+        Ok(true) => {
+            println!("\x1b[32m[SUCCESS] Logged out and removed local cloud credentials.\x1b[0m");
+            Ok(())
+        }
+        Ok(false) => {
+            println!("No active cloud session found.");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("\x1b[31m[ERROR] Logout failed: {}\x1b[0m", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+async fn handle_cloud_whoami() -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    if let Some(creds) = automa_core::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await {
+        println!("Device ID:   {}", creds.device_id);
+        println!("Device Name: {}", creds.name);
+        println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+        println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
+    } else {
+        println!("Not logged in to Tuquet Cloud.");
+    }
+    Ok(())
+}
+
+async fn handle_browser_command(command: BrowserCommands) -> Result<(), Box<dyn std::error::Error>> {
+    match command {
+        BrowserCommands::Install { force, revision } => {
+            match automa_core::core::browser::resolver::download_chromium_runtime(force, revision.as_deref()).await {
+                Ok(path) => {
+                    println!("\x1b[32m[SUCCESS] Dedicated Open-Source Chromium runtime ready at: {}\x1b[0m", path);
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("\x1b[31m[ERROR] Failed to install Chromium runtime: {}\x1b[0m", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        BrowserCommands::Status => {
+            let status = automa_core::core::browser::resolver::get_runtime_status();
+            println!("============================================================");
+            println!(" Tuquet Ecosystem - Open-Source Chromium Runtime Status");
+            println!("============================================================");
+            println!(" Engine:          Chromium (Pure Open Source - BSD 3-Clause)");
+            println!(" Platform:        {}", status.platform);
+            println!(" Status:          {}", if status.installed { "\x1b[32mINSTALLED\x1b[0m" } else { "\x1b[33mNOT INSTALLED\x1b[0m" });
+            println!(" Version/Rev:     {}", status.pinned_version);
+            println!(" Executable Path: {}", status.executable_path);
+            println!(" Directory:       {}", status.directory);
+            if let Some(mb) = status.size_mb {
+                println!(" Disk Usage:      {:.1} MB", mb);
+            }
+            println!("============================================================");
+            if !status.installed {
+                println!("👉 Run 'tuquet browser install' to download and setup.");
+            }
+            Ok(())
+        }
+        BrowserCommands::Clean => {
+            match automa_core::core::browser::resolver::clean_runtime() {
+                Ok(_) => {
+                    println!("\x1b[32m[SUCCESS] Cleaned browser runtime directory.\x1b[0m");
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("\x1b[31m[ERROR] Failed to clean runtime: {}\x1b[0m", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        BrowserCommands::Path => {
+            match automa_core::core::browser::resolver::resolve_executable_path("default").await {
+                Ok(path) => {
+                    println!("{}", path);
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }
