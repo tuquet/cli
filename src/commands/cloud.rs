@@ -27,8 +27,7 @@ pub async fn login(
             Ok(())
         }
         Err(e) => {
-            eprintln!("\x1b[31m[ERROR] Enrollment failed: {}\x1b[0m", e);
-            std::process::exit(1);
+            Err(format!("Enrollment failed: {}", e).into())
         }
     }
 }
@@ -45,8 +44,7 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Err(e) => {
-            eprintln!("\x1b[31m[ERROR] Logout failed: {}\x1b[0m", e);
-            std::process::exit(1);
+            Err(format!("Logout failed: {}", e).into())
         }
     }
 }

@@ -81,9 +81,16 @@ impl Completer for TuquetCompleter {
                 ShellScope::Global => &[
                     ("use", "Switch active service scope (automa, runner, cloud, browser)"),
                     ("automa", "Enter browser automation scope"),
-                    ("runner", "Enter distributed runner scope"),
-                    ("cloud", "Enter cloud authentication scope"),
+                    ("runner", "Enter distributed runner scope (aliases: daemon, worker)"),
+                    ("cloud", "Enter cloud authentication scope (alias: auth)"),
                     ("browser", "Enter browser runtime management scope"),
+                    ("status", "Inspect status across all Tuquet subsystems"),
+                    ("login", "Authenticate workstation with Tuquet Cloud"),
+                    ("whoami", "Check active cloud pairing and device ID"),
+                    ("logout", "Log out and remove local cloud credentials"),
+                    ("run", "Execute a workflow (.json or stored ID)"),
+                    ("list", "List stored workflows in vault and database"),
+                    ("studio", "Launch Automa Web Studio"),
                     ("help", "Print help overview"),
                     ("clear", "Clear terminal screen"),
                     ("exit", "Exit Tuquet shell"),
@@ -140,13 +147,13 @@ impl Completer for TuquetCompleter {
             }
         } else if words_before.len() == 1 && words_before[0] == "use" {
             // Completing scope target for 'use'
-            let scopes = ["automa", "runner", "cloud", "browser", "global"];
+            let scopes = ["automa", "runner", "cloud", "browser", "auth", "daemon", "worker", "global"];
             for s in &scopes {
                 if s.starts_with(current_word) {
                     suggestions.push(make_suggestion(*s, "Target service scope", span));
                 }
             }
-        } else if self.scope == ShellScope::Automa && matches!(words_before[0], "run" | "inspect" | "export" | "delete") {
+        } else if (self.scope == ShellScope::Automa || self.scope == ShellScope::Global) && matches!(words_before[0], "run" | "inspect" | "export" | "delete") {
             // Suggest workflows from ~/.tuquet/workflows/
             if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
                 let vault_dir = PathBuf::from(home).join(".tuquet").join("workflows");
@@ -183,8 +190,8 @@ impl Completer for TuquetCompleter {
 pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let mut scope = match initial_service.map(|s| s.to_lowercase()).as_deref() {
         Some("automa") => ShellScope::Automa,
-        Some("runner") => ShellScope::Runner,
-        Some("cloud") => ShellScope::Cloud,
+        Some("runner") | Some("daemon") | Some("worker") => ShellScope::Runner,
+        Some("cloud") | Some("auth") => ShellScope::Cloud,
         Some("browser") => ShellScope::Browser,
         _ => ShellScope::Global,
     };
@@ -290,11 +297,11 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                         *scope = ShellScope::Automa;
                         println!("Switched to \x1b[33mAutoma\x1b[0m context (Browser automation engine).");
                     }
-                    "runner" => {
+                    "runner" | "daemon" | "worker" => {
                         *scope = ShellScope::Runner;
                         println!("Switched to \x1b[32mRunner\x1b[0m context (Distributed daemon & node).");
                     }
-                    "cloud" => {
+                    "cloud" | "auth" => {
                         *scope = ShellScope::Cloud;
                         println!("Switched to \x1b[35mCloud\x1b[0m context (Authentication & pairing).");
                     }
@@ -325,7 +332,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
         _ => {}
     }
 
-    // Direct scope switching shortcuts in Global: "automa", "runner", "cloud", "browser"
+    // Direct scope switching shortcuts in Global: "automa", "runner", "cloud", "browser" + aliases
     if *scope == ShellScope::Global {
         match cmd {
             "automa" if args.is_empty() => {
@@ -333,12 +340,12 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                 println!("Switched to \x1b[33mAutoma\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
-            "runner" if args.is_empty() => {
+            "runner" | "daemon" | "worker" if args.is_empty() => {
                 *scope = ShellScope::Runner;
                 println!("Switched to \x1b[32mRunner\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
-            "cloud" if args.is_empty() => {
+            "cloud" | "auth" if args.is_empty() => {
                 *scope = ShellScope::Cloud;
                 println!("Switched to \x1b[35mCloud\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
@@ -350,6 +357,23 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
             }
             _ => {}
         }
+    }
+
+    // Support scope prefix redundancy gracefully (e.g. typing "automa run" inside automa scope)
+    match *scope {
+        ShellScope::Automa if cmd == "automa" && !args.is_empty() => {
+            return dispatch_automa(args[0], &args[1..]).await.map(|_| false);
+        }
+        ShellScope::Runner if matches!(cmd, "runner" | "daemon" | "worker") && !args.is_empty() => {
+            return dispatch_runner(args[0], &args[1..]).await.map(|_| false);
+        }
+        ShellScope::Cloud if matches!(cmd, "cloud" | "auth") && !args.is_empty() => {
+            return dispatch_cloud(args[0], &args[1..]).await.map(|_| false);
+        }
+        ShellScope::Browser if cmd == "browser" && !args.is_empty() => {
+            return dispatch_browser(args[0], &args[1..]).await.map(|_| false);
+        }
+        _ => {}
     }
 
     match *scope {
@@ -372,14 +396,14 @@ async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
                 dispatch_automa(args[0], &args[1..]).await?;
             }
         }
-        "runner" => {
+        "runner" | "daemon" | "worker" => {
             if args.is_empty() {
                 println!("Usage: runner <status | probe | export-openapi | setup-ext | start>");
             } else {
                 dispatch_runner(args[0], &args[1..]).await?;
             }
         }
-        "cloud" => {
+        "cloud" | "auth" => {
             if args.is_empty() {
                 println!("Usage: cloud <login | logout | whoami>");
             } else {
@@ -392,6 +416,30 @@ async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
             } else {
                 dispatch_browser(args[0], &args[1..]).await?;
             }
+        }
+        // Direct Global convenience commands
+        "login" | "logout" | "whoami" => {
+            dispatch_cloud(cmd, args).await?;
+        }
+        "run" | "list" | "ls" | "inspect" | "import" | "export" | "delete" | "studio" => {
+            dispatch_automa(cmd, args).await?;
+        }
+        "install" | "clean" | "path" => {
+            dispatch_browser(cmd, args).await?;
+        }
+        "status" => {
+            println!("\x1b[1;36m============================================================\x1b[0m");
+            println!("\x1b[1;36m Tuquet Ecosystem Health & Status\x1b[0m");
+            println!("\x1b[1;36m============================================================\x1b[0m");
+            println!("\x1b[1;33m--- [Browser Runtime] ---\x1b[0m");
+            let _ = dispatch_browser("status", &[]).await;
+            println!();
+            println!("\x1b[1;32m--- [Runner Daemon] ---\x1b[0m");
+            let _ = dispatch_runner("status", &[]).await;
+            println!();
+            println!("\x1b[1;35m--- [Cloud Pairing] ---\x1b[0m");
+            let _ = dispatch_cloud("whoami", &[]).await;
+            println!("============================================================");
         }
         other => {
             println!("Unknown global command: '{}'. Type 'help' or 'use <service>' to enter a scope.", other);
@@ -547,17 +595,21 @@ fn print_scope_help(scope: ShellScope) {
             println!("============================================================");
             println!(" Scope Navigation:");
             println!("   use <service>      Switch context: automa, runner, cloud, browser");
-            println!("   automa             Quick switch to automa scope");
-            println!("   runner             Quick switch to runner scope");
-            println!("   cloud              Quick switch to cloud scope");
-            println!("   browser            Quick switch to browser scope");
+            println!("   automa             Switch to automa scope (browser automation)");
+            println!("   runner / daemon    Switch to runner scope (worker daemon)");
+            println!("   cloud / auth       Switch to cloud scope (pairing & identity)");
+            println!("   browser            Switch to browser scope (isolated chromium)");
             println!("   clear              Clear terminal display");
             println!("   exit               Quit interactive shell");
-            println!(" Direct Execution:");
-            println!("   automa run <id>    Execute workflow directly from global");
-            println!("   browser status     Inspect dedicated browser runtime");
-            println!("   runner status      Check local runner daemon health");
-            println!("   cloud whoami       Check cloud pairing status");
+            println!(" Direct Commands:");
+            println!("   status             Inspect status of all Tuquet subsystems");
+            println!("   login [token]      Authenticate workstation with Tuquet Cloud");
+            println!("   whoami             Inspect cloud enrollment and device ID");
+            println!("   logout             Disconnect from Tuquet Cloud");
+            println!("   run <wf>           Execute workflow (.json or ID)");
+            println!("   list [query]       List stored workflows");
+            println!("   studio             Open Automa Web Studio in browser");
+            println!("   install            Download and install isolated Chromium");
             println!("============================================================");
         }
         ShellScope::Automa => {

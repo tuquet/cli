@@ -7,7 +7,7 @@ use clap::{CommandFactory, Parser};
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    match cli.command {
+    let result = match cli.command {
         Some(Commands::Automa { command }) => match command {
             Some(subcmd) => commands::automa::handle(subcmd).await,
             None => {
@@ -68,5 +68,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 std::process::exit(2);
             }
         }
+    };
+
+    if let Err(e) = result {
+        eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
+        std::process::exit(1);
     }
+
+    Ok(())
 }

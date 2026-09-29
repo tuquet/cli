@@ -551,11 +551,10 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
             match resolved {
                 Some(r) => r,
                 None => {
-                    eprintln!(
-                        "Error: Workflow file or ID '{}' not found in file system, database, or vault.",
+                    return Err(format!(
+                        "Workflow file or ID '{}' not found in file system, database, or vault.",
                         target
-                    );
-                    std::process::exit(1);
+                    ).into());
                 }
             }
         }
@@ -567,8 +566,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
     let val: serde_json::Value = match serde_json::from_str(&content) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Error: Failed to parse workflow file as valid JSON: {}", e);
-            std::process::exit(1);
+            return Err(format!("Failed to parse workflow file as valid JSON: {}", e).into());
         }
     };
 
@@ -835,8 +833,7 @@ pub async fn run_workflow(
     {
         Ok(id) => id,
         Err(e) => {
-            eprintln!("Error submitting workflow: {}", e);
-            std::process::exit(1);
+            return Err(format!("Error submitting workflow: {}", e).into());
         }
     };
 
@@ -905,11 +902,11 @@ pub async fn run_workflow(
     match execution_result {
         Ok(_) => {
             println!(">> Run completed successfully.");
-            std::process::exit(0);
+            Ok(())
         }
         Err(e) => {
             eprintln!(">> Run failed: {}", e);
-            std::process::exit(1);
+            Err(e.into())
         }
     }
 }

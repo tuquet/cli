@@ -9,8 +9,7 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("\x1b[31m[ERROR] Failed to install Chromium runtime: {}\x1b[0m", e);
-                    std::process::exit(1);
+                    Err(format!("Failed to install Chromium runtime: {}", e).into())
                 }
             }
         }
@@ -30,7 +29,7 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
             }
             println!("============================================================");
             if !status.installed {
-                println!("👉 Run 'tuquet browser install' to download and setup.");
+                println!(">> Run 'tuquet browser install' to download and setup.");
             }
             Ok(())
         }
@@ -41,8 +40,7 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("\x1b[31m[ERROR] Failed to clean runtime: {}\x1b[0m", e);
-                    std::process::exit(1);
+                    Err(format!("Failed to clean runtime: {}", e).into())
                 }
             }
         }
@@ -53,8 +51,7 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
-                    std::process::exit(1);
+                    Err(e.into())
                 }
             }
         }
