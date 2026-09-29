@@ -722,7 +722,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     // Dynamic expressions scan
-    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
+    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").map_err(|e| format!("Invalid regex: {}", e))?;
     let mut expressions = std::collections::BTreeSet::new();
     for cap in re.captures_iter(&content) {
         if let Some(matched) = cap.get(1) {
