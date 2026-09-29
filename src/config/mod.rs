@@ -19,10 +19,12 @@ impl AppConfig {
         // Ignore dotenv error if file doesn't exist
         let _ = dotenv();
 
-        let mut server_host = env::var("AUTOMA_HOST")
+        let mut server_host = env::var("TUQUET_HOST")
+            .or_else(|_| env::var("AUTOMA_HOST"))
             .unwrap_or_else(|_| "127.0.0.1".to_string());
 
-        let mut server_port = env::var("AUTOMA_PORT")
+        let mut server_port = env::var("TUQUET_PORT")
+            .or_else(|_| env::var("AUTOMA_PORT"))
             .unwrap_or_else(|_| "8765".to_string())
             .parse()
             .unwrap_or(8765);
@@ -39,23 +41,23 @@ impl AppConfig {
             }
         }
 
-        let environment = env::var("AUTOMA_ENV").unwrap_or_else(|_| "development".to_string());
+        let environment = env::var("TUQUET_ENV")
+            .or_else(|_| env::var("AUTOMA_ENV"))
+            .unwrap_or_else(|_| "development".to_string());
         
-        let log_level = env::var("AUTOMA_LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+        let log_level = env::var("TUQUET_LOG_LEVEL")
+            .or_else(|_| env::var("AUTOMA_LOG_LEVEL"))
+            .unwrap_or_else(|_| "info".to_string());
         
-        let data_dir = env::var("AUTOMA_DATA_DIR").unwrap_or_else(|_| {
-            let env_type = env::var("AUTOMA_ENV").unwrap_or_else(|_| "development".to_string());
-            let home = env::var("HOME")
-                .or_else(|_| env::var("USERPROFILE"))
-                .unwrap_or_else(|_| ".".to_string());
-            let mut path = std::path::PathBuf::from(home);
-            if env_type == "development" {
-                path.push(".automa/core-dev");
-            } else {
-                path.push(".automa/core");
-            }
-            path.to_string_lossy().to_string()
-        });
+        let data_dir = env::var("TUQUET_DATA_DIR")
+            .unwrap_or_else(|_| {
+                let home = env::var("HOME")
+                    .or_else(|_| env::var("USERPROFILE"))
+                    .unwrap_or_else(|_| ".".to_string());
+                let home_buf = std::path::PathBuf::from(home);
+                let env_suffix = if environment == "development" { "core-dev" } else { "core" };
+                home_buf.join(".tuquet").join(env_suffix).to_string_lossy().to_string()
+            });
 
         let mut cloud_url = env::var("TUQUET_CLOUD_URL")
             .or_else(|_| env::var("AUTOMA_CLOUD_URL"))

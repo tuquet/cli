@@ -32,9 +32,9 @@ pub fn resolve_cli_runner_extension_path() -> String {
 
     if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
         let home_path = std::path::PathBuf::from(home);
-        possible_paths.push(home_path.join(r"Repository\tuquet-automa\apps\runner\dist"));
-        possible_paths.push(home_path.join(".automa/runner"));
-        possible_paths.push(home_path.join(".automa/extension"));
+        possible_paths.push(home_path.join(r"Repository\tuquet\automa\apps\runner\dist"));
+        possible_paths.push(home_path.join(".tuquet/runner"));
+        possible_paths.push(home_path.join(".tuquet/extension"));
     }
 
     if let Ok(exe_path) = std::env::current_exe()
@@ -45,7 +45,7 @@ pub fn resolve_cli_runner_extension_path() -> String {
             possible_paths.push(exe_dir.join("../../../apps/runner/dist"));
         }
 
-    if let Ok(env_ext) = std::env::var("AUTOMA_EXTENSION_PATH") {
+    if let Ok(env_ext) = std::env::var("TUQUET_EXTENSION_PATH").or_else(|_| std::env::var("AUTOMA_EXTENSION_PATH")) {
         possible_paths.insert(0, std::path::PathBuf::from(env_ext));
     }
 

@@ -144,10 +144,10 @@ pub async fn list_workflows(
         let home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .unwrap_or_else(|_| ".".to_string());
-        let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+        let tuquet_vault = PathBuf::from(&home).join(".tuquet").join("workflows");
         let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
-        let vault_dirs = [user_vault, config_vault];
+        let vault_dirs = [tuquet_vault, config_vault];
         for vdir in &vault_dirs {
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
@@ -346,11 +346,11 @@ pub async fn import_workflow(
         icon.as_deref(),
     )?;
 
-    // Also copy to Vault ~/.automa/workflows/
+    // Also copy to Vault ~/.tuquet/workflows/
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
         .unwrap_or_else(|_| ".".to_string());
-    let vault_dir = PathBuf::from(home).join(".automa").join("workflows");
+    let vault_dir = PathBuf::from(home).join(".tuquet").join("workflows");
     let _ = tokio::fs::create_dir_all(&vault_dir).await;
     let vault_file = vault_dir.join(format!("{}.workflow.json", id));
     tokio::fs::write(&vault_file, &serialized).await?;
@@ -406,12 +406,12 @@ pub async fn export_workflow(
         let home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .unwrap_or_else(|_| ".".to_string());
-        let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+        let tuquet_vault = PathBuf::from(&home).join(".tuquet").join("workflows");
         let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
         let candidates = [
-            user_vault.join(format!("{}.workflow.json", id)),
-            user_vault.join(format!("{}.json", id)),
+            tuquet_vault.join(format!("{}.workflow.json", id)),
+            tuquet_vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];
@@ -469,12 +469,12 @@ pub async fn delete_workflow(
         let home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .unwrap_or_else(|_| ".".to_string());
-        let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+        let tuquet_vault = PathBuf::from(&home).join(".tuquet").join("workflows");
         let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
         let candidates = [
-            user_vault.join(format!("{}.workflow.json", id)),
-            user_vault.join(format!("{}.json", id)),
+            tuquet_vault.join(format!("{}.workflow.json", id)),
+            tuquet_vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];
@@ -529,12 +529,12 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                 let home = std::env::var("HOME")
                     .or_else(|_| std::env::var("USERPROFILE"))
                     .unwrap_or_else(|_| ".".to_string());
-                let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+                let tuquet_vault = PathBuf::from(&home).join(".tuquet").join("workflows");
                 let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
                 let candidates = [
-                    user_vault.join(format!("{}.workflow.json", target)),
-                    user_vault.join(format!("{}.json", target)),
+                    tuquet_vault.join(format!("{}.workflow.json", target)),
+                    tuquet_vault.join(format!("{}.json", target)),
                     config_vault.join(format!("{}.workflow.json", target)),
                     config_vault.join(format!("{}.json", target)),
                 ];

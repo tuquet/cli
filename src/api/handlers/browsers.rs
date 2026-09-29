@@ -411,7 +411,7 @@ pub struct StartBrowserSessionRequest {
     "pid": 12345,
     "debuggingPort": 54321,
     "wsUrl": "ws://127.0.0.1:54321/devtools/browser/abc-123",
-    "userDataDir": "C:\\Users\\user\\.automa\\core-dev\\browsers\\default"
+    "userDataDir": "C:\\Users\\user\\.tuquet\\core-dev\\browsers\\default"
 }))]
 /// Response descriptor containing active browser session connection parameters
 pub struct StartBrowserSessionResponse {

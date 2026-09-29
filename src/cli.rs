@@ -258,7 +258,7 @@ pub enum WorkflowCommands {
         #[arg(long)]
         db_only: bool,
 
-        /// Only list workflows from Vault directory (~/.automa/workflows)
+        /// Only list workflows from Vault directory (~/.tuquet/workflows)
         #[arg(long)]
         vault_only: bool,
     },

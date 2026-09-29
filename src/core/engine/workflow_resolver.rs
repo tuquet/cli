@@ -198,14 +198,14 @@ impl WorkflowResolver {
         let home = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .unwrap_or_else(|_| ".".to_string());
-        let user_vault = PathBuf::from(&home).join(".automa").join("workflows");
+        let tuquet_vault = PathBuf::from(&home).join(".tuquet").join("workflows");
         let config_vault = PathBuf::from(&persistent_config.data_dir).join("workflows");
         let local_vault = PathBuf::from(data_dir).join("workflows");
 
         let candidates = [
-            user_vault.join(format!("{}.workflow.json", wf_id)),
-            user_vault.join(format!("{}.json", wf_id)),
-            user_vault.join(wf_id),
+            tuquet_vault.join(format!("{}.workflow.json", wf_id)),
+            tuquet_vault.join(format!("{}.json", wf_id)),
+            tuquet_vault.join(wf_id),
             config_vault.join(format!("{}.workflow.json", wf_id)),
             config_vault.join(format!("{}.json", wf_id)),
             config_vault.join(wf_id),
@@ -224,7 +224,7 @@ impl WorkflowResolver {
 
         // Step 4: Case-insensitive / slug search in vaults
         let target_lower = wf_id.to_lowercase();
-        let vault_dirs = [user_vault, config_vault, local_vault];
+        let vault_dirs = [tuquet_vault, config_vault, local_vault];
         for vdir in &vault_dirs {
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
@@ -248,7 +248,7 @@ impl WorkflowResolver {
                 }
 
         Err(WorkflowResolveError::NotFound(format!(
-            "Workflow '{}' not found in database or vault (~/.automa/workflows/). Use 'automa workflow list' to view available workflows.",
+            "Workflow '{}' not found in database or vault (~/.tuquet/workflows/). Use 'tuquet automa workflow list' to view available workflows.",
             wf_id
         )))
     }
