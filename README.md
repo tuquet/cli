@@ -146,3 +146,21 @@ Khi Runner Daemon hoạt động (cổng mặc định `8765`), các giao diện
 3. **Bảo Mật Zero-Knowledge**:
    - Lưu trữ Credentials mã hóa AES-256 kết hợp HMAC-SHA256, không lưu plain-text.
    - Browser Extension giải mã trên RAM với passphrase của người dùng.
+
+---
+
+## 🔗 LIÊN KẾT TÀI LIỆU CÁC REPOSITORY LIÊN QUAN (ECOSYSTEM REFERENCES)
+
+Tuquet CLI là trung tâm điều phối, kết nối chặt chẽ với các repository chuyên biệt trong hệ sinh thái Tuquet:
+
+| Repository / Module | Tài Liệu Chi Tiết | Vai Trò & Mối Liên Kết |
+| :--- | :--- | :--- |
+| **Automa Engine** | [📘 `automa/README.md`](../automa/README.md) | Chứa toàn bộ Browser Extension manifest, Background Script & Web Studio. |
+| **Tuquet Runner** | [📘 `runner/README.md`](../runner/README.md) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
+| **Tuquet Cloud** | [📘 `cloud/README.md`](../cloud/README.md) | Nền tảng Supabase Multi-Tenant, RPC enroll device và quản lý license. |
+| **Tuquet Lib** | [📘 `lib/README.md`](../lib/README.md) | Monorepo thư viện chia sẻ TypeScript (`vue-ui`, `extension-runner`, `crypto`). |
+| **Scoop Bucket** | [📘 `scoop-bucket/README.md`](../scoop-bucket/README.md) | Manifest cài đặt Windows Scoop chính thức cho `tuquet` và `tqr`. |
+| **Claude-Agy** | [📘 `claude-agy/README.md`](../claude-agy/README.md) | Engine trung gian tích hợp Claude Code CLI và Antigravity OAuth quota. |
+| **Tuquet Skills** | [📘 `skills/README.md`](../skills/README.md) | Bộ kịch bản và năng lực (Skills) cho AI Coding Agents. |
+| **Ecosystem Root** | [📘 `README.md (Root)`](../README.md) | Trang tổng quan toàn bộ hệ sinh thái Tuquet. |
+
