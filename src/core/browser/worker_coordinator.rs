@@ -37,14 +37,13 @@ pub fn resolve_cli_runner_extension_path() -> String {
         possible_paths.push(home_path.join(".automa/extension"));
     }
 
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
+    if let Ok(exe_path) = std::env::current_exe()
+        && let Some(exe_dir) = exe_path.parent() {
             possible_paths.push(exe_dir.join("apps/runner/dist"));
             possible_paths.push(exe_dir.join("../runner/dist"));
             possible_paths.push(exe_dir.join("../../apps/runner/dist"));
             possible_paths.push(exe_dir.join("../../../apps/runner/dist"));
         }
-    }
 
     if let Ok(env_ext) = std::env::var("AUTOMA_EXTENSION_PATH") {
         possible_paths.insert(0, std::path::PathBuf::from(env_ext));
@@ -129,11 +128,10 @@ pub async fn ensure_browser_worker(
         custom_args.push(format!("--window-size={},{}", slot_w, slot_h));
     }
 
-    if let Some(ref ua) = app_settings.browser.default_user_agent {
-        if !ua.is_empty() {
+    if let Some(ref ua) = app_settings.browser.default_user_agent
+        && !ua.is_empty() {
             custom_args.push(format!("--user-agent={}", ua));
         }
-    }
 
     let mut manager = BrowserManager::new(BrowserManagerOptions {
         default_browser,

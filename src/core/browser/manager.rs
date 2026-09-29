@@ -118,9 +118,9 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
 
                 // Ensure manifest.json exists and has valid version for Chromium
                 let manifest_path = browser_ext_dir.join("manifest.json");
-                if manifest_path.exists() {
-                    if let Ok(content) = tokio::fs::read_to_string(&manifest_path).await {
-                        if let Ok(mut manifest) = serde_json::from_str::<serde_json::Value>(&content) {
+                if manifest_path.exists()
+                    && let Ok(content) = tokio::fs::read_to_string(&manifest_path).await
+                        && let Ok(mut manifest) = serde_json::from_str::<serde_json::Value>(&content) {
                             let has_valid_version = manifest.get("version")
                                 .and_then(|v| v.as_str())
                                 .map(|s| !s.is_empty())
@@ -132,8 +132,6 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
                                 }
                             }
                         }
-                    }
-                }
                 
                 final_ext_paths.push(browser_ext_dir.to_string_lossy().to_string());
             } else {
@@ -205,14 +203,13 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
         self.created_ext_dirs.clear();
 
         // If user_data_dir was ephemeral (created in Temp with automa_browser_), clean it up
-        if let Some(ref dir) = self.resolved_user_data_dir {
-            if dir.contains("automa_browser_") {
+        if let Some(ref dir) = self.resolved_user_data_dir
+            && dir.contains("automa_browser_") {
                 let p = std::path::Path::new(dir);
                 if p.exists() {
                     let _ = tokio::fs::remove_dir_all(p).await;
                 }
             }
-        }
         self.resolved_user_data_dir = None;
 
         Ok(())
@@ -459,11 +456,10 @@ pub async fn sanitize_browser_profile(user_data_dir: &std::path::Path, is_force:
         // Clean any crash dumps (*.dmp) in Crashpad or root
         if let Ok(mut entries) = tokio::fs::read_dir(user_data_dir).await {
             while let Ok(Some(entry)) = entries.next_entry().await {
-                if let Some(ext) = entry.path().extension() {
-                    if ext == "dmp" {
+                if let Some(ext) = entry.path().extension()
+                    && ext == "dmp" {
                         let _ = tokio::fs::remove_file(entry.path()).await;
                     }
-                }
             }
         }
     }

@@ -14,13 +14,11 @@ fn is_valid_id(id: &str) -> bool {
 
 async fn get_browsers_base_path(data_dir: &str) -> String {
     let settings_path = std::path::Path::new(data_dir).join("settings.json");
-    if let Ok(content) = tokio::fs::read_to_string(&settings_path).await {
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-            if let Some(path) = json.get("browsersPath").and_then(|p| p.as_str()) {
+    if let Ok(content) = tokio::fs::read_to_string(&settings_path).await
+        && let Ok(json) = serde_json::from_str::<serde_json::Value>(&content)
+            && let Some(path) = json.get("browsersPath").and_then(|p| p.as_str()) {
                 return path.to_string();
             }
-        }
-    }
     "browsers".to_string()
 }
 
@@ -547,26 +545,23 @@ pub async fn start_browser(
 
     // User-Agent: Profile DB takes precedence, then app_settings
     let effective_ua = db_user_agent.or(app_settings.browser.default_user_agent);
-    if let Some(ref ua) = effective_ua {
-        if !ua.is_empty() {
+    if let Some(ref ua) = effective_ua
+        && !ua.is_empty() {
             custom_args.push(format!("--user-agent={}", ua));
         }
-    }
 
     // Timezone: Profile DB
-    if let Some(ref tz) = db_timezone {
-        if !tz.is_empty() {
+    if let Some(ref tz) = db_timezone
+        && !tz.is_empty() {
             custom_args.push(format!("--timezone={}", tz));
         }
-    }
 
     // Proxy: from request payload takes precedence, then profile DB
     let effective_proxy = req.proxy.or(db_proxy);
-    if let Some(ref proxy) = effective_proxy {
-        if !proxy.is_empty() {
+    if let Some(ref proxy) = effective_proxy
+        && !proxy.is_empty() {
             custom_args.push(format!("--proxy-server={}", proxy));
         }
-    }
 
     // Custom extra CLI flags from request payload
     if let Some(ref extra_args) = req.args {
@@ -574,11 +569,10 @@ pub async fn start_browser(
     }
 
     // Start URL: from request payload
-    if let Some(ref start_url) = req.start_url {
-        if !start_url.is_empty() {
+    if let Some(ref start_url) = req.start_url
+        && !start_url.is_empty() {
             custom_args.push(start_url.clone());
         }
-    }
 
     // Edge Case 1: Headless override from request payload takes precedence
     let headless = req.headless.unwrap_or(app_settings.browser.headless);
@@ -699,11 +693,10 @@ pub async fn stop_browser(
         "id": browser_id
     }).to_string());
 
-    if !is_force {
-        if let Err(e) = zip_browser_folder(&browser_id, &state.config.data_dir).await {
+    if !is_force
+        && let Err(e) = zip_browser_folder(&browser_id, &state.config.data_dir).await {
             tracing::warn!("Browser folder zip skipped or error: {}", e);
         }
-    }
 
     let msg = if is_force {
         "Browser session forcefully terminated"
@@ -790,7 +783,7 @@ async fn zip_browser_folder(id: &str, data_dir: &str) -> anyhow::Result<()> {
             for entry in entries.flatten() {
                 let path = entry.path();
                 let name = path.strip_prefix(&user_data_dir_clone)
-                    .unwrap_or_else(|_| path.as_path())
+                    .unwrap_or(path.as_path())
                     .to_string_lossy()
                     .replace("\\", "/");
                 
@@ -852,11 +845,10 @@ async fn unzip_browser_folder(id: &str, data_dir: &str) -> anyhow::Result<()> {
             if (*file.name()).ends_with('/') {
                 std::fs::create_dir_all(&outpath)?;
             } else {
-                if let Some(p) = outpath.parent() {
-                    if !p.exists() {
-                        std::fs::create_dir_all(&p)?;
+                if let Some(p) = outpath.parent()
+                    && !p.exists() {
+                        std::fs::create_dir_all(p)?;
                     }
-                }
                 let mut outfile = std::fs::File::create(&outpath)?;
                 std::io::copy(&mut file, &mut outfile)?;
             }
@@ -1175,7 +1167,7 @@ mod tests {
         let _ = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
 
         let set_res = set_default_browser(State(state.clone()), Path("test_profile_custom".to_string())).await.unwrap();
-        assert_eq!(set_res.0.success, true);
+        assert!(set_res.0.success);
         assert_eq!(set_res.0.default_profile_id, "test_profile_custom");
 
         let detail = get_browser_detail(State(state.clone()), Path("test_profile_custom".to_string())).await.unwrap();

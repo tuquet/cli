@@ -27,21 +27,20 @@ impl FsStorageManager {
 
     pub async fn load_storage_settings() -> StorageSettings {
         let path = Self::get_globals_file_path("storage.setting.json").await;
-        if let Ok(content) = fs::read_to_string(&path).await {
-            if let Ok(settings) = serde_json::from_str::<StorageSettings>(&content) {
+        if let Ok(content) = fs::read_to_string(&path).await
+            && let Ok(settings) = serde_json::from_str::<StorageSettings>(&content) {
                 return settings;
             }
-        }
         StorageSettings::default()
     }
 
     pub async fn save_storage_settings(settings: &StorageSettings) -> Result<(), AutomaError> {
         let path = Self::get_globals_file_path("storage.setting.json").await;
         let content = serde_json::to_string_pretty(settings)
-            .map_err(|e| AutomaError::JsonError(e))?;
+            .map_err(AutomaError::JsonError)?;
         fs::write(&path, content)
             .await
-            .map_err(|e| AutomaError::IoError(e))?;
+            .map_err(AutomaError::IoError)?;
         Ok(())
     }
 

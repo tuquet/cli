@@ -143,11 +143,10 @@ fn calculate_dir_size(dir: &std::path::Path) -> Option<u64> {
                 if let Ok(meta) = entry.metadata() {
                     total += meta.len();
                 }
-            } else if path.is_dir() {
-                if let Some(sub_total) = calculate_dir_size(&path) {
+            } else if path.is_dir()
+                && let Some(sub_total) = calculate_dir_size(&path) {
                     total += sub_total;
                 }
-            }
         }
     }
     Some(total)
@@ -210,11 +209,9 @@ pub async fn download_chromium_runtime(force: bool, custom_revision: Option<&str
         .or_else(|_| env::var("HTTP_PROXY"))
         .or_else(|_| env::var("all_proxy"))
         .or_else(|_| env::var("http_proxy"))
-    {
-        if let Ok(proxy) = reqwest::Proxy::all(&proxy_url) {
+        && let Ok(proxy) = reqwest::Proxy::all(&proxy_url) {
             builder = builder.proxy(proxy);
         }
-    }
 
     let client = builder.build()?;
 

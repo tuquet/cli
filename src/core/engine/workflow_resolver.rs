@@ -46,13 +46,11 @@ impl WorkflowResolver {
         } else if let Some(wp) = workflow_path {
             let trimmed = wp.trim();
             // Step 1: Check if input is inline JSON string
-            if trimmed.starts_with('{') {
-                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                    if json_val.is_object() && (json_val.get("nodes").is_some() || json_val.get("drawflow").is_some()) {
+            if trimmed.starts_with('{')
+                && let Ok(json_val) = serde_json::from_str::<serde_json::Value>(trimmed)
+                    && json_val.is_object() && (json_val.get("nodes").is_some() || json_val.get("drawflow").is_some()) {
                         return Self::resolve_inline_data(job_id, data_dir, &json_val).await;
                     }
-                }
-            }
 
             // Step 2: Check if wp is an existing file path directly
             let path_obj = Path::new(wp);
@@ -86,8 +84,8 @@ impl WorkflowResolver {
         if let Ok(mut wf) = serde_json::from_value::<crate::core::models::workflow::Workflow>(data.clone()) {
             wf = crate::core::engine::sanitizer::sanitize_workflow(wf);
             if let Ok(mut val) = serde_json::to_value(wf) {
-                if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut()) {
-                    if let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
+                if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut())
+                    && let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
                         for edge in edges.iter_mut() {
                             if let Some(edge_map) = edge.as_object_mut() {
                                 let src = edge_map.get("source").and_then(|s| s.as_str()).unwrap_or("").to_string();
@@ -101,7 +99,6 @@ impl WorkflowResolver {
                             }
                         }
                     }
-                }
                 sanitized_data = val;
             }
         }
@@ -139,22 +136,20 @@ impl WorkflowResolver {
         if db_workflow.is_none() {
             let persistent_config = crate::config::AppConfig::load();
             let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join("automa.sqlite");
-            if persistent_db_path.exists() {
-                if let Ok(pdb) = AutomaDb::new(&persistent_db_path) {
+            if persistent_db_path.exists()
+                && let Ok(pdb) = AutomaDb::new(&persistent_db_path) {
                     db_workflow = pdb.workflows().get_workflow_by_id_or_name(wf_id).ok().flatten();
                 }
-            }
         }
 
         if let Some(wf) = db_workflow {
             let mut json_data: serde_json::Value = serde_json::from_str(&wf.data)
                 .map_err(|e| WorkflowResolveError::Internal(format!("Failed to parse database workflow JSON: {}", e)))?;
 
-            if json_data.get("name").is_none() {
-                if let Some(obj) = json_data.as_object_mut() {
+            if json_data.get("name").is_none()
+                && let Some(obj) = json_data.as_object_mut() {
                     obj.insert("name".to_string(), serde_json::Value::String(wf.name.clone()));
                 }
-            }
 
             Self::validate_workflow_structure(&json_data)?;
 
@@ -162,8 +157,8 @@ impl WorkflowResolver {
             if let Ok(mut wf_model) = serde_json::from_value::<crate::core::models::workflow::Workflow>(json_data.clone()) {
                 wf_model = crate::core::engine::sanitizer::sanitize_workflow(wf_model);
                 if let Ok(mut val) = serde_json::to_value(wf_model) {
-                    if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut()) {
-                        if let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
+                    if let Some(df_obj) = val.get_mut("drawflow").and_then(|d| d.as_object_mut())
+                        && let Some(edges) = df_obj.get_mut("edges").and_then(|e| e.as_array_mut()) {
                             for edge in edges.iter_mut() {
                                 if let Some(edge_map) = edge.as_object_mut() {
                                     let src = edge_map.get("source").and_then(|s| s.as_str()).unwrap_or("").to_string();
@@ -177,7 +172,6 @@ impl WorkflowResolver {
                                 }
                             }
                         }
-                    }
                     sanitized_data = val;
                 }
             }
@@ -235,26 +229,23 @@ impl WorkflowResolver {
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
                     let path = entry.path();
-                    if path.is_file() {
-                        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    if path.is_file()
+                        && let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                             let stem_clean = stem.trim_end_matches(".workflow");
                             if stem_clean.eq_ignore_ascii_case(&target_lower) || stem.eq_ignore_ascii_case(&target_lower) {
                                 return Self::read_and_validate_file(&path).await;
                             }
                         }
-                    }
                 }
             }
         }
 
         // Step 5: Check fallback path if provided
-        if let Some(wp) = fallback_path {
-            if let Ok(canon) = tokio::fs::canonicalize(wp).await {
-                if canon.is_file() {
+        if let Some(wp) = fallback_path
+            && let Ok(canon) = tokio::fs::canonicalize(wp).await
+                && canon.is_file() {
                     return Self::read_and_validate_file(&canon).await;
                 }
-            }
-        }
 
         Err(WorkflowResolveError::NotFound(format!(
             "Workflow '{}' not found in database or vault (~/.automa/workflows/). Use 'automa workflow list' to view available workflows.",
@@ -276,9 +267,9 @@ impl WorkflowResolver {
         let mut final_path = canon;
         #[cfg(target_os = "windows")]
         {
-            let s = final_path.to_string_lossy().to_string();
-            if s.starts_with(r"\\?\") {
-                final_path = std::path::PathBuf::from(&s[4..]);
+            let s = final_path.to_string_lossy();
+            if let Some(stripped) = s.strip_prefix(r"\\?\") {
+                final_path = std::path::PathBuf::from(stripped);
             }
         }
 
@@ -308,13 +299,12 @@ impl WorkflowResolver {
     }
 
     fn validate_workflow_structure(val: &serde_json::Value) -> Result<(), WorkflowResolveError> {
-        if let Some(nodes) = val.get("nodes") {
-            if !nodes.is_array() {
+        if let Some(nodes) = val.get("nodes")
+            && !nodes.is_array() {
                 return Err(WorkflowResolveError::BadRequest(
                     "workflowData.nodes must be an array".to_string(),
                 ));
             }
-        }
 
         if let Some(drawflow) = val.get("drawflow") {
             if let Some(s) = drawflow.as_str() {

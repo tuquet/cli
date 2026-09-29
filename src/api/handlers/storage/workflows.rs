@@ -281,7 +281,7 @@ pub async fn update_storage_workflow(
     Path(id): Path<String>,
     Json(payload): Json<UpdateWorkflowStorageRequest>,
 ) -> Result<Json<WorkflowStorageItem>, AutomaError> {
-    let data_str = payload.data.as_ref().map(|d| serde_json::to_string(d)).transpose()
+    let data_str = payload.data.as_ref().map(serde_json::to_string).transpose()
         .map_err(|e| AutomaError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
 
     let db = state.db.lock().await;
@@ -516,10 +516,10 @@ pub async fn get_workflow(
         .map_err(|e| AutomaError::Internal(format!("Failed to read file: {}", e)))?;
     let _ = serde_json::from_str::<serde_json::Value>(&content)
         .map_err(|e| AutomaError::BadRequest(format!("Failed to parse workflow JSON: {}", e)))?;
-    Ok(Response::builder()
+    Response::builder()
         .header("content-type", "application/json")
         .body(Body::from(content))
-        .map_err(|e| AutomaError::Internal(format!("Failed to build response: {}", e)))?)
+        .map_err(|e| AutomaError::Internal(format!("Failed to build response: {}", e)))
 }
 
 #[utoipa::path(
@@ -537,12 +537,11 @@ pub async fn save_workflow(
     Json(payload): Json<SaveWorkflowFilePayload>,
 ) -> Result<Json<SaveWorkflowFileResponse>, AutomaError> {
     let safe_path = resolve_safe_workflow_path(&payload.path)?;
-    if let Some(parent) = safe_path.parent() {
-        if !parent.exists() {
+    if let Some(parent) = safe_path.parent()
+        && !parent.exists() {
             tokio::fs::create_dir_all(parent).await
                 .map_err(|e| AutomaError::Internal(format!("Failed to create parent directory: {}", e)))?;
         }
-    }
     let json_str = serde_json::to_string_pretty(&payload.content)
         .map_err(|e| AutomaError::BadRequest(format!("Failed to serialize workflow JSON: {}", e)))?;
     tokio::fs::write(&safe_path, json_str).await

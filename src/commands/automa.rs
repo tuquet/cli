@@ -93,9 +93,9 @@ pub async fn list_workflows(
     // 1. Fetch from SQLite Database if not vault_only
     if !vault_only {
         let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
-        if db_path.exists() {
-            if let Ok(db) = AutomaDb::new(&db_path) {
-                if let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref()) {
+        if db_path.exists()
+            && let Ok(db) = AutomaDb::new(&db_path)
+                && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref()) {
                     for wf in list {
                         let parsed: Option<serde_json::Value> = serde_json::from_str(&wf.data).ok();
                         let blocks = parsed
@@ -137,8 +137,6 @@ pub async fn list_workflows(
                         });
                     }
                 }
-            }
-        }
     }
 
     // 2. Fetch from Vault if not db_only
@@ -154,9 +152,9 @@ pub async fn list_workflows(
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
                     let path = entry.path();
-                    if path.is_file() && (path.extension().map(|e| e == "json").unwrap_or(false)) {
-                        if let Ok(content) = tokio::fs::read_to_string(&path).await {
-                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if path.is_file() && (path.extension().map(|e| e == "json").unwrap_or(false))
+                        && let Ok(content) = tokio::fs::read_to_string(&path).await
+                            && let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
                                 let stem =
                                     path.file_stem().and_then(|s| s.to_str()).unwrap_or("wf");
                                 let id = val
@@ -234,8 +232,6 @@ pub async fn list_workflows(
                                     updated_at,
                                 });
                             }
-                        }
-                    }
                 }
             }
         }
@@ -251,8 +247,8 @@ pub async fn list_workflows(
         println!("   tuquet automa workflow import <file.json> --id <workflow_id>");
     } else {
         println!(
-            " {:<20} {:<24} {:<8} {:<10} {:<8} {}",
-            "ID", "NAME", "VERSION", "SOURCE", "BLOCKS", "UPDATED AT"
+            " {:<20} {:<24} {:<8} {:<10} {:<8} UPDATED AT",
+            "ID", "NAME", "VERSION", "SOURCE", "BLOCKS"
         );
         println!("----------------------------------------------------------------------------------------");
         for wf in &workflows {
@@ -399,13 +395,11 @@ pub async fn export_workflow(
 
     // 1. Check persistent SQLite DB
     let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
-    if db_path.exists() {
-        if let Ok(db) = AutomaDb::new(&db_path) {
-            if let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id) {
+    if db_path.exists()
+        && let Ok(db) = AutomaDb::new(&db_path)
+            && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id) {
                 workflow_json = Some(wf.data);
             }
-        }
-    }
 
     // 2. Check Vault
     if workflow_json.is_none() {
@@ -423,12 +417,11 @@ pub async fn export_workflow(
         ];
 
         for c in &candidates {
-            if c.exists() && c.is_file() {
-                if let Ok(content) = tokio::fs::read_to_string(c).await {
+            if c.exists() && c.is_file()
+                && let Ok(content) = tokio::fs::read_to_string(c).await {
                     workflow_json = Some(content);
                     break;
                 }
-            }
         }
     }
 
@@ -465,13 +458,11 @@ pub async fn delete_workflow(
 
     // 1. Delete from SQLite DB
     let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
-    if db_path.exists() {
-        if let Ok(db) = AutomaDb::new(&db_path) {
-            if let Ok(res) = db.workflows().delete_workflow(&id) {
+    if db_path.exists()
+        && let Ok(db) = AutomaDb::new(&db_path)
+            && let Ok(res) = db.workflows().delete_workflow(&id) {
                 deleted_db = res;
             }
-        }
-    }
 
     // 2. Delete from Vault if requested
     if delete_from_vault {
@@ -489,11 +480,10 @@ pub async fn delete_workflow(
         ];
 
         for c in &candidates {
-            if c.exists() && c.is_file() {
-                if tokio::fs::remove_file(c).await.is_ok() {
+            if c.exists() && c.is_file()
+                && tokio::fs::remove_file(c).await.is_ok() {
                     deleted_vault = true;
                 }
-            }
         }
     }
 
@@ -528,13 +518,11 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
 
             // Check SQLite DB
             let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
-            if db_path.exists() {
-                if let Ok(db) = AutomaDb::new(&db_path) {
-                    if let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target) {
+            if db_path.exists()
+                && let Ok(db) = AutomaDb::new(&db_path)
+                    && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target) {
                         resolved = Some((wf.data, format!("Database (ID: {})", wf.id)));
                     }
-                }
-            }
 
             // Check Vault
             if resolved.is_none() {
@@ -552,12 +540,11 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                 ];
 
                 for c in &candidates {
-                    if c.exists() && c.is_file() {
-                        if let Ok(text) = std::fs::read_to_string(c) {
+                    if c.exists() && c.is_file()
+                        && let Ok(text) = std::fs::read_to_string(c) {
                             resolved = Some((text, format!("Vault File: {}", c.display())));
                             break;
                         }
-                    }
                 }
             }
 
@@ -662,8 +649,8 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
         println!("Triggers ({}):", triggers.len());
         for (id, t_type, params) in &triggers {
             println!("  - [{}] Type: {}", id, t_type);
-            if let Some(param_arr) = params.and_then(|p| p.as_array()) {
-                if !param_arr.is_empty() {
+            if let Some(param_arr) = params.and_then(|p| p.as_array())
+                && !param_arr.is_empty() {
                     println!("    Parameters:");
                     for p in param_arr {
                         let pname = p.get("name").and_then(|v| v.as_str()).unwrap_or("?");
@@ -674,7 +661,6 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                         println!("      * {} (default: {})", pname, pval);
                     }
                 }
-            }
         }
     }
 

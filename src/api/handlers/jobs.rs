@@ -278,13 +278,11 @@ pub async fn worker_sse(
         let _guard_clone = _guard.clone();
         let expected_browser = expected_browser.clone();
         let data = msg.ok()?;
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
-            if let Some(msg_browser) = json.get("browserId").and_then(|v| v.as_str()) {
-                if msg_browser != expected_browser {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data)
+            && let Some(msg_browser) = json.get("browserId").and_then(|v| v.as_str())
+                && msg_browser != expected_browser {
                     return None;
                 }
-            }
-        }
         Some(Ok(Event::default().data(data)))
     });
 

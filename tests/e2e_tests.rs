@@ -80,9 +80,8 @@ async fn test_worker_sse_json_validity_e2e() {
         println!("Received SSE Chunk: {}", chunk);
         
         // SSE chunks look like "data: {...}\n\n"
-        for line in chunk.split("\n") {
-            if line.starts_with("data: ") {
-                let json_str = &line[6..];
+        for line in chunk.split('\n') {
+            if let Some(json_str) = line.strip_prefix("data: ") {
                 raw_data = json_str.to_string();
                 
                 // Assert that the JSON parses perfectly

@@ -189,7 +189,7 @@ pub async fn add_table_row(
 ) -> Result<Json<AddTableRowResponse>, AutomaError> {
     let row_id = crate::infrastructure::fs_storage::FsStorageManager::generate_id();
     let data_str = serde_json::to_string(&payload.data)
-        .map_err(|e| AutomaError::JsonError(e))?;
+        .map_err(AutomaError::JsonError)?;
     let db = state.db.lock().await;
     db.tables().add_table_row(&row_id, &table_id, &data_str)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;

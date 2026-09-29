@@ -94,18 +94,15 @@ impl BrowserLauncher {
         let client = reqwest::Client::new();
 
         for _ in 0..60 {
-            if let Some(child) = self.process.as_mut() {
-                if let Ok(Some(_status)) = child.try_wait() {
+            if let Some(child) = self.process.as_mut()
+                && let Ok(Some(_status)) = child.try_wait() {
                     return Err(anyhow!("Chrome process exited unexpectedly before opening debugger port. Browser might be locked."));
                 }
-            }
-            if let Ok(resp) = client.get(&url).send().await {
-                if let Ok(json) = resp.json::<serde_json::Value>().await {
-                    if let Some(ws) = json.get("webSocketDebuggerUrl").and_then(|v| v.as_str()) {
+            if let Ok(resp) = client.get(&url).send().await
+                && let Ok(json) = resp.json::<serde_json::Value>().await
+                    && let Some(ws) = json.get("webSocketDebuggerUrl").and_then(|v| v.as_str()) {
                         return Ok(ws.to_string());
                     }
-                }
-            }
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
 

@@ -30,11 +30,10 @@ impl AppConfig {
         // Check command line arguments for --port / -p, --host / -H
         let args: Vec<String> = env::args().collect();
         for i in 0..args.len() {
-            if (args[i] == "--port" || args[i] == "-p") && i + 1 < args.len() {
-                if let Ok(p) = args[i + 1].parse::<u16>() {
+            if (args[i] == "--port" || args[i] == "-p") && i + 1 < args.len()
+                && let Ok(p) = args[i + 1].parse::<u16>() {
                     server_port = p;
                 }
-            }
             if (args[i] == "--host" || args[i] == "-H") && i + 1 < args.len() {
                 server_host = args[i + 1].clone();
             }
@@ -65,17 +64,13 @@ impl AppConfig {
 
         if cloud_url.is_none() {
             let device_path = std::path::Path::new(&data_dir).join("device.json");
-            if device_path.exists() {
-                if let Ok(content) = std::fs::read_to_string(&device_path) {
-                    if let Ok(creds) = serde_json::from_str::<serde_json::Value>(&content) {
-                        if let Some(u) = creds.get("cloud_url").and_then(|v| v.as_str()) {
-                            if !u.trim().is_empty() {
+            if device_path.exists()
+                && let Ok(content) = std::fs::read_to_string(&device_path)
+                    && let Ok(creds) = serde_json::from_str::<serde_json::Value>(&content)
+                        && let Some(u) = creds.get("cloud_url").and_then(|v| v.as_str())
+                            && !u.trim().is_empty() {
                                 cloud_url = Some(u.to_string());
                             }
-                        }
-                    }
-                }
-            }
         }
 
         let cloud_enrollment_token = env::var("TUQUET_ENROLLMENT_TOKEN")

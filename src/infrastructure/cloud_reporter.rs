@@ -60,13 +60,11 @@ impl CloudReporter {
 
     pub async fn load_credentials(data_dir: &str) -> Option<DeviceCredentials> {
         let path = Self::get_credentials_path(data_dir);
-        if path.exists() {
-            if let Ok(content) = tokio::fs::read_to_string(&path).await {
-                if let Ok(creds) = serde_json::from_str::<DeviceCredentials>(&content) {
+        if path.exists()
+            && let Ok(content) = tokio::fs::read_to_string(&path).await
+                && let Ok(creds) = serde_json::from_str::<DeviceCredentials>(&content) {
                     return Some(creds);
                 }
-            }
-        }
         None
     }
 

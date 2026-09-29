@@ -323,13 +323,12 @@ impl<'a> SqliteJobRepository<'a> {
                 "created_at": item.3
             });
 
-            if let Ok(parsed_msg) = serde_json::from_str::<Value>(&item.2) {
-                if let (Some(obj), Some(parsed_obj)) = (log_obj.as_object_mut(), parsed_msg.as_object()) {
+            if let Ok(parsed_msg) = serde_json::from_str::<Value>(&item.2)
+                && let (Some(obj), Some(parsed_obj)) = (log_obj.as_object_mut(), parsed_msg.as_object()) {
                     for (k, v) in parsed_obj {
                         obj.insert(k.clone(), v.clone());
                     }
                 }
-            }
             logs.push(log_obj);
         }
         Ok(logs)

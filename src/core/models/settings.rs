@@ -21,21 +21,13 @@ use utoipa::ToSchema;
         "auto_clean_history_days": 30
     }
 }))]
+#[derive(Default)]
 pub struct AppSettings {
     pub grid: GridSettings,
     pub browser: BrowserSettings,
     pub runner: RunnerSettings,
 }
 
-impl Default for AppSettings {
-    fn default() -> Self {
-        Self {
-            grid: GridSettings::default(),
-            browser: BrowserSettings::default(),
-            runner: RunnerSettings::default(),
-        }
-    }
-}
 
 // === NAMESPACE 1: GRID SYSTEM ===
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
