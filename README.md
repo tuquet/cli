@@ -153,14 +153,13 @@ Khi Runner Daemon hoạt động (cổng mặc định `8765`), các giao diện
 
 Tuquet CLI là trung tâm điều phối, kết nối chặt chẽ với các repository chuyên biệt trong hệ sinh thái Tuquet:
 
-| Repository / Module | Tài Liệu Chi Tiết | Vai Trò & Mối Liên Kết |
+| Repository / Module | GitHub Repository & README | Vai Trò & Mối Liên Kết |
 | :--- | :--- | :--- |
-| **Automa Engine** | [📘 `automa/README.md`](../automa/README.md) | Chứa toàn bộ Browser Extension manifest, Background Script & Web Studio. |
-| **Tuquet Runner** | [📘 `runner/README.md`](../runner/README.md) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
-| **Tuquet Cloud** | [📘 `cloud/README.md`](../cloud/README.md) | Nền tảng Supabase Multi-Tenant, RPC enroll device và quản lý license. |
-| **Tuquet Lib** | [📘 `lib/README.md`](../lib/README.md) | Monorepo thư viện chia sẻ TypeScript (`vue-ui`, `extension-runner`, `crypto`). |
-| **Scoop Bucket** | [📘 `scoop-bucket/README.md`](../scoop-bucket/README.md) | Manifest cài đặt Windows Scoop chính thức cho `tuquet` và `tqr`. |
-| **Claude-Agy** | [📘 `claude-agy/README.md`](../claude-agy/README.md) | Engine trung gian tích hợp Claude Code CLI và Antigravity OAuth quota. |
-| **Tuquet Skills** | [📘 `skills/README.md`](../skills/README.md) | Bộ kịch bản và năng lực (Skills) cho AI Coding Agents. |
-| **Ecosystem Root** | [📘 `README.md (Root)`](../README.md) | Trang tổng quan toàn bộ hệ sinh thái Tuquet. |
+| **Automa Engine** | [📘 `github.com/tuquet/automa`](https://github.com/tuquet/automa#readme) | Browser Extension manifest, Background Worker & Web Studio canvas. |
+| **Tuquet Runner** | [📘 `github.com/tuquet/runner`](https://github.com/tuquet/runner#readme) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
+| **Tuquet Cloud** | [📘 `github.com/tuquet/cloud`](https://github.com/tuquet/cloud#readme) | Nền tảng Supabase Multi-Tenant, RPC enroll device và quản lý pairing. |
+| **Tuquet Lib** | [📘 `github.com/tuquet/lib`](https://github.com/tuquet/lib#readme) | Monorepo thư viện chia sẻ TypeScript (`vue-ui`, `extension-runner`, `crypto`). |
+| **Scoop Bucket** | [📘 `github.com/tuquet/scoop-bucket`](https://github.com/tuquet/scoop-bucket#readme) | Manifest cài đặt Windows Scoop chính thức cho `tuquet` và `tqr`. |
+| **Claude-Agy** | [📘 `github.com/tuquet/claude-agy`](https://github.com/tuquet/claude-agy#readme) | Engine điều phối Claude Code CLI với Antigravity OAuth quota. |
+| **Tuquet Skills** | [📘 `github.com/tuquet/skills`](https://github.com/tuquet/skills#readme) | Bộ kịch bản và năng lực (Skills) tự động hóa cho AI Coding Agents. |
 
