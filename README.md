@@ -1,84 +1,148 @@
 # ⚡ Tuquet CLI (`tuquet`)
 
-> **Unified Master Control CLI, Cloud Runner Daemon & Distributed Browser Automation Engine for the Tuquet Ecosystem**.
+> **Unified Master Control CLI, Cloud Runner Daemon & Distributed Browser Automation Engine for the Tuquet Ecosystem**.  
 > Điều phối quy trình làm việc, quản lý Chromium Profile, tự động hóa luồng duyệt web, đồng bộ đám mây và kết nối lưu trữ SQLite cục bộ.
 
 ---
 
-## 🛑 QUY TẮC KIẾN TRÚC (BẮT BUỘC)
+## 🚀 HƯỚNG DẪN CÀI ĐẶT (INSTALLATION)
 
-### 1. Phân Lớp Độc Lập (Decoupled Layers)
-- **Domain/Core:** KHÔNG ĐƯỢC PHÉP import các module `infrastructure` (DB, External API) hay `api` (Axum). Mọi giao tiếp ra ngoài **BẮT BUỘC** thông qua Trait Interfaces (Dependency Inversion).
-- **Infrastructure:** Triển khai các Trait của Domain. Chịu trách nhiệm trực tiếp gọi SQLite (`rusqlite`), thao tác file IO, và gọi tiến trình con (Chromium).
-- **API Layer:** Chỉ làm nhiệm vụ điều hướng HTTP (Axum) và parse payload. Phải uỷ quyền logic nghiệp vụ cho Domain.
+### 1. Cài đặt qua Scoop (Khuyến nghị trên Windows)
+```powershell
+scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
+scoop install tuquet
+```
 
-### 2. Xử Lý Bất Đồng Bộ (Async Concurrency)
-- **Runtime:** Toàn bộ hệ thống chạy trên `tokio` async runtime.
-- **CPU-bound Tasks:** Các tác vụ nặng (như mã hoá AES, parse file JSON khổng lồ) **BẮT BUỘC** chạy qua `tokio::task::spawn_blocking` để tránh block luồng Async chính.
-- **Shared State:** State dùng chung qua Axum **BẮT BUỘC** gói trong `Arc<T>`. Dữ liệu thay đổi cần khoá bằng `tokio::sync::RwLock` hoặc `tokio::sync::Mutex` (KHÔNG dùng thư viện chuẩn `std::sync`).
-
-### 3. Xử Lý Lỗi (Error Handling)
-- **Cấm Crash:** **TUYỆT ĐỐI KHÔNG** sử dụng `.unwrap()` hay `.expect()` trong code production.
-- **Domain Errors:** **BẮT BUỘC** định nghĩa cấu trúc lỗi tập trung thông qua thư viện `thiserror` và lan truyền (propagate) bằng toán tử `?`.
-
----
-
-## 🗄️ CƠ SỞ DỮ LIỆU (SQLITE)
-
-Hệ thống sử dụng SQLite để ghi nhận trạng thái Job, Logs, Browser Profiles và Storage Tables. Vị trí mặc định: `~/.automa/core/automa.sqlite`.
-
-- **Mô hình WAL:** Cấu hình **BẮT BUỘC** kích hoạt `journal_mode = WAL` để hỗ trợ đa luồng ghi log song song không bị khoá.
-- **Bảng `jobs`:** Lưu metadata của luồng thực thi (id, name, options, status, kết quả outputs).
-- **Bảng `logs`:** Lưu chi tiết từng step execution, tham chiếu qua khóa ngoại `job_id` (Cấu hình `ON DELETE CASCADE`).
-- **Dọn Dẹp (Cleanup):** Daemon **BẮT BUỘC** tự động purge các Job và Logs vượt quá giới hạn (giữ 100 jobs gần nhất) vào thời điểm khởi động server để chống rò rỉ dung lượng.
+### 2. Cài đặt từ nguồn (Build from Source)
+```powershell
+git clone https://github.com/tuquet/cli.git
+cd cli
+cargo build --release
+# File nhị phân sinh ra tại: target/release/tuquet.exe
+```
 
 ---
 
-## 🔐 BẢO MẬT VÀ MÃ HOÁ (CRYPTOGRAPHY)
+## 🖥️ PHIÊN TƯƠNG TÁC (INTERACTIVE SCOPED SHELL)
 
-Quản lý thông tin nhạy cảm (Credentials, Tokens, Passwords) trong Global Storage.
+Gõ trực tiếp `tuquet` trong terminal để mở phiên Shell tương tác hỗ trợ **Smart Tab-Completion**, quản lý ngữ cảnh theo phân tầng (Hierarchical Scope) và lưu trữ lịch sử lệnh:
 
-- **Không Lưu Bảng Rõ:** **TUYỆT ĐỐI KHÔNG** lưu plain-text lên ổ cứng.
-- **Chuẩn Mã Hoá:** Tuân thủ 100% chuẩn AES-256-GCM hoặc AES kết hợp HMAC-SHA256 (tương thích ngược với `crypto-js` của Extension).
-- **Zero-knowledge Runtime:** Rust Daemon **TUYỆT ĐỐI KHÔNG** tự động giải mã Credentials khi chạy luồng. Dữ liệu mã hoá được tiêm trực tiếp (inject) nguyên bản vào Web Storage; Browser Extension tự chịu trách nhiệm giải mã tại bộ nhớ (RAM) bằng passphrase của người dùng.
-- **CLI Commands:** Yêu cầu người dùng nhập Passphrase qua cờ `--passphrase`, biến môi trường `AUTOMA_PASSPHRASE` hoặc STDIN prompt ẩn khi sử dụng lệnh `encrypt-secret`.
+```powershell
+tuquet
+```
+
+### 1. Vào thẳng phạm vi dịch vụ (Direct Scoped Launch)
+Bạn có thể mở shell và đi thẳng vào ngữ cảnh của dịch vụ mong muốn:
+
+```powershell
+tuquet automa    # Vào phạm vi Automa: tuquet(automa)>
+tuquet runner    # Vào phạm vi Runner: tuquet(runner)> (alias: daemon, worker)
+tuquet cloud     # Vào phạm vi Cloud:  tuquet(cloud)>  (alias: auth)
+tuquet browser   # Vào phạm vi Browser: tuquet(browser)>
+```
+
+### 2. Điều hướng và Phím tắt trong Shell
+- **Chuyển ngữ cảnh**: `use <automa | runner | cloud | browser | global>`
+- **Trở về phạm vi Global**: Gõ `back` hoặc `cd ..` hoặc `exit` (nếu đang ở sub-scope)
+- **Thoát chương trình**: Gõ `exit` hoặc `quit` tại phạm vi Global (hoặc nhấn `Ctrl+D`)
+- **Xóa màn hình**: `clear` hoặc `cls`
+- **Xem trợ giúp ngữ cảnh**: `help` hoặc `?`
+- **Smart Autocomplete (Tab)**: Tự động gợi ý lệnh, cờ tham số (`--headless`, `--timeout`), và **quét tự động danh sách workflow** có trong vault `~/.tuquet/workflows/`.
+- **Dung sai tiền tố (Prefix Tolerance)**: Nếu đang ở trong `tuquet(automa)>`, bạn có thể gõ `run flow.json` hoặc `automa run flow.json` đều hoạt động chính xác.
 
 ---
 
-## 🛠️ VÒNG ĐỜI JOB & CHIẾN DỊCH (EXECUTION ENGINE)
+## 📋 HƯỚNG DẪN SỬ DỤNG DÒNG LỆNH (CLI REFERENCE)
 
-- **Sanitization Bắt Buộc:** Mọi file JSON import từ ngoài **BẮT BUỘC** đi qua bộ phận tiền xử lý (Auto-Sanitization) để tiêm NanoID, default types và khôi phục edge handles trước khi parse.
-- **Zombie Process Prevention:** Quản lý Chromium browser **BẮT BUỘC** sử dụng *Registry Pattern*. Mọi process đều phải đăng ký vào một `Set` toàn cục và bị triệt tiêu (`kill`) sạch sẽ khi nhận tín hiệu graceful shutdown (Ctrl+C).
-- **Cross-Validation Linter:** CLI **PHẢI** kiểm tra chéo (Cross-reference) tính toàn vẹn của File liên kết trước khi thực thi. Nếu `execute-workflow` trỏ tới file không tồn tại, báo lỗi `[Missing Workflow Reference]`. Cảnh báo (Warnings) được VS Code thu thập qua Diagnostics để hiển thị trực tiếp lên UI.
+Hỗ trợ chạy trực tiếp từ dòng lệnh / script CI mà không cần vào Shell:
+
+### 1. Quản lý trạng thái chung (Global Commands)
+```powershell
+tuquet status               # Kiểm tra sức khỏe toàn diện: Browser, Runner Daemon, Cloud Pairing
+tuquet login [token]        # Đăng nhập và xác thực workstation với Tuquet Cloud
+tuquet whoami               # Xem thông tin định danh và pairing máy trạm
+tuquet logout               # Hủy kết nối và xóa thông tin phiên cloud trên máy
+```
+
+### 2. Tự động hóa trình duyệt (Automa Engine)
+```powershell
+# Chạy workflow (hỗ trợ đường dẫn file .json hoặc workflow ID đã lưu trong vault/DB)
+tuquet automa run ./my_workflow.json --headless
+tuquet automa run <workflow-id> --timeout 60
+
+# Quản lý danh sách workflows
+tuquet automa list                      # Liệt kê workflows trong vault và database
+tuquet automa list "scraping"           # Tìm kiếm workflow theo từ khóa
+tuquet automa inspect ./my_flow.json    # Kiểm tra tính hợp lệ của cấu trúc đồ thị workflow
+tuquet automa import ./backup.json      # Nạp workflow vào lưu trữ cục bộ
+tuquet automa export <workflow-id>      # Xuất workflow ra file JSON
+tuquet automa delete <workflow-id>      # Xóa workflow khỏi hệ thống
+
+# Mở Web Studio thiết kế trực quan trên trình duyệt
+tuquet automa studio
+```
+
+### 3. Điều phối Daemon & Cloud Worker (Runner Engine)
+```powershell
+tuquet runner start --port 8765         # Khởi chạy Runner Daemon ở tiền cảnh (Foreground)
+tuquet runner status                    # Kiểm tra trạng thái máy chủ Runner cục bộ
+tuquet runner probe                     # Xem bản kê năng lực phần cứng & driver
+tuquet runner export-openapi spec.json  # Xuất đặc tả OpenAPI v3 ra file
+tuquet runner setup-ext                 # Tiện ích dev khởi động trình duyệt nạp sẵn extension
+```
+
+### 4. Quản lý Isolated Chromium Runtime (Browser Management)
+Tuquet sử dụng bản Chromium thuần nguồn mở (Pure Open-Source BSD) độc lập, không phụ thuộc vào Chrome cài đặt sẵn của hệ điều hành:
+
+```powershell
+tuquet browser status                   # Kiểm tra phiên bản, đường dẫn và dung lượng disk usage
+tuquet browser install                  # Tự động tải và cấu hình Chromium chuyên biệt
+tuquet browser install --force          # Cài đặt lại nếu runtime bị lỗi
+tuquet browser path                     # In đường dẫn tuyệt đối đến file thực thi chromium.exe
+tuquet browser clean                    # Xóa runtime Chromium để giải phóng dung lượng ổ cứng
+```
 
 ---
 
-## 🌐 DEVELOPMENT & API ENDPOINTS (DEV TOOLING)
+## 🏛️ SINGLE SOURCE OF TRUTH (SSOT) & CẤU TRÚC LƯU TRỮ
 
-Khi Automa Core Daemon chạy ngầm (`pnpm run dev:all` hoặc `cargo run`), các cổng giao tiếp và giao diện chẩn đoán được cung cấp tại:
+Toàn bộ dữ liệu, runtime và cấu hình của hệ sinh thái Tuquet được quản lý duy nhất tại thư mục canonical:
+
+```
+~/.tuquet/
+├── workflows/           # Local Workflow Vault (lưu trữ các file kịch bản .json)
+├── runtimes/            # Dedicated Isolated Open-Source Chromium Runtime
+├── data/
+│   └── tuquet.sqlite    # SQLite database nhúng (lưu trữ Jobs, Logs, Variables, Profiles)
+└── history.txt          # Lịch sử câu lệnh tương tác của Tuquet Interactive Shell
+```
+
+---
+
+## 🌐 GIAO DIỆN & DEV TOOLING ENDPOINTS
+
+Khi Runner Daemon hoạt động (cổng mặc định `8765`), các giao diện phục vụ kiểm thử và debug sẵn sàng tại:
 
 | Giao Diện / Endpoint | Địa Chỉ URL | Giao Thức / Mô Tả |
 | :--- | :--- | :--- |
-| 📑 **Swagger UI (API Docs)** | **`http://127.0.0.1:8765/swagger-ui`** | Giao diện OpenAPI v3 tương tác trực tiếp, test và khám phá toàn bộ REST APIs. |
-| 📄 **OpenAPI Spec (JSON)** | **`http://127.0.0.1:8765/api-docs/openapi.json`** | Bản đặc tả OpenAPI JSON v3 phục vụ codegen và Bruno/Postman sync. |
-| 🎨 **Web Studio Canvas** | **`http://127.0.0.1:8765/studio/`** | Visual Workflow Canvas standalone nhúng sẵn từ build `dist/studio`. |
-| 📡 **SSE Telemetry** | **`http://127.0.0.1:8765/api/v1/events`** | Server-Sent Events luồng đơn truyền tải real-time logs và tiến trình jobs. |
-| ⚡ **WebSocket Control** | **`ws://127.0.0.1:8765/api/v1/ws`** | Kênh WS 2 chiều độ trễ thấp (Pause/Resume/Kill job và live breakpoint debug). |
+| 📑 **Swagger UI (API Docs)** | **`http://127.0.0.1:8765/swagger-ui`** | Giao diện OpenAPI v3 tương tác trực tiếp, test REST APIs. |
+| 📄 **OpenAPI Spec (JSON)** | **`http://127.0.0.1:8765/api-docs/openapi.json`** | Đặc tả OpenAPI JSON v3 cho codegen hoặc Postman/Bruno sync. |
+| 🎨 **Web Studio Canvas** | **`http://127.0.0.1:8765/studio/`** | Visual Workflow Canvas thiết kế kéo thả luồng tự động hóa. |
+| 📡 **SSE Telemetry** | **`http://127.0.0.1:8765/api/v1/events`** | Server-Sent Events phát logs thời gian thực khi chạy jobs. |
+| ⚡ **WebSocket Control** | **`ws://127.0.0.1:8765/api/v1/ws`** | Kênh WebSocket 2 chiều độ trễ thấp điều khiển luồng (Pause/Resume/Kill). |
 
 ---
 
-## 📚 BẢNG THUẬT NGỮ CỐT LÕI (CORE CODEBASE TERMINOLOGY)
+## 🛑 NGUYÊN TẮC KIẾN TRÚC MÃ NGUỒN
 
-| Thuật Ngữ Chuẩn (Canonical Term) | Thành Phần Code Đại Diện | Mô Tả Kỹ Thuật Ngắn Gọn |
-| :--- | :--- | :--- |
-| **Daemon Engine** | `AppState`, `run_server` | Tiến trình dịch vụ Rust chạy ngầm (Axum REST/SSE tại cổng `8765`), là trái tim điều phối execution, quản lý trình duyệt và SQLite DB. |
-| **Job** | `SubmitJobPayload`, `JobRunner` | Đơn vị tác vụ thực thi 1 workflow có vòng đời (`queued` ➔ `running` ➔ `completed`/`error`), cấp phát cancel token và stream logs qua SSE. |
-| **Ephemeral Profile** | `TempDir`, `TempProfile` | Hồ sơ trình duyệt tạm thời lưu tại `%LOCALAPPDATA%\Temp\automa_browser_<id>_<timestamp>`, tự sinh khi chạy Job và tự xoá sạch sau khi kết thúc. |
-| **Persistent Profile** | `BrowserProfile`, `{data_dir}/browsers/{id}` | Hồ sơ trình duyệt lưu cố định, bảo lưu cookies, local storage và đăng nhập lâu dài cho các browser profile do người dùng tạo. |
-| **Browser Worker** | `ensure_browser_worker`, `BrowserManager` | Cửa sổ Chromium chạy nền cài sẵn extension Automa để thực thi kịch bản headless thông qua kết nối SSE reader loop nội bộ. |
-| **Auto-Sanitization** | `sanitize_workflow` | Tiền xử lý JSON workflow để tự động tiêm nanoid hợp lệ, gán `BlockBasic` và sửa edge handles lỗi trước khi nạp vào engine. |
-| **Registry Pattern** | `static ref INSTANCES: Set<...>` | Mẫu quản lý tập trung toàn bộ tiến trình Chromium con để đảm bảo dọn dẹp sạch sẽ (`destroyAll`) ngăn chặn triệt để zombie processes. |
-| **AutomaDb** | `AutomaDb`, `SqliteJobRepository` | Cơ sở dữ liệu SQLite nhúng (`journal_mode = WAL`) lưu trữ metadata jobs, step logs, app settings và browser profiles. |
-| **Storage Workspace** | `apps/vault/` | Thư mục cục bộ phục vụ Git Version Control và Export/Import thủ công (tuân thủ nguyên tắc Zero Folder Scanning; 100% kịch bản runtime được quản lý tập trung qua SQLite Database API). |
-
-
+1. **Phân Lớp Độc Lập (Decoupled Layers)**:
+   - `core`: Chứa logic nghiệp vụ lõi, không phụ thuộc tầng ngoài.
+   - `infrastructure`: Triển khai SQLite (`rusqlite`), File I/O, Chromium Process Management.
+   - `api`: Axum HTTP, WebSocket, SSE routes và payload parsing.
+   - `commands`: Command handlers trả về `Result<(), Box<dyn Error>>`, tuyệt đối không gọi `std::process::exit` để bảo vệ phiên tương tác Shell.
+2. **Async Concurrency**:
+   - Chạy trên `tokio` multi-thread runtime.
+   - Tác vụ CPU-bound chạy qua `tokio::task::spawn_blocking`.
+3. **Bảo Mật Zero-Knowledge**:
+   - Lưu trữ Credentials mã hóa AES-256 kết hợp HMAC-SHA256, không lưu plain-text.
+   - Browser Extension giải mã trên RAM với passphrase của người dùng.
