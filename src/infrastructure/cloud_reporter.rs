@@ -4,6 +4,8 @@ use sha2::{Digest, Sha256};
 use tracing::{info, warn};
 use crate::AppState;
 
+pub const DEFAULT_SUPABASE_ANON_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd2hhY3NvYXhncGZua2F4bmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTEzMzcsImV4cCI6MjEwNTg2NzMzN30.QRdxE3CPCF8CtliOtSUcSFO-jbKi99uM2AKlJgKt6RQ";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceCredentials {
     #[serde(default)]
@@ -12,6 +14,8 @@ pub struct DeviceCredentials {
     pub device_token: String,
     pub tenant_id: Option<String>,
     pub name: String,
+    #[serde(default)]
+    pub api_key: Option<String>,
     #[serde(default)]
     pub machine_fingerprint: String,
     #[serde(default, alias = "enrolled_at")]
@@ -125,7 +129,10 @@ impl CloudReporter {
         let target_url = format!("{}/rest/v1/rpc/enroll_device", cloud_url.trim_end_matches('/'));
         info!("[CloudReporter] Enrolling workstation with Tuquet Cloud at: {}", target_url);
 
+        let anon_key = std::env::var("TUQUET_API_KEY").unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let res = client.post(&target_url)
+            .header("apikey", &anon_key)
+            .header("Authorization", format!("Bearer {}", anon_key))
             .json(&payload)
             .send()
             .await?;
@@ -147,6 +154,7 @@ impl CloudReporter {
             device_token,
             tenant_id,
             name: assigned_name,
+            api_key: Some(anon_key),
             machine_fingerprint: fingerprint,
             registered_at: Some(chrono_iso_now()),
         };
@@ -194,7 +202,10 @@ impl CloudReporter {
         });
 
         let target_url = format!("{}/rest/v1/rpc/enroll_device", cloud_url.trim_end_matches('/'));
+        let anon_key = std::env::var("TUQUET_API_KEY").unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let res = client.post(&target_url)
+            .header("apikey", &anon_key)
+            .header("Authorization", format!("Bearer {}", anon_key))
             .json(&payload)
             .send()
             .await?;
@@ -217,6 +228,7 @@ impl CloudReporter {
             device_token,
             tenant_id,
             name: assigned_name,
+            api_key: Some(anon_key),
             machine_fingerprint: fingerprint,
             registered_at: Some(chrono_iso_now()),
         };
@@ -296,9 +308,16 @@ impl CloudReporter {
 
         let browsers_count = browsers_payload.len();
 
+        let env_key = std::env::var("TUQUET_API_KEY").ok();
+        let anon_key = creds.api_key.as_deref()
+            .or(env_key.as_deref())
+            .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
+
         // 2. Report Browser Inventory to Central Hub
         let report_url = format!("{}/rest/v1/rpc/report_browser_inventory", cloud_url.trim_end_matches('/'));
         let report_res = client.post(&report_url)
+            .header("apikey", anon_key)
+            .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
                 "p_device_id": creds.device_id,
                 "p_device_token": creds.device_token,
@@ -335,6 +354,8 @@ impl CloudReporter {
 
         let heartbeat_url = format!("{}/rest/v1/rpc/heartbeat", cloud_url.trim_end_matches('/'));
         let heartbeat_res = client.post(&heartbeat_url)
+            .header("apikey", anon_key)
+            .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
                 "p_device_id": creds.device_id,
                 "p_device_token": creds.device_token,
