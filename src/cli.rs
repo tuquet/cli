@@ -322,16 +322,86 @@ pub enum BrowserCommands {
     #[command(name = "path")]
     Path,
 
-    /// Inspect and configure Automa MV3 extension for browser automation
+    /// Manage and configure browser extensions (Automa MV3 and custom extensions)
     #[command(name = "ext", aliases = ["extension", "setup-ext"])]
     Ext {
+        #[command(subcommand)]
+        command: Option<ExtCommands>,
+
         /// Target browser to launch (chrome, edge, brave, auto)
         #[arg(short, long, default_value = "chrome")]
         browser: String,
 
-        /// Custom path to unpacked @automa/runner extension directory
+        /// Custom path to unpacked extension directory
         #[arg(short, long)]
         extension_path: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum ExtCommands {
+    /// List all registered browser extensions (alias: ls)
+    #[command(name = "list", alias = "ls")]
+    List,
+
+    /// Register a new browser extension from an unpacked directory
+    #[command(name = "add")]
+    Add {
+        /// Path to unpacked extension directory containing manifest.json
+        path: PathBuf,
+
+        /// Optional custom ID for the extension (defaults to slugified manifest name)
+        #[arg(short, long)]
+        id: Option<String>,
+    },
+
+    /// Unregister a browser extension by ID (alias: rm)
+    #[command(name = "remove", alias = "rm")]
+    Remove {
+        /// Extension ID to remove
+        id: String,
+    },
+
+    /// Enable an extension for automated browser sessions
+    #[command(name = "enable")]
+    Enable {
+        /// Extension ID to enable
+        id: String,
+    },
+
+    /// Disable an extension
+    #[command(name = "disable")]
+    Disable {
+        /// Extension ID to disable
+        id: String,
+    },
+
+    /// Show detailed metadata and manifest for an extension
+    #[command(name = "info")]
+    Info {
+        /// Extension ID to inspect (defaults to 'automa')
+        #[arg(default_value = "automa")]
+        id: String,
+    },
+
+    /// Print the absolute filesystem path of an extension (defaults to 'automa')
+    #[command(name = "path")]
+    Path {
+        /// Extension ID (defaults to 'automa')
+        #[arg(default_value = "automa")]
+        id: String,
+    },
+
+    /// Launch browser with specified extension(s) or all enabled extensions
+    #[command(name = "launch")]
+    Launch {
+        /// Comma-separated extension IDs to load (or 'all' for all enabled)
+        #[arg(short, long)]
+        ext: Option<String>,
+
+        /// Target browser to launch (chrome, edge, brave)
+        #[arg(short, long, default_value = "chrome")]
+        browser: String,
     },
 }
 

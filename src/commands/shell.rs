@@ -96,21 +96,21 @@ impl Highlighter for TuquetHighlighter {
             ShellScope::Global => vec![
                 "use", "automa", "runner", "cloud", "browser", "status", "whoami", "login",
                 "logout", "run", "list", "ls", "studio", "inspect", "import", "export",
-                "delete", "install", "clean", "path", "help", "clear", "cls", "exit", "quit", "q",
+                "delete", "install", "clean", "path", "ext", "help", "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Automa => vec![
                 "run", "list", "ls", "inspect", "import", "export", "delete", "rm", "studio",
                 "back", "help", "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Runner => vec![
-                "start", "status", "probe", "export-openapi", "setup-ext", "back", "help",
+                "start", "stop", "restart", "status", "logs", "probe", "back", "help",
                 "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Cloud => vec![
                 "login", "logout", "whoami", "back", "help", "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Browser => vec![
-                "install", "status", "clean", "path", "back", "help", "clear", "cls", "exit", "quit", "q",
+                "install", "status", "clean", "path", "ext", "back", "help", "clear", "cls", "exit", "quit", "q",
             ],
         };
 
@@ -281,6 +281,22 @@ impl Completer for TuquetCompleter {
                     if flag.starts_with(current_word) {
                         suggestions.push(make_suggestion(*flag, "Execution option", span));
                     }
+                }
+            }
+        } else if words_before.len() == 1 && (words_before[0] == "ext" || words_before[0] == "extension") {
+            let ext_subcmds = [
+                ("list", "List all registered extensions (alias: ls)"),
+                ("add", "Register custom extension from directory"),
+                ("remove", "Unregister extension by ID (alias: rm)"),
+                ("enable", "Enable extension for automated sessions"),
+                ("disable", "Disable extension"),
+                ("info", "Show extension details and manifest metadata"),
+                ("path", "Print absolute path of extension"),
+                ("launch", "Launch browser with loaded extensions"),
+            ];
+            for (sc, desc) in &ext_subcmds {
+                if sc.starts_with(current_word) {
+                    suggestions.push(make_suggestion(*sc, *desc, span));
                 }
             }
         }
@@ -796,8 +812,45 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
             crate::commands::browser::handle(crate::cli::BrowserCommands::Path).await?;
         }
         "ext" | "setup-ext" => {
-            let browser = args.first().copied().unwrap_or("chrome");
-            crate::commands::browser::setup_extension(browser, None).await?;
+            let subcmd_str = args.first().copied();
+            let ext_subcmd = match subcmd_str {
+                Some("list") | Some("ls") => Some(crate::cli::ExtCommands::List),
+                Some("add") => {
+                    let path_str = args.get(1).copied().unwrap_or(".");
+                    Some(crate::cli::ExtCommands::Add {
+                        path: std::path::PathBuf::from(path_str),
+                        id: args.get(2).map(|s| s.to_string()),
+                    })
+                }
+                Some("remove") | Some("rm") => {
+                    let id = args.get(1).copied().unwrap_or("").to_string();
+                    Some(crate::cli::ExtCommands::Remove { id })
+                }
+                Some("enable") => {
+                    let id = args.get(1).copied().unwrap_or("").to_string();
+                    Some(crate::cli::ExtCommands::Enable { id })
+                }
+                Some("disable") => {
+                    let id = args.get(1).copied().unwrap_or("").to_string();
+                    Some(crate::cli::ExtCommands::Disable { id })
+                }
+                Some("info") => {
+                    let id = args.get(1).copied().unwrap_or("automa").to_string();
+                    Some(crate::cli::ExtCommands::Info { id })
+                }
+                Some("path") => {
+                    let id = args.get(1).copied().unwrap_or("automa").to_string();
+                    Some(crate::cli::ExtCommands::Path { id })
+                }
+                Some("launch") => {
+                    Some(crate::cli::ExtCommands::Launch {
+                        ext: args.get(1).map(|s| s.to_string()),
+                        browser: "chrome".to_string(),
+                    })
+                }
+                _ => None,
+            };
+            crate::commands::browser::handle_ext(ext_subcmd, "chrome", None).await?;
         }
         other => {
             println!("Unknown browser command '{}'. Type 'help' to see valid commands.", other);
@@ -894,7 +947,7 @@ fn print_scope_help(scope: ShellScope) {
             card.add_kv("  install [--force]", "Download and install Open-Source Chromium");
             card.add_kv("  clean", "Delete browser runtime directory to reclaim disk");
             card.add_kv("  path", "Print absolute path to browser executable");
-            card.add_kv("  ext", "Inspect and configure Automa MV3 extension");
+            card.add_kv("  ext [subcmd]", "Manage extensions (list, add, remove, enable, disable, info, launch)");
             card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
             card.add_kv("  back / cd ..", "Return to global scope");
             card.add_kv("  exit", "Return to global scope (or quit)");
