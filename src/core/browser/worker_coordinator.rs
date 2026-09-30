@@ -45,8 +45,17 @@ pub async fn ensure_browser_worker(
         }
     }
 
-    let ext_path = resolve_cli_runner_extension_path();
-    tracing::info!("[submit_job] Resolved extension path: {}", ext_path);
+    let profile_ext_paths = tuquet_browser::resolve_profile_extension_paths(&["automa".to_string()], true).await;
+    let mut ext_path_strings: Vec<String> = profile_ext_paths
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
+
+    if ext_path_strings.is_empty() {
+        let fallback_ext = resolve_cli_runner_extension_path();
+        ext_path_strings.push(fallback_ext);
+    }
+    tracing::info!("[submit_job] Resolved extension paths: {:?}", ext_path_strings);
 
     let headless = headless_opt.unwrap_or(app_settings.browser.headless);
 
@@ -75,7 +84,7 @@ pub async fn ensure_browser_worker(
         default_browser,
         browser_id: browser_id.to_string(),
         headless,
-        extension_paths: vec![ext_path],
+        extension_paths: ext_path_strings,
         custom_args,
         user_data_dir: None,
     });

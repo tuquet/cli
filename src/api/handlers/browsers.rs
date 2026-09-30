@@ -47,6 +47,8 @@ pub struct BrowserResponse {
     pub timezone: Option<String>,
     /// Proxy server string (e.g. socks5://127.0.0.1:1080 or http://user:pass@host:port)
     pub proxy: Option<String>,
+    /// Active extension identifiers configured for this profile
+    pub extensions: Vec<String>,
     /// Whether this profile is currently configured as the system default
     pub is_default: bool,
     /// Creation timestamp (ISO 8601)
@@ -64,7 +66,8 @@ pub struct BrowserResponse {
     "name": "Personal Profile",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     "timezone": "Asia/Ho_Chi_Minh",
-    "proxy": "socks5://127.0.0.1:1080"
+    "proxy": "socks5://127.0.0.1:1080",
+    "extensions": ["automa", "ublock"]
 }))]
 /// Request payload for creating a new browser profile
 pub struct CreateBrowserRequest {
@@ -78,6 +81,8 @@ pub struct CreateBrowserRequest {
     pub timezone: Option<String>,
     /// Optional proxy server URL
     pub proxy: Option<String>,
+    /// Optional extension identifiers to load for this profile (defaults to ["automa"])
+    pub extensions: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, ToSchema)]
@@ -86,7 +91,8 @@ pub struct CreateBrowserRequest {
     "name": "Updated Profile Name",
     "userAgent": null,
     "timezone": "UTC",
-    "proxy": "http://10.0.0.1:8080"
+    "proxy": "http://10.0.0.1:8080",
+    "extensions": ["automa", "ublock", "cookie-injector"]
 }))]
 /// Request payload for modifying an existing browser profile
 pub struct UpdateBrowserRequest {
@@ -98,6 +104,8 @@ pub struct UpdateBrowserRequest {
     pub timezone: Option<String>,
     /// New proxy server URL
     pub proxy: Option<String>,
+    /// Optional updated list of extension identifiers
+    pub extensions: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -161,12 +169,14 @@ pub async fn get_browsers(
     let response = browsers.into_iter().map(|p| {
         let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
         let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
+        let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
         BrowserResponse {
             id: p.id,
             name: p.name,
             user_agent: p.user_agent,
             timezone: p.timezone,
             proxy: p.proxy,
+            extensions,
             is_default,
             created_at: p.created_at,
             updated_at: p.updated_at,
@@ -183,7 +193,7 @@ pub async fn get_browsers(
     path = "/api/v1/browsers",
     operation_id = "create_browser",
     summary = "Create a new browser profile",
-    description = "Persists a new isolated browser profile with custom fingerprint settings (User-Agent, Timezone, Proxy) in SQLite.",
+    description = "Persists a new isolated browser profile with custom fingerprint settings (User-Agent, Timezone, Proxy, Extensions) in SQLite.",
     request_body = CreateBrowserRequest,
     responses(
         (status = 200, description = "Browser profile created successfully", body = Value),
@@ -200,7 +210,8 @@ pub async fn create_browser(
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
     let db = state.db.lock().await;
-    db.browsers().create_browser(&final_id, &req.name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref())
+    let exts = req.extensions.as_deref();
+    db.browsers().create_browser(&final_id, &req.name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
     Ok(Json(json!({"success": true, "id": final_id, "message": "Browser created"})))
 }
@@ -233,7 +244,8 @@ pub async fn update_browser(
     }
     let db = state.db.lock().await;
     let name = req.name.unwrap_or_default();
-    db.browsers().update_browser(&id, &name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref())
+    let exts = req.extensions.as_deref();
+    db.browsers().update_browser(&id, &name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
     Ok(Json(json!({"success": true, "message": "Browser updated"})))
 }
@@ -306,12 +318,14 @@ pub async fn get_browser_detail(
         let default_profile_id = db.settings().get_settings().ok().and_then(|s| s.browser.default_profile_id);
         let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
         
+        let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
         let response = BrowserResponse {
             id: p.id,
             name: p.name,
             user_agent: p.user_agent,
             timezone: p.timezone,
             proxy: p.proxy,
+            extensions,
             is_default,
             created_at: p.created_at,
             updated_at: p.updated_at,
@@ -521,12 +535,12 @@ pub async fn start_browser(
     }
 
     // Edge Case 2: Load Profile settings from SQLite database
-    let (db_user_agent, db_timezone, db_proxy) = {
+    let (db_user_agent, db_timezone, db_proxy, db_extensions) = {
         let db = state.db.lock().await;
         if let Ok(Some(profile)) = db.browsers().get_browser(&browser_id) {
-            (profile.user_agent, profile.timezone, profile.proxy)
+            (profile.user_agent, profile.timezone, profile.proxy, profile.extensions)
         } else {
-            (None, None, None)
+            (None, None, None, None)
         }
     };
 
@@ -583,11 +597,23 @@ pub async fn start_browser(
         app_settings.browser.default_type.clone()
     };
 
+    // Edge Cases 1.1, 1.2, 2.1, 2.2: Resolve profile extension paths with JIT provisioning and safe ordering
+    let profile_ext_ids = db_extensions.unwrap_or_else(|| vec!["automa".to_string()]);
+    let resolved_ext_paths = tuquet_browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
+    let mut ext_path_strings: Vec<String> = resolved_ext_paths
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
+
+    if ext_path_strings.is_empty() {
+        ext_path_strings.push(ext_path);
+    }
+
     let mut manager = BrowserManager::new(BrowserManagerOptions {
         default_browser,
         browser_id: browser_id.clone(),
         headless,
-        extension_paths: vec![ext_path],
+        extension_paths: ext_path_strings,
         custom_args,
         user_data_dir: Some(target_dir.to_string_lossy().to_string()),
     });
@@ -910,7 +936,7 @@ pub async fn import_csv(
         let user_agent = parts.get(2).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
         let timezone = parts.get(3).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
         let proxy = parts.get(4).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let _ = db.browsers().create_browser(&id, &name, user_agent.as_deref(), timezone.as_deref(), proxy.as_deref());
+        let _ = db.browsers().create_browser(&id, &name, user_agent.as_deref(), timezone.as_deref(), proxy.as_deref(), None);
         imported += 1;
     }
 
@@ -996,7 +1022,7 @@ pub async fn auto_detect_browsers(
         if !already_exists {
             let id = "default_chromium".to_string();
             if db.browsers().get_browser(&id).map_err(|e| AutomaError::DatabaseError(e.to_string()))?.is_none() {
-                let _ = db.browsers().create_browser(&id, &host_browser.name, None, None, None);
+                let _ = db.browsers().create_browser(&id, &host_browser.name, None, None, None, None);
             }
         }
     }
@@ -1027,12 +1053,14 @@ pub async fn auto_detect_browsers(
     let response = updated_browsers.into_iter().map(|p| {
         let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
         let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
+        let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
         BrowserResponse {
             id: p.id,
             name: p.name,
             user_agent: p.user_agent,
             timezone: p.timezone,
             proxy: p.proxy,
+            extensions,
             is_default,
             created_at: p.created_at,
             updated_at: p.updated_at,
@@ -1075,6 +1103,7 @@ mod tests {
             user_agent: Some("TestAgent/1.0".to_string()),
             timezone: Some("UTC".to_string()),
             proxy: Some("socks5://127.0.0.1:1080".to_string()),
+            extensions: Some(vec!["automa".to_string(), "ublock".to_string()]),
         };
 
         let create_res = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
@@ -1086,10 +1115,12 @@ mod tests {
         assert_eq!(list_res.len(), 1);
         assert_eq!(list_res[0].id, "test_browser_profile_1");
         assert_eq!(list_res[0].proxy.as_deref(), Some("socks5://127.0.0.1:1080"));
+        assert_eq!(list_res[0].extensions, vec!["automa".to_string(), "ublock".to_string()]);
 
         let detail_res = get_browser_detail(State(state.clone()), Path("test_browser_profile_1".to_string())).await.unwrap();
         assert_eq!(detail_res.name, "Test Browser 1");
         assert_eq!(detail_res.proxy.as_deref(), Some("socks5://127.0.0.1:1080"));
+        assert_eq!(detail_res.extensions, vec!["automa".to_string(), "ublock".to_string()]);
     }
 
     #[tokio::test]
@@ -1101,6 +1132,7 @@ mod tests {
             user_agent: None,
             timezone: None,
             proxy: None,
+            extensions: None,
         };
         let _ = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
 
@@ -1109,12 +1141,14 @@ mod tests {
             user_agent: Some("CustomAgent/2.0".to_string()),
             timezone: Some("Asia/Ho_Chi_Minh".to_string()),
             proxy: Some("http://proxy.local:8080".to_string()),
+            extensions: Some(vec!["automa".to_string(), "cookie-injector".to_string()]),
         };
         let update_res = update_browser(State(state.clone()), Path("test_browser_profile_2".to_string()), Json(update_req)).await.unwrap();
         assert_eq!(update_res.0["success"], true);
 
         let detail_res = get_browser_detail(State(state.clone()), Path("test_browser_profile_2".to_string())).await.unwrap();
         assert_eq!(detail_res.proxy.as_deref(), Some("http://proxy.local:8080"));
+        assert_eq!(detail_res.extensions, vec!["automa".to_string(), "cookie-injector".to_string()]);
 
         let _ = delete_browser(State(state.clone()), Path("test_browser_profile_2".to_string())).await.unwrap();
         let query = GetBrowsersQuery { limit: None, offset: None, search: None };
@@ -1131,6 +1165,7 @@ mod tests {
             user_agent: None,
             timezone: None,
             proxy: None,
+            extensions: None,
         };
         let err = create_browser(State(state), Json(create_req)).await.unwrap_err();
         match err {
@@ -1163,6 +1198,7 @@ mod tests {
             user_agent: None,
             timezone: None,
             proxy: None,
+            extensions: None,
         };
         let _ = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
 

@@ -58,6 +58,7 @@ pub trait BrowserRepository {
         user_agent: Option<&str>,
         timezone: Option<&str>,
         proxy: Option<&str>,
+        extensions: Option<&[String]>,
     ) -> Result<()>;
 
     fn get_browsers(
@@ -76,6 +77,7 @@ pub trait BrowserRepository {
         user_agent: Option<&str>,
         timezone: Option<&str>,
         proxy: Option<&str>,
+        extensions: Option<&[String]>,
     ) -> Result<()>;
 
     fn delete_browser(&self, id: &str) -> Result<()>;

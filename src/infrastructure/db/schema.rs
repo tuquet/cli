@@ -35,6 +35,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
             timezone TEXT,
             proxy TEXT,
             browser_type TEXT DEFAULT 'Chromium',
+            extensions TEXT DEFAULT '["automa"]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -106,5 +107,17 @@ pub fn init_db(conn: &Connection) -> Result<()> {
         );
         "#
     )?;
+
+    // Safe & Idempotent Schema Migration (Edge Case 6.1):
+    // Ensure 'extensions' column exists on 'browsers' table for pre-existing databases
+    let mut stmt = conn.prepare("PRAGMA table_info(browsers)")?;
+    let columns = stmt.query_map([], |row| row.get::<_, String>(1))?
+        .filter_map(Result::ok)
+        .collect::<Vec<String>>();
+
+    if !columns.iter().any(|c| c == "extensions") {
+        conn.execute("ALTER TABLE browsers ADD COLUMN extensions TEXT DEFAULT '[\"automa\"]'", [])?;
+    }
+
     Ok(())
 }
