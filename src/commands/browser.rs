@@ -121,7 +121,9 @@ pub async fn handle_ext(
 
             card.add_line("");
             card.add_line("Management Commands:");
-            card.add_line("  tuquet browser ext add <path>       Register custom extension");
+            card.add_line("  tuquet browser ext catalog          Browse downloadable extensions");
+            card.add_line("  tuquet browser ext install <id>     Install extension from catalog");
+            card.add_line("  tuquet browser ext add <path>       Register custom local extension");
             card.add_line("  tuquet browser ext enable <id>      Enable extension for sessions");
             card.add_line("  tuquet browser ext disable <id>     Disable extension");
             card.add_line("  tuquet browser ext remove <id>      Unregister custom extension");
@@ -133,6 +135,81 @@ pub async fn handle_ext(
             card.print();
             println!();
             Ok(())
+        }
+        Some(ExtCommands::Catalog { query }) => {
+            let available = crate::core::browser::fetch_available_extensions().await?;
+            let filtered: Vec<_> = if let Some(ref q) = query {
+                let q_lower = q.to_lowercase();
+                available
+                    .into_iter()
+                    .filter(|m| {
+                        m.id.contains(&q_lower)
+                            || m.name.to_lowercase().contains(&q_lower)
+                            || m.description.to_lowercase().contains(&q_lower)
+                    })
+                    .collect()
+            } else {
+                available
+            };
+
+            let mut card = Card::new("EXTENSION CATALOG");
+            card.with_badge(badge_online(&format!("{} AVAILABLE (SCOOP)", filtered.len())));
+            card.with_min_width(68);
+
+            for pkg in &filtered {
+                let installed = registry
+                    .get(&pkg.id)
+                    .map(|e| if e.path.exists() { " [INSTALLED]" } else { " [BROKEN PATH]" })
+                    .unwrap_or("");
+                card.add_kv(
+                    &format!("ID: {}{}", pkg.id, installed),
+                    format!("{} (v{})", pkg.name, pkg.version),
+                );
+                card.add_kv("  Info", &pkg.description);
+                if let Some(ref hp) = pkg.homepage {
+                    card.add_kv("  Homepage", hp);
+                }
+            }
+
+            card.add_line("");
+            card.add_line("Installation:");
+            card.add_line("  tuquet browser ext install <id>     Download and install extension");
+            card.with_footer("Catalog Source: tuquet-scoop-bucket (GitHub / Local)");
+
+            println!();
+            card.print();
+            println!();
+            Ok(())
+        }
+        Some(ExtCommands::Install { id, force }) => {
+            match crate::core::browser::install_remote_extension(&id, force).await {
+                Ok(ext) => {
+                    let mut card = Card::new("BROWSER EXTENSION");
+                    card.with_badge(badge_online("INSTALLED & REGISTERED"));
+                    card.with_min_width(64);
+                    card.add_kv("Package ID", ext.id);
+                    card.add_kv("Name", ext.name);
+                    card.add_kv("Version", ext.version);
+                    card.add_kv("Filesystem Path", ext.path.display().to_string());
+                    card.with_footer("Ready to load into browser automation sessions");
+                    println!();
+                    card.print();
+                    println!();
+                    Ok(())
+                }
+                Err(e) => {
+                    let mut card = Card::new("BROWSER EXTENSION");
+                    card.with_badge(badge_error("INSTALLATION FAILED"));
+                    card.with_min_width(64);
+                    card.add_kv("Target ID", id);
+                    card.add_kv("Error", format!("{}", e));
+                    card.with_footer("Run 'tuquet browser ext catalog' to see available packages");
+                    println!();
+                    card.print();
+                    println!();
+                    Err(e.into())
+                }
+            }
         }
         Some(ExtCommands::Add { path, id }) => {
             match Extension::from_unpacked_dir(&path, id) {

@@ -285,8 +285,10 @@ impl Completer for TuquetCompleter {
             }
         } else if words_before.len() == 1 && (words_before[0] == "ext" || words_before[0] == "extension") {
             let ext_subcmds = [
+                ("catalog", "Browse available extensions in tuquet-scoop-bucket (alias: search)"),
+                ("install", "Download and install extension from catalog"),
                 ("list", "List all registered extensions (alias: ls)"),
-                ("add", "Register custom extension from directory"),
+                ("add", "Register custom extension from local directory"),
                 ("remove", "Unregister extension by ID (alias: rm)"),
                 ("enable", "Enable extension for automated sessions"),
                 ("disable", "Disable extension"),
@@ -815,6 +817,15 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
             let subcmd_str = args.first().copied();
             let ext_subcmd = match subcmd_str {
                 Some("list") | Some("ls") => Some(crate::cli::ExtCommands::List),
+                Some("catalog") | Some("search") | Some("available") => {
+                    let query = args.get(1).map(|s| s.to_string());
+                    Some(crate::cli::ExtCommands::Catalog { query })
+                }
+                Some("install") | Some("get") => {
+                    let id = args.get(1).copied().unwrap_or("automa").to_string();
+                    let force = args.contains(&"-f") || args.contains(&"--force");
+                    Some(crate::cli::ExtCommands::Install { id, force })
+                }
                 Some("add") => {
                     let path_str = args.get(1).copied().unwrap_or(".");
                     Some(crate::cli::ExtCommands::Add {

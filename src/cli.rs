@@ -344,6 +344,24 @@ pub enum ExtCommands {
     #[command(name = "list", alias = "ls")]
     List,
 
+    /// Browse and search available extensions from tuquet-scoop-bucket (aliases: search, available)
+    #[command(name = "catalog", aliases = ["search", "available"])]
+    Catalog {
+        /// Optional keyword to filter extensions
+        query: Option<String>,
+    },
+
+    /// Download and install an extension package from tuquet-scoop-bucket (alias: get)
+    #[command(name = "install", alias = "get")]
+    Install {
+        /// Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')
+        id: String,
+
+        /// Force re-download and overwrite existing installation
+        #[arg(short, long)]
+        force: bool,
+    },
+
     /// Register a new browser extension from an unpacked directory
     #[command(name = "add")]
     Add {
