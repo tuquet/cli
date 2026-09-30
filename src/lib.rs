@@ -4,6 +4,7 @@ pub mod commands;
 pub mod config;
 pub mod core;
 pub mod infrastructure;
+pub mod ui;
 
 use std::sync::Arc;
 use tokio::sync::Mutex;

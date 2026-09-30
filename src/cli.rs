@@ -4,38 +4,47 @@ use std::path::PathBuf;
 
 pub fn get_styles() -> Styles {
     Styles::styled()
-        .header(AnsiColor::Green.on_default() | Effects::BOLD)
-        .usage(AnsiColor::Green.on_default() | Effects::BOLD)
-        .literal(AnsiColor::Cyan.on_default() | Effects::BOLD)
-        .placeholder(AnsiColor::Cyan.on_default())
+        .header(AnsiColor::Cyan.on_default() | Effects::BOLD)
+        .usage(AnsiColor::Cyan.on_default() | Effects::BOLD)
+        .literal(AnsiColor::Green.on_default() | Effects::BOLD)
+        .placeholder(AnsiColor::BrightBlack.on_default())
         .error(AnsiColor::Red.on_default() | Effects::BOLD)
         .valid(AnsiColor::Green.on_default())
         .invalid(AnsiColor::Yellow.on_default())
 }
 
 pub const MAIN_HELP_TEMPLATE: &str = "\
-{about-with-newline}
-{usage-heading} {usage}
+\x1b[38;2;71;85;105m╭─\x1b[0m \x1b[1;38;2;56;189;248mTUQUET ECOSYSTEM\x1b[0m \x1b[38;2;71;85;105m────────────────────────────────────────────\x1b[0m
+\x1b[38;2;71;85;105m│\x1b[0m  Unified CLI for Browser Automation & Distributed Mesh Runtime
+\x1b[38;2;71;85;105m╰──────────────────────────────────────────────────────────────────╯\x1b[0m
 
-\x1b[1;32mServices:\x1b[0m
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtuquet\x1b[0m [COMMAND] [OPTIONS]
+
+\x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
+  \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, and Browser
+  \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
+  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Tuquet Cloud
+
+\x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
   \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node (aliases: daemon, worker)
   \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing (alias: auth)
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
 
-\x1b[1;32mInteractive:\x1b[0m
-  \x1b[1;36mshell\x1b[0m           Launch interactive scoped shell session (alias: repl)
+\x1b[1;38;2;56;189;248mInteractive:\x1b[0m
+  \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session (alias: repl)
 
-\x1b[1;32mOptions:\x1b[0m
-  \x1b[1;36m-h, --help\x1b[0m          Print help (see more with '--help')
-  \x1b[1;36m-V, --version\x1b[0m       Print version
+\x1b[1;38;2;56;189;248mOptions:\x1b[0m
+  \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
+  \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
-\x1b[1;32mExamples:\x1b[0m
-  tuquet                          Launch interactive shell
-  tuquet automa                   Launch interactive shell in automa scope
+\x1b[1;38;2;56;189;248mExamples:\x1b[0m
+  tuquet                          Launch modern interactive REPL
+  tuquet status                   Check full ecosystem dashboard
+  tuquet whoami                   Display cloud device identity
   tuquet automa run ./wf.json     Execute workflow directly
-  tuquet runner start --port 8765
-  tuquet browser install";
+  tuquet runner start --port 8765 Start local daemon worker
+  tuquet browser status           Inspect dedicated browser engine";
 
 /// Tuquet - Unified CLI Tool
 #[derive(Parser, Debug)]
@@ -55,6 +64,30 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Show unified status overview of Tuquet ecosystem
+    #[command(name = "status")]
+    Status,
+
+    /// Show current Tuquet Cloud identity and enrollment status
+    #[command(name = "whoami")]
+    Whoami,
+
+    /// Authenticate and pair workstation with Tuquet Cloud
+    #[command(name = "login")]
+    Login {
+        /// Tuquet Cloud endpoint URL
+        #[arg(short, long)]
+        url: Option<String>,
+
+        /// Organization / Tenant enrollment token
+        #[arg(short, long)]
+        token: Option<String>,
+
+        /// Custom workstation name (defaults to machine hostname)
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
     /// Automa browser workflow automation engine
     #[command(name = "automa")]
     Automa {

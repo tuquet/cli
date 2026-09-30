@@ -1,6 +1,7 @@
 use crate::cli::CloudSubcommands;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
+use crate::ui::{badge_offline, badge_online, Card};
 
 pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     match command {
@@ -20,10 +21,17 @@ pub async fn login(
     let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
     match CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
         Ok(creds) => {
-            println!("\x1b[32m[SUCCESS] Workstation enrolled successfully!\x1b[0m");
-            println!("Device ID:   {}", creds.device_id);
-            println!("Device Name: {}", creds.name);
-            println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
+            let mut card = Card::new("TUQUET CLOUD");
+            card.with_badge(badge_online("ENROLLED"));
+            card.with_min_width(64);
+            card.add_kv("Device ID", &creds.device_id);
+            card.add_kv("Device Name", &creds.name);
+            card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
+            card.add_kv("Endpoint", creds.cloud_url.as_deref().unwrap_or(&cloud_url));
+            card.with_footer("Workstation successfully paired with Tuquet Cloud fleet");
+            println!();
+            card.print();
+            println!();
             Ok(())
         }
         Err(e) => {
@@ -36,11 +44,24 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
     match CloudReporter::logout(&config.data_dir).await {
         Ok(true) => {
-            println!("\x1b[32m[SUCCESS] Logged out and removed local cloud credentials.\x1b[0m");
+            let mut card = Card::new("TUQUET CLOUD");
+            card.with_badge(badge_offline("LOGGED OUT"));
+            card.with_min_width(64);
+            card.add_line("Removed local cloud pairing credentials and session identity.");
+            card.with_footer("Run 'tuquet login' to enroll again with Tuquet Cloud");
+            println!();
+            card.print();
+            println!();
             Ok(())
         }
         Ok(false) => {
-            println!("No active cloud session found.");
+            let mut card = Card::new("TUQUET CLOUD");
+            card.with_badge(badge_offline("DISCONNECTED"));
+            card.with_min_width(64);
+            card.add_line("No active cloud session found on this machine.");
+            println!();
+            card.print();
+            println!();
             Ok(())
         }
         Err(e) => {
@@ -52,12 +73,27 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
 pub async fn whoami() -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
     if let Some(creds) = CloudReporter::whoami(&config.data_dir).await {
-        println!("Device ID:   {}", creds.device_id);
-        println!("Device Name: {}", creds.name);
-        println!("Tenant ID:   {}", creds.tenant_id.as_deref().unwrap_or("none"));
-        println!("Cloud URL:   {}", creds.cloud_url.as_deref().unwrap_or("none"));
+        let is_prod = creds.cloud_url.as_deref().map(|u| u.contains("dswhacsoaxgpfnkaxnhz") || u.contains("supabase")).unwrap_or(false);
+        let badge_text = if is_prod { "ENROLLED (PROD)" } else { "ENROLLED" };
+        let mut card = Card::new("TUQUET CLOUD");
+        card.with_badge(badge_online(badge_text));
+        card.with_min_width(64);
+        card.add_kv("Device ID", &creds.device_id);
+        card.add_kv("Device Name", &creds.name);
+        card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
+        card.add_kv("Endpoint", creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"));
+        println!();
+        card.print();
+        println!();
     } else {
-        println!("Not logged in to Tuquet Cloud.");
+        let mut card = Card::new("TUQUET CLOUD");
+        card.with_badge(badge_offline("DISCONNECTED"));
+        card.with_min_width(64);
+        card.add_line("Workstation not enrolled with cloud fleet.");
+        card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
+        println!();
+        card.print();
+        println!();
     }
     Ok(())
 }

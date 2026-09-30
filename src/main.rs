@@ -8,6 +8,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let result = match cli.command {
+        Some(Commands::Status) => commands::status::show_dashboard().await,
+        Some(Commands::Whoami) => commands::cloud::whoami().await,
+        Some(Commands::Login { url, token, name }) => commands::cloud::login(url, token, name).await,
         Some(Commands::Automa { command }) => match command {
             Some(subcmd) => commands::automa::handle(subcmd).await,
             None => {

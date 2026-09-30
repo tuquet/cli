@@ -1,10 +1,17 @@
 use std::borrow::Cow;
 use std::io::Write;
 use std::path::PathBuf;
+use nu_ansi_term::{Color, Style};
 use reedline::{
-    Completer, CompletionResult, FileBackedHistory, Prompt, PromptEditMode, PromptHistorySearch,
-    Reedline, Signal, Span, Suggestion,
+    default_emacs_keybindings, Completer, CompletionResult, DefaultHinter, Emacs,
+    FileBackedHistory, Highlighter, IdeMenu, KeyCode, KeyModifiers, MenuBuilder, Prompt,
+    PromptEditMode, PromptHistorySearch, Reedline, ReedlineEvent, Signal, Span, StyledText,
+    Suggestion,
 };
+
+use crate::config::AppConfig;
+use crate::infrastructure::cloud_reporter::CloudReporter;
+use crate::ui::{badge_online, colors, status_pill, Card};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShellScope {
@@ -17,17 +24,39 @@ pub enum ShellScope {
 
 pub struct TuquetPrompt {
     pub scope: ShellScope,
+    pub cloud_env: String,
 }
 
 impl Prompt for TuquetPrompt {
     fn render_prompt_left(&self) -> Cow<'_, str> {
-        match self.scope {
-            ShellScope::Global => Cow::Borrowed("\x1b[1;36mtuquet\x1b[0m"),
-            ShellScope::Automa => Cow::Borrowed("\x1b[1;36mtuquet\x1b[0m\x1b[33m(automa)\x1b[0m"),
-            ShellScope::Runner => Cow::Borrowed("\x1b[1;36mtuquet\x1b[0m\x1b[32m(runner)\x1b[0m"),
-            ShellScope::Cloud => Cow::Borrowed("\x1b[1;36mtuquet\x1b[0m\x1b[35m(cloud)\x1b[0m"),
-            ShellScope::Browser => Cow::Borrowed("\x1b[1;36mtuquet\x1b[0m\x1b[34m(browser)\x1b[0m"),
-        }
+        let border = colors::BORDER;
+        let cyan = colors::CYAN;
+        let bold = colors::BOLD;
+        let reset = colors::RESET;
+        let muted = colors::MUTED;
+        let green = colors::GREEN;
+        let yellow = colors::AMBER;
+        let purple = colors::PURPLE;
+        let blue = "\x1b[38;2;96;165;250m";
+
+        let (scope_str, scope_color) = match self.scope {
+            ShellScope::Global => ("global", cyan),
+            ShellScope::Automa => ("automa", yellow),
+            ShellScope::Runner => ("runner", green),
+            ShellScope::Cloud => ("cloud", purple),
+            ShellScope::Browser => ("browser", blue),
+        };
+
+        let env_badge = if self.cloud_env.is_empty() {
+            format!("{muted}○ cloud:local{reset}")
+        } else {
+            format!("{green}● {}{reset}", self.cloud_env)
+        };
+
+        let line = format!(
+            "{border}╭─{reset} {bold}{cyan}⚡ tuquet{reset}  {env_badge}  {border}[{reset}{scope_color}{scope_str}{reset}{border}]{reset}\n{border}╰─{reset}"
+        );
+        Cow::Owned(line)
     }
 
     fn render_prompt_right(&self) -> Cow<'_, str> {
@@ -35,15 +64,87 @@ impl Prompt for TuquetPrompt {
     }
 
     fn render_prompt_indicator(&self, _edit_mode: PromptEditMode) -> Cow<'_, str> {
-        Cow::Borrowed("> ")
+        Cow::Borrowed("\x1b[1;38;2;56;189;248m❯\x1b[0m ")
     }
 
     fn render_prompt_multiline_indicator(&self) -> Cow<'_, str> {
-        Cow::Borrowed("::: ")
+        Cow::Borrowed("\x1b[38;2;71;85;105m::: \x1b[0m")
     }
 
     fn render_prompt_history_search_indicator(&self, _history_search: PromptHistorySearch) -> Cow<'_, str> {
-        Cow::Borrowed("(search)> ")
+        Cow::Borrowed("\x1b[38;2;251;191;36m(search)\x1b[0m❯ ")
+    }
+}
+
+pub struct TuquetHighlighter {
+    pub scope: ShellScope,
+}
+
+impl Highlighter for TuquetHighlighter {
+    fn highlight(&self, line: &str, _cursor: usize) -> StyledText {
+        let mut styled = StyledText::new();
+        if line.is_empty() {
+            return styled;
+        }
+
+        let leading_spaces = line.len() - line.trim_start().len();
+        if leading_spaces > 0 {
+            styled.push((Style::new(), line[..leading_spaces].to_string()));
+        }
+
+        let valid_commands = match self.scope {
+            ShellScope::Global => vec![
+                "use", "automa", "runner", "cloud", "browser", "status", "whoami", "login",
+                "logout", "run", "list", "ls", "studio", "inspect", "import", "export",
+                "delete", "install", "clean", "path", "help", "clear", "cls", "exit", "quit", "q",
+            ],
+            ShellScope::Automa => vec![
+                "run", "list", "ls", "inspect", "import", "export", "delete", "rm", "studio",
+                "back", "help", "clear", "cls", "exit", "quit", "q",
+            ],
+            ShellScope::Runner => vec![
+                "start", "status", "probe", "export-openapi", "setup-ext", "back", "help",
+                "clear", "cls", "exit", "quit", "q",
+            ],
+            ShellScope::Cloud => vec![
+                "login", "logout", "whoami", "back", "help", "clear", "cls", "exit", "quit", "q",
+            ],
+            ShellScope::Browser => vec![
+                "install", "status", "clean", "path", "back", "help", "clear", "cls", "exit", "quit", "q",
+            ],
+        };
+
+        let mut remaining = &line[leading_spaces..];
+        let mut is_first_word = true;
+
+        while !remaining.is_empty() {
+            let next_word_end = remaining.find(char::is_whitespace).unwrap_or(remaining.len());
+            let word = &remaining[..next_word_end];
+
+            if is_first_word {
+                is_first_word = false;
+                if valid_commands.contains(&word) {
+                    styled.push((Color::Cyan.bold(), word.to_string()));
+                } else {
+                    styled.push((Color::Red.normal(), word.to_string()));
+                }
+            } else if word.starts_with('-') {
+                styled.push((Color::Yellow.normal(), word.to_string()));
+            } else if word.starts_with('"') || word.starts_with('\'') {
+                styled.push((Color::Green.normal(), word.to_string()));
+            } else {
+                styled.push((Color::White.normal(), word.to_string()));
+            }
+
+            remaining = &remaining[next_word_end..];
+            let ws_len = remaining.len() - remaining.trim_start().len();
+            if ws_len > 0 {
+                styled.push((Style::new(), remaining[..ws_len].to_string()));
+                remaining = &remaining[ws_len..];
+            }
+        }
+
+        styled
     }
 }
 
@@ -80,20 +181,20 @@ impl Completer for TuquetCompleter {
             let commands: &[(&str, &str)] = match self.scope {
                 ShellScope::Global => &[
                     ("use", "Switch active service scope (automa, runner, cloud, browser)"),
-                    ("automa", "Enter browser automation scope"),
-                    ("runner", "Enter distributed runner scope (aliases: daemon, worker)"),
-                    ("cloud", "Enter cloud authentication scope (alias: auth)"),
-                    ("browser", "Enter browser runtime management scope"),
-                    ("status", "Inspect status across all Tuquet subsystems"),
+                    ("status", "Inspect unified status across Cloud, Runner, and Browser"),
+                    ("whoami", "Check active cloud enrollment identity & device ID"),
                     ("login", "Authenticate workstation with Tuquet Cloud"),
-                    ("whoami", "Check active cloud pairing and device ID"),
-                    ("logout", "Log out and remove local cloud credentials"),
+                    ("logout", "Disconnect and remove local cloud credentials"),
+                    ("automa", "Enter browser automation scope"),
+                    ("runner", "Enter distributed runner daemon scope"),
+                    ("cloud", "Enter cloud authentication scope"),
+                    ("browser", "Enter browser runtime management scope"),
                     ("run", "Execute a workflow (.json or stored ID)"),
                     ("list", "List stored workflows in vault and database"),
                     ("studio", "Launch Automa Web Studio"),
-                    ("help", "Print help overview"),
+                    ("help", "Print help overview for current scope"),
                     ("clear", "Clear terminal screen"),
-                    ("exit", "Exit Tuquet shell"),
+                    ("exit", "Exit Tuquet shell session"),
                 ],
                 ShellScope::Automa => &[
                     ("run", "Execute a workflow (.json or stored ID)"),
@@ -105,7 +206,7 @@ impl Completer for TuquetCompleter {
                     ("studio", "Launch Automa Web Studio"),
                     ("back", "Return to global scope"),
                     ("help", "Print Automa scope help"),
-                    ("clear", "Clear screen"),
+                    ("clear", "Clear terminal display"),
                     ("exit", "Return to global scope (or quit)"),
                 ],
                 ShellScope::Runner => &[
@@ -116,7 +217,7 @@ impl Completer for TuquetCompleter {
                     ("setup-ext", "Launch browser with extension loaded"),
                     ("back", "Return to global scope"),
                     ("help", "Print Runner scope help"),
-                    ("clear", "Clear screen"),
+                    ("clear", "Clear terminal display"),
                     ("exit", "Return to global scope (or quit)"),
                 ],
                 ShellScope::Cloud => &[
@@ -125,7 +226,7 @@ impl Completer for TuquetCompleter {
                     ("whoami", "Check active cloud pairing and enrollment"),
                     ("back", "Return to global scope"),
                     ("help", "Print Cloud scope help"),
-                    ("clear", "Clear screen"),
+                    ("clear", "Clear terminal display"),
                     ("exit", "Return to global scope (or quit)"),
                 ],
                 ShellScope::Browser => &[
@@ -135,7 +236,7 @@ impl Completer for TuquetCompleter {
                     ("path", "Print absolute path to browser executable"),
                     ("back", "Return to global scope"),
                     ("help", "Print Browser scope help"),
-                    ("clear", "Clear screen"),
+                    ("clear", "Clear terminal display"),
                     ("exit", "Return to global scope (or quit)"),
                 ],
             };
@@ -146,8 +247,7 @@ impl Completer for TuquetCompleter {
                 }
             }
         } else if words_before.len() == 1 && words_before[0] == "use" {
-            // Completing scope target for 'use'
-            let scopes = ["automa", "runner", "cloud", "browser", "auth", "daemon", "worker", "global"];
+            let scopes = ["automa", "runner", "cloud", "browser", "global"];
             for s in &scopes {
                 if s.starts_with(current_word) {
                     suggestions.push(make_suggestion(*s, "Target service scope", span));
@@ -196,15 +296,61 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
         _ => ShellScope::Global,
     };
 
-    println!("\x1b[1;36m============================================================\x1b[0m");
-    println!("\x1b[1;36m Tuquet Unified Interactive Shell (v{})\x1b[0m", env!("CARGO_PKG_VERSION"));
-    println!("\x1b[1;36m============================================================\x1b[0m");
-    println!("Type \x1b[1;33m'help'\x1b[0m for commands, \x1b[1;33m'use <service>'\x1b[0m to switch scope, \x1b[1;33m'exit'\x1b[0m to quit.");
-    println!("Tip: Press \x1b[1;32m[Tab]\x1b[0m for smart autocomplete and workflow suggestions.");
+    let config = AppConfig::load();
+    let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
+    let cloud_env_badge = if let Some(ref creds) = cloud_creds {
+        if creds.cloud_url.as_deref().map(|u| u.contains("dswhacsoaxgpfnkaxnhz")).unwrap_or(false) {
+            "prod:dswhacsoaxgpfnkaxnhz".to_string()
+        } else {
+            "enrolled".to_string()
+        }
+    } else {
+        "".to_string()
+    };
+
+    // Probe runner daemon health
+    let daemon_port = config.server_port;
+    let daemon_online = {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_millis(300))
+            .build();
+        if let Ok(c) = client {
+            c.get(format!("http://127.0.0.1:{}/api/v1/health", daemon_port))
+                .send()
+                .await
+                .map(|r| r.status().is_success())
+                .unwrap_or(false)
+        } else {
+            false
+        }
+    };
+
+    let browser_status = crate::core::browser::resolver::get_runtime_status();
+
+    let cloud_pill = if !cloud_env_badge.is_empty() {
+        status_pill("cloud", &cloud_env_badge, true)
+    } else {
+        status_pill("cloud", "unpaired", false)
+    };
+    let daemon_pill = if daemon_online {
+        status_pill("daemon", &daemon_port.to_string(), true)
+    } else {
+        status_pill("daemon", "offline", false)
+    };
+    let browser_pill = if browser_status.installed {
+        status_pill("browser", "chromium", true)
+    } else {
+        status_pill("browser", "uninstalled", false)
+    };
+
+    // Print Hero Brand Banner
+    println!();
+    print!("{}", crate::ui::render_hero(env!("CARGO_PKG_VERSION"), &cloud_pill, &daemon_pill, &browser_pill));
     println!();
 
     if scope != ShellScope::Global {
-        println!("Starting in \x1b[33m{:?}\x1b[0m service scope.", scope);
+        println!("Starting in \x1b[38;2;251;191;36m{:?}\x1b[0m service scope.", scope);
+        println!();
     }
 
     let history_path = {
@@ -217,13 +363,54 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
 
     let history = Box::new(FileBackedHistory::with_file(1000, history_path)?);
 
+    // Floating IDE completion popup menu
+    let ide_menu = Box::new(
+        IdeMenu::default()
+            .with_name("completion_menu")
+            .with_default_border()
+            .with_min_completion_width(18)
+            .with_max_completion_width(55)
+            .with_min_description_width(20)
+            .with_max_description_width(50)
+            .with_max_completion_height(10),
+    );
+
+    // Custom keybindings for Tab autocomplete
+    let mut keybindings = default_emacs_keybindings();
+    keybindings.add_binding(
+        KeyModifiers::NONE,
+        KeyCode::Tab,
+        ReedlineEvent::UntilFound(vec![
+            ReedlineEvent::Menu("completion_menu".to_string()),
+            ReedlineEvent::MenuNext,
+        ]),
+    );
+    keybindings.add_binding(
+        KeyModifiers::SHIFT,
+        KeyCode::BackTab,
+        ReedlineEvent::MenuPrevious,
+    );
+    let edit_mode = Box::new(Emacs::new(keybindings));
+
+    let hinter = Box::new(DefaultHinter::default().with_style(Style::new().dimmed()));
+
     let mut line_editor = Reedline::create()
-        .with_history(history);
+        .with_history(history)
+        .with_edit_mode(edit_mode)
+        .with_menu(reedline::ReedlineMenu::EngineCompleter(ide_menu))
+        .with_hinter(hinter);
 
     loop {
-        let prompt = TuquetPrompt { scope };
+        let prompt = TuquetPrompt {
+            scope,
+            cloud_env: cloud_env_badge.clone(),
+        };
         let completer = Box::new(TuquetCompleter { scope });
-        line_editor = line_editor.with_completer(completer);
+        let highlighter = Box::new(TuquetHighlighter { scope });
+
+        line_editor = line_editor
+            .with_completer(completer)
+            .with_highlighter(highlighter);
 
         let sig = line_editor.read_line(&prompt);
         match sig {
@@ -239,7 +426,7 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
                         }
                     }
                     Err(e) => {
-                        eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
+                        eprintln!("\x1b[38;2;248;113;113m[ERROR] {}\x1b[0m", e);
                     }
                 }
             }
@@ -252,7 +439,7 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
             }
             Ok(_) => {}
             Err(e) => {
-                eprintln!("\x1b[31m[ERROR] Readline error: {}\x1b[0m", e);
+                eprintln!("\x1b[38;2;248;113;113m[ERROR] Readline error: {}\x1b[0m", e);
                 break;
             }
         }
@@ -274,7 +461,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
     match cmd {
         "exit" | "quit" | "q" => {
             if *scope != ShellScope::Global {
-                println!("Returning to \x1b[1;36mGlobal\x1b[0m scope. Type 'exit' again to leave Tuquet.");
+                println!("Returning to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope. Type 'exit' again to leave Tuquet.");
                 *scope = ShellScope::Global;
                 return Ok(false);
             } else {
@@ -283,7 +470,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
         }
         "back" | "cd .." => {
             if *scope != ShellScope::Global {
-                println!("Returned to \x1b[1;36mGlobal\x1b[0m scope.");
+                println!("Returned to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope.");
                 *scope = ShellScope::Global;
             }
             return Ok(false);
@@ -295,23 +482,23 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                 match args[0].to_lowercase().as_str() {
                     "automa" => {
                         *scope = ShellScope::Automa;
-                        println!("Switched to \x1b[33mAutoma\x1b[0m context (Browser automation engine).");
+                        println!("Switched to \x1b[38;2;251;191;36mAutoma\x1b[0m context (Browser automation engine).");
                     }
                     "runner" | "daemon" | "worker" => {
                         *scope = ShellScope::Runner;
-                        println!("Switched to \x1b[32mRunner\x1b[0m context (Distributed daemon & node).");
+                        println!("Switched to \x1b[38;2;74;222;128mRunner\x1b[0m context (Distributed daemon & node).");
                     }
                     "cloud" | "auth" => {
                         *scope = ShellScope::Cloud;
-                        println!("Switched to \x1b[35mCloud\x1b[0m context (Authentication & pairing).");
+                        println!("Switched to \x1b[38;2;168;85;247mCloud\x1b[0m context (Authentication & pairing).");
                     }
                     "browser" => {
                         *scope = ShellScope::Browser;
-                        println!("Switched to \x1b[34mBrowser\x1b[0m context (Isolated Chromium management).");
+                        println!("Switched to \x1b[38;2;96;165;250mBrowser\x1b[0m context (Isolated Chromium management).");
                     }
                     "global" | "root" => {
                         *scope = ShellScope::Global;
-                        println!("Returned to \x1b[1;36mGlobal\x1b[0m context.");
+                        println!("Returned to \x1b[1;38;2;56;189;248mGlobal\x1b[0m context.");
                     }
                     other => {
                         println!("Unknown scope '{}'. Available: automa, runner, cloud, browser, global", other);
@@ -337,22 +524,22 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
         match cmd {
             "automa" if args.is_empty() => {
                 *scope = ShellScope::Automa;
-                println!("Switched to \x1b[33mAutoma\x1b[0m context. Type 'help' for commands, 'back' to return.");
+                println!("Switched to \x1b[38;2;251;191;36mAutoma\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
             "runner" | "daemon" | "worker" if args.is_empty() => {
                 *scope = ShellScope::Runner;
-                println!("Switched to \x1b[32mRunner\x1b[0m context. Type 'help' for commands, 'back' to return.");
+                println!("Switched to \x1b[38;2;74;222;128mRunner\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
             "cloud" | "auth" if args.is_empty() => {
                 *scope = ShellScope::Cloud;
-                println!("Switched to \x1b[35mCloud\x1b[0m context. Type 'help' for commands, 'back' to return.");
+                println!("Switched to \x1b[38;2;168;85;247mCloud\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
             "browser" if args.is_empty() => {
                 *scope = ShellScope::Browser;
-                println!("Switched to \x1b[34mBrowser\x1b[0m context. Type 'help' for commands, 'back' to return.");
+                println!("Switched to \x1b[38;2;96;165;250mBrowser\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
             _ => {}
@@ -389,6 +576,19 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
 
 async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
+        "status" => {
+            crate::commands::status::show_dashboard().await?;
+        }
+        "whoami" => {
+            crate::commands::cloud::whoami().await?;
+        }
+        "login" => {
+            let token = args.first().map(|s| s.to_string());
+            crate::commands::cloud::login(None, token, None).await?;
+        }
+        "logout" => {
+            crate::commands::cloud::logout().await?;
+        }
         "automa" => {
             if args.is_empty() {
                 println!("Usage: automa <run | list | inspect | import | export | delete | studio>");
@@ -418,28 +618,11 @@ async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
             }
         }
         // Direct Global convenience commands
-        "login" | "logout" | "whoami" => {
-            dispatch_cloud(cmd, args).await?;
-        }
         "run" | "list" | "ls" | "inspect" | "import" | "export" | "delete" | "studio" => {
             dispatch_automa(cmd, args).await?;
         }
         "install" | "clean" | "path" => {
             dispatch_browser(cmd, args).await?;
-        }
-        "status" => {
-            println!("\x1b[1;36m============================================================\x1b[0m");
-            println!("\x1b[1;36m Tuquet Ecosystem Health & Status\x1b[0m");
-            println!("\x1b[1;36m============================================================\x1b[0m");
-            println!("\x1b[1;33m--- [Browser Runtime] ---\x1b[0m");
-            let _ = dispatch_browser("status", &[]).await;
-            println!();
-            println!("\x1b[1;32m--- [Runner Daemon] ---\x1b[0m");
-            let _ = dispatch_runner("status", &[]).await;
-            println!();
-            println!("\x1b[1;35m--- [Cloud Pairing] ---\x1b[0m");
-            let _ = dispatch_cloud("whoami", &[]).await;
-            println!("============================================================");
         }
         other => {
             println!("Unknown global command: '{}'. Type 'help' or 'use <service>' to enter a scope.", other);
@@ -452,47 +635,60 @@ async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
     match cmd {
         "run" => {
             if args.is_empty() {
-                println!("Usage: run <workflow_id_or_file> [--headless] [--timeout <secs>]");
-                return Ok(());
-            }
-            let target = Some(args[0].to_string());
-            let headless = args.contains(&"--headless");
-            let timeout = args.iter().position(|&x| x == "--timeout")
-                .and_then(|idx| args.get(idx + 1))
-                .and_then(|val| val.parse::<u64>().ok());
+                println!("Usage: run <workflow.json | stored_id> [--headless] [--browser <name>] [--timeout <sec>]");
+            } else {
+                let wf = Some(args[0].to_string());
+                let headless = args.contains(&"--headless");
+                let mut browser = None;
+                let mut timeout = None;
 
-            crate::commands::automa::run_workflow(target, None, headless, None, None, Vec::new(), timeout).await?;
+                let mut iter = args.iter().skip(1);
+                while let Some(arg) = iter.next() {
+                    if *arg == "--browser" {
+                        browser = iter.next().map(|s| s.to_string());
+                    } else if *arg == "--timeout" {
+                        timeout = iter.next().and_then(|s| s.parse::<u64>().ok());
+                    }
+                }
+
+                crate::commands::automa::run_workflow(
+                    wf, None, headless, browser, None, Vec::new(), timeout,
+                )
+                .await?;
+            }
         }
         "list" | "ls" => {
-            let search = if !args.is_empty() && !args[0].starts_with('-') {
-                Some(args[0].to_string())
-            } else {
-                None
-            };
-            let db_only = args.contains(&"--db-only");
-            let vault_only = args.contains(&"--vault-only");
-            crate::commands::automa::list_workflows(search, db_only, vault_only).await?;
+            let search = args.first().map(|s| s.to_string());
+            crate::commands::automa::list_workflows(search, false, false).await?;
         }
         "inspect" => {
             if args.is_empty() {
-                println!("Usage: inspect <workflow_id_or_file>");
+                println!("Usage: inspect <workflow.json | stored_id>");
             } else {
                 crate::commands::automa::inspect_workflow(args[0])?;
             }
         }
-        "import" | "add" => {
+        "import" => {
             if args.is_empty() {
-                println!("Usage: import <file.json> [id] [name]");
+                println!("Usage: import <file.json> [--id <id>] [--name <name>]");
             } else {
                 let file = PathBuf::from(args[0]);
-                let id = args.get(1).map(|s| s.to_string());
-                let name = args.get(2).map(|s| s.to_string());
+                let mut id = None;
+                let mut name = None;
+                let mut iter = args.iter().skip(1);
+                while let Some(arg) = iter.next() {
+                    if *arg == "--id" {
+                        id = iter.next().map(|s| s.to_string());
+                    } else if *arg == "--name" {
+                        name = iter.next().map(|s| s.to_string());
+                    }
+                }
                 crate::commands::automa::import_workflow(file, id, name, None).await?;
             }
         }
         "export" => {
             if args.is_empty() {
-                println!("Usage: export <workflow_id> [output_file]");
+                println!("Usage: export <workflow_id> [output_file.json]");
             } else {
                 let id = args[0].to_string();
                 let output = args.get(1).map(PathBuf::from);
@@ -590,86 +786,96 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
 fn print_scope_help(scope: ShellScope) {
     match scope {
         ShellScope::Global => {
-            println!("============================================================");
-            println!(" Tuquet Interactive Shell - Global Scope");
-            println!("============================================================");
-            println!(" Scope Navigation:");
-            println!("   use <service>      Switch context: automa, runner, cloud, browser");
-            println!("   automa             Switch to automa scope (browser automation)");
-            println!("   runner / daemon    Switch to runner scope (worker daemon)");
-            println!("   cloud / auth       Switch to cloud scope (pairing & identity)");
-            println!("   browser            Switch to browser scope (isolated chromium)");
-            println!("   clear              Clear terminal display");
-            println!("   exit               Quit interactive shell");
-            println!(" Direct Commands:");
-            println!("   status             Inspect status of all Tuquet subsystems");
-            println!("   login [token]      Authenticate workstation with Tuquet Cloud");
-            println!("   whoami             Inspect cloud enrollment and device ID");
-            println!("   logout             Disconnect from Tuquet Cloud");
-            println!("   run <wf>           Execute workflow (.json or ID)");
-            println!("   list [query]       List stored workflows");
-            println!("   studio             Open Automa Web Studio in browser");
-            println!("   install            Download and install isolated Chromium");
-            println!("============================================================");
+            let mut card = Card::new("TUQUET SHELL");
+            card.with_badge(badge_online("GLOBAL SCOPE"));
+            card.with_min_width(68);
+            card.add_line(format!("{BOLD}Scope Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  use <service>", "Switch active context: automa, runner, cloud, browser");
+            card.add_kv("  automa", "Enter browser automation scope directly");
+            card.add_kv("  runner", "Enter worker daemon scope directly");
+            card.add_kv("  cloud", "Enter cloud pairing scope directly");
+            card.add_kv("  browser", "Enter browser runtime management scope");
+            card.add_kv("  clear", "Clear terminal screen buffer");
+            card.add_kv("  exit", "Quit interactive shell");
+            card.add_line(format!("{BOLD}Direct Shortcuts:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  status", "Unified ecosystem health & subsystem status");
+            card.add_kv("  whoami", "Inspect cloud enrollment identity & device ID");
+            card.add_kv("  login [token]", "Authenticate workstation with Tuquet Cloud");
+            card.add_kv("  run <wf>", "Execute workflow (.json file or stored ID)");
+            card.add_kv("  list [query]", "List stored workflows in vault & database");
+            card.add_kv("  studio", "Launch Automa Web Studio in browser");
+            card.add_kv("  install", "Download and install isolated Chromium runtime");
+            card.with_footer("Tip: Press [Tab] anytime for smart floating autocomplete");
+            println!();
+            card.print();
+            println!();
         }
         ShellScope::Automa => {
-            println!("============================================================");
-            println!(" Tuquet Interactive Shell - Automa (Browser Automation)");
-            println!("============================================================");
-            println!(" Commands:");
-            println!("   run <wf> [--headless]  Execute workflow directly");
-            println!("   list [query]           List workflows in vault & database");
-            println!("   inspect <wf>           Validate & inspect workflow graph");
-            println!("   import <file.json>     Import workflow into local storage");
-            println!("   export <id> [out.json] Export workflow to file");
-            println!("   delete <id> [--vault]  Delete workflow");
-            println!("   studio                 Launch Automa Web Studio in browser");
-            println!(" Navigation:");
-            println!("   back                   Return to global scope");
-            println!("   exit                   Return to global scope (or quit)");
-            println!("============================================================");
+            let mut card = Card::new("TUQUET SHELL");
+            card.with_badge(badge_online("AUTOMA SCOPE"));
+            card.with_min_width(68);
+            card.add_line(format!("{BOLD}Workflow Automation Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  run <wf> [--headless]", "Execute workflow (.json file or saved ID)");
+            card.add_kv("  list [query]", "List all workflows saved in database and vault");
+            card.add_kv("  inspect <wf>", "Inspect block graph structure and triggers");
+            card.add_kv("  import <file.json>", "Import workflow into local database & vault");
+            card.add_kv("  export <id>", "Export saved workflow to a JSON file");
+            card.add_kv("  delete <id>", "Delete workflow from storage");
+            card.add_kv("  studio", "Launch Automa Web Studio in browser");
+            card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  back / cd ..", "Return to global scope");
+            card.add_kv("  exit", "Return to global scope (or quit)");
+            println!();
+            card.print();
+            println!();
         }
         ShellScope::Runner => {
-            println!("============================================================");
-            println!(" Tuquet Interactive Shell - Runner (Daemon & Execution Node)");
-            println!("============================================================");
-            println!(" Commands:");
-            println!("   status             Check local runner daemon health");
-            println!("   probe              Inspect capability manifest");
-            println!("   export-openapi     Export OpenAPI specification");
-            println!("   setup-ext          Developer utility to load unpacked extension");
-            println!("   start              Start local runner daemon in foreground");
-            println!(" Navigation:");
-            println!("   back               Return to global scope");
-            println!("   exit               Return to global scope (or quit)");
-            println!("============================================================");
+            let mut card = Card::new("TUQUET SHELL");
+            card.with_badge(badge_online("RUNNER SCOPE"));
+            card.with_min_width(68);
+            card.add_line(format!("{BOLD}Daemon Worker Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  status", "Inspect local runner daemon health check");
+            card.add_kv("  probe", "Probe runner driver capabilities manifest");
+            card.add_kv("  export-openapi", "Export OpenAPI v3 spec to file");
+            card.add_kv("  setup-ext", "Launch Chrome with extension runner attached");
+            card.add_kv("  start", "Start local daemon worker in foreground");
+            card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  back / cd ..", "Return to global scope");
+            card.add_kv("  exit", "Return to global scope (or quit)");
+            println!();
+            card.print();
+            println!();
         }
         ShellScope::Cloud => {
-            println!("============================================================");
-            println!(" Tuquet Interactive Shell - Cloud (Multi-Tenant Auth)");
-            println!("============================================================");
-            println!(" Commands:");
-            println!("   login [token]      Authenticate workstation with Tuquet Cloud");
-            println!("   logout             Log out and clear device pairing credentials");
-            println!("   whoami             Check current device enrollment & tenant");
-            println!(" Navigation:");
-            println!("   back               Return to global scope");
-            println!("   exit               Return to global scope (or quit)");
-            println!("============================================================");
+            let mut card = Card::new("TUQUET SHELL");
+            card.with_badge(badge_online("CLOUD SCOPE"));
+            card.with_min_width(68);
+            card.add_line(format!("{BOLD}Cloud Pairing Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  login [token]", "Authenticate and pair device with Tuquet Cloud");
+            card.add_kv("  logout", "Log out and delete local cloud pairing");
+            card.add_kv("  whoami", "Inspect current workstation identity and tenant");
+            card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  back / cd ..", "Return to global scope");
+            card.add_kv("  exit", "Return to global scope (or quit)");
+            println!();
+            card.print();
+            println!();
         }
         ShellScope::Browser => {
-            println!("============================================================");
-            println!(" Tuquet Interactive Shell - Browser (Runtime Management)");
-            println!("============================================================");
-            println!(" Commands:");
-            println!("   status             Inspect dedicated Chromium runtime installation");
-            println!("   install [--force]  Download and setup pure Open-Source Chromium");
-            println!("   clean              Remove browser runtime to reclaim disk space");
-            println!("   path               Print absolute browser binary path");
-            println!(" Navigation:");
-            println!("   back               Return to global scope");
-            println!("   exit               Return to global scope (or quit)");
-            println!("============================================================");
+            let mut card = Card::new("TUQUET SHELL");
+            card.with_badge(badge_online("BROWSER SCOPE"));
+            card.with_min_width(68);
+            card.add_line(format!("{BOLD}Browser Runtime Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  status", "Show installed browser status, path, and disk usage");
+            card.add_kv("  install [--force]", "Download and install Open-Source Chromium");
+            card.add_kv("  clean", "Delete browser runtime directory to reclaim disk");
+            card.add_kv("  path", "Print absolute path to browser executable");
+            card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  back / cd ..", "Return to global scope");
+            card.add_kv("  exit", "Return to global scope (or quit)");
+            println!();
+            card.print();
+            println!();
         }
     }
 }

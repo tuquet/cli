@@ -47,6 +47,7 @@ tokio-util = "0.7.19"
 tower-http = { version = "0.7.0", features = ["cors", "fs"] }
 sysinfo = "0.39.6"
 reedline = "0.52.0"
+nu-ansi-term = "0.50.3"
 
 [dev-dependencies]
 reqwest = { version = "0.12", features = ["json"] }

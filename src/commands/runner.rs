@@ -69,18 +69,42 @@ pub fn export_openapi(output_path: &Path) -> Result<(), Box<dyn std::error::Erro
 
 pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
     let target = format!("{}/api/v1/health", url.trim_end_matches('/'));
-    println!("Querying Automa Core daemon status at {} ...", target);
-    match reqwest::get(&target).await {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_millis(1500))
+        .build()?;
+
+    match client.get(&target).send().await {
         Ok(res) if res.status().is_success() => {
-            println!("Status: ONLINE [HTTP 200]");
-            let text = res.text().await?;
-            println!("Response: {}", text);
+            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            card.with_badge(crate::ui::badge_online("ONLINE (HTTP 200)"));
+            card.with_min_width(64);
+            card.add_kv("Endpoint", url);
+            card.add_kv("Worker Driver", "mv3_extension_worker (CDP Bridge)");
+            card.add_kv("Health Route", &target);
+            card.with_footer("Worker daemon is ready to receive and execute jobs");
+            println!();
+            card.print();
+            println!();
         }
         Ok(res) => {
-            println!("Status: ERROR [HTTP {}]", res.status());
+            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            card.with_badge(crate::ui::badge_error(&format!("HTTP {}", res.status())));
+            card.with_min_width(64);
+            card.add_kv("Endpoint", url);
+            println!();
+            card.print();
+            println!();
         }
         Err(e) => {
-            println!("Status: OFFLINE or UNREACHABLE ({})", e);
+            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            card.with_badge(crate::ui::badge_offline("OFFLINE"));
+            card.with_min_width(64);
+            card.add_kv("Endpoint", url);
+            card.add_kv("Diagnostic", format!("{}", e));
+            card.with_footer("Start local daemon with 'tuquet runner start --port 8765'");
+            println!();
+            card.print();
+            println!();
         }
     }
     Ok(())
@@ -94,20 +118,29 @@ pub async fn setup_extension(
         PathBuf::from(crate::core::browser::worker_coordinator::resolve_cli_runner_extension_path())
     });
 
-    println!("============================================================");
-    println!(" Automa Web Extension Setup Utility");
-    println!("============================================================");
-    println!("Target Browser: {}", browser);
-    println!("Extension Path: {}", ext_dir.display());
-
-    if !ext_dir.exists() {
-        println!("Status: Extension path does not exist yet.");
-        println!("Hint: Build extension first with: pnpm --filter @automa/runner build");
+    let exists = ext_dir.exists();
+    let badge = if exists {
+        crate::ui::badge_online("READY")
     } else {
-        println!("Status: Extension directory verified.");
-        println!("To launch Chrome manually with extension loaded:");
-        println!("  chrome.exe --load-extension=\"{}\"", ext_dir.display());
+        crate::ui::badge_warn("NOT BUILT")
+    };
+
+    let mut card = crate::ui::Card::new("BROWSER EXTENSION RUNNER");
+    card.with_badge(badge);
+    card.with_min_width(64);
+    card.add_kv("Target Browser", browser);
+    card.add_kv("Extension Path", ext_dir.display().to_string());
+
+    if !exists {
+        card.add_line("Status: Extension unpacked directory does not exist yet.");
+        card.with_footer("Build extension with: pnpm --filter @automa/runner build");
+    } else {
+        card.add_line(format!("Launch command: chrome.exe --load-extension=\"{}\"", ext_dir.display()));
+        card.with_footer("Ready to launch and attach to worker daemon");
     }
+    println!();
+    card.print();
+    println!();
     Ok(())
 }
 

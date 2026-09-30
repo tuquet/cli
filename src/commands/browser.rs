@@ -1,11 +1,20 @@
 use crate::cli::BrowserCommands;
+use crate::ui::{badge_online, badge_warn, Card};
 
 pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         BrowserCommands::Install { force, revision } => {
             match crate::core::browser::resolver::download_chromium_runtime(force, revision.as_deref()).await {
                 Ok(path) => {
-                    println!("\x1b[32m[SUCCESS] Dedicated Open-Source Chromium runtime ready at: {}\x1b[0m", path);
+                    let mut card = Card::new("CHROMIUM RUNTIME");
+                    card.with_badge(badge_online("INSTALLED"));
+                    card.with_min_width(64);
+                    card.add_kv("Engine", "Chromium (Pure Open Source - BSD-3-Clause)");
+                    card.add_kv("Executable", path);
+                    card.with_footer("Dedicated browser runtime is ready for automated execution");
+                    println!();
+                    card.print();
+                    println!();
                     Ok(())
                 }
                 Err(e) => {
@@ -15,28 +24,41 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
         }
         BrowserCommands::Status => {
             let status = crate::core::browser::resolver::get_runtime_status();
-            println!("============================================================");
-            println!(" Tuquet Ecosystem - Open-Source Chromium Runtime Status");
-            println!("============================================================");
-            println!(" Engine:          Chromium (Pure Open Source - BSD 3-Clause)");
-            println!(" Platform:        {}", status.platform);
-            println!(" Status:          {}", if status.installed { "\x1b[32mINSTALLED\x1b[0m" } else { "\x1b[33mNOT INSTALLED\x1b[0m" });
-            println!(" Version/Rev:     {}", status.pinned_version);
-            println!(" Executable Path: {}", status.executable_path);
-            println!(" Directory:       {}", status.directory);
+            let badge = if status.installed {
+                badge_online("INSTALLED")
+            } else {
+                badge_warn("NOT INSTALLED")
+            };
+            let mut card = Card::new("CHROMIUM RUNTIME");
+            card.with_badge(badge);
+            card.with_min_width(64);
+            card.add_kv("Engine", "Chromium (Pure Open Source - BSD-3-Clause)");
+            card.add_kv("Platform", &status.platform);
+            card.add_kv("Revision", &status.pinned_version);
+            card.add_kv("Executable", &status.executable_path);
+            card.add_kv("Directory", &status.directory);
             if let Some(mb) = status.size_mb {
-                println!(" Disk Usage:      {:.1} MB", mb);
+                card.add_kv("Disk Usage", format!("{:.1} MB", mb));
             }
-            println!("============================================================");
             if !status.installed {
-                println!(">> Run 'tuquet browser install' to download and setup.");
+                card.with_footer("Run 'tuquet browser install' to download and setup");
             }
+            println!();
+            card.print();
+            println!();
             Ok(())
         }
         BrowserCommands::Clean => {
             match crate::core::browser::resolver::clean_runtime() {
                 Ok(_) => {
-                    println!("\x1b[32m[SUCCESS] Cleaned browser runtime directory.\x1b[0m");
+                    let mut card = Card::new("CHROMIUM RUNTIME");
+                    card.with_badge(badge_online("CLEANED"));
+                    card.with_min_width(64);
+                    card.add_line("Removed dedicated browser runtime to reclaim disk space.");
+                    card.with_footer("Run 'tuquet browser install' when you need to reinstall");
+                    println!();
+                    card.print();
+                    println!();
                     Ok(())
                 }
                 Err(e) => {

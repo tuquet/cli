@@ -2594,6 +2594,7 @@ dependencies = [
  "hex",
  "hmac",
  "md-5",
+ "nu-ansi-term",
  "rand 0.8.7",
  "reedline",
  "regex",

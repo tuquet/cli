@@ -12,7 +12,9 @@ pub struct DeviceCredentials {
     pub device_token: String,
     pub tenant_id: Option<String>,
     pub name: String,
+    #[serde(default)]
     pub machine_fingerprint: String,
+    #[serde(default, alias = "enrolled_at")]
     pub registered_at: Option<String>,
 }
 
@@ -41,7 +43,16 @@ pub struct CloudReporter;
 
 impl CloudReporter {
     pub fn get_credentials_path(data_dir: &str) -> PathBuf {
-        Path::new(data_dir).join("device.json")
+        let home = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")).unwrap_or_else(|_| ".".to_string());
+        let canonical_identity = PathBuf::from(&home).join(".tuquet").join("config").join(".identity.json");
+        if canonical_identity.exists() {
+            return canonical_identity;
+        }
+        let dev_json = Path::new(data_dir).join("device.json");
+        if dev_json.exists() {
+            return dev_json;
+        }
+        canonical_identity
     }
 
     pub fn generate_machine_fingerprint() -> String {

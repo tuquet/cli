@@ -237,43 +237,33 @@ pub async fn list_workflows(
         }
     }
 
-    println!("========================================================================================");
-    println!(" 📂 AUTOMA SAVED WORKFLOWS ({} Workflows Found)", workflows.len());
-    println!("========================================================================================");
-    if workflows.is_empty() {
-        println!(" (No workflows found)");
-        println!("----------------------------------------------------------------------------------------");
-        println!("💡 Import a workflow with:");
-        println!("   tuquet automa workflow import <file.json> --id <workflow_id>");
-    } else {
-        println!(
-            " {:<20} {:<24} {:<8} {:<10} {:<8} UPDATED AT",
-            "ID", "NAME", "VERSION", "SOURCE", "BLOCKS"
-        );
-        println!("----------------------------------------------------------------------------------------");
-        for wf in &workflows {
-            let id_display = if wf.id.len() > 19 {
-                format!("{}...", &wf.id[..16])
-            } else {
-                wf.id.clone()
-            };
-            let name_display = if wf.name.len() > 23 {
-                format!("{}...", &wf.name[..20])
-            } else {
-                wf.name.clone()
-            };
-            println!(
-                " {:<20} {:<24} {:<8} {:<10} {:<8} {}",
-                id_display, name_display, wf.version, wf.source, wf.blocks, wf.updated_at
-            );
-        }
-        println!("========================================================================================");
-        println!("💡 Run with:  tuquet automa run <ID>");
-        if let Some(first) = workflows.first() {
-            println!("   Example:   tuquet automa run {} --headless", first.id);
-        }
+    println!();
+    let columns = vec![
+        crate::ui::Column { title: "ID".to_string(), min_width: 18, align_right: false },
+        crate::ui::Column { title: "NAME".to_string(), min_width: 24, align_right: false },
+        crate::ui::Column { title: "VERSION".to_string(), min_width: 8, align_right: false },
+        crate::ui::Column { title: "SOURCE".to_string(), min_width: 10, align_right: false },
+        crate::ui::Column { title: "BLOCKS".to_string(), min_width: 6, align_right: true },
+        crate::ui::Column { title: "UPDATED".to_string(), min_width: 12, align_right: false },
+    ];
+    let mut table = crate::ui::Table::new(columns);
+    for wf in &workflows {
+        table.add_row(vec![
+            wf.id.clone(),
+            wf.name.clone(),
+            wf.version.clone(),
+            wf.source.clone(),
+            wf.blocks.to_string(),
+            wf.updated_at.clone(),
+        ]);
     }
-    println!("========================================================================================");
+    if let Some(first) = workflows.first() {
+        table = table.with_footer(format!("Run workflow with: tuquet automa run {} --headless", first.id));
+    } else {
+        table = table.with_footer("Import a workflow with: tuquet automa workflow import <file.json> --id <workflow_id>");
+    }
+    table.print();
+    println!();
 
     Ok(())
 }
