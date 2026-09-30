@@ -482,28 +482,35 @@ impl Table {
     }
 }
 
-/// Brand Hero Banner
+/// Brand Hero Banner with Styled ASCII Art Logo
 pub fn render_hero(
     version: &str,
     cloud_status: &str,
     daemon_status: &str,
     browser_status: &str,
 ) -> String {
-    let mut card = Card::new("TUQUET");
-    card.with_badge(format!("v{}", version));
-    card.with_min_width(68);
+    let reset = colors::RESET;
+    let bold_white = colors::BOLD_WHITE;
+    let muted = colors::MUTED;
+    let cyan = colors::CYAN;
 
-    card.add_line(format!(
-        "{BOLD_WHITE}Autonomous Browser Automation & Distributed Mesh Runtime{RESET}",
-        BOLD_WHITE = colors::BOLD_WHITE,
-        RESET = colors::RESET
-    ));
+    let c1 = "\x1b[38;2;56;189;248m";
+    let c2 = "\x1b[38;2;96;165;250m";
+    let c3 = "\x1b[38;2;129;140;248m";
+    let c4 = "\x1b[38;2;168;85;247m";
+    let c5 = "\x1b[38;2;192;132;252m";
 
-    let pills = format!(
-        "{}  {}  {}",
-        cloud_status, daemon_status, browser_status
-    );
-    card.add_line(pills);
-    card.with_footer("Press [Tab] for autocomplete, 'help' for commands, 'exit' to quit");
-    card.render()
+    format!(
+"
+{c1}  ______          ____                  __ {reset}
+{c2} /_  __/_  __    / __ \\__  __  ___     / /_{reset}
+{c3}  / /  / / / /  / / / // / / // _ \\   / __/{reset}   {cyan}v{version}{reset}
+{c4} / /  / /_/ /  / /_/ // /_/ //  __/  / /_  {reset}
+{c5}/_/   \\__,_/   \\___\\_\\\\__,_/ \\___/   \\__/  {reset}
+
+  {bold_white}Autonomous Browser Automation & Distributed Mesh Runtime{reset}
+  {cloud_status}  {daemon_status}  {browser_status}
+  {muted}Press [Tab] for autocomplete, 'help' for commands, 'exit' to quit{reset}
+"
+    )
 }

@@ -14,9 +14,13 @@ pub fn get_styles() -> Styles {
 }
 
 pub const MAIN_HELP_TEMPLATE: &str = "\
-\x1b[38;2;71;85;105m╭─\x1b[0m \x1b[1;38;2;56;189;248mTUQUET ECOSYSTEM\x1b[0m \x1b[38;2;71;85;105m────────────────────────────────────────────\x1b[0m
-\x1b[38;2;71;85;105m│\x1b[0m  Unified CLI for Browser Automation & Distributed Mesh Runtime
-\x1b[38;2;71;85;105m╰──────────────────────────────────────────────────────────────────╯\x1b[0m
+\x1b[38;2;56;189;248m  ______          ____                  __ \x1b[0m
+\x1b[38;2;96;165;250m /_  __/_  __    / __ \\__  __  ___     / /_\x1b[0m
+\x1b[38;2;129;140;248m  / /  / / / /  / / / // / / // _ \\   / __/\x1b[0m   \x1b[1;38;2;56;189;248mv1.0.0\x1b[0m
+\x1b[38;2;168;85;247m / /  / /_/ /  / /_/ // /_/ //  __/  / /_  \x1b[0m
+\x1b[38;2;192;132;252m/_/   \\__,_/   \\___\\_\\\\__,_/ \\___/   \\__/\x1b[0m
+
+  Autonomous Browser Automation & Distributed Mesh Runtime
 
 \x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtuquet\x1b[0m [COMMAND] [OPTIONS]
 
