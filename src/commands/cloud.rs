@@ -21,7 +21,7 @@ pub async fn login(
     let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
     match CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
         Ok(creds) => {
-            let mut card = Card::new("TUQUET CLOUD");
+            let mut card = Card::new("CLOUD");
             card.with_badge(badge_online("ENROLLED"));
             card.with_min_width(64);
             card.add_kv("Device ID", &creds.device_id);
@@ -44,7 +44,7 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
     match CloudReporter::logout(&config.data_dir).await {
         Ok(true) => {
-            let mut card = Card::new("TUQUET CLOUD");
+            let mut card = Card::new("CLOUD");
             card.with_badge(badge_offline("LOGGED OUT"));
             card.with_min_width(64);
             card.add_line("Removed local cloud pairing credentials and session identity.");
@@ -55,7 +55,7 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Ok(false) => {
-            let mut card = Card::new("TUQUET CLOUD");
+            let mut card = Card::new("CLOUD");
             card.with_badge(badge_offline("DISCONNECTED"));
             card.with_min_width(64);
             card.add_line("No active cloud session found on this machine.");
@@ -75,7 +75,7 @@ pub async fn whoami() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(creds) = CloudReporter::whoami(&config.data_dir).await {
         let is_prod = creds.cloud_url.as_deref().map(|u| u.contains("dswhacsoaxgpfnkaxnhz") || u.contains("supabase")).unwrap_or(false);
         let badge_text = if is_prod { "ENROLLED (PROD)" } else { "ENROLLED" };
-        let mut card = Card::new("TUQUET CLOUD");
+        let mut card = Card::new("CLOUD");
         card.with_badge(badge_online(badge_text));
         card.with_min_width(64);
         card.add_kv("Device ID", &creds.device_id);
@@ -86,7 +86,7 @@ pub async fn whoami() -> Result<(), Box<dyn std::error::Error>> {
         card.print();
         println!();
     } else {
-        let mut card = Card::new("TUQUET CLOUD");
+        let mut card = Card::new("CLOUD");
         card.with_badge(badge_offline("DISCONNECTED"));
         card.with_min_width(64);
         card.add_line("Workstation not enrolled with cloud fleet.");

@@ -9,7 +9,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Cloud Authentication & Identity
     let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
     let cloud_card = if let Some(ref creds) = cloud_creds {
-        let mut card = Card::new("TUQUET CLOUD");
+        let mut card = Card::new("CLOUD");
         card.with_badge(badge_online("ENROLLED (PROD)"));
         card.with_min_width(68);
         card.add_kv("Device ID", &creds.device_id);
@@ -18,7 +18,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
         card.add_kv("Endpoint", creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"));
         card
     } else {
-        let mut card = Card::new("TUQUET CLOUD");
+        let mut card = Card::new("CLOUD");
         card.with_badge(badge_offline("DISCONNECTED"));
         card.with_min_width(68);
         card.add_line("Workstation not enrolled with cloud fleet.");
@@ -38,7 +38,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
 
     let daemon_card = match client.get(&health_url).send().await {
         Ok(res) if res.status().is_success() => {
-            let mut card = Card::new("RUNNER DAEMON");
+            let mut card = Card::new("RUNNER");
             card.with_badge(badge_online("ONLINE (HTTP 200)"));
             card.with_min_width(68);
             card.add_kv("Endpoint", &daemon_url);
@@ -47,7 +47,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
             card
         }
         _ => {
-            let mut card = Card::new("RUNNER DAEMON");
+            let mut card = Card::new("RUNNER");
             card.with_badge(badge_offline("OFFLINE"));
             card.with_min_width(68);
             card.add_kv("Endpoint", &daemon_url);
@@ -60,7 +60,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
     // 3. Browser Runtime State
     let browser_status = crate::core::browser::resolver::get_runtime_status();
     let browser_card = if browser_status.installed {
-        let mut card = Card::new("BROWSER RUNTIME");
+        let mut card = Card::new("BROWSER");
         card.with_badge(badge_online("READY"));
         card.with_min_width(68);
         card.add_kv("Engine", "Chromium (Open Source - BSD-3-Clause)");
@@ -72,7 +72,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
         }
         card
     } else {
-        let mut card = Card::new("BROWSER RUNTIME");
+        let mut card = Card::new("BROWSER");
         card.with_badge(badge_warn("NOT INSTALLED"));
         card.with_min_width(68);
         card.add_line("Dedicated Chromium binary not found in ~/.tuquet/runtimes/");
@@ -103,7 +103,7 @@ pub async fn show_dashboard() -> Result<(), Box<dyn std::error::Error>> {
         "Not initialized".to_string()
     };
 
-    let mut storage_card = Card::new("STORAGE & VAULT");
+    let mut storage_card = Card::new("VAULT");
     storage_card.with_badge(badge_online("ACTIVE"));
     storage_card.with_min_width(68);
     storage_card.add_kv("Canonical Root", format!("{}/.tuquet", home.replace('\\', "/")));

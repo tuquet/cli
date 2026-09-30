@@ -75,7 +75,7 @@ pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     match client.get(&target).send().await {
         Ok(res) if res.status().is_success() => {
-            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            let mut card = crate::ui::Card::new("RUNNER");
             card.with_badge(crate::ui::badge_online("ONLINE (HTTP 200)"));
             card.with_min_width(64);
             card.add_kv("Endpoint", url);
@@ -87,7 +87,7 @@ pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
             println!();
         }
         Ok(res) => {
-            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            let mut card = crate::ui::Card::new("RUNNER");
             card.with_badge(crate::ui::badge_error(&format!("HTTP {}", res.status())));
             card.with_min_width(64);
             card.add_kv("Endpoint", url);
@@ -96,7 +96,7 @@ pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
             println!();
         }
         Err(e) => {
-            let mut card = crate::ui::Card::new("RUNNER DAEMON");
+            let mut card = crate::ui::Card::new("RUNNER");
             card.with_badge(crate::ui::badge_offline("OFFLINE"));
             card.with_min_width(64);
             card.add_kv("Endpoint", url);
