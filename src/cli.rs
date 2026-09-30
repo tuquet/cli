@@ -200,6 +200,10 @@ pub enum RunnerSubcommands {
         #[arg(short, long)]
         port: Option<u16>,
 
+        /// Run in background as detached daemon process
+        #[arg(short = 'd', long)]
+        detach: bool,
+
         /// Path to custom data directory (stores SQLite DB and logs)
         #[arg(short, long)]
         data_dir: Option<PathBuf>,
@@ -209,6 +213,20 @@ pub enum RunnerSubcommands {
         log_level: Option<String>,
     },
 
+    /// Gracefully stop the running Tuquet runner daemon
+    Stop {
+        /// Force terminate without waiting for active jobs
+        #[arg(short, long)]
+        force: bool,
+    },
+
+    /// Restart the local Tuquet runner daemon
+    Restart {
+        /// Run in background as detached daemon process
+        #[arg(short = 'd', long)]
+        detach: bool,
+    },
+
     /// Inspect local Tuquet daemon status and health check endpoint
     Status {
         /// Daemon server base URL (defaults to http://{AUTOMA_HOST}:{AUTOMA_PORT} or http://127.0.0.1:8765)
@@ -216,17 +234,30 @@ pub enum RunnerSubcommands {
         url: Option<String>,
     },
 
+    /// View or tail runner daemon execution and telemetry logs
+    Logs {
+        /// Follow / stream log output continuously
+        #[arg(short = 'f', long)]
+        follow: bool,
+
+        /// Number of tail lines to display
+        #[arg(short = 'n', long, default_value_t = 50)]
+        lines: usize,
+    },
+
     /// Active capability negotiation probe returning manifest JSON for Tuquet Runner
     Probe,
 
-    /// Export OpenAPI v3 JSON specification to file
+    /// Developer utility: Export OpenAPI v3 JSON specification to file (Hidden)
+    #[command(hide = true)]
     ExportOpenapi {
         /// Output JSON destination file path
         #[arg(short, long, default_value = "openapi.json")]
         output: PathBuf,
     },
 
-    /// Developer utility to launch browser with unpacked extension loaded
+    /// [Deprecated: Moved to 'tuquet browser ext']
+    #[command(hide = true)]
     SetupExt {
         /// Target browser to launch (chrome, edge, brave, auto)
         #[arg(short, long, default_value = "chrome")]
@@ -290,6 +321,18 @@ pub enum BrowserCommands {
     /// Print the absolute executable path of the browser (for scripting / integrations)
     #[command(name = "path")]
     Path,
+
+    /// Inspect and configure Automa MV3 extension for browser automation
+    #[command(name = "ext", aliases = ["extension", "setup-ext"])]
+    Ext {
+        /// Target browser to launch (chrome, edge, brave, auto)
+        #[arg(short, long, default_value = "chrome")]
+        browser: String,
+
+        /// Custom path to unpacked @automa/runner extension directory
+        #[arg(short, long)]
+        extension_path: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand, Debug)]

@@ -77,5 +77,42 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
                 }
             }
         }
+        BrowserCommands::Ext { browser, extension_path } => {
+            setup_extension(&browser, extension_path).await
+        }
     }
+}
+
+pub async fn setup_extension(
+    browser: &str,
+    extension_path: Option<std::path::PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let ext_dir = extension_path.unwrap_or_else(|| {
+        std::path::PathBuf::from(crate::core::browser::worker_coordinator::resolve_cli_runner_extension_path())
+    });
+
+    let exists = ext_dir.exists();
+    let badge = if exists {
+        badge_online("READY")
+    } else {
+        badge_warn("NOT BUILT")
+    };
+
+    let mut card = Card::new("BROWSER EXTENSION");
+    card.with_badge(badge);
+    card.with_min_width(64);
+    card.add_kv("Target Browser", browser);
+    card.add_kv("Extension Path", ext_dir.display().to_string());
+
+    if !exists {
+        card.add_line("Status: Extension unpacked directory does not exist yet.");
+        card.with_footer("Build extension with: pnpm --filter @automa/runner build");
+    } else {
+        card.add_line(format!("Launch command: chrome.exe --load-extension=\"{}\"", ext_dir.display()));
+        card.with_footer("Ready to launch and attach to worker daemon");
+    }
+    println!();
+    card.print();
+    println!();
+    Ok(())
 }

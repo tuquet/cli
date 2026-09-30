@@ -10,14 +10,25 @@ use crate::config::AppConfig;
 use crate::infrastructure::db::AutomaDb;
 use crate::AppState;
 
+pub fn get_pid_file_path(data_dir: &str) -> PathBuf {
+    Path::new(data_dir).join("runner.pid")
+}
+
+pub fn get_log_file_path(data_dir: &str) -> PathBuf {
+    Path::new(data_dir).join("logs").join("runner.log")
+}
+
 pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         RunnerSubcommands::Start {
             host,
             port,
+            detach,
             data_dir,
             log_level,
-        } => run_server(host, port, data_dir, log_level).await,
+        } => run_server(host, port, detach, data_dir, log_level).await,
+        RunnerSubcommands::Stop { force } => stop_daemon(force).await,
+        RunnerSubcommands::Restart { detach } => restart_daemon(detach).await,
         RunnerSubcommands::Status { url } => {
             let target_url = url.unwrap_or_else(|| {
                 let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
@@ -26,12 +37,13 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
             });
             check_status(&target_url).await
         }
+        RunnerSubcommands::Logs { follow, lines } => show_logs(follow, lines).await,
         RunnerSubcommands::Probe => print_probe_manifest(),
         RunnerSubcommands::ExportOpenapi { output } => export_openapi(&output),
         RunnerSubcommands::SetupExt {
             browser,
             extension_path,
-        } => setup_extension(&browser, extension_path).await,
+        } => crate::commands::browser::setup_extension(&browser, extension_path).await,
     }
 }
 
@@ -101,7 +113,7 @@ pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
             card.with_min_width(64);
             card.add_kv("Endpoint", url);
             card.add_kv("Diagnostic", format!("{}", e));
-            card.with_footer("Start local daemon with 'tuquet runner start --port 8765'");
+            card.with_footer("Start local daemon with 'tuquet runner start -d'");
             println!();
             card.print();
             println!();
@@ -110,58 +122,242 @@ pub async fn check_status(url: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub async fn setup_extension(
-    browser: &str,
-    extension_path: Option<PathBuf>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let ext_dir = extension_path.unwrap_or_else(|| {
-        PathBuf::from(crate::core::browser::worker_coordinator::resolve_cli_runner_extension_path())
-    });
-
-    let exists = ext_dir.exists();
-    let badge = if exists {
-        crate::ui::badge_online("READY")
-    } else {
-        crate::ui::badge_warn("NOT BUILT")
-    };
-
-    let mut card = crate::ui::Card::new("BROWSER EXTENSION RUNNER");
-    card.with_badge(badge);
-    card.with_min_width(64);
-    card.add_kv("Target Browser", browser);
-    card.add_kv("Extension Path", ext_dir.display().to_string());
-
-    if !exists {
-        card.add_line("Status: Extension unpacked directory does not exist yet.");
-        card.with_footer("Build extension with: pnpm --filter @automa/runner build");
-    } else {
-        card.add_line(format!("Launch command: chrome.exe --load-extension=\"{}\"", ext_dir.display()));
-        card.with_footer("Ready to launch and attach to worker daemon");
+pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let _ = force;
+    let config = AppConfig::load();
+    let pid_file = get_pid_file_path(&config.data_dir);
+    
+    let mut pid_to_kill: Option<u32> = None;
+    if pid_file.exists() {
+        if let Ok(content) = std::fs::read_to_string(&pid_file) {
+            if let Ok(p) = content.trim().parse::<u32>() {
+                pid_to_kill = Some(p);
+            }
+        }
     }
+
+    let mut sys = sysinfo::System::new_all();
+    sys.refresh_all();
+    
+    let current_pid = std::process::id();
+    let mut found_pids = Vec::new();
+    if let Some(p) = pid_to_kill {
+        found_pids.push(p);
+    }
+
+    for (p, proc) in sys.processes() {
+        let p_u32 = p.as_u32();
+        if p_u32 == current_pid {
+            continue;
+        }
+        let name = proc.name().to_string_lossy().to_lowercase();
+        if name.contains("tuquet") {
+            let cmd = proc.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            if cmd.contains("runner") && cmd.contains("start") {
+                if !found_pids.contains(&p_u32) {
+                    found_pids.push(p_u32);
+                }
+            }
+        }
+    }
+
+    if found_pids.is_empty() {
+        let health_url = format!("http://{}:{}/api/v1/health", config.server_host, config.server_port);
+        let client = reqwest::Client::builder().timeout(std::time::Duration::from_millis(500)).build()?;
+        let is_running = client.get(&health_url).send().await.map(|r| r.status().is_success()).unwrap_or(false);
+        if !is_running {
+            let mut card = crate::ui::Card::new("RUNNER");
+            card.with_badge(crate::ui::badge_offline("NOT RUNNING"));
+            card.with_min_width(64);
+            card.add_line("No active runner daemon process found on this machine.");
+            card.with_footer("Start daemon with 'tuquet runner start -d'");
+            println!();
+            card.print();
+            println!();
+            let _ = std::fs::remove_file(&pid_file);
+            return Ok(());
+        }
+    }
+
+    for &pid in &found_pids {
+        #[cfg(target_os = "windows")]
+        {
+            let pid_str = pid.to_string();
+            let mut cmd = tokio::process::Command::new("taskkill");
+            // Windows console processes have no GUI window for WM_CLOSE, requiring /F to terminate
+            let args = vec!["/F", "/T", "/PID", pid_str.as_str()];
+            cmd.args(&args)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null());
+            let _ = cmd.status().await;
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let sig = if force { "-9" } else { "-15" };
+            let _ = tokio::process::Command::new("kill")
+                .args([sig, &pid.to_string()])
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status()
+                .await;
+        }
+    }
+
+    let _ = std::fs::remove_file(&pid_file);
+
+    let mut card = crate::ui::Card::new("RUNNER");
+    card.with_badge(crate::ui::badge_online("STOPPED"));
+    card.with_min_width(64);
+    if !found_pids.is_empty() {
+        let pids_str = found_pids.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(", ");
+        card.add_kv("Terminated PID(s)", pids_str);
+    }
+    card.add_line("Runner worker daemon has been gracefully terminated.");
+    card.with_footer("Start daemon again with 'tuquet runner start -d'");
     println!();
     card.print();
     println!();
+
+    Ok(())
+}
+
+pub async fn restart_daemon(detach: bool) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Stopping existing runner daemon...");
+    let _ = stop_daemon(false).await;
+    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+    println!("Starting runner daemon...");
+    run_server(None, None, detach, None, None).await
+}
+
+pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::error::Error>> {
+    let config = AppConfig::load();
+    let log_file = get_log_file_path(&config.data_dir);
+    if !log_file.exists() {
+        let mut card = crate::ui::Card::new("RUNNER");
+        card.with_badge(crate::ui::badge_warn("NO LOGS FOUND"));
+        card.with_min_width(64);
+        card.add_kv("Expected Log File", log_file.display().to_string());
+        card.add_line("Daemon has not written any background logs yet.");
+        card.with_footer("Start daemon in background with 'tuquet runner start -d'");
+        println!();
+        card.print();
+        println!();
+        return Ok(());
+    }
+
+    let content = std::fs::read_to_string(&log_file)?;
+    let all_lines: Vec<&str> = content.lines().collect();
+    let start_idx = all_lines.len().saturating_sub(lines);
+    
+    println!("\x1b[1;36m╭─ RUNNER LOGS ({}) ─\x1b[0m", log_file.display());
+    for line in &all_lines[start_idx..] {
+        println!("│ {}", line);
+    }
+    println!("\x1b[1;36m╰───────────────────────────────────────────────────\x1b[0m");
+
+    if follow {
+        use std::io::{BufRead, BufReader, Seek, SeekFrom};
+        let file = std::fs::File::open(&log_file)?;
+        let mut reader = BufReader::new(file);
+        reader.seek(SeekFrom::End(0))?;
+
+        let mut line_buf = String::new();
+        loop {
+            line_buf.clear();
+            let bytes = reader.read_line(&mut line_buf)?;
+            if bytes > 0 {
+                print!("│ {}", line_buf);
+            } else {
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+            }
+        }
+    }
+
     Ok(())
 }
 
 pub async fn run_server(
     host_override: Option<String>,
     port_override: Option<u16>,
+    detach: bool,
     data_dir_override: Option<PathBuf>,
     log_level_override: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = AppConfig::load();
-    if let Some(host) = host_override {
+    if let Some(host) = host_override.clone() {
         config.server_host = host;
     }
     if let Some(port) = port_override {
         config.server_port = port;
     }
-    if let Some(dir) = data_dir_override {
+    if let Some(dir) = data_dir_override.clone() {
         config.data_dir = dir.to_string_lossy().to_string();
     }
-    if let Some(level) = log_level_override {
+    if let Some(level) = log_level_override.clone() {
         config.log_level = level;
+    }
+
+    if detach {
+        let log_file_path = get_log_file_path(&config.data_dir);
+        if let Some(parent) = log_file_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let exe = std::env::current_exe()?;
+        let mut args = vec!["runner".to_string(), "start".to_string()];
+        if let Some(ref h) = host_override {
+            args.push("-H".to_string());
+            args.push(h.clone());
+        }
+        if let Some(p) = port_override {
+            args.push("-p".to_string());
+            args.push(p.to_string());
+        }
+        if let Some(ref d) = data_dir_override {
+            args.push("--data-dir".to_string());
+            args.push(d.to_string_lossy().to_string());
+        }
+        if let Some(ref l) = log_level_override {
+            args.push("--log-level".to_string());
+            args.push(l.clone());
+        }
+
+        let out_file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file_path)?;
+        let err_file = out_file.try_clone()?;
+
+        let mut cmd = std::process::Command::new(exe);
+        cmd.args(&args)
+            .stdout(std::process::Stdio::from(out_file))
+            .stderr(std::process::Stdio::from(err_file));
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            // CREATE_NO_WINDOW (0x08000000) | DETACHED_PROCESS (0x00000008)
+            cmd.creation_flags(0x08000008);
+        }
+
+        let child = cmd.spawn()?;
+        let child_pid = child.id();
+        let pid_file_path = get_pid_file_path(&config.data_dir);
+        let _ = std::fs::write(&pid_file_path, child_pid.to_string());
+
+        tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+
+        let mut card = crate::ui::Card::new("RUNNER");
+        card.with_badge(crate::ui::badge_online("STARTED (DETACHED)"));
+        card.with_min_width(64);
+        card.add_kv("Mode", "Background Daemon (Detached)");
+        card.add_kv("PID", child_pid.to_string());
+        card.add_kv("Endpoint", format!("http://{}:{}", config.server_host, config.server_port));
+        card.add_kv("Log File", log_file_path.display().to_string());
+        card.with_footer("Stop daemon with 'tuquet runner stop'");
+        println!();
+        card.print();
+        println!();
+        return Ok(());
     }
 
     let log_level = match config.log_level.to_lowercase().as_str() {
@@ -182,6 +378,10 @@ pub async fn run_server(
     info!("Data Directory: {}", config.data_dir);
 
     std::fs::create_dir_all(&config.data_dir)?;
+
+    let pid = std::process::id();
+    let pid_file_path = get_pid_file_path(&config.data_dir);
+    let _ = std::fs::write(&pid_file_path, pid.to_string());
 
     let db_path = Path::new(&config.data_dir).join("automa.sqlite");
     let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
@@ -213,7 +413,8 @@ pub async fn run_server(
         let _ = std::fs::write(&panic_log_path, &msg);
     }));
 
-    let shutdown_signal = async {
+    let pid_file_clone = pid_file_path.clone();
+    let shutdown_signal = async move {
         #[cfg(windows)]
         {
             if std::env::var("AUTOMA_NO_CTRLC_SHUTDOWN").is_ok() {
@@ -229,6 +430,7 @@ pub async fn run_server(
         eprintln!("[AUTOMA-CORE SHUTDOWN TRIGGERED] SIGINT/Ctrl-C received!");
         info!("Shutdown signal received. Cleaning up child processes...");
         crate::core::browser::manager::BrowserManager::destroy_all().await;
+        let _ = std::fs::remove_file(&pid_file_clone);
         info!("All browser processes cleaned up.");
     };
 
@@ -236,10 +438,12 @@ pub async fn run_server(
         .with_graceful_shutdown(shutdown_signal)
         .await
     {
+        let _ = std::fs::remove_file(&pid_file_path);
         eprintln!("[AUTOMA-CORE SERVER ERROR] {:?}", e);
         return Err(e.into());
     }
 
+    let _ = std::fs::remove_file(&pid_file_path);
     eprintln!("[AUTOMA-CORE EXITED MAIN OK]");
     Ok(())
 }

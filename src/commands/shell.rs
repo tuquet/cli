@@ -211,10 +211,11 @@ impl Completer for TuquetCompleter {
                 ],
                 ShellScope::Runner => &[
                     ("start", "Start the local runner daemon server"),
+                    ("stop", "Gracefully terminate the runner daemon"),
+                    ("restart", "Restart the local runner daemon"),
                     ("status", "Inspect local runner daemon health check"),
+                    ("logs", "View background runner daemon logs"),
                     ("probe", "Probe runner driver manifest capabilities"),
-                    ("export-openapi", "Export OpenAPI v3 spec to file"),
-                    ("setup-ext", "Launch browser with extension loaded"),
                     ("back", "Return to global scope"),
                     ("help", "Print Runner scope help"),
                     ("clear", "Clear terminal display"),
@@ -234,6 +235,7 @@ impl Completer for TuquetCompleter {
                     ("status", "Show installed browser path and disk usage"),
                     ("clean", "Delete installed browser runtime directory"),
                     ("path", "Print absolute path to browser executable"),
+                    ("ext", "Inspect and configure Automa MV3 extension"),
                     ("back", "Return to global scope"),
                     ("help", "Print Browser scope help"),
                     ("clear", "Clear terminal display"),
@@ -720,6 +722,27 @@ async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
             let target_url = args.first().copied().unwrap_or("http://127.0.0.1:8765");
             crate::commands::runner::check_status(target_url).await?;
         }
+        "start" => {
+            let detach = args.contains(&"-d") || args.contains(&"--detach");
+            if detach {
+                println!("Starting runner daemon in background...");
+            } else {
+                println!("Starting runner daemon in foreground (Ctrl+C to stop)...");
+            }
+            crate::commands::runner::run_server(None, None, detach, None, None).await?;
+        }
+        "stop" => {
+            let force = args.contains(&"-f") || args.contains(&"--force");
+            crate::commands::runner::stop_daemon(force).await?;
+        }
+        "restart" => {
+            let detach = args.contains(&"-d") || args.contains(&"--detach");
+            crate::commands::runner::restart_daemon(detach).await?;
+        }
+        "logs" => {
+            let follow = args.contains(&"-f") || args.contains(&"--follow");
+            crate::commands::runner::show_logs(follow, 50).await?;
+        }
         "probe" => {
             crate::commands::runner::print_probe_manifest()?;
         }
@@ -729,11 +752,7 @@ async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
         }
         "setup-ext" => {
             let browser = args.first().copied().unwrap_or("chrome");
-            crate::commands::runner::setup_extension(browser, None).await?;
-        }
-        "start" => {
-            println!("Starting runner daemon in foreground (Ctrl+C to stop)...");
-            crate::commands::runner::run_server(None, None, None, None).await?;
+            crate::commands::browser::setup_extension(browser, None).await?;
         }
         other => {
             println!("Unknown runner command '{}'. Type 'help' to see valid commands.", other);
@@ -775,6 +794,10 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
         }
         "path" => {
             crate::commands::browser::handle(crate::cli::BrowserCommands::Path).await?;
+        }
+        "ext" | "setup-ext" => {
+            let browser = args.first().copied().unwrap_or("chrome");
+            crate::commands::browser::setup_extension(browser, None).await?;
         }
         other => {
             println!("Unknown browser command '{}'. Type 'help' to see valid commands.", other);
@@ -834,11 +857,12 @@ fn print_scope_help(scope: ShellScope) {
             card.with_badge(badge_online("RUNNER SCOPE"));
             card.with_min_width(68);
             card.add_line(format!("{BOLD}Daemon Worker Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  start [-d]", "Start runner daemon worker (foreground or detached)");
+            card.add_kv("  stop [-f]", "Gracefully terminate running runner daemon");
+            card.add_kv("  restart [-d]", "Restart local runner daemon worker");
             card.add_kv("  status", "Inspect local runner daemon health check");
+            card.add_kv("  logs [-f]", "View or stream background runner daemon logs");
             card.add_kv("  probe", "Probe runner driver capabilities manifest");
-            card.add_kv("  export-openapi", "Export OpenAPI v3 spec to file");
-            card.add_kv("  setup-ext", "Launch Chrome with extension runner attached");
-            card.add_kv("  start", "Start local daemon worker in foreground");
             card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
             card.add_kv("  back / cd ..", "Return to global scope");
             card.add_kv("  exit", "Return to global scope (or quit)");
@@ -870,6 +894,7 @@ fn print_scope_help(scope: ShellScope) {
             card.add_kv("  install [--force]", "Download and install Open-Source Chromium");
             card.add_kv("  clean", "Delete browser runtime directory to reclaim disk");
             card.add_kv("  path", "Print absolute path to browser executable");
+            card.add_kv("  ext", "Inspect and configure Automa MV3 extension");
             card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
             card.add_kv("  back / cd ..", "Return to global scope");
             card.add_kv("  exit", "Return to global scope (or quit)");
