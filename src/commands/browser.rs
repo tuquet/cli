@@ -113,7 +113,7 @@ pub async fn handle_ext(
                 };
                 let tag = if ext.is_builtin { " (built-in)" } else { "" };
                 card.add_kv(
-                    &format!("ID: {}{}", ext.id, tag),
+                    format!("ID: {}{}", ext.id, tag),
                     format!("{} [v{}] - {}", ext.name, ext.version, status_icon),
                 );
                 card.add_kv("  Path", ext.path.display().to_string());
@@ -162,7 +162,7 @@ pub async fn handle_ext(
                     .map(|e| if e.path.exists() { " [INSTALLED]" } else { " [BROKEN PATH]" })
                     .unwrap_or("");
                 card.add_kv(
-                    &format!("ID: {}{}", pkg.id, installed),
+                    format!("ID: {}{}", pkg.id, installed),
                     format!("{} (v{})", pkg.name, pkg.version),
                 );
                 card.add_kv("  Info", &pkg.description);

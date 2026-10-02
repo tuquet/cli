@@ -127,14 +127,9 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
     let config = AppConfig::load();
     let pid_file = get_pid_file_path(&config.data_dir);
     
-    let mut pid_to_kill: Option<u32> = None;
-    if pid_file.exists() {
-        if let Ok(content) = std::fs::read_to_string(&pid_file) {
-            if let Ok(p) = content.trim().parse::<u32>() {
-                pid_to_kill = Some(p);
-            }
-        }
-    }
+    let pid_to_kill: Option<u32> = std::fs::read_to_string(&pid_file)
+        .ok()
+        .and_then(|c| c.trim().parse::<u32>().ok());
 
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
@@ -153,10 +148,8 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         let name = proc.name().to_string_lossy().to_lowercase();
         if name.contains("tuquet") {
             let cmd = proc.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
-            if cmd.contains("runner") && cmd.contains("start") {
-                if !found_pids.contains(&p_u32) {
-                    found_pids.push(p_u32);
-                }
+            if cmd.contains("runner") && cmd.contains("start") && !found_pids.contains(&p_u32) {
+                found_pids.push(p_u32);
             }
         }
     }

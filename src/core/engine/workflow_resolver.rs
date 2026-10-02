@@ -264,6 +264,7 @@ impl WorkflowResolver {
             .await
             .map_err(|_| WorkflowResolveError::BadRequest("Invalid workflow path (does not exist)".to_string()))?;
 
+        #[allow(unused_mut)]
         let mut final_path = canon;
         #[cfg(target_os = "windows")]
         {

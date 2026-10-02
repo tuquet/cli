@@ -212,7 +212,7 @@ impl Card {
             out.push_str(b);
             out.push(' ');
             out.push_str(border);
-            out.push_str("─");
+            out.push('─');
         }
         out.push_str(border);
         out.push_str("╮\n");
@@ -287,7 +287,7 @@ impl Card {
             out.push_str(&"─".repeat(footer_dashes));
             out.push_str("╯\n");
         } else {
-            out.push_str("╰");
+            out.push('╰');
             out.push_str(&"─".repeat(inner_width));
             out.push_str("╯\n");
         }
