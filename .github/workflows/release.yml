@@ -22,6 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout browser dependency
+        shell: bash
+        run: git clone --depth 1 https://github.com/tuquet/browser.git ../browser
+
       - name: Determine Release Tag & Version
         id: vars
         shell: pwsh
