@@ -1,164 +1,193 @@
-# ⚡ Tuquet CLI (`tuquet`)
+<div align="center">
+  <img src="./assets/logo.svg" width="76" height="76" alt="CLI Logo" />
+  <h1>CLI</h1>
+  <p><strong>Interactive Scoped Shell &amp; Unified Automation Terminal in Rust</strong></p>
 
-> **Tuquet** là bộ công cụ được xây dựng theo phong cách CLI, đóng vai trò giao diện dòng lệnh hợp nhất để quản lý và vận hành các dịch vụ trong hệ sinh thái Tuquet.
+  <p>
+    <a href="https://github.com/tuquet/scoop-bucket"><img src="https://img.shields.io/badge/Scoop-tuquet-brightgreen.svg" alt="Scoop" /></a>
+    <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-Clap%2FRatatui-orange.svg" alt="Rust" /></a>
+    <img src="https://img.shields.io/badge/Shell-Interactive%20Scoped-blue.svg" alt="Interactive Shell" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" /></a>
+  </p>
+</div>
 
 ---
 
-## 🚀 HƯỚNG DẪN CÀI ĐẶT (INSTALLATION)
+> High-performance developer CLI & interactive scoped shell written in Rust, providing a unified terminal interface to orchestrate and manage services across the automation ecosystem.
 
-### 1. Cài đặt qua Scoop (Khuyến nghị trên Windows)
+## 🚀 Installation
+
+### 1. Windows via Scoop (Recommended)
 ```powershell
 scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
 scoop install tuquet
 ```
 
-### 2. Cài đặt từ nguồn (Build from Source)
+### 2. Build from Source (Cargo)
 ```powershell
 git clone https://github.com/tuquet/cli.git
 cd cli
 cargo build --release
-# File nhị phân sinh ra tại: target/release/tuquet.exe
+# Binary generated at: target/release/tuquet.exe
 ```
 
 ---
 
-## 🖥️ PHIÊN TƯƠNG TÁC (INTERACTIVE SCOPED SHELL)
+## 🖥️ Interactive Scoped Shell
 
-Gõ trực tiếp `tuquet` trong terminal để mở phiên Shell tương tác hỗ trợ **Smart Tab-Completion**, quản lý ngữ cảnh theo phân tầng (Hierarchical Scope) và lưu trữ lịch sử lệnh:
+Launch the interactive shell by running `tuquet` in your terminal. Features **Smart Tab-Completion**, hierarchical scope management, and command history persistence:
 
 ```powershell
 tuquet
 ```
 
-### 1. Vào thẳng phạm vi dịch vụ (Direct Scoped Launch)
-Bạn có thể mở shell và đi thẳng vào ngữ cảnh của dịch vụ mong muốn:
+### 1. Direct Scoped Launch
+Open the shell and enter a specific service context directly:
 
 ```powershell
-tuquet automa    # Vào phạm vi Automa: tuquet(automa)>
-tuquet runner    # Vào phạm vi Runner: tuquet(runner)> (alias: daemon, worker)
-tuquet cloud     # Vào phạm vi Cloud:  tuquet(cloud)>  (alias: auth)
-tuquet browser   # Vào phạm vi Browser: tuquet(browser)>
+tuquet automa    # Enter Automa scope: tuquet(automa)>
+tuquet runner    # Enter Runner scope: tuquet(runner)> (aliases: daemon, worker)
+tuquet cloud     # Enter Cloud scope:  tuquet(cloud)>  (alias: auth)
+tuquet browser   # Enter Browser scope: tuquet(browser)>
 ```
 
-### 2. Điều hướng và Phím tắt trong Shell
-- **Chuyển ngữ cảnh**: `use <automa | runner | cloud | browser | global>`
-- **Trở về phạm vi Global**: Gõ `back` hoặc `cd ..` hoặc `exit` (nếu đang ở sub-scope)
-- **Thoát chương trình**: Gõ `exit` hoặc `quit` tại phạm vi Global (hoặc nhấn `Ctrl+D`)
-- **Xóa màn hình**: `clear` hoặc `cls`
-- **Xem trợ giúp ngữ cảnh**: `help` hoặc `?`
-- **Smart Autocomplete (Tab)**: Tự động gợi ý lệnh, cờ tham số (`--headless`, `--timeout`), và **quét tự động danh sách workflow** có trong vault `~/.tuquet/workflows/`.
-- **Dung sai tiền tố (Prefix Tolerance)**: Nếu đang ở trong `tuquet(automa)>`, bạn có thể gõ `run flow.json` hoặc `automa run flow.json` đều hoạt động chính xác.
+### 2. Shell Navigation & Keyboard Shortcuts
+- **Switch Scope**: `use <automa | runner | cloud | browser | global>`
+- **Return to Global Scope**: Type `back`, `cd ..`, or `exit` (when in a sub-scope)
+- **Exit Program**: Type `exit` or `quit` at the Global scope (or press `Ctrl+D`)
+- **Clear Screen**: `clear` or `cls`
+- **Context Help**: `help` or `?`
+- **Smart Autocomplete (Tab)**: Auto-suggests commands, argument flags (`--headless`, `--timeout`), and **dynamically scans workflows** in `~/.tuquet/workflows/`.
+- **Prefix Tolerance**: When inside `tuquet(automa)>`, both `run flow.json` and `automa run flow.json` execute accurately.
 
 ---
 
-## 📋 HƯỚNG DẪN SỬ DỤNG DÒNG LỆNH (CLI REFERENCE)
+## 📋 CLI Command Reference
 
-Hỗ trợ chạy trực tiếp từ dòng lệnh / script CI mà không cần vào Shell:
+Supports direct execution from scripts, terminals, or CI pipelines without entering the interactive shell:
 
-### 1. Quản lý trạng thái chung (Global Commands)
+### 1. Global & State Management
 ```powershell
-tuquet status               # Kiểm tra sức khỏe toàn diện: Browser, Runner Daemon, Cloud Pairing
-tuquet login [token]        # Đăng nhập và xác thực workstation với Tuquet Cloud
-tuquet whoami               # Xem thông tin định danh và pairing máy trạm
-tuquet logout               # Hủy kết nối và xóa thông tin phiên cloud trên máy
+tuquet status               # Comprehensive health check: Browser, Runner Daemon, Cloud Pairing
+tuquet login [token]        # Authenticate workstation with Cloud Control Plane
+tuquet whoami               # Inspect workstation identity and pairing credentials
+tuquet logout               # Disconnect and revoke local cloud session credentials
 ```
 
-### 2. Tự động hóa trình duyệt (Automa Engine)
+### 2. Browser Automation (Automa Engine)
 ```powershell
-# Chạy workflow (hỗ trợ đường dẫn file .json hoặc workflow ID đã lưu trong vault/DB)
+# Run a workflow (supports .json file path or workflow ID stored in vault/DB)
 tuquet automa run ./my_workflow.json --headless
 tuquet automa run <workflow-id> --timeout 60
 
-# Quản lý danh sách workflows
-tuquet automa list                      # Liệt kê workflows trong vault và database
-tuquet automa list "scraping"           # Tìm kiếm workflow theo từ khóa
-tuquet automa inspect ./my_flow.json    # Kiểm tra tính hợp lệ của cấu trúc đồ thị workflow
-tuquet automa import ./backup.json      # Nạp workflow vào lưu trữ cục bộ
-tuquet automa export <workflow-id>      # Xuất workflow ra file JSON
-tuquet automa delete <workflow-id>      # Xóa workflow khỏi hệ thống
+# Manage workflow vault
+tuquet automa list                      # List workflows in vault and local database
+tuquet automa list "scraping"           # Search workflows by keyword
+tuquet automa inspect ./my_flow.json    # Validate workflow node-graph structure
+tuquet automa import ./backup.json      # Import workflow into local vault storage
+tuquet automa export <workflow-id>      # Export workflow to JSON file
+tuquet automa delete <workflow-id>      # Remove workflow from local storage
 
-# Mở Web Studio thiết kế trực quan trên trình duyệt
+# Launch visual Web Studio in browser
 tuquet automa studio
 ```
 
-### 3. Điều phối Daemon & Cloud Worker (Runner Engine)
+### 3. Daemon & Cloud Worker (Runner Engine)
 ```powershell
-tuquet runner start --port 8765         # Khởi chạy Runner Daemon ở tiền cảnh (Foreground)
-tuquet runner status                    # Kiểm tra trạng thái máy chủ Runner cục bộ
-tuquet runner probe                     # Xem bản kê năng lực phần cứng & driver
-tuquet runner export-openapi spec.json  # Xuất đặc tả OpenAPI v3 ra file
-tuquet runner setup-ext                 # Tiện ích dev khởi động trình duyệt nạp sẵn extension
+tuquet runner start --port 8765         # Start Runner Daemon in foreground
+tuquet runner status                    # Check local Runner daemon health
+tuquet runner probe                     # Inspect hardware specs & driver capabilities
+tuquet runner export-openapi spec.json  # Export OpenAPI v3 specification to file
+tuquet runner setup-ext                 # Developer utility to launch browser pre-loaded with extension
 ```
 
-### 4. Quản lý Isolated Chromium Runtime (Browser Management)
-Tuquet sử dụng bản Chromium thuần nguồn mở (Pure Open-Source BSD) độc lập, không phụ thuộc vào Chrome cài đặt sẵn của hệ điều hành:
+### 4. Isolated Chromium Runtime Management
+Tuquet manages a dedicated, pure open-source Chromium LTS runtime, completely decoupled from the OS default browser:
 
 ```powershell
-tuquet browser status                   # Kiểm tra phiên bản, đường dẫn và dung lượng disk usage
-tuquet browser install                  # Tự động tải và cấu hình Chromium chuyên biệt
-tuquet browser install --force          # Cài đặt lại nếu runtime bị lỗi
-tuquet browser path                     # In đường dẫn tuyệt đối đến file thực thi chromium.exe
-tuquet browser clean                    # Xóa runtime Chromium để giải phóng dung lượng ổ cứng
+tuquet browser status                   # Check runtime version, install path, and disk usage
+tuquet browser install                  # Automatically download and configure isolated Chromium
+tuquet browser install --force          # Reinstall runtime if corrupted
+tuquet browser path                     # Print absolute executable path to chromium.exe
+tuquet browser clean                    # Purge Chromium runtime to free disk space
 ```
 
 ---
 
-## 🏛️ SINGLE SOURCE OF TRUTH (SSOT) & CẤU TRÚC LƯU TRỮ
+## 🏛️ Single Source of Truth (SSOT) & Storage Hierarchy
 
-Toàn bộ dữ liệu, runtime và cấu hình của hệ sinh thái Tuquet được quản lý duy nhất tại thư mục canonical:
+All configuration, runtimes, and local data across the ecosystem resolve strictly to the canonical directory:
 
 ```
 ~/.tuquet/
-├── workflows/           # Local Workflow Vault (lưu trữ các file kịch bản .json)
-├── runtimes/            # Dedicated Isolated Open-Source Chromium Runtime
+├── workflows/           # Local Workflow Vault (.json scenario files)
+├── runtimes/            # Dedicated Isolated Open-Source Chromium Runtimes
 ├── data/
-│   └── tuquet.sqlite    # SQLite database nhúng (lưu trữ Jobs, Logs, Variables, Profiles)
-└── history.txt          # Lịch sử câu lệnh tương tác của Tuquet Interactive Shell
+│   └── tuquet.sqlite    # Embedded SQLite database (Jobs, Logs, Variables, Profiles)
+└── history.txt          # Command history for Tuquet Interactive Shell
 ```
 
 ---
 
-## 🌐 GIAO DIỆN & DEV TOOLING ENDPOINTS
+## 🌐 Dev Tooling & Interactive Endpoints
 
-Khi Runner Daemon hoạt động (cổng mặc định `8765`), các giao diện phục vụ kiểm thử và debug sẵn sàng tại:
+When the Runner Daemon is active (default port `8765`), interactive developer interfaces are immediately accessible:
 
-| Giao Diện / Endpoint | Địa Chỉ URL | Giao Thức / Mô Tả |
+| Interface / Endpoint | URL Address | Description |
 | :--- | :--- | :--- |
-| 📑 **Swagger UI (API Docs)** | **`http://127.0.0.1:8765/swagger-ui`** | Giao diện OpenAPI v3 tương tác trực tiếp, test REST APIs. |
-| 📄 **OpenAPI Spec (JSON)** | **`http://127.0.0.1:8765/api-docs/openapi.json`** | Đặc tả OpenAPI JSON v3 cho codegen hoặc Postman/Bruno sync. |
-| 🎨 **Web Studio Canvas** | **`http://127.0.0.1:8765/studio/`** | Visual Workflow Canvas thiết kế kéo thả luồng tự động hóa. |
-| 📡 **SSE Telemetry** | **`http://127.0.0.1:8765/api/v1/events`** | Server-Sent Events phát logs thời gian thực khi chạy jobs. |
-| ⚡ **WebSocket Control** | **`ws://127.0.0.1:8765/api/v1/ws`** | Kênh WebSocket 2 chiều độ trễ thấp điều khiển luồng (Pause/Resume/Kill). |
+| 📑 **Swagger UI (API Docs)** | **`http://127.0.0.1:8765/swagger-ui`** | Interactive OpenAPI v3 interface to test REST APIs live. |
+| 📄 **OpenAPI Spec (JSON)** | **`http://127.0.0.1:8765/api-docs/openapi.json`** | Raw OpenAPI JSON spec for codegen or Postman/Bruno sync. |
+| 🎨 **Web Studio Canvas** | **`http://127.0.0.1:8765/studio/`** | Visual node-graph canvas for drag-and-drop workflow editing. |
+| 📡 **SSE Telemetry** | **`http://127.0.0.1:8765/api/v1/events`** | Server-Sent Events stream for real-time job execution logs. |
+| ⚡ **WebSocket Control** | **`ws://127.0.0.1:8765/api/v1/ws`** | Low-latency bi-directional control channel (Pause/Resume/Kill). |
 
 ---
 
-## 🛑 NGUYÊN TẮC KIẾN TRÚC MÃ NGUỒN
+## 🛑 Architectural Design Principles
 
-1. **Phân Lớp Độc Lập (Decoupled Layers)**:
-   - `core`: Chứa logic nghiệp vụ lõi, không phụ thuộc tầng ngoài.
-   - `infrastructure`: Triển khai SQLite (`rusqlite`), File I/O, Chromium Process Management.
-   - `api`: Axum HTTP, WebSocket, SSE routes và payload parsing.
-   - `commands`: Command handlers trả về `Result<(), Box<dyn Error>>`, tuyệt đối không gọi `std::process::exit` để bảo vệ phiên tương tác Shell.
+1. **Decoupled Layers**:
+   - `core`: Pure business logic, independent of outer I/O layers.
+   - `infrastructure`: Implements SQLite (`rusqlite`), file I/O, and Chromium process management.
+   - `api`: Axum HTTP, WebSocket, SSE endpoints, and request validation.
+   - `commands`: Command handlers return `Result<(), Box<dyn Error>>` without calling `std::process::exit` to protect shell session continuity.
 2. **Async Concurrency**:
-   - Chạy trên `tokio` multi-thread runtime.
-   - Tác vụ CPU-bound chạy qua `tokio::task::spawn_blocking`.
-3. **Bảo Mật Zero-Knowledge**:
-   - Lưu trữ Credentials mã hóa AES-256 kết hợp HMAC-SHA256, không lưu plain-text.
-   - Browser Extension giải mã trên RAM với passphrase của người dùng.
+   - Executes on top of the `tokio` multi-threaded runtime.
+   - CPU-bound tasks are offloaded via `tokio::task::spawn_blocking`.
+3. **Zero-Knowledge Security**:
+   - Credentials stored with AES-256 encryption and HMAC-SHA256 integrity verification.
+   - Browser extensions decrypt sensitive secrets in-memory using user passphrase.
 
 ---
 
-## 🔗 LIÊN KẾT TÀI LIỆU CÁC REPOSITORY LIÊN QUAN (ECOSYSTEM REFERENCES)
+## 🔗 Ecosystem References
 
-Tuquet CLI là trung tâm điều phối, kết nối chặt chẽ với các repository chuyên biệt trong hệ sinh thái Tuquet:
+CLI is the primary terminal orchestrator connecting the specialized modules of the automation ecosystem:
 
-| Repository / Module | GitHub Repository & README | Vai Trò & Mối Liên Kết |
+| Repository / Module | GitHub Repository & README | Core Role & Architecture Link |
 | :--- | :--- | :--- |
-| **Automa Engine** | [📘 `github.com/tuquet/automa`](https://github.com/tuquet/automa#readme) | Browser Extension manifest, Background Worker & Web Studio canvas. |
-| **Tuquet Runner** | [📘 `github.com/tuquet/runner`](https://github.com/tuquet/runner#readme) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
-| **Tuquet Cloud** | [📘 `github.com/tuquet/cloud`](https://github.com/tuquet/cloud#readme) | Nền tảng Supabase Multi-Tenant, RPC enroll device và quản lý pairing. |
-| **Tuquet Lib** | [📘 `github.com/tuquet/lib`](https://github.com/tuquet/lib#readme) | Monorepo thư viện chia sẻ TypeScript (`vue-ui`, `extension-runner`, `crypto`). |
-| **Scoop Bucket** | [📘 `github.com/tuquet/scoop-bucket`](https://github.com/tuquet/scoop-bucket#readme) | Manifest cài đặt Windows Scoop chính thức cho `tuquet` và `tqr`. |
-| **Claude-Agy** | [📘 `github.com/tuquet/claude-agy`](https://github.com/tuquet/claude-agy#readme) | Engine điều phối Claude Code CLI với Antigravity OAuth quota. |
-| **Tuquet Skills** | [📘 `github.com/tuquet/skills`](https://github.com/tuquet/skills#readme) | Bộ kịch bản và năng lực (Skills) tự động hóa cho AI Coding Agents. |
+| **Automa** | [📘 `github.com/tuquet/automa`](https://github.com/tuquet/automa#readme) | Browser Extension manifest, Background Worker & Web Studio canvas. |
+| **Runner** | [📘 `github.com/tuquet/runner`](https://github.com/tuquet/runner#readme) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
+| **Browser** | [📘 `github.com/tuquet/browser`](https://github.com/tuquet/browser#readme) | Chromium LTS runtime management, multi-profile sandbox & CDP stealth engine. |
+| **Cloud** | [📘 `github.com/tuquet/cloud`](https://github.com/tuquet/cloud#readme) | Supabase Multi-Tenant foundation, device enrollment RPC, and pairing management. |
+| **Lib** | [📘 `github.com/tuquet/lib`](https://github.com/tuquet/lib#readme) | TypeScript & Vue 3 shared monorepo (`vue-ui`, `vue-table`, `md-export`, `extension-runner`, `lunar`). |
+| **Scoop Bucket** | [📘 `github.com/tuquet/scoop-bucket`](https://github.com/tuquet/scoop-bucket#readme) | Official Windows Scoop distribution channel for CLI and runner binaries. |
+| **Claude-Agy** | [📘 `github.com/tuquet/claude-agy`](https://github.com/tuquet/claude-agy#readme) | Claude Code CLI integration powered by Google Antigravity OAuth quotas. |
+| **Skills** | [📘 `github.com/tuquet/skills`](https://github.com/tuquet/skills#readme) | Automation skillsets, runbooks, and recipes for AI Coding Agents. |
 
+---
+
+## 📄 License
+
+Distributed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+  <samp>
+    <a href="https://tuquet.github.io">Portfolio</a> •
+    <a href="https://tuquet.github.io/cv">CV &amp; Resume</a> •
+    <a href="https://tuquet.github.io/automa">Automa Studio</a> •
+    <a href="https://tuquet.github.io/lib">Component Lab</a> •
+    <a href="https://github.com/tuquet/scoop-bucket">Scoop Bucket</a>
+  </samp>
+</div>

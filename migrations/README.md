@@ -1,34 +1,34 @@
-# 📦 Automa Core: Local Database Migrations (SQLite)
+# 📦 Local Database Migrations (SQLite)
 
-Thư mục này quản lý các file migration UP và DOWN cho động cơ máy trạm `automa-core` chạy cục bộ trên môi trường của người dùng.
+This directory manages UP and DOWN migration files for the local database engine running on the client workstation.
 
 ---
 
-## 🏛️ Phân Biệt Hai Tầng Cơ Sở Dữ Liệu Trong Hệ Sinh Thái
+## 🏛️ Two-Tier Database Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 1. LOCAL CLIENT RUNTIME (tuquet-automa - apps/core)         │
-│    - Công nghệ: SQLite 3 (WAL mode)                         │
-│    - File lưu trữ: ~/.automa/automa.db (hoặc in-memory test)│
-│    - Bản chất: Offline-first, đơn người dùng (Single-user)  │
-│    - Quản lý: apps/core/migrations/*.sql                    │
+│ 1. LOCAL CLIENT RUNTIME (apps/core)                         │
+│    - Technology: SQLite 3 (WAL mode)                        │
+│    - Storage: ~/.tuquet/data/tuquet.sqlite (or in-memory)   │
+│    - Paradigm: Offline-first, single-user                   │
+│    - Management: migrations/*.sql                           │
 └──────────────────────────┬──────────────────────────────────┘
                            │
                            │ Sync Workflows / Remote Telemetry
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ 2. CENTRAL CLOUD BAAS HUB (tuquet-cloud)                    │
-│    - Công nghệ: Supabase / PostgreSQL                       │
-│    - Bản chất: Multi-tenant RBAC, RLS Policy, Quota         │
-│    - Bảng tiền tố: automa_* (automa_workflows, runners...)  │
-│    - Quản lý: tuquet-cloud/supabase/plugins/automa/*.sql    │
+│ 2. CENTRAL CLOUD BAAS HUB (Cloud Control Plane)             │
+│    - Technology: Supabase / PostgreSQL 15+                  │
+│    - Paradigm: Multi-tenant RBAC, RLS policies, quotas      │
+│    - Schema table prefixes: automa_* (workflows, runners...)│
+│    - Management: cloud/supabase/plugins/automa/*.sql        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📂 Danh Mục Migration Local (SQLite)
+## 📂 Local Migration Catalog (SQLite)
 
-- `0001_initial_schema.up.sql`: Khởi tạo 10 bảng cục bộ (`jobs`, `logs`, `browsers`, `workflows`, `campaigns`, `storage_tables`, `storage_table_rows`, `system_settings`, `storage_variables`, `storage_credentials`).
-- `0001_initial_schema.down.sql`: Rollback và thu hồi sạch sẽ toàn bộ 10 bảng cục bộ.
+- `0001_initial_schema.up.sql`: Initializes 10 local tables (`jobs`, `logs`, `browsers`, `workflows`, `campaigns`, `storage_tables`, `storage_table_rows`, `system_settings`, `storage_variables`, `storage_credentials`).
+- `0001_initial_schema.down.sql`: Reversible rollback cleanly tearing down all 10 local tables.
