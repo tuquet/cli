@@ -189,7 +189,7 @@ pub enum AutomaSubcommands {
 
 #[derive(Subcommand, Debug)]
 pub enum RunnerSubcommands {
-    /// Start the Tuquet runner daemon and cloud worker (aliases: server, up, worker)
+    /// Start the runner daemon and cloud worker (aliases: server, up, worker)
     #[command(name = "start", aliases = ["server", "up", "worker"])]
     Start {
         /// HTTP server listening host IP (e.g. 127.0.0.1, 0.0.0.0)
@@ -213,21 +213,21 @@ pub enum RunnerSubcommands {
         log_level: Option<String>,
     },
 
-    /// Gracefully stop the running Tuquet runner daemon
+    /// Gracefully stop the running runner daemon
     Stop {
         /// Force terminate without waiting for active jobs
         #[arg(short, long)]
         force: bool,
     },
 
-    /// Restart the local Tuquet runner daemon
+    /// Restart the local runner daemon
     Restart {
         /// Run in background as detached daemon process
         #[arg(short = 'd', long)]
         detach: bool,
     },
 
-    /// Inspect local Tuquet daemon status and health check endpoint
+    /// Inspect local runner daemon status and health check endpoint
     Status {
         /// Daemon server base URL (defaults to http://{AUTOMA_HOST}:{AUTOMA_PORT} or http://127.0.0.1:8765)
         #[arg(short, long)]
