@@ -248,6 +248,27 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
                 "type": "object",
                 "properties": {}
             }
+        },
+        {
+            "name": "tuquet_tree",
+            "description": "Scan directory structure recursively up to a specified depth, ignoring build artifacts (.git, node_modules, target, dist, build, cache) and returning a clean visual tree.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Root directory path to scan. Defaults to current directory ('.')."
+                    },
+                    "depth": {
+                        "type": "integer",
+                        "description": "Maximum directory traversal depth (default: 3, max: 10)."
+                    },
+                    "show_hidden": {
+                        "type": "boolean",
+                        "description": "Whether to include hidden files (starting with dot). Default is false."
+                    }
+                }
+            }
         }
     ]);
 
@@ -287,6 +308,7 @@ async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> JsonRpcR
         "tuquet_runner_probe" => execute_tuquet_runner_probe().await,
         "tuquet_cloud_whoami" => execute_tuquet_cloud_whoami().await,
         "tuquet_browser_status" => execute_tuquet_browser_status().await,
+        "tuquet_tree" => execute_tuquet_tree(&arguments).await,
         other => {
             return JsonRpcResponse {
                 jsonrpc: "2.0",
@@ -769,3 +791,78 @@ async fn execute_tuquet_browser_status() -> Result<String, String> {
     });
     Ok(serde_json::to_string_pretty(&res).unwrap_or_default())
 }
+
+async fn execute_tuquet_tree(args: &Value) -> Result<String, String> {
+    let target_path_str = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
+    let max_depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(3).min(10) as usize;
+    let show_hidden = args.get("show_hidden").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    let root_path = Path::new(target_path_str);
+    if !root_path.exists() {
+        return Err(format!("Path '{}' does not exist", target_path_str));
+    }
+
+    let canonical = root_path.canonicalize().map_err(|e| e.to_string())?;
+    let display_name = canonical.file_name().and_then(|s| s.to_str()).unwrap_or(target_path_str);
+
+    let mut output = String::new();
+    output.push_str(&format!("{}/\n", display_name));
+    build_dir_tree(&canonical, "", 1, max_depth, show_hidden, &mut output);
+
+    Ok(output)
+}
+
+fn build_dir_tree(
+    dir: &Path,
+    prefix: &str,
+    current_depth: usize,
+    max_depth: usize,
+    show_hidden: bool,
+    output: &mut String,
+) {
+    if current_depth > max_depth {
+        return;
+    }
+
+    let mut entries: Vec<_> = match std::fs::read_dir(dir) {
+        Ok(read) => read.filter_map(|e| e.ok()).collect(),
+        Err(_) => return,
+    };
+
+    entries.sort_by_key(|e| e.file_name());
+
+    let filtered: Vec<_> = entries
+        .into_iter()
+        .filter(|e| {
+            let name = e.file_name().to_string_lossy().to_string();
+            if !show_hidden && name.starts_with('.') {
+                return false;
+            }
+            if matches!(
+                name.as_str(),
+                "node_modules" | "target" | "dist" | ".git" | ".turbo" | "build" | ".output" | ".next"
+            ) {
+                return false;
+            }
+            true
+        })
+        .collect();
+
+    let count = filtered.len();
+    for (i, entry) in filtered.into_iter().enumerate() {
+        let is_last = i == count - 1;
+        let connector = if is_last { "└── " } else { "├── " };
+        let name = entry.file_name().to_string_lossy().to_string();
+        let path = entry.path();
+        let is_dir = path.is_dir();
+
+        if is_dir {
+            output.push_str(&format!("{}{}{}/\n", prefix, connector, name));
+            let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+            build_dir_tree(&path, &new_prefix, current_depth + 1, max_depth, show_hidden, output);
+        } else {
+            output.push_str(&format!("{}{}{}\n", prefix, connector, name));
+        }
+    }
+}
+
