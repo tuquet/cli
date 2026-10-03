@@ -213,7 +213,7 @@ pub enum RunnerSubcommands {
         detach: bool,
 
         /// Path to custom data directory (stores SQLite DB and logs)
-        #[arg(short, long)]
+        #[arg(short = 'D', long)]
         data_dir: Option<PathBuf>,
 
         /// Log verbosity level (trace, debug, info, warn, error)
