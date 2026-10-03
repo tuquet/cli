@@ -35,6 +35,9 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
 
+\x1b[1;38;2;56;189;248mIntegration:\x1b[0m
+  \x1b[1;35mmcp\x1b[0m             Run Model Context Protocol (MCP) stdio server for AI agents
+
 \x1b[1;38;2;56;189;248mInteractive:\x1b[0m
   \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session
 
@@ -48,7 +51,8 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   tuquet whoami                   Display cloud device identity
   tuquet automa run ./wf.json     Execute workflow directly
   tuquet runner start --port 8765 Start local daemon worker
-  tuquet browser status           Inspect dedicated browser engine";
+  tuquet browser status           Inspect dedicated browser engine
+  tuquet mcp                      Start native MCP stdio server";
 
 /// Tuquet - Unified CLI Tool
 #[derive(Parser, Debug)]
@@ -127,6 +131,10 @@ pub enum Commands {
         #[arg(value_name = "SERVICE")]
         service: Option<String>,
     },
+
+    /// Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents
+    #[command(name = "mcp")]
+    Mcp,
 }
 
 #[derive(Subcommand, Debug)]

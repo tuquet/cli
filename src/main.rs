@@ -62,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Shell { service }) => {
             commands::shell::run(service.as_deref()).await
         }
+        Some(Commands::Mcp) => commands::mcp::run().await,
         None => {
             if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
                 commands::shell::run(None).await

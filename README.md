@@ -112,6 +112,22 @@ tuquet browser path                     # Print absolute executable path to chro
 tuquet browser clean                    # Purge Chromium runtime to free disk space
 ```
 
+### 5. Model Context Protocol (MCP) Server
+Tuquet ships with a native, zero-dependency MCP stdio server complying with JSON-RPC 2.0 (spec `2024-11-05`), empowering AI Coding Agents (such as Google Antigravity, Claude Code, Cursor) to autonomously orchestrate browser automations and probe runner nodes:
+
+```console
+tuquet mcp                              # Launch JSON-RPC 2.0 stdio MCP server
+```
+
+**Exposed MCP Tools:**
+- `tuquet_status`: Inspect unified health across Cloud, Runner, and Browser.
+- `tuquet_workflow_list`: Query workflows stored in SQLite database and Vault (`~/.tuquet/workflows/`).
+- `tuquet_workflow_inspect`: Deeply analyze node connections, triggers, variables, and parameters of any workflow.
+- `tuquet_workflow_run`: Execute automation workflows in headless or visible browser with runtime variables.
+- `tuquet_runner_probe`: Query hardware specifications and driver capabilities.
+- `tuquet_cloud_whoami`: Query cloud pairing identity and tenant enrollment.
+- `tuquet_browser_status`: Inspect dedicated Chromium runtime path, version, and footprint.
+
 ---
 
 ## 🏛️ Single Source of Truth (SSOT) & Storage Hierarchy
