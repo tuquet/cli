@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/logo.svg" width="76" height="76" alt="CLI Logo" />
+  <img src="https://tuquet.github.io/icons/cli.svg" width="76" height="76" alt="CLI Logo" />
   <h1>CLI</h1>
   <p><strong>Interactive Scoped Shell &amp; Unified Automation Terminal in Rust</strong></p>
 
