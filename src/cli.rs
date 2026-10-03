@@ -31,12 +31,12 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
-  \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node (aliases: daemon, worker)
-  \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing (alias: auth)
+  \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
+  \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
 
 \x1b[1;38;2;56;189;248mInteractive:\x1b[0m
-  \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session (alias: repl)
+  \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session
 
 \x1b[1;38;2;56;189;248mOptions:\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
@@ -100,14 +100,14 @@ pub enum Commands {
     },
 
     /// Distributed runner daemon worker & cloud execution node
-    #[command(name = "runner", aliases = ["daemon", "worker"])]
+    #[command(name = "runner")]
     Runner {
         #[command(subcommand)]
         command: Option<RunnerSubcommands>,
     },
 
     /// Tuquet Cloud authentication & multi-tenant pairing
-    #[command(name = "cloud", alias = "auth")]
+    #[command(name = "cloud")]
     Cloud {
         #[command(subcommand)]
         command: Option<CloudSubcommands>,
@@ -121,7 +121,7 @@ pub enum Commands {
     },
 
     /// Launch interactive scoped shell session
-    #[command(name = "shell", alias = "repl")]
+    #[command(name = "shell")]
     Shell {
         /// Optional target service scope to enter (automa, runner, cloud, browser)
         #[arg(value_name = "SERVICE")]
@@ -158,7 +158,7 @@ pub enum AutomaSubcommands {
         browser_id: Option<String>,
 
         /// Workflow variables in KEY=VALUE format
-        #[arg(short = 'p', long = "var", alias = "param", value_name = "KEY=VALUE")]
+        #[arg(short = 'p', long = "var", value_name = "KEY=VALUE")]
         variables: Vec<String>,
 
         /// Optional workflow execution timeout in seconds
@@ -166,8 +166,8 @@ pub enum AutomaSubcommands {
         timeout: Option<u64>,
     },
 
-    /// Manage stored workflows in local database and vault (alias: wf)
-    #[command(name = "workflow", alias = "wf")]
+    /// Manage stored workflows in local database and vault
+    #[command(name = "workflow")]
     Workflow {
         #[command(subcommand)]
         command: WorkflowCommands,
@@ -189,8 +189,8 @@ pub enum AutomaSubcommands {
 
 #[derive(Subcommand, Debug)]
 pub enum RunnerSubcommands {
-    /// Start the runner daemon and cloud worker (aliases: server, up, worker)
-    #[command(name = "start", aliases = ["server", "up", "worker"])]
+    /// Start the runner daemon and cloud worker
+    #[command(name = "start")]
     Start {
         /// HTTP server listening host IP (e.g. 127.0.0.1, 0.0.0.0)
         #[arg(short = 'H', long)]
@@ -289,8 +289,8 @@ pub enum CloudSubcommands {
     /// Log out and disconnect this workstation from Tuquet Cloud
     Logout,
 
-    /// Show current Tuquet Cloud authentication and enrollment status (alias: status)
-    #[command(name = "whoami", alias = "status")]
+    /// Show current Tuquet Cloud authentication and enrollment status
+    #[command(name = "whoami")]
     Whoami,
 }
 
@@ -323,7 +323,7 @@ pub enum BrowserCommands {
     Path,
 
     /// Manage and configure browser extensions (Automa MV3 and custom extensions)
-    #[command(name = "ext", aliases = ["extension", "setup-ext"])]
+    #[command(name = "ext")]
     Ext {
         #[command(subcommand)]
         command: Option<ExtCommands>,
@@ -340,19 +340,19 @@ pub enum BrowserCommands {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum ExtCommands {
-    /// List all registered browser extensions (alias: ls)
-    #[command(name = "list", alias = "ls")]
+    /// List all registered browser extensions
+    #[command(name = "list")]
     List,
 
-    /// Browse and search available extensions from tuquet-scoop-bucket (aliases: search, available)
-    #[command(name = "catalog", aliases = ["search", "available"])]
+    /// Browse and search available extensions from tuquet-scoop-bucket
+    #[command(name = "catalog")]
     Catalog {
         /// Optional keyword to filter extensions
         query: Option<String>,
     },
 
-    /// Download and install an extension package from tuquet-scoop-bucket (alias: get)
-    #[command(name = "install", alias = "get")]
+    /// Download and install an extension package from tuquet-scoop-bucket
+    #[command(name = "install")]
     Install {
         /// Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')
         id: String,
@@ -373,8 +373,8 @@ pub enum ExtCommands {
         id: Option<String>,
     },
 
-    /// Unregister a browser extension by ID (alias: rm)
-    #[command(name = "remove", alias = "rm")]
+    /// Unregister a browser extension by ID
+    #[command(name = "remove")]
     Remove {
         /// Extension ID to remove
         id: String,
@@ -425,8 +425,8 @@ pub enum ExtCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum WorkflowCommands {
-    /// List all workflows saved in database and vault (alias: ls)
-    #[command(name = "list", alias = "ls")]
+    /// List all workflows saved in database and vault
+    #[command(name = "list")]
     List {
         /// Filter workflows by keyword (name, ID, or description)
         #[arg(short, long)]
@@ -441,8 +441,8 @@ pub enum WorkflowCommands {
         vault_only: bool,
     },
 
-    /// Import a workflow file (.json) into SQLite database and vault (alias: add)
-    #[command(name = "import", alias = "add")]
+    /// Import a workflow file (.json) into SQLite database and vault
+    #[command(name = "import")]
     Import {
         /// Path to workflow JSON file (.workflow.json or .json)
         #[arg(value_name = "FILE")]
@@ -472,16 +472,16 @@ pub enum WorkflowCommands {
         output: Option<PathBuf>,
     },
 
-    /// Inspect details, triggers, parameters, and block sequence of a stored workflow (alias: show)
-    #[command(name = "info", alias = "show")]
+    /// Inspect details, triggers, parameters, and block sequence of a stored workflow
+    #[command(name = "info")]
     Info {
         /// Workflow ID or Name
         #[arg(value_name = "WORKFLOW_ID")]
         id: String,
     },
 
-    /// Delete a workflow from database and vault (alias: rm)
-    #[command(name = "delete", alias = "rm")]
+    /// Delete a workflow from database and vault
+    #[command(name = "delete")]
     Delete {
         /// Workflow ID to delete
         #[arg(value_name = "WORKFLOW_ID")]

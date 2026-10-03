@@ -37,17 +37,17 @@ cargo build --release
 
 Launch the interactive shell by running `tuquet` in your terminal. Features **Smart Tab-Completion**, hierarchical scope management, and command history persistence:
 
-```powershell
+```console
 tuquet
 ```
 
 ### 1. Direct Scoped Launch
 Open the shell and enter a specific service context directly:
 
-```powershell
+```console
 tuquet automa    # Enter Automa scope: tuquet(automa)>
-tuquet runner    # Enter Runner scope: tuquet(runner)> (aliases: daemon, worker)
-tuquet cloud     # Enter Cloud scope:  tuquet(cloud)>  (alias: auth)
+tuquet runner    # Enter Runner scope: tuquet(runner)>
+tuquet cloud     # Enter Cloud scope:  tuquet(cloud)>
 tuquet browser   # Enter Browser scope: tuquet(browser)>
 ```
 
@@ -67,7 +67,7 @@ tuquet browser   # Enter Browser scope: tuquet(browser)>
 Supports direct execution from scripts, terminals, or CI pipelines without entering the interactive shell:
 
 ### 1. Global & State Management
-```powershell
+```console
 tuquet status               # Comprehensive health check: Browser, Runner Daemon, Cloud Pairing
 tuquet login [token]        # Authenticate workstation with Cloud Control Plane
 tuquet whoami               # Inspect workstation identity and pairing credentials
@@ -75,7 +75,7 @@ tuquet logout               # Disconnect and revoke local cloud session credenti
 ```
 
 ### 2. Browser Automation (Automa Engine)
-```powershell
+```console
 # Run a workflow (supports .json file path or workflow ID stored in vault/DB)
 tuquet automa run ./my_workflow.json --headless
 tuquet automa run <workflow-id> --timeout 60
@@ -93,7 +93,7 @@ tuquet automa studio
 ```
 
 ### 3. Daemon & Cloud Worker (Runner Engine)
-```powershell
+```console
 tuquet runner start --port 8765         # Start Runner Daemon in foreground
 tuquet runner status                    # Check local Runner daemon health
 tuquet runner probe                     # Inspect hardware specs & driver capabilities
@@ -104,11 +104,11 @@ tuquet runner setup-ext                 # Developer utility to launch browser pr
 ### 4. Isolated Chromium Runtime Management
 Tuquet manages a dedicated, pure open-source Chromium LTS runtime, completely decoupled from the OS default browser:
 
-```powershell
+```console
 tuquet browser status                   # Check runtime version, install path, and disk usage
 tuquet browser install                  # Automatically download and configure isolated Chromium
 tuquet browser install --force          # Reinstall runtime if corrupted
-tuquet browser path                     # Print absolute executable path to chromium.exe
+tuquet browser path                     # Print absolute executable path to chromium
 tuquet browser clean                    # Purge Chromium runtime to free disk space
 ```
 

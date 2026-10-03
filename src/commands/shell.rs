@@ -95,11 +95,11 @@ impl Highlighter for TuquetHighlighter {
         let valid_commands = match self.scope {
             ShellScope::Global => vec![
                 "use", "automa", "runner", "cloud", "browser", "status", "whoami", "login",
-                "logout", "run", "list", "ls", "studio", "inspect", "import", "export",
+                "logout", "run", "list", "studio", "inspect", "import", "export",
                 "delete", "install", "clean", "path", "ext", "help", "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Automa => vec![
-                "run", "list", "ls", "inspect", "import", "export", "delete", "rm", "studio",
+                "run", "list", "inspect", "import", "export", "delete", "studio",
                 "back", "help", "clear", "cls", "exit", "quit", "q",
             ],
             ShellScope::Runner => vec![
@@ -283,13 +283,13 @@ impl Completer for TuquetCompleter {
                     }
                 }
             }
-        } else if words_before.len() == 1 && (words_before[0] == "ext" || words_before[0] == "extension") {
+        } else if words_before.len() == 1 && words_before[0] == "ext" {
             let ext_subcmds = [
-                ("catalog", "Browse available extensions in tuquet-scoop-bucket (alias: search)"),
+                ("catalog", "Browse available extensions in tuquet-scoop-bucket"),
                 ("install", "Download and install extension from catalog"),
-                ("list", "List all registered extensions (alias: ls)"),
+                ("list", "List all registered extensions"),
                 ("add", "Register custom extension from local directory"),
-                ("remove", "Unregister extension by ID (alias: rm)"),
+                ("remove", "Unregister extension by ID"),
                 ("enable", "Enable extension for automated sessions"),
                 ("disable", "Disable extension"),
                 ("info", "Show extension details and manifest metadata"),
@@ -310,8 +310,8 @@ impl Completer for TuquetCompleter {
 pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let mut scope = match initial_service.map(|s| s.to_lowercase()).as_deref() {
         Some("automa") => ShellScope::Automa,
-        Some("runner") | Some("daemon") | Some("worker") => ShellScope::Runner,
-        Some("cloud") | Some("auth") => ShellScope::Cloud,
+        Some("runner") => ShellScope::Runner,
+        Some("cloud") => ShellScope::Cloud,
         Some("browser") => ShellScope::Browser,
         _ => ShellScope::Global,
     };
@@ -504,11 +504,11 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                         *scope = ShellScope::Automa;
                         println!("Switched to \x1b[38;2;251;191;36mAutoma\x1b[0m context (Browser automation engine).");
                     }
-                    "runner" | "daemon" | "worker" => {
+                    "runner" => {
                         *scope = ShellScope::Runner;
                         println!("Switched to \x1b[38;2;74;222;128mRunner\x1b[0m context (Distributed daemon & node).");
                     }
-                    "cloud" | "auth" => {
+                    "cloud" => {
                         *scope = ShellScope::Cloud;
                         println!("Switched to \x1b[38;2;168;85;247mCloud\x1b[0m context (Authentication & pairing).");
                     }
@@ -516,7 +516,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                         *scope = ShellScope::Browser;
                         println!("Switched to \x1b[38;2;96;165;250mBrowser\x1b[0m context (Isolated Chromium management).");
                     }
-                    "global" | "root" => {
+                    "global" => {
                         *scope = ShellScope::Global;
                         println!("Returned to \x1b[1;38;2;56;189;248mGlobal\x1b[0m context.");
                     }
@@ -539,7 +539,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
         _ => {}
     }
 
-    // Direct scope switching shortcuts in Global: "automa", "runner", "cloud", "browser" + aliases
+    // Direct scope switching shortcuts in Global: "automa", "runner", "cloud", "browser"
     if *scope == ShellScope::Global {
         match cmd {
             "automa" if args.is_empty() => {
@@ -547,12 +547,12 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
                 println!("Switched to \x1b[38;2;251;191;36mAutoma\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
-            "runner" | "daemon" | "worker" if args.is_empty() => {
+            "runner" if args.is_empty() => {
                 *scope = ShellScope::Runner;
                 println!("Switched to \x1b[38;2;74;222;128mRunner\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
             }
-            "cloud" | "auth" if args.is_empty() => {
+            "cloud" if args.is_empty() => {
                 *scope = ShellScope::Cloud;
                 println!("Switched to \x1b[38;2;168;85;247mCloud\x1b[0m context. Type 'help' for commands, 'back' to return.");
                 return Ok(false);
@@ -571,10 +571,10 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
         ShellScope::Automa if cmd == "automa" && !args.is_empty() => {
             return dispatch_automa(args[0], &args[1..]).await.map(|_| false);
         }
-        ShellScope::Runner if matches!(cmd, "runner" | "daemon" | "worker") && !args.is_empty() => {
+        ShellScope::Runner if cmd == "runner" && !args.is_empty() => {
             return dispatch_runner(args[0], &args[1..]).await.map(|_| false);
         }
-        ShellScope::Cloud if matches!(cmd, "cloud" | "auth") && !args.is_empty() => {
+        ShellScope::Cloud if cmd == "cloud" && !args.is_empty() => {
             return dispatch_cloud(args[0], &args[1..]).await.map(|_| false);
         }
         ShellScope::Browser if cmd == "browser" && !args.is_empty() => {
@@ -616,14 +616,14 @@ async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
                 dispatch_automa(args[0], &args[1..]).await?;
             }
         }
-        "runner" | "daemon" | "worker" => {
+        "runner" => {
             if args.is_empty() {
-                println!("Usage: runner <status | probe | export-openapi | setup-ext | start>");
+                println!("Usage: runner <start | stop | restart | status | logs | probe | export-openapi | setup-ext>");
             } else {
                 dispatch_runner(args[0], &args[1..]).await?;
             }
         }
-        "cloud" | "auth" => {
+        "cloud" => {
             if args.is_empty() {
                 println!("Usage: cloud <login | logout | whoami>");
             } else {
@@ -632,13 +632,13 @@ async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
         }
         "browser" => {
             if args.is_empty() {
-                println!("Usage: browser <status | install | clean | path>");
+                println!("Usage: browser <status | install | clean | path | ext>");
             } else {
                 dispatch_browser(args[0], &args[1..]).await?;
             }
         }
         // Direct Global convenience commands
-        "run" | "list" | "ls" | "inspect" | "import" | "export" | "delete" | "studio" => {
+        "run" | "list" | "inspect" | "import" | "export" | "delete" | "studio" => {
             dispatch_automa(cmd, args).await?;
         }
         "install" | "clean" | "path" => {
@@ -677,7 +677,7 @@ async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
                 .await?;
             }
         }
-        "list" | "ls" => {
+        "list" => {
             let search = args.first().map(|s| s.to_string());
             crate::commands::automa::list_workflows(search, false, false).await?;
         }
@@ -715,7 +715,7 @@ async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::er
                 crate::commands::automa::export_workflow(id, output).await?;
             }
         }
-        "delete" | "rm" => {
+        "delete" => {
             if args.is_empty() {
                 println!("Usage: delete <workflow_id> [--vault]");
             } else {
@@ -813,15 +813,15 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
         "path" => {
             crate::commands::browser::handle(crate::cli::BrowserCommands::Path).await?;
         }
-        "ext" | "setup-ext" => {
+        "ext" => {
             let subcmd_str = args.first().copied();
             let ext_subcmd = match subcmd_str {
-                Some("list") | Some("ls") => Some(crate::cli::ExtCommands::List),
-                Some("catalog") | Some("search") | Some("available") => {
+                Some("list") => Some(crate::cli::ExtCommands::List),
+                Some("catalog") => {
                     let query = args.get(1).map(|s| s.to_string());
                     Some(crate::cli::ExtCommands::Catalog { query })
                 }
-                Some("install") | Some("get") => {
+                Some("install") => {
                     let id = args.get(1).copied().unwrap_or("automa").to_string();
                     let force = args.contains(&"-f") || args.contains(&"--force");
                     Some(crate::cli::ExtCommands::Install { id, force })
@@ -833,7 +833,7 @@ async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::e
                         id: args.get(2).map(|s| s.to_string()),
                     })
                 }
-                Some("remove") | Some("rm") => {
+                Some("remove") => {
                     let id = args.get(1).copied().unwrap_or("").to_string();
                     Some(crate::cli::ExtCommands::Remove { id })
                 }
