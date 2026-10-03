@@ -2640,7 +2640,7 @@
           "System"
         ],
         "summary": "Get runner machine identity and system capabilities",
-        "description": "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Tuquet Runner orchestration.",
+        "description": "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Runner orchestration.",
         "operationId": "get_system_info",
         "responses": {
           "200": {
@@ -3996,7 +3996,7 @@
           },
           "protocol": {
             "type": "string",
-            "description": "Protocol contract version for Tuquet Runner"
+            "description": "Protocol contract version for Runner"
           },
           "serverPort": {
             "type": "integer",

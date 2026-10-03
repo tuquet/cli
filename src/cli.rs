@@ -245,7 +245,7 @@ pub enum RunnerSubcommands {
         lines: usize,
     },
 
-    /// Active capability negotiation probe returning manifest JSON for Tuquet Runner
+    /// Active capability negotiation probe returning manifest JSON for Runner
     Probe,
 
     /// Developer utility: Export OpenAPI v3 JSON specification to file (Hidden)

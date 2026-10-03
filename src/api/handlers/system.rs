@@ -98,7 +98,7 @@ pub struct MachineInfo {
 pub struct RunnerIdentityResponse {
     /// Service identifier name
     pub service: String,
-    /// Protocol contract version for Tuquet Runner
+    /// Protocol contract version for Runner
     pub protocol: String,
     /// Version of automa-runner daemon
     pub version: String,
@@ -120,7 +120,7 @@ pub struct RunnerIdentityResponse {
     path = "/api/v1/system/info",
     operation_id = "get_system_info",
     summary = "Get runner machine identity and system capabilities",
-    description = "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Tuquet Runner orchestration.",
+    description = "Returns host machine identity (hostname, OS, architecture), runner service protocol, and runtime capabilities for Runner orchestration.",
     responses(
         (status = 200, description = "Runner machine identity information", body = RunnerIdentityResponse)
     )

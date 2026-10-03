@@ -166,11 +166,11 @@ CLI is the primary terminal orchestrator connecting the specialized modules of t
 | Repository / Module | GitHub Repository & README | Core Role & Architecture Link |
 | :--- | :--- | :--- |
 | **Automa** | [📘 `github.com/tuquet/automa`](https://github.com/tuquet/automa#readme) | Browser Extension manifest, Background Worker & Web Studio canvas. |
-| **Runner** | [📘 `github.com/tuquet/runner`](https://github.com/tuquet/runner#readme) | Universal distributed execution node (`tqr`), Win32 Job Objects supervision & driver router. |
+| **Runner** | [📘 `github.com/tuquet/runner`](https://github.com/tuquet/runner#readme) | Universal distributed execution node (`runner`), kernel process supervision & driver router. |
 | **Browser** | [📘 `github.com/tuquet/browser`](https://github.com/tuquet/browser#readme) | Chromium LTS runtime management, multi-profile sandbox & CDP stealth engine. |
 | **Cloud** | [📘 `github.com/tuquet/cloud`](https://github.com/tuquet/cloud#readme) | Supabase Multi-Tenant foundation, device enrollment RPC, and pairing management. |
 | **Lib** | [📘 `github.com/tuquet/lib`](https://github.com/tuquet/lib#readme) | TypeScript & Vue 3 shared monorepo (`vue-ui`, `vue-table`, `md-export`, `extension-runner`, `lunar`). |
-| **Scoop Bucket** | [📘 `github.com/tuquet/scoop-bucket`](https://github.com/tuquet/scoop-bucket#readme) | Official Windows Scoop distribution channel for CLI and runner binaries. |
+| **Scoop Bucket** | [📘 `github.com/tuquet/scoop-bucket`](https://github.com/tuquet/scoop-bucket#readme) | Official Scoop distribution channel for Tuquet unified CLI package. |
 | **Claude-Agy** | [📘 `github.com/tuquet/claude-agy`](https://github.com/tuquet/claude-agy#readme) | Claude Code CLI integration powered by Google Antigravity OAuth quotas. |
 | **Skills** | [📘 `github.com/tuquet/skills`](https://github.com/tuquet/skills#readme) | Automation skillsets, runbooks, and recipes for AI Coding Agents. |
 
