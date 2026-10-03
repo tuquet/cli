@@ -17,18 +17,18 @@
 
 ## 🚀 Installation
 
-### 1. Windows via Scoop (Recommended)
-```powershell
+### 1. Via Scoop Package Manager (Recommended)
+```console
 scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
 scoop install tuquet
 ```
 
 ### 2. Build from Source (Cargo)
-```powershell
+```console
 git clone https://github.com/tuquet/cli.git
 cd cli
 cargo build --release
-# Binary generated at: target/release/tuquet.exe
+# Binary generated at: target/release/tuquet
 ```
 
 ---
