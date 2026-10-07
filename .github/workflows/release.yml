@@ -18,6 +18,7 @@ jobs:
   build-release:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -125,7 +126,6 @@ jobs:
           files: |
             ${{ matrix.asset_prefix }}.${{ matrix.archive_ext }}
             ${{ matrix.asset_prefix }}.${{ matrix.archive_ext }}.sha256
-            dist/${{ matrix.bin_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
