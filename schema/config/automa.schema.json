@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TuquetAutomaConfig",
+  "description": "Configuration schema for Tuquet Automa Workflow Automation Engine (~/.specter/automa/automa.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "server_host": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "description": "Local HTTP server binding host address"
+    },
+    "server_port": {
+      "type": "integer",
+      "default": 8765,
+      "description": "Local HTTP server listening port"
+    },
+    "vault_dir": {
+      "type": "string",
+      "description": "Directory storing workflow JSON templates (defaults to ~/.specter/automa/workflows)"
+    },
+    "sqlite_path": {
+      "type": "string",
+      "description": "Path to local SQLite database (defaults to ~/.specter/automa/automa.sqlite)"
+    }
+  }
+}

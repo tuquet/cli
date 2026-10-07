@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🦀 Dev: Watch Daemon (cargo watch)",
+      "type": "shell",
+      "command": "cargo watch -x run",
+      "isBackground": true,
+      "presentation": {
+        "panel": "dedicated",
+        "clear": false
+      },
+      "problemMatcher": {
+        "owner": "rust",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*(Compiling|Automa Core|Checking).*$",
+          "endsPattern": "^.*(listening on|Server listening|could not compile|error: aborting).*$"
+        }
+      }
+    },
+    {
+      "label": "🦀 Run: Daemon (cargo run)",
+      "type": "shell",
+      "command": "cargo run -- serve",
+      "problemMatcher": [],
+      "presentation": {
+        "panel": "dedicated",
+        "clear": false
+      }
+    },
+    {
+      "label": "📦 Build: Rust Core (Release)",
+      "type": "shell",
+      "command": "cargo build --release",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🧪 Test: Rust Core (cargo test)",
+      "type": "shell",
+      "command": "cargo test",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "panel": "dedicated"
+      }
+    }
+  ]
+}
+

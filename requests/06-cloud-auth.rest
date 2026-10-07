@@ -1,0 +1,90 @@
+### Tuquet Automa Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
+@baseUrl = http://127.0.0.1:8765
+@cloudUrl = https://dswhacsoaxgpfnkaxnhz.supabase.co
+@contentType = application/json
+@anonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd2hhY3NvYXhncGZua2F4bmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTEzMzcsImV4cCI6MjEwNTg2NzMzN30.QRdxE3CPCF8CtliOtSUcSFO-jbKi99uM2AKlJgKt6RQ
+
+# ====================================================================
+# 6.1 TUQUET CLOUD - USER REGISTRATION & AUTO-TENANT PROVISIONING
+# ====================================================================
+
+### 6.1.1 Dang ky nguoi dung moi tren Tuquet Cloud (Auto-provision Personal Tenant)
+# Khi tao user thanh cong, PostgreSQL trigger 'handle_new_user' se tu dong:
+# 1. Tao Profile trong public.profiles
+# 2. Tao Personal Tenant ("<Name>'s Workspace") trong public.tenants
+# 3. Gan quyen 'owner' cho user trong public.tenant_members
+# @name userSignup
+POST {{cloudUrl}}/auth/v1/signup
+Content-Type: {{contentType}}
+apikey: {{anonKey}}
+
+{
+  "email": "dev@test.local",
+  "password": "Password!12345",
+  "data": {
+    "full_name": "Dev Automation Specialist"
+  }
+}
+
+### 6.1.2 Dang nhap Nguoi dung (User Login - lay JWT Access Token)
+# @name userLogin
+POST {{cloudUrl}}/auth/v1/token?grant_type=password
+Content-Type: {{contentType}}
+apikey: {{anonKey}}
+
+{
+  "email": "dev@test.local",
+  "password": "Password!12345"
+}
+
+### Luu JWT Token vao bien de dung cho cac request tiep theo
+@userToken = {{userLogin.response.body.access_token}}
+@userId = {{userLogin.response.body.user.id}}
+
+### 6.1.3 Kiem tra Tenant ca nhan duoc tu dong so huu boi User (Role: owner)
+GET {{cloudUrl}}/rest/v1/tenants?select=id,slug,name,plan,created_by
+Authorization: Bearer {{userToken}}
+apikey: {{anonKey}}
+
+### 6.1.4 Kiem tra Quyen han trong Tenant Members
+GET {{cloudUrl}}/rest/v1/tenant_members?select=tenant_id,user_id,role
+Authorization: Bearer {{userToken}}
+apikey: {{anonKey}}
+
+# ====================================================================
+# 6.2 LOCAL RUNNER - CLOUD PAIRING & DEVICE ENROLLMENT
+# ====================================================================
+
+### 6.2.1 Dang nhap / Ghep noi May tram (Workstation Runner) voi Cloud qua Local Daemon API
+# Local Daemon tu sinh Hardware Fingerprint va goi RPC 'runners.enroll_device'
+# @name runnerCloudLogin
+POST {{baseUrl}}/api/v1/system/cloud/login
+Content-Type: {{contentType}}
+
+{
+  "cloudUrl": "{{cloudUrl}}",
+  "token": "{{userToken}}",
+  "name": "Local-Dev-Workstation"
+}
+
+### 6.2.2 Kiem tra Trang thai Cloud Pairing tren Local Runner
+GET {{baseUrl}}/api/v1/system/cloud/status
+
+### 6.2.3 Kich hoat Dong bo Heartbeat & Browser Inventory len Cloud
+POST {{baseUrl}}/api/v1/system/cloud/sync
+
+### 6.2.4 Kiem tra Thiet bi (Runner Device) da xuat hien tren Cloud Database
+GET {{cloudUrl}}/rest/v1/devices?select=id,tenant_id,name,machine_fingerprint,status,capabilities,last_heartbeat_at
+Authorization: Bearer {{userToken}}
+apikey: {{anonKey}}
+
+### 6.2.5 Truy van Workflows Cloud cua Tenant
+GET {{cloudUrl}}/rest/v1/workflows?select=id,name,description,version,created_at
+Authorization: Bearer {{userToken}}
+apikey: {{anonKey}}
+
+### 6.2.6 Dang xuat / Huy lien ket May tram khoi Cloud (Clear device.json)
+POST {{baseUrl}}/api/v1/system/cloud/logout
+
+### 6.2.7 Xac nhan trang thai Local Runner sau khi dang xuat (Expect enrolled = false)
+GET {{baseUrl}}/api/v1/system/cloud/status

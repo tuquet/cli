@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tuquet.github.io/schema/cli.manifest.schema.json",
+  "title": "TuquetCliManifest",
+  "description": "Declarative JSON Schema definition for Tuquet Ecosystem CLI commands, pillars, and capabilities (VS Code Contributes pattern).",
+  "type": "object",
+  "required": ["$schema", "name", "version", "description", "pillars", "commands"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "const": "tuquet" },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "homepage": { "type": "string" },
+    "repository": { "type": "string" },
+    "pillars": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Canonical 5 microservice storage pillars and core systems."
+    },
+    "commands": {
+      "type": "array",
+      "description": "Full catalog of executable CLI commands and subcommands.",
+      "items": {
+        "$ref": "#/$defs/CommandDefinition"
+      }
+    },
+    "configurations": {
+      "type": "object",
+      "description": "JSON Schema mappings for local microservice configuration files."
+    },
+    "brand": {
+      "type": "object",
+      "description": "Declarative commercial product branding, alias, and positioning configuration.",
+      "required": ["productName", "cliAlias", "canonicalRoot", "tagline"],
+      "properties": {
+        "productName": { "type": "string", "description": "Commercial product brand name (e.g. Specter)." },
+        "cliAlias": { "type": "string", "description": "Commercial CLI command alias (e.g. specter)." },
+        "canonicalRoot": { "type": "string", "description": "Core ecosystem engine command name (e.g. tuquet)." },
+        "category": { "type": "string", "description": "Market product category (e.g. Agentic Antidetect Browser)." },
+        "tagline": { "type": "string", "description": "Punchy commercial value proposition." },
+        "organization": { "type": "string", "description": "Parent organization or platform umbrella (e.g. Tuquet)." },
+        "mcpServerName": { "type": "string", "description": "Standardized MCP server identifier." }
+      }
+    }
+  },
+  "$defs": {
+    "CommandDefinition": {
+      "type": "object",
+      "required": ["id", "route", "pillar", "title", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique namespaced identifier (e.g. tuquet.browser.launch, tuquet.doctor)."
+        },
+        "route": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Invocation path hierarchy (e.g. ['browser', 'launch'])."
+        },
+        "pillar": {
+          "type": "string",
+          "enum": ["system", "automa", "browser", "bridge", "faker", "runner", "cloud", "core"],
+          "description": "Target microservice pillar domain."
+        },
+        "title": {
+          "type": "string",
+          "description": "Short human-readable title formatted like VS Code Command Palette."
+        },
+        "description": {
+          "type": "string",
+          "description": "Clear description explaining what this command accomplishes."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Shorthand aliases recognized by the shell or CLI parser."
+        },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ArgumentDefinition" },
+          "description": "Positional arguments expected by the command."
+        },
+        "options": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OptionDefinition" },
+          "description": "Command flags and named options."
+        },
+        "mcp": {
+          "type": "object",
+          "properties": {
+            "tool_name": { "type": "string" },
+            "exported": { "type": "boolean" }
+          },
+          "description": "Mapping to AI Agent Model Context Protocol tool definition."
+        },
+        "when": {
+          "type": "string",
+          "description": "Contextual enablement clause matching VS Code when-clauses."
+        }
+      }
+    },
+    "ArgumentDefinition": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["string", "integer", "boolean", "path", "choice"] },
+        "required": { "type": "boolean", "default": false },
+        "default": {},
+        "description": { "type": "string" },
+        "choices": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "OptionDefinition": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "short": { "type": "string" },
+        "type": { "type": "string", "enum": ["string", "integer", "boolean", "path", "choice"] },
+        "default": {},
+        "description": { "type": "string" },
+        "choices": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

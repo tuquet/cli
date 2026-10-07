@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TuquetFakerConfig",
+  "description": "Configuration schema for Tuquet Synthetic Persona Generator (~/.specter/faker/faker.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "locale": {
+      "type": "string",
+      "default": "vi_VN",
+      "description": "Primary identity localization locale (e.g. vi_VN, en_US, ja_JP)"
+    },
+    "custom_templates_dir": {
+      "type": "string",
+      "description": "Directory storing custom synthetic data generation schemas"
+    }
+  }
+}

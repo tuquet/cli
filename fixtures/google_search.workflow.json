@@ -1,0 +1,58 @@
+{
+  "id": "google_search",
+  "name": "Google Search Bot",
+  "description": "Automated Google search workflow with parameter keyword",
+  "version": "1.0.0",
+  "icon": "ri-search-line",
+  "drawflow": {
+    "nodes": [
+      {
+        "id": "node_trigger",
+        "type": "trigger",
+        "label": "trigger",
+        "data": {
+          "type": "manual",
+          "parameters": [
+            {
+              "name": "keyword",
+              "defaultValue": "Tuquet Automa Runner"
+            }
+          ]
+        }
+      },
+      {
+        "id": "node_open_tab",
+        "type": "new-tab",
+        "label": "new-tab",
+        "data": {
+          "url": "https://www.google.com"
+        }
+      },
+      {
+        "id": "node_forms",
+        "type": "forms",
+        "label": "forms",
+        "data": {
+          "selector": "textarea[name='q']",
+          "value": "{{keyword}}"
+        }
+      },
+      {
+        "id": "node_delay",
+        "type": "delay",
+        "label": "delay",
+        "data": {
+          "time": 2000
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "node_trigger", "target": "node_open_tab" },
+      { "id": "e2", "source": "node_open_tab", "target": "node_forms" },
+      { "id": "e3", "source": "node_forms", "target": "node_delay" }
+    ]
+  },
+  "variables": {
+    "default_timeout": 30000
+  }
+}

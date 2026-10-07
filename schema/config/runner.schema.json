@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TuquetRunnerConfig",
+  "description": "Configuration schema for Tuquet Distributed Runner Daemon Worker (~/.specter/automa/runner.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "server_host": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "description": "Daemon worker listening host IP"
+    },
+    "server_port": {
+      "type": "integer",
+      "default": 8765,
+      "description": "Daemon worker listening port"
+    },
+    "max_concurrent_jobs": {
+      "type": "integer",
+      "default": 4,
+      "description": "Maximum concurrent job workers allowed"
+    },
+    "cloud_sync_interval_secs": {
+      "type": "integer",
+      "default": 30,
+      "description": "Heartbeat and cloud sync interval in seconds"
+    }
+  }
+}

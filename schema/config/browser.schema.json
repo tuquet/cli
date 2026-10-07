@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TuquetBrowserConfig",
+  "description": "Configuration schema for Tuquet Dedicated Isolated Chromium Runtime (~/.specter/browser/browser.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "default_cdp_port": {
+      "type": "integer",
+      "default": 9222,
+      "description": "Default DevTools CDP debugging port for browser automation"
+    },
+    "headless": {
+      "type": "boolean",
+      "default": false,
+      "description": "Launch browser in headless mode by default"
+    },
+    "lts_version": {
+      "type": "string",
+      "default": "148",
+      "description": "Target Chromium Golden LTS engine version"
+    },
+    "custom_binary_path": {
+      "type": "string",
+      "description": "Optional absolute path override to custom Chromium executable"
+    },
+    "default_proxy": {
+      "type": "string",
+      "description": "Default proxy server URL for launched browser sessions (e.g. socks5://127.0.0.1:1080)"
+    },
+    "default_profile": {
+      "type": "string",
+      "default": "default",
+      "description": "Default browser profile name when omitted in 'tuquet launch'"
+    }
+  }
+}

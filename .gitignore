@@ -1,0 +1,36 @@
+# Rust Build Outputs
+/target/
+coverage/
+*.profraw
+*.profdata
+
+# SQLite & Runtime Databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+# Local Automation & Browser Cache
+.automa/
+.browser_cache/
+*.log
+
+# Temporary / Scratch Files
+scratch/
+*.zip
+
+# Operating System & IDE Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# Sensitive Local Configurations (Never commit real hosts, keys, or endpoints)
+bridge.toml
+bridge.json
+*.local.toml
+*.local.json
+

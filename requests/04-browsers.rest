@@ -1,0 +1,57 @@
+### Tuquet Automa Runner - Browser Profiles & Lifecycle Isolation
+@baseUrl = http://127.0.0.1:8765
+@contentType = application/json
+
+### 4.1 Danh sach tat ca Browser Profiles
+GET {{baseUrl}}/api/v1/browsers
+
+### 4.2 Tao Browser Profile moi (Ho tro Fingerprint & Proxy)
+# @name createProfile
+POST {{baseUrl}}/api/v1/browsers
+Content-Type: {{contentType}}
+
+{
+  "name": "Dev Automation Profile",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "proxy": "socks5://127.0.0.1:1080"
+}
+
+### 4.3 Xem chi tiet Browser Profile theo ID (Kiem tra proxy & isDefault)
+@targetProfileId = {{createProfile.response.body.id}}
+GET {{baseUrl}}/api/v1/browsers/{{targetProfileId}}
+
+### 4.4 Cap nhat Browser Profile (Cap nhat Ten, Fingerprint & Proxy)
+PUT {{baseUrl}}/api/v1/browsers/{{targetProfileId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Updated Dev Automation Profile",
+  "timezone": "UTC",
+  "proxy": "socks5://127.0.0.1:1080"
+}
+
+### 4.5 Thiet lap Browser Profile lam Default Profile
+POST {{baseUrl}}/api/v1/browsers/{{targetProfileId}}/set-default
+
+### 4.6 Mo trinh duyet truc tiep (Manual session voi Custom URL)
+# @name startSession
+POST {{baseUrl}}/api/v1/browsers/{{targetProfileId}}/session
+Content-Type: {{contentType}}
+
+{
+  "headless": false,
+  "startUrl": "https://www.google.com"
+}
+
+### 4.7 Dong phien trinh duyet manual
+DELETE {{baseUrl}}/api/v1/browsers/{{targetProfileId}}/session
+
+### 4.8 Don sach tat ca tien trinh Chromium dang chay
+DELETE {{baseUrl}}/api/v1/browsers/sessions
+
+### 4.9 Xoa Browser Profile
+DELETE {{baseUrl}}/api/v1/browsers/{{targetProfileId}}
+
+### 4.10 Negative Test - Truy van Browser Profile khong ton tai (Expect 404 Not Found)
+GET {{baseUrl}}/api/v1/browsers/non-existent-profile-uuid

@@ -1,0 +1,1608 @@
+{
+  "$schema": "https://tuquet.github.io/schema/cli.manifest.schema.json",
+  "name": "tuquet",
+  "version": "1.0.0",
+  "description": "Autonomous Browser Automation & Distributed Mesh Runtime",
+  "homepage": "https://tuquet.github.io",
+  "repository": "https://github.com/tuquet/cli",
+  "brand": {
+    "productName": "Specter",
+    "cliAlias": "specter",
+    "canonicalRoot": "tuquet",
+    "category": "Hạ tầng Tự động hóa & Trình duyệt Ẩn danh All-in-One",
+    "tagline": "Vũ khí All-in-One miễn phí chuẩn kỹ thuật cao dành cho dân MMO, Dropshipping và Web Scraper.",
+    "organization": "Tuquet",
+    "mcpServerName": "specter",
+    "telegram": "tuquet"
+  },
+  "pillars": [
+    "system",
+    "automa",
+    "browser",
+    "bridge",
+    "faker",
+    "runner",
+    "cloud"
+  ],
+  "commands": [
+    {
+      "id": "tuquet.bootstrap",
+      "route": [
+        "bootstrap"
+      ],
+      "pillar": "system",
+      "title": "One-Command Workstation Onboarding",
+      "description": "Initialize 5 SSOT storage pillars, SQLite database, native MCP stdio server, and download Chromium Golden LTS.",
+      "options": [
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force re-download and re-provisioning of runtimes even if already present."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.config",
+      "route": [
+        "config"
+      ],
+      "pillar": "system",
+      "title": "Unified Configuration Manager",
+      "description": "Inspect or edit configuration across Tuquet microservice pillars (~/.specter/).",
+      "arguments": [
+        {
+          "name": "service",
+          "type": "choice",
+          "required": false,
+          "description": "Target service (bridge, automa, runner, browser, cloud, system, faker)",
+          "choices": [
+            "bridge",
+            "automa",
+            "runner",
+            "browser",
+            "cloud",
+            "system",
+            "faker"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "name": "edit",
+          "short": "e",
+          "type": "boolean",
+          "default": false,
+          "description": "Open target configuration file in system default editor."
+        },
+        {
+          "name": "show",
+          "short": "s",
+          "type": "boolean",
+          "default": false,
+          "description": "Display structured configuration details and summary card."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.doctor",
+      "route": [
+        "doctor"
+      ],
+      "pillar": "system",
+      "title": "System & Dependency Health Check",
+      "description": "Check system dependencies, required tools, network tunnels, and environment health.",
+      "options": [
+        {
+          "name": "fix",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Attempt automatic remediation of missing dependencies where supported."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.mcp",
+      "route": [
+        "mcp"
+      ],
+      "pillar": "system",
+      "title": "Run MCP Stdio Server",
+      "description": "Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents."
+    },
+    {
+      "id": "tuquet.schema",
+      "route": [
+        "schema"
+      ],
+      "pillar": "system",
+      "title": "Schema Manifest & Introspection",
+      "description": "Inspect and export CLI command manifests and microservice JSON schemas.",
+      "options": [
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": false,
+          "description": "Output schema in raw JSON format for machine parsing."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.schema.commands",
+      "route": [
+        "schema",
+        "commands"
+      ],
+      "pillar": "system",
+      "title": "Export Command Manifest",
+      "description": "List or export the full command manifest catalog matching the VS Code contributes standard.",
+      "options": [
+        {
+          "name": "pillar",
+          "short": "p",
+          "type": "string",
+          "description": "Filter commands by microservice pillar domain."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": false,
+          "description": "Output catalog in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.schema.config",
+      "route": [
+        "schema",
+        "config"
+      ],
+      "pillar": "system",
+      "title": "Export Configuration JSON Schema",
+      "description": "Export the JSON Schema definition for a microservice configuration file.",
+      "arguments": [
+        {
+          "name": "service",
+          "type": "choice",
+          "required": true,
+          "description": "Service configuration schema to output",
+          "choices": [
+            "bridge",
+            "browser",
+            "automa",
+            "runner",
+            "faker",
+            "system"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tuquet.schema.mcp",
+      "route": [
+        "schema",
+        "mcp"
+      ],
+      "pillar": "system",
+      "title": "Export MCP Agent Tools Catalog",
+      "description": "Export the AI Agent Model Context Protocol (MCP) tool schemas generated from this manifest."
+    },
+    {
+      "id": "tuquet.shell",
+      "route": [
+        "shell"
+      ],
+      "pillar": "system",
+      "title": "Interactive Tuquet REPL Shell",
+      "description": "Launch interactive scoped terminal shell session with auto-completion and hotkeys.",
+      "arguments": [
+        {
+          "name": "service",
+          "type": "string",
+          "required": false,
+          "description": "Optional service domain to scope REPL into (automa, browser, bridge, faker)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.status",
+      "route": [
+        "status"
+      ],
+      "pillar": "system",
+      "title": "System Status Overview",
+      "description": "Show unified status overview across Cloud, Runner, Bridge, and Antidetect Browser.",
+      "options": [
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": false,
+          "description": "Output status in raw JSON format for machine parsing and automation pipelines."
+        }
+      ],
+      "mcp": {
+        "tool_name": "tuquet_status",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.upgrade",
+      "route": [
+        "upgrade"
+      ],
+      "pillar": "system",
+      "title": "Upgrade Tuquet CLI",
+      "description": "Check and atomically upgrade Tuquet CLI binary in-place to latest release."
+    },
+    {
+      "id": "tuquet.automa.inspect",
+      "route": [
+        "automa",
+        "inspect"
+      ],
+      "pillar": "automa",
+      "title": "Inspect Workflow DAG",
+      "description": "Inspect and validate a workflow JSON file, its block sequence, and parameters.",
+      "arguments": [
+        {
+          "name": "workflow",
+          "type": "string",
+          "required": true,
+          "description": "Path to workflow file or saved workflow ID."
+        }
+      ],
+      "mcp": {
+        "tool_name": "tuquet_workflow_inspect",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.automa.probe",
+      "route": [
+        "automa",
+        "probe"
+      ],
+      "pillar": "automa",
+      "title": "Probe Automation Engine",
+      "description": "Probe Automa manifest capabilities and protocol version."
+    },
+    {
+      "id": "tuquet.automa.run",
+      "route": [
+        "automa",
+        "run"
+      ],
+      "pillar": "automa",
+      "title": "Execute Automation Workflow",
+      "description": "Execute a DAG workflow directly via Chromium automation worker.",
+      "arguments": [
+        {
+          "name": "workflow_pos",
+          "type": "string",
+          "required": false,
+          "description": "Positional path or saved workflow ID."
+        }
+      ],
+      "options": [
+        {
+          "name": "workflow",
+          "short": "w",
+          "type": "string",
+          "description": "Path to workflow JSON file or stored workflow ID."
+        },
+        {
+          "name": "headless",
+          "type": "boolean",
+          "default": false,
+          "description": "Run browser in headless mode."
+        },
+        {
+          "name": "var",
+          "short": "p",
+          "type": "string",
+          "description": "Workflow variable overrides in KEY=VALUE format."
+        },
+        {
+          "name": "timeout",
+          "short": "t",
+          "type": "integer",
+          "description": "Optional execution timeout in seconds."
+        }
+      ],
+      "mcp": {
+        "tool_name": "tuquet_workflow_run",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.automa.studio",
+      "route": [
+        "automa",
+        "studio"
+      ],
+      "pillar": "automa",
+      "title": "Launch Automa Web Studio",
+      "description": "Launch Automa Web Studio in default system browser."
+    },
+    {
+      "id": "tuquet.automa.workflow.delete",
+      "route": [
+        "automa",
+        "workflow",
+        "delete"
+      ],
+      "pillar": "automa",
+      "title": "Delete Stored Workflow",
+      "description": "Delete a workflow from database and vault.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Workflow ID to delete."
+        }
+      ],
+      "options": [
+        {
+          "name": "vault",
+          "type": "boolean",
+          "default": true,
+          "description": "Also delete from vault directory if present."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.automa.workflow.export",
+      "route": [
+        "automa",
+        "workflow",
+        "export"
+      ],
+      "pillar": "automa",
+      "title": "Export Workflow File",
+      "description": "Export a workflow from database or vault to a JSON file.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Workflow ID or Name to export."
+        }
+      ],
+      "options": [
+        {
+          "name": "output",
+          "short": "o",
+          "type": "path",
+          "description": "Destination file path (default: <id>.workflow.json)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.automa.workflow.import",
+      "route": [
+        "automa",
+        "workflow",
+        "import"
+      ],
+      "pillar": "automa",
+      "title": "Import Workflow File",
+      "description": "Import a workflow file (.json) into SQLite database and vault.",
+      "arguments": [
+        {
+          "name": "file",
+          "type": "path",
+          "required": true,
+          "description": "Path to workflow JSON file (.workflow.json or .json)."
+        }
+      ],
+      "options": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Custom identifier for the workflow."
+        },
+        {
+          "name": "name",
+          "short": "n",
+          "type": "string",
+          "description": "Custom display name for the workflow."
+        },
+        {
+          "name": "description",
+          "short": "d",
+          "type": "string",
+          "description": "Custom description for the workflow."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.automa.workflow.info",
+      "route": [
+        "automa",
+        "workflow",
+        "info"
+      ],
+      "pillar": "automa",
+      "title": "Inspect Stored Workflow Details",
+      "description": "Inspect details, triggers, parameters, and block sequence of a stored workflow.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Workflow ID or Name."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.automa.workflow.list",
+      "route": [
+        "automa",
+        "workflow",
+        "list"
+      ],
+      "pillar": "automa",
+      "title": "List Stored Workflows",
+      "description": "List all workflows saved in SQLite database and local file vault.",
+      "options": [
+        {
+          "name": "search",
+          "short": "s",
+          "type": "string",
+          "description": "Filter workflows by keyword."
+        }
+      ],
+      "mcp": {
+        "tool_name": "tuquet_workflow_list",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.browser.clean",
+      "route": [
+        "browser",
+        "clean"
+      ],
+      "pillar": "browser",
+      "title": "Clean Browser Runtimes",
+      "description": "Delete installed browser runtime to reclaim disk space."
+    },
+    {
+      "id": "tuquet.browser.ext.add",
+      "route": [
+        "browser",
+        "ext",
+        "add"
+      ],
+      "pillar": "browser",
+      "title": "Add Local Extension",
+      "description": "Register a new browser extension from an unpacked directory.",
+      "arguments": [
+        {
+          "name": "path",
+          "type": "path",
+          "required": true,
+          "description": "Path to unpacked extension directory containing manifest.json."
+        }
+      ],
+      "options": [
+        {
+          "name": "id",
+          "short": "i",
+          "type": "string",
+          "description": "Optional custom ID for the extension (defaults to slugified manifest name)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.catalog",
+      "route": [
+        "browser",
+        "ext",
+        "catalog"
+      ],
+      "pillar": "browser",
+      "title": "Browse Extensions Catalog",
+      "description": "Browse and search available extensions from tuquet-scoop-bucket.",
+      "arguments": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": false,
+          "description": "Optional keyword to filter extensions."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.disable",
+      "route": [
+        "browser",
+        "ext",
+        "disable"
+      ],
+      "pillar": "browser",
+      "title": "Disable Extension",
+      "description": "Disable an extension.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Extension ID to disable."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.enable",
+      "route": [
+        "browser",
+        "ext",
+        "enable"
+      ],
+      "pillar": "browser",
+      "title": "Enable Extension",
+      "description": "Enable an extension for automated browser sessions.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Extension ID to enable."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.info",
+      "route": [
+        "browser",
+        "ext",
+        "info"
+      ],
+      "pillar": "browser",
+      "title": "Extension Information",
+      "description": "Show detailed metadata and manifest for an extension.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": false,
+          "default": "automa",
+          "description": "Extension ID to inspect (defaults to 'automa')."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.install",
+      "route": [
+        "browser",
+        "ext",
+        "install"
+      ],
+      "pillar": "browser",
+      "title": "Install Extension Package",
+      "description": "Download and install an extension package from tuquet-scoop-bucket.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')."
+        }
+      ],
+      "options": [
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force re-download and overwrite existing installation."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.launch",
+      "route": [
+        "browser",
+        "ext",
+        "launch"
+      ],
+      "pillar": "browser",
+      "title": "Launch Browser With Extensions",
+      "description": "Launch browser with specified extension(s) or all enabled extensions.",
+      "options": [
+        {
+          "name": "ext",
+          "short": "e",
+          "type": "string",
+          "description": "Comma-separated extension IDs to load (or 'all' for all enabled)."
+        },
+        {
+          "name": "browser",
+          "short": "b",
+          "type": "string",
+          "default": "chrome",
+          "description": "Target browser to launch (chrome, edge, brave)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.list",
+      "route": [
+        "browser",
+        "ext",
+        "list"
+      ],
+      "pillar": "browser",
+      "title": "List Registered Extensions",
+      "description": "List all registered browser extensions."
+    },
+    {
+      "id": "tuquet.browser.ext.path",
+      "route": [
+        "browser",
+        "ext",
+        "path"
+      ],
+      "pillar": "browser",
+      "title": "Extension Filesystem Path",
+      "description": "Print the absolute filesystem path of an extension (defaults to 'automa').",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": false,
+          "default": "automa",
+          "description": "Extension ID (defaults to 'automa')."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.ext.remove",
+      "route": [
+        "browser",
+        "ext",
+        "remove"
+      ],
+      "pillar": "browser",
+      "title": "Remove Extension",
+      "description": "Unregister a browser extension by ID.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Extension ID to remove."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.install",
+      "route": [
+        "browser",
+        "install"
+      ],
+      "pillar": "browser",
+      "title": "Install Antidetect Chromium",
+      "description": "Download and provision Chromium C++ Antidetect engine from curated manifest.",
+      "arguments": [
+        {
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "description": "Target version or channel (e.g. '148', 'v148', '144', 'lts')."
+        }
+      ],
+      "options": [
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force re-download even if already installed."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.launch",
+      "route": [
+        "browser",
+        "launch"
+      ],
+      "pillar": "browser",
+      "title": "Launch Browser In Profile",
+      "description": "Launch an antidetect browser profile with direct CDP DevTools bridge.",
+      "arguments": [
+        {
+          "name": "profile",
+          "type": "string",
+          "required": false,
+          "default": "default",
+          "description": "Target profile ID or name (default: 'default')."
+        }
+      ],
+      "options": [
+        {
+          "name": "port",
+          "short": "p",
+          "type": "integer",
+          "default": 9222,
+          "description": "Chrome DevTools Protocol (CDP) port for Playwright / Puppeteer automation."
+        },
+        {
+          "name": "headless",
+          "type": "boolean",
+          "default": false,
+          "description": "Run browser in headless mode."
+        },
+        {
+          "name": "url",
+          "short": "u",
+          "type": "string",
+          "description": "Initial URL to navigate to."
+        },
+        {
+          "name": "detach",
+          "short": "d",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in background without keeping terminal attached."
+        },
+        {
+          "name": "proxy",
+          "type": "string",
+          "description": "Override proxy server (e.g. socks5://127.0.0.1:1080)."
+        },
+        {
+          "name": "mode",
+          "short": "m",
+          "type": "string",
+          "default": "driver",
+          "description": "Automation mode: 'driver' or 'extension'."
+        },
+        {
+          "name": "no_cdp",
+          "type": "boolean",
+          "default": false,
+          "description": "Shortcut for --mode extension (disables remote debugging port completely)."
+        },
+        {
+          "name": "skip_proxy_check",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass pre-flight proxy healthcheck and launch immediately."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.list",
+      "route": [
+        "browser",
+        "list"
+      ],
+      "pillar": "browser",
+      "title": "List Installed Browser Engines",
+      "description": "List all locally installed Chromium runtimes on this workstation."
+    },
+    {
+      "id": "tuquet.browser.path",
+      "route": [
+        "browser",
+        "path"
+      ],
+      "pillar": "browser",
+      "title": "Browser Executable Path",
+      "description": "Print the absolute executable path of the browser (for scripting / integrations)."
+    },
+    {
+      "id": "tuquet.browser.profile.cloud.acquire",
+      "route": [
+        "browser",
+        "profile",
+        "cloud",
+        "acquire"
+      ],
+      "pillar": "browser",
+      "title": "Acquire Cloud Profile Lease Lock",
+      "description": "Acquire exclusive distributed lease lock on a cloud browser profile.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Cloud Browser Profile ID (UUID) or name."
+        }
+      ],
+      "options": [
+        {
+          "name": "json",
+          "type": "boolean",
+          "default": false,
+          "description": "Output result in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.cloud.list",
+      "route": [
+        "browser",
+        "profile",
+        "cloud",
+        "list"
+      ],
+      "pillar": "browser",
+      "title": "List Cloud Browser Profiles",
+      "description": "List all central cloud browser profiles in current tenant.",
+      "options": [
+        {
+          "name": "json",
+          "type": "boolean",
+          "default": false,
+          "description": "Output result in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.cloud.release",
+      "route": [
+        "browser",
+        "profile",
+        "cloud",
+        "release"
+      ],
+      "pillar": "browser",
+      "title": "Release Cloud Profile Lease Lock",
+      "description": "Release distributed lease lock and synchronize session delta back to cloud.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Cloud Browser Profile ID (UUID) or name."
+        }
+      ],
+      "options": [
+        {
+          "name": "json",
+          "type": "boolean",
+          "default": false,
+          "description": "Output result in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.create",
+      "route": [
+        "browser",
+        "profile",
+        "create"
+      ],
+      "pillar": "browser",
+      "title": "Create Browser Profile",
+      "description": "Create a new isolated profile with deterministic hardware specs and PRNG seed.",
+      "arguments": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Profile name (e.g. Facebook-Ad-VN, TikTok-US)."
+        }
+      ],
+      "options": [
+        {
+          "name": "seed",
+          "short": "s",
+          "type": "integer",
+          "description": "Deterministic PRNG seed (random u32 if omitted)."
+        },
+        {
+          "name": "os",
+          "type": "choice",
+          "default": "windows",
+          "description": "Operating system platform to spoof.",
+          "choices": [
+            "windows",
+            "macos",
+            "linux"
+          ]
+        },
+        {
+          "name": "cores",
+          "type": "integer",
+          "description": "CPU cores count to spoof in navigator.hardwareConcurrency."
+        },
+        {
+          "name": "ram",
+          "type": "integer",
+          "description": "RAM size in GB to spoof in navigator.deviceMemory."
+        },
+        {
+          "name": "proxy",
+          "type": "string",
+          "description": "Proxy URL to route profile traffic (e.g. socks5://127.0.0.1:1080)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.delete",
+      "route": [
+        "browser",
+        "profile",
+        "delete"
+      ],
+      "pillar": "browser",
+      "title": "Delete Browser Profile",
+      "description": "Delete a browser profile and permanently purge its sandbox directory.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Profile identifier or display name."
+        }
+      ],
+      "options": [
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force deletion without confirmation prompt."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.inspect",
+      "route": [
+        "browser",
+        "profile",
+        "inspect"
+      ],
+      "pillar": "browser",
+      "title": "Inspect Profile Hardware Specs",
+      "description": "Inspect detailed hardware fingerprint specifications of an isolated profile.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Profile identifier or display name."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.list",
+      "route": [
+        "browser",
+        "profile",
+        "list"
+      ],
+      "pillar": "browser",
+      "title": "List Browser Profiles",
+      "description": "List all local browser profiles in ~/.specter/browser/profiles/."
+    },
+    {
+      "id": "tuquet.browser.profile.pack",
+      "route": [
+        "browser",
+        "profile",
+        "pack"
+      ],
+      "pillar": "browser",
+      "title": "Pack Profile Snapshot",
+      "description": "Pack a profile into a lightweight .tar.zst archive with cache filtering and SHA-256 hash.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Profile identifier to compress."
+        }
+      ],
+      "options": [
+        {
+          "name": "output",
+          "short": "o",
+          "type": "path",
+          "description": "Custom destination archive path."
+        },
+        {
+          "name": "level",
+          "short": "l",
+          "type": "integer",
+          "default": 3,
+          "description": "Zstandard compression level (1-19)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.test_proxy",
+      "route": [
+        "browser",
+        "profile",
+        "test-proxy"
+      ],
+      "pillar": "browser",
+      "title": "Test Profile Proxy",
+      "description": "Probe and test the proxy configured for a specific profile.",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "Profile ID or name."
+        }
+      ],
+      "options": [
+        {
+          "name": "timeout",
+          "short": "t",
+          "type": "integer",
+          "default": 5,
+          "description": "Probe timeout in seconds (default: 5)."
+        },
+        {
+          "name": "json",
+          "type": "boolean",
+          "default": false,
+          "description": "Output diagnostic result in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.profile.unpack",
+      "route": [
+        "browser",
+        "profile",
+        "unpack"
+      ],
+      "pillar": "browser",
+      "title": "Unpack Profile Snapshot",
+      "description": "Unpack and restore a profile from a .tar.zst archive into SSOT storage with integrity check.",
+      "arguments": [
+        {
+          "name": "archive",
+          "type": "path",
+          "required": true,
+          "description": "Path to .tar.zst profile archive."
+        }
+      ],
+      "options": [
+        {
+          "name": "hash",
+          "type": "string",
+          "description": "Optional expected SHA-256 integrity hash."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.search",
+      "route": [
+        "browser",
+        "search"
+      ],
+      "pillar": "browser",
+      "title": "Search Browser Releases",
+      "description": "Search and list available engine releases from the curated manifest.",
+      "options": [
+        {
+          "name": "remote",
+          "short": "r",
+          "type": "boolean",
+          "default": false,
+          "description": "Force refreshing remote manifest from GitHub CDN."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.status",
+      "route": [
+        "browser",
+        "status"
+      ],
+      "pillar": "browser",
+      "title": "Browser Engine Status",
+      "description": "Display installation status, executable path, and disk usage of dedicated browser.",
+      "mcp": {
+        "tool_name": "tuquet_browser_status",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.browser.use",
+      "route": [
+        "browser",
+        "use"
+      ],
+      "pillar": "browser",
+      "title": "Switch Active Browser Engine",
+      "description": "Switch the active Chromium antidetect version (e.g. '148', '144', 'lts').",
+      "arguments": [
+        {
+          "name": "version",
+          "type": "string",
+          "required": true,
+          "description": "Version identifier or alias to activate."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.browser.verify",
+      "route": [
+        "browser",
+        "verify"
+      ],
+      "pillar": "browser",
+      "title": "Live Stealth Verification Demo",
+      "description": "Live visual verification & stealth presentation (Cloudflare Turnstile, Bézier mouse, smooth scroll).",
+      "options": [
+        {
+          "name": "url",
+          "short": "u",
+          "type": "string",
+          "description": "Target URL to test (defaults to Cloudflare Turnstile challenge test)."
+        },
+        {
+          "name": "headless",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in headless mode."
+        },
+        {
+          "name": "timeout",
+          "short": "t",
+          "type": "integer",
+          "default": 30,
+          "description": "Timeout in seconds for challenge resolution."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.bridge.check",
+      "route": [
+        "bridge",
+        "check"
+      ],
+      "pillar": "bridge",
+      "title": "Validate Bridge Configuration",
+      "description": "Validate ~/.specter/bridge/bridge.json configuration schema, ports, and workloads."
+    },
+    {
+      "id": "tuquet.bridge.disable",
+      "route": [
+        "bridge",
+        "disable"
+      ],
+      "pillar": "bridge",
+      "title": "Disable Bridge Server",
+      "description": "Disable a server in bridge configuration (~/.specter/bridge/bridge.json).",
+      "arguments": [
+        {
+          "name": "server",
+          "type": "string",
+          "required": true,
+          "description": "Server identifier to disable (e.g. my-vps, may-b)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.bridge.enable",
+      "route": [
+        "bridge",
+        "enable"
+      ],
+      "pillar": "bridge",
+      "title": "Enable Bridge Server",
+      "description": "Enable a server in bridge configuration (~/.specter/bridge/bridge.json).",
+      "arguments": [
+        {
+          "name": "server",
+          "type": "string",
+          "required": true,
+          "description": "Server identifier to enable (e.g. my-vps, may-b)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.bridge.start",
+      "route": [
+        "bridge",
+        "start"
+      ],
+      "pillar": "bridge",
+      "title": "Start Bridge Mesh Tunnels",
+      "description": "Start background SOCKS5 proxy (1080) and HTTP adapter (8118) for configured VPS servers.",
+      "arguments": [
+        {
+          "name": "server",
+          "type": "string",
+          "required": false,
+          "description": "Target server identifier or pattern (e.g. my-vps)."
+        }
+      ],
+      "options": [
+        {
+          "name": "http",
+          "type": "boolean",
+          "default": false,
+          "description": "Also start pure Rust HTTP-to-SOCKS5 bridge (port 8118)."
+        },
+        {
+          "name": "ssh",
+          "type": "boolean",
+          "default": false,
+          "description": "Also start direct SSH tunnel on port 2222."
+        },
+        {
+          "name": "foreground",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Run supervisor in foreground with auto-healing until Ctrl+C."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.bridge.status",
+      "route": [
+        "bridge",
+        "status"
+      ],
+      "pillar": "bridge",
+      "title": "Bridge Mesh Status",
+      "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads."
+    },
+    {
+      "id": "tuquet.bridge.stop",
+      "route": [
+        "bridge",
+        "stop"
+      ],
+      "pillar": "bridge",
+      "title": "Stop Bridge Tunnels",
+      "description": "Stop running bridge tunnels and proxy background daemons.",
+      "arguments": [
+        {
+          "name": "server",
+          "type": "string",
+          "required": false,
+          "description": "Server identifier to stop, or omit to stop all."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.proxy.probe",
+      "route": [
+        "proxy",
+        "probe"
+      ],
+      "pillar": "bridge",
+      "title": "Probe Proxy Egress & Latency",
+      "description": "Probe connectivity, latency, and public egress IP of a proxy.",
+      "arguments": [
+        {
+          "name": "url",
+          "type": "string",
+          "required": true,
+          "description": "Target proxy URL (e.g. socks5://127.0.0.1:1080 or http://127.0.0.1:8118)."
+        }
+      ],
+      "options": [
+        {
+          "name": "timeout",
+          "short": "t",
+          "type": "integer",
+          "default": 5,
+          "description": "Probe timeout in seconds (default: 5)."
+        },
+        {
+          "name": "json",
+          "type": "boolean",
+          "default": false,
+          "description": "Output diagnostic result in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.faker.card",
+      "route": [
+        "faker",
+        "card"
+      ],
+      "pillar": "faker",
+      "title": "Display Detailed Persona Card",
+      "description": "Inspect a single detailed persona card with full credentials and citizen data.",
+      "options": [
+        {
+          "name": "gender",
+          "short": "g",
+          "type": "string",
+          "description": "Filter by gender."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.faker.generate",
+      "route": [
+        "faker",
+        "generate"
+      ],
+      "pillar": "faker",
+      "title": "Generate Synthetic Identities",
+      "description": "Generate compliant personas with validated 12-digit CCCD, phone, and addresses.",
+      "options": [
+        {
+          "name": "count",
+          "short": "n",
+          "type": "integer",
+          "default": 1,
+          "description": "Number of profiles to generate."
+        },
+        {
+          "name": "gender",
+          "short": "g",
+          "type": "choice",
+          "description": "Filter by gender: male, female, or all.",
+          "choices": [
+            "male",
+            "female",
+            "all"
+          ]
+        },
+        {
+          "name": "nat",
+          "type": "string",
+          "default": "VN",
+          "description": "Filter by nationality (VN, US, JP)."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "choice",
+          "default": "table",
+          "description": "Output format: table, card, json, or csv.",
+          "choices": [
+            "table",
+            "card",
+            "json",
+            "csv"
+          ]
+        },
+        {
+          "name": "output",
+          "short": "o",
+          "type": "path",
+          "description": "Optional file path to export output to."
+        }
+      ],
+      "mcp": {
+        "tool_name": "tuquet_faker_generate",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.runner.logs",
+      "route": [
+        "runner",
+        "logs"
+      ],
+      "pillar": "runner",
+      "title": "View Runner Logs",
+      "description": "View or tail runner daemon execution and telemetry logs.",
+      "options": [
+        {
+          "name": "follow",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Follow / stream log output continuously."
+        },
+        {
+          "name": "lines",
+          "short": "n",
+          "type": "integer",
+          "default": 50,
+          "description": "Number of tail lines to display."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.runner.probe",
+      "route": [
+        "runner",
+        "probe"
+      ],
+      "pillar": "runner",
+      "title": "Probe Runner Capabilities",
+      "description": "Active capability negotiation probe returning manifest JSON for Runner.",
+      "mcp": {
+        "tool_name": "tuquet_runner_probe",
+        "exported": true
+      }
+    },
+    {
+      "id": "tuquet.runner.restart",
+      "route": [
+        "runner",
+        "restart"
+      ],
+      "pillar": "runner",
+      "title": "Restart Runner Daemon",
+      "description": "Restart the local runner daemon.",
+      "options": [
+        {
+          "name": "detach",
+          "short": "d",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in background as detached daemon process."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.runner.start",
+      "route": [
+        "runner",
+        "start"
+      ],
+      "pillar": "runner",
+      "title": "Start Runner Daemon",
+      "description": "Start local runner daemon and cloud worker HTTP server on port 8765.",
+      "options": [
+        {
+          "name": "port",
+          "short": "p",
+          "type": "integer",
+          "default": 8765,
+          "description": "Listening HTTP port."
+        },
+        {
+          "name": "detach",
+          "short": "d",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in background as detached daemon process."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.runner.status",
+      "route": [
+        "runner",
+        "status"
+      ],
+      "pillar": "runner",
+      "title": "Runner Daemon Status",
+      "description": "Inspect local runner daemon status and health check endpoint.",
+      "options": [
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": false,
+          "description": "Output status in raw JSON format."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.runner.stop",
+      "route": [
+        "runner",
+        "stop"
+      ],
+      "pillar": "runner",
+      "title": "Stop Runner Daemon",
+      "description": "Gracefully stop the running runner daemon.",
+      "options": [
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force terminate without waiting for active jobs."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.runner.worker",
+      "route": [
+        "runner",
+        "worker"
+      ],
+      "pillar": "runner",
+      "title": "Cloud Fleet Mesh Worker",
+      "description": "Run as an autonomous cloud fleet worker polling and executing jobs.",
+      "options": [
+        {
+          "name": "cloud_profile",
+          "type": "string",
+          "description": "Target cloud profile ID or name to execute."
+        },
+        {
+          "name": "workflow",
+          "short": "w",
+          "type": "string",
+          "description": "Path to workflow JSON file to execute on cloud profile."
+        },
+        {
+          "name": "headless",
+          "type": "boolean",
+          "default": false,
+          "description": "Headless browser execution."
+        },
+        {
+          "name": "interval",
+          "short": "i",
+          "type": "integer",
+          "default": 15,
+          "description": "Poll interval in seconds (default: 15)."
+        },
+        {
+          "name": "once",
+          "type": "boolean",
+          "default": false,
+          "description": "Run once and exit."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.cloud.login",
+      "route": [
+        "cloud",
+        "login"
+      ],
+      "pillar": "cloud",
+      "title": "Cloud Authentication Login",
+      "description": "Authenticate and enroll this workstation with Tuquet Cloud.",
+      "options": [
+        {
+          "name": "url",
+          "short": "u",
+          "type": "string",
+          "description": "Tuquet Cloud endpoint URL (e.g. https://cloud.tuquet.com)."
+        },
+        {
+          "name": "token",
+          "short": "t",
+          "type": "string",
+          "description": "Organization / Tenant enrollment token."
+        },
+        {
+          "name": "name",
+          "short": "n",
+          "type": "string",
+          "description": "Custom workstation name (defaults to machine hostname)."
+        }
+      ]
+    },
+    {
+      "id": "tuquet.cloud.logout",
+      "route": [
+        "cloud",
+        "logout"
+      ],
+      "pillar": "cloud",
+      "title": "Cloud Disconnect & Logout",
+      "description": "Log out and disconnect this workstation from Tuquet Cloud."
+    },
+    {
+      "id": "tuquet.cloud.whoami",
+      "route": [
+        "cloud",
+        "whoami"
+      ],
+      "pillar": "cloud",
+      "title": "Display Cloud Enrollment Identity",
+      "description": "Show current Tuquet Cloud identity, enrolled device GUID, and tenant ID.",
+      "mcp": {
+        "tool_name": "tuquet_cloud_whoami",
+        "exported": true
+      }
+    }
+  ]
+}

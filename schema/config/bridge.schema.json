@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TuquetBridgeConfig",
+  "description": "Configuration schema for Tuquet Network Bridge and Multi-VPS Mesh (~/.specter/bridge/bridge.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "default_ssh_key": {
+      "type": "string",
+      "description": "Default private SSH key path (e.g. ~/.ssh/id_rsa or ~/.ssh/id_ed25519)"
+    },
+    "default_user": {
+      "type": "string",
+      "default": "root",
+      "description": "Default SSH username for VPS connections"
+    },
+    "http_proxy_port": {
+      "type": "integer",
+      "default": 8118,
+      "description": "Local HTTP-to-SOCKS5 adapter listening port"
+    },
+    "auto_reconnect": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically reconnect dropped SSH tunnels in supervisor mode"
+    },
+    "servers": {
+      "type": "array",
+      "description": "List of configured remote VPS nodes and proxy workloads",
+      "items": {
+        "type": "object",
+        "required": ["name", "host", "socks5_port"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique VPS server identifier (e.g. 'sg-node-01', 'us-east-proxy')"
+          },
+          "host": {
+            "type": "string",
+            "description": "Remote server hostname or IP address"
+          },
+          "port": {
+            "type": "integer",
+            "default": 22,
+            "description": "Remote SSH port"
+          },
+          "user": {
+            "type": "string",
+            "default": "root",
+            "description": "Remote SSH username override"
+          },
+          "ssh_key": {
+            "type": "string",
+            "description": "Custom SSH key path for this specific server"
+          },
+          "socks5_port": {
+            "type": "integer",
+            "description": "Local SOCKS5 proxy port (e.g. 1080)"
+          },
+          "http_port": {
+            "type": "integer",
+            "description": "Optional dedicated local HTTP proxy port for this server"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this server is included in 'tuquet bridge start' by default"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Labels for filtering (e.g. ['mmo', 'clean-ip', 'asia'])"
+          }
+        }
+      }
+    }
+  }
+}
