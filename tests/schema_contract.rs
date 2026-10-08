@@ -155,7 +155,7 @@ fn test_runtime_manifest_queries() {
     assert!(!bridge_cmds.is_empty(), "Expected bridge commands in manifest");
 
     let schema_cmd = find_by_route(&["schema", "commands"]);
-    assert!(schema_cmd.is_some(), "Expected 'tuquet schema commands' to resolve via find_by_route");
+    assert!(schema_cmd.is_some(), "Expected 'specter schema commands' to resolve via find_by_route");
     assert_eq!(schema_cmd.unwrap().id, "tuquet.schema.commands");
 }
 

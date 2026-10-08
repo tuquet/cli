@@ -66,15 +66,15 @@ To eliminate documentation drift and guarantee always-accurate syntax, all opera
 
 | Domain / Pillar | Dedicated Skill | Slash Command | Scope & Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Platform Health** | [`tuquet`](https://github.com/tuquet/skills/blob/main/skills/tuquet/SKILL.md) | `/tuquet` | Holistic ecosystem health check (`tuquet status`) & SSOT validation. |
-| **Master Cheatsheet** | [`tuquet-help`](https://github.com/tuquet/skills/blob/main/skills/tuquet-help/SKILL.md) | `/tuquet-help` | One-shot cheatsheet, REPL shortcuts, and universal tool reference. |
-| **Network Bridge** | [`tuquet-bridge`](https://github.com/tuquet/skills/blob/main/skills/tuquet-bridge/SKILL.md) | `/tuquet-bridge` | Multi-VPS tunnels, SOCKS5 (1080), HTTP adapter (8118), and `git spush`. |
-| **Browser Runtime** | [`tuquet-browser`](https://github.com/tuquet/skills/blob/main/skills/tuquet-browser/SKILL.md) | `/tuquet-browser` | Isolated Chromium LTS provisioning, sandbox cleanup, and binary paths. |
-| **Workflow Engine** | [`tuquet-automa`](https://github.com/tuquet/skills/blob/main/skills/tuquet-automa/SKILL.md) | `/tuquet-automa` | Headless visual workflow execution, DAG validation, and SQLite runs. |
-| **Process Supervisor** | [`tuquet-runner`](https://github.com/tuquet/skills/blob/main/skills/tuquet-runner/SKILL.md) | `/tuquet-runner` | Background worker daemon (port 8765), Win32 Job Object tree supervision. |
-| **Cloud Control Plane** | [`tuquet-cloud`](https://github.com/tuquet/skills/blob/main/skills/tuquet-cloud/SKILL.md) | `/tuquet-cloud` | Device fleet enrollment (`tuquet login/whoami`) and Supabase DB push. |
-| **Synthetic Identity** | [`tuquet-faker`](https://github.com/tuquet/skills/blob/main/skills/tuquet-faker/SKILL.md) | `/tuquet-faker` | Synthetic personas, validated CCCDs, and custom email domain pools. |
-| **Cloud Hardening** | [`tuquet-security`](https://github.com/tuquet/skills/blob/main/skills/tuquet-security/SKILL.md) | `/tuquet-security` | Enterprise cloud server hardening, Zero Inbound Ports, disk hygiene. |
+| **Platform Health** | [`specter`](https://github.com/tuquet/skills/blob/main/skills/specter/SKILL.md) | `/specter` | Holistic ecosystem health check (`specter status`) & SSOT validation. |
+| **Master Cheatsheet** | [`specter-help`](https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md) | `/specter-help` | One-shot cheatsheet, REPL shortcuts, and universal tool reference. |
+| **Network Bridge** | [`specter-bridge`](https://github.com/tuquet/skills/blob/main/skills/specter-bridge/SKILL.md) | `/specter-bridge` | Multi-VPS tunnels, SOCKS5 (1080), HTTP adapter (8118), and `git spush`. |
+| **Browser Runtime** | [`specter-browser`](https://github.com/tuquet/skills/blob/main/skills/specter-browser/SKILL.md) | `/specter-browser` | Isolated Chromium LTS provisioning, sandbox cleanup, and binary paths. |
+| **Workflow Engine** | [`specter-automa`](https://github.com/tuquet/skills/blob/main/skills/specter-automa/SKILL.md) | `/specter-automa` | Headless visual workflow execution, DAG validation, and SQLite runs. |
+| **Process Supervisor** | [`specter-runner`](https://github.com/tuquet/skills/blob/main/skills/specter-runner/SKILL.md) | `/specter-runner` | Background worker daemon (port 8765), Win32 Job Object tree supervision. |
+| **Cloud Control Plane** | [`specter-cloud`](https://github.com/tuquet/skills/blob/main/skills/specter-cloud/SKILL.md) | `/specter-cloud` | Device fleet enrollment (`specter login/whoami`) and Supabase DB push. |
+| **Synthetic Identity** | [`specter-faker`](https://github.com/tuquet/skills/blob/main/skills/specter-faker/SKILL.md) | `/specter-faker` | Synthetic personas, validated CCCDs, and custom email domain pools. |
+| **Cloud Hardening** | [`specter-security`](https://github.com/tuquet/skills/blob/main/skills/specter-security/SKILL.md) | `/specter-security` | Enterprise cloud server hardening, Zero Inbound Ports, disk hygiene. |
 
 ---
 

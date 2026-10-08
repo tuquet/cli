@@ -111,7 +111,7 @@ impl ConfigRegistry {
             card.add_kv(&label, format!("{}{}", entry.path.display(), status));
         }
 
-        card.with_footer("Tip: 'tuquet <service> config' for raw path or '--edit' to open in editor");
+        card.with_footer("Tip: 'specter <service> config' for raw path or '--edit' to open in editor");
         card.print();
         println!();
     }

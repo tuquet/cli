@@ -116,7 +116,7 @@ pub fn manage_config(edit: bool, show: bool) -> Result<(), Box<dyn std::error::E
         card.add_kv("Update Channel", &config.update_channel);
         card.add_kv("Environment", &config.environment);
         card.add_kv("Auto Update Check", if config.auto_check_update { "enabled" } else { "disabled" });
-        card.with_footer("Tip: edit with 'tuquet cloud config --edit'");
+        card.with_footer("Tip: edit with 'specter cloud config --edit'");
         card.print();
         println!();
     } else {

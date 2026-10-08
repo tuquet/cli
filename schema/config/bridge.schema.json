@@ -67,7 +67,7 @@
           "enabled": {
             "type": "boolean",
             "default": true,
-            "description": "Whether this server is included in 'tuquet bridge start' by default"
+            "description": "Whether this server is included in 'specter bridge start' by default"
           },
           "tags": {
             "type": "array",
