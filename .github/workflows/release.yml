@@ -24,24 +24,24 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin_name: tuquet.exe
+            bin_name: specter.exe
             archive_ext: zip
-            asset_prefix: tuquet-windows-x64
+            asset_prefix: specter-windows-x64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bin_name: tuquet
+            bin_name: specter
             archive_ext: tar.gz
-            asset_prefix: tuquet-linux-x64
+            asset_prefix: specter-linux-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            bin_name: tuquet
+            bin_name: specter
             archive_ext: tar.gz
-            asset_prefix: tuquet-macos-arm64
+            asset_prefix: specter-macos-arm64
           - os: macos-13
             target: x86_64-apple-darwin
-            bin_name: tuquet
+            bin_name: specter
             archive_ext: tar.gz
-            asset_prefix: tuquet-macos-x64
+            asset_prefix: specter-macos-x64
 
     steps:
       - name: Checkout repository
@@ -89,11 +89,11 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $binPath = "target/${{ matrix.target }}/release/tuquet.exe"
+          $binPath = "target/${{ matrix.target }}/release/specter.exe"
           New-Item -ItemType Directory -Path "dist" -Force
-          Copy-Item $binPath -Destination "dist/tuquet.exe"
+          Copy-Item $binPath -Destination "dist/specter.exe"
           $archiveName = "${{ matrix.asset_prefix }}.zip"
-          Compress-Archive -Path "dist/tuquet.exe" -DestinationPath "$archiveName" -Force
+          Compress-Archive -Path "dist/specter.exe" -DestinationPath "$archiveName" -Force
           $hash = (Get-FileHash -Algorithm SHA256 "$archiveName").Hash.ToLower()
           "$hash  $archiveName" | Out-File -Encoding ascii "$archiveName.sha256"
           Write-Host "Packaged $archiveName (SHA256: $hash)"
@@ -102,12 +102,12 @@ jobs:
         if: matrix.os != 'windows-latest'
         shell: bash
         run: |
-          BIN_PATH="target/${{ matrix.target }}/release/tuquet"
+          BIN_PATH="target/${{ matrix.target }}/release/specter"
           mkdir -p dist
-          cp "${BIN_PATH}" dist/tuquet
-          chmod +x dist/tuquet
+          cp "${BIN_PATH}" dist/specter
+          chmod +x dist/specter
           ARCHIVE_NAME="${{ matrix.asset_prefix }}.tar.gz"
-          tar -czf "${ARCHIVE_NAME}" -C dist tuquet
+          tar -czf "${ARCHIVE_NAME}" -C dist specter
           if command -v sha256sum >/dev/null 2>&1; then
             sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
           else
