@@ -1,14 +1,14 @@
-### Tuquet Automa Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
+### Specter Automa Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
 @baseUrl = http://127.0.0.1:8765
 @cloudUrl = https://dswhacsoaxgpfnkaxnhz.supabase.co
 @contentType = application/json
 @anonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd2hhY3NvYXhncGZua2F4bmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTEzMzcsImV4cCI6MjEwNTg2NzMzN30.QRdxE3CPCF8CtliOtSUcSFO-jbKi99uM2AKlJgKt6RQ
 
 # ====================================================================
-# 6.1 TUQUET CLOUD - USER REGISTRATION & AUTO-TENANT PROVISIONING
+# 6.1 SPECTER CLOUD - USER REGISTRATION & AUTO-TENANT PROVISIONING
 # ====================================================================
 
-### 6.1.1 Dang ky nguoi dung moi tren Tuquet Cloud (Auto-provision Personal Tenant)
+### 6.1.1 Dang ky nguoi dung moi tren SPECTER CLOUD (Auto-provision Personal Tenant)
 # Khi tao user thanh cong, PostgreSQL trigger 'handle_new_user' se tu dong:
 # 1. Tao Profile trong public.profiles
 # 2. Tao Personal Tenant ("<Name>'s Workspace") trong public.tenants
@@ -88,3 +88,4 @@ POST {{baseUrl}}/api/v1/system/cloud/logout
 
 ### 6.2.7 Xac nhan trang thai Local Runner sau khi dang xuat (Expect enrolled = false)
 GET {{baseUrl}}/api/v1/system/cloud/status
+

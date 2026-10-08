@@ -1,4 +1,4 @@
-### Tuquet CLI - System, Health & Machine Identity
+### Specter CLI - System, Health & Machine Identity
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
@@ -25,4 +25,5 @@ GET {{baseUrl}}/api/v1/system/cloud/status
 
 ### 1.8 Kich hoat dong bo Cloud ngay lap tuc (Inventory & Heartbeat)
 POST {{baseUrl}}/api/v1/system/cloud/sync
+
 

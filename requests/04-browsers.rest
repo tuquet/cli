@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Browser Profiles & Lifecycle Isolation
+### Specter Automa Runner - Browser Profiles & Lifecycle Isolation
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
@@ -55,3 +55,4 @@ DELETE {{baseUrl}}/api/v1/browsers/{{targetProfileId}}
 
 ### 4.10 Negative Test - Truy van Browser Profile khong ton tai (Expect 404 Not Found)
 GET {{baseUrl}}/api/v1/browsers/non-existent-profile-uuid
+

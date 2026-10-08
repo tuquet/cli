@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Job Execution & Real-Time Monitoring
+### Specter Automa Runner - Job Execution & Real-Time Monitoring
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
@@ -22,7 +22,7 @@ Content-Type: {{contentType}}
             "parameters": [
               {
                 "name": "searchQuery",
-                "value": "tuquet automa direct inline run"
+                "value": "specter automa direct inline run"
               }
             ]
           }
@@ -43,7 +43,7 @@ Content-Type: {{contentType}}
           "label": "javascript-code",
           "data": {
             "description": "Dien tu khoa va submit form tim kiem",
-            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'tuquet automa'; const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); } if (typeof automaNextBlock === 'function') automaNextBlock({ query, action: 'searched' });",
+            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'specter automa'; const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); } if (typeof automaNextBlock === 'function') automaNextBlock({ query, action: 'searched' });",
             "context": "webpage",
             "preloadScripts": [],
             "timeout": 10000
@@ -87,7 +87,7 @@ Content-Type: {{contentType}}
     "headless": false,
     "closeBrowserOnFinish": false,
     "variables": {
-      "searchQuery": "tuquet automa pure open source chromium"
+      "searchQuery": "specter automa pure open source chromium"
     }
   }
 }
@@ -177,3 +177,4 @@ DELETE {{baseUrl}}/api/v1/jobs/{{targetJobId}}
 
 ### 3.11 Negative Test - Kiem tra Job khong ton tai (Expect 404 Not Found)
 GET {{baseUrl}}/api/v1/jobs/non-existent-job-uuid/status
+

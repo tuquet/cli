@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Workflow Storage & Static Linting
+### Specter Automa Runner - Workflow Storage & Static Linting
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
@@ -53,7 +53,7 @@ Content-Type: {{contentType}}
             "parameters": [
               {
                 "name": "searchQuery",
-                "value": "tuquet automa pure open source chromium"
+                "value": "specter automa pure open source chromium"
               }
             ]
           }
@@ -74,7 +74,7 @@ Content-Type: {{contentType}}
           "label": "javascript-code",
           "data": {
             "description": "Dien tu khoa vao o tim kiem va submit form",
-            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'tuquet automa'; console.log('Searching:', query); const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); let status = 'notFound'; if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); status = 'submitted'; } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); status = 'redirected'; } if (typeof automaNextBlock === 'function') automaNextBlock({ query, action: status, url: window.location.href });",
+            "code": "const query = (typeof automaRefData === 'function' ? automaRefData('variables', 'searchQuery') : null) || '{{ variables.searchQuery }}' || 'specter automa'; console.log('Searching:', query); const searchInput = document.querySelector('textarea[name=\"q\"]') || document.querySelector('input[name=\"q\"]'); let status = 'notFound'; if (searchInput) { searchInput.focus(); searchInput.value = query; searchInput.dispatchEvent(new Event('input', { bubbles: true })); searchInput.form?.submit(); status = 'submitted'; } else { window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query); status = 'redirected'; } if (typeof automaNextBlock === 'function') automaNextBlock({ query, action: status, url: window.location.href });",
             "context": "webpage",
             "preloadScripts": [],
             "timeout": 10000
@@ -128,7 +128,7 @@ Content-Type: {{contentType}}
     "headless": false,
     "closeBrowserOnFinish": false,
     "variables": {
-      "searchQuery": "tuquet automa runner execution by workflowId"
+      "searchQuery": "Specter Automa Runner execution by workflowId"
     }
   }
 }
@@ -144,3 +144,4 @@ DELETE {{baseUrl}}/api/v1/storage/workflows/{{savedWorkflowId}}
 
 ### 2.7 Negative Test - Lay Workflow khong ton tai (Expect 404 Not Found)
 GET {{baseUrl}}/api/v1/storage/workflows/non-existent-wf-uuid
+
