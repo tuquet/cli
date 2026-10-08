@@ -8,9 +8,9 @@
 ## ⚡ Canonical Command Reference (SSOT)
 
 > [!IMPORTANT]
-> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in **[Tuquet Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
-> - In AI Agent terminals (Antigravity, Claude Code, Cursor), invoke: **`/tuquet-help`**
-> - In web browser: View the [**`tuquet-help` Master Reference Card**](https://github.com/tuquet/skills/blob/main/skills/tuquet-help/SKILL.md)
+> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in the **[Specter Documentation Portal](https://tuquet.github.io/docs/commands/)** and **[Specter Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
+> - In AI Agent terminals (Antigravity, Claude Code, Cursor), invoke: **`/specter-help`**
+> - In web browser: View the [**Specter Master CLI Reference**](https://tuquet.github.io/docs/commands/) & [**`specter-help` Skill Card**](https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md)
 
 ---
 
@@ -39,17 +39,17 @@ specter <scope>              # Direct jump to target scope (e.g., specter bridge
 
 ## 🗺️ Master Scopes & Dedicated Skills Directory
 
-Each interactive scope maps 1-to-1 with a specialized, atomic **Tuquet Skill**:
+Each interactive scope maps 1-to-1 with a specialized, atomic **Specter Skill**:
 
 | Scope | Prompt Indicator | Subsystem Role | Dedicated AI Agent Skill |
 | :--- | :--- | :--- | :--- |
-| **`global`** | `[global]` (Cyan) | Platform health, updates, MCP server | [`/tuquet`](https://github.com/tuquet/skills/blob/main/skills/tuquet/SKILL.md) |
-| **`bridge`** | `[bridge]` (Magenta) | Multi-VPS mesh, Cloudflare tunnels, SOCKS5 & HTTP 8118 | [`/tuquet-bridge`](https://github.com/tuquet/skills/blob/main/skills/tuquet-bridge/SKILL.md) |
-| **`browser`** | `[browser]` (Blue) | Isolated Chromium LTS runtime, profile sandboxes | [`/tuquet-browser`](https://github.com/tuquet/skills/blob/main/skills/tuquet-browser/SKILL.md) |
-| **`automa`** | `[automa]` (Amber) | Visual workflow execution, CDP engine, local SQLite | [`/tuquet-automa`](https://github.com/tuquet/skills/blob/main/skills/tuquet-automa/SKILL.md) |
-| **`runner`** | `[runner]` (Green) | Background supervisor daemon (8765), Win32 Job Object | [`/tuquet-runner`](https://github.com/tuquet/skills/blob/main/skills/tuquet-runner/SKILL.md) |
-| **`cloud`** | `[cloud]` (Purple) | Supabase device enrollment, tenant pairing & DB push | [`/tuquet-cloud`](https://github.com/tuquet/skills/blob/main/skills/tuquet-cloud/SKILL.md) |
-| **`faker`** | `[faker]` (Cyan) | Synthetic persona generator (CCCD, addresses, emails) | [`/tuquet-faker`](https://github.com/tuquet/skills/blob/main/skills/tuquet-faker/SKILL.md) |
+| **`global`** | `[global]` (Cyan) | Platform health, updates, MCP server | [`/specter`](https://github.com/tuquet/skills/blob/main/skills/specter/SKILL.md) |
+| **`bridge`** | `[bridge]` (Magenta) | Multi-VPS mesh, Cloudflare tunnels, SOCKS5 & HTTP 8118 | [`/specter-bridge`](https://github.com/tuquet/skills/blob/main/skills/specter-bridge/SKILL.md) |
+| **`browser`** | `[browser]` (Blue) | Isolated Chromium LTS runtime, profile sandboxes | [`/specter-browser`](https://github.com/tuquet/skills/blob/main/skills/specter-browser/SKILL.md) |
+| **`automa`** | `[automa]` (Amber) | Visual workflow execution, CDP engine, local SQLite | [`/specter-automa`](https://github.com/tuquet/skills/blob/main/skills/specter-automa/SKILL.md) |
+| **`runner`** | `[runner]` (Green) | Background supervisor daemon (8765), Win32 Job Object | [`/specter-runner`](https://github.com/tuquet/skills/blob/main/skills/specter-runner/SKILL.md) |
+| **`cloud`** | `[cloud]` (Purple) | Supabase device enrollment, tenant pairing & DB push | [`/specter-cloud`](https://github.com/tuquet/skills/blob/main/skills/specter-cloud/SKILL.md) |
+| **`faker`** | `[faker]` (Cyan) | Synthetic persona generator (CCCD, addresses, emails) | [`/specter-faker`](https://github.com/tuquet/skills/blob/main/skills/specter-faker/SKILL.md) |
 
 ---
 

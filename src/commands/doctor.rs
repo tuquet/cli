@@ -2,7 +2,7 @@ use std::path::Path;
 use crate::config::{canonical_ssot_dir, canonical_specter_dir, AppConfig};
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::infrastructure::bridge::probe_port;
-use crate::ui::{badge_offline, badge_online, badge_warn, badge_error, colors, Card, Column, Table};
+use crate::ui::{badge_online, badge_warn, badge_error, colors, Card, Column, Table, create_network_topology_card, default_workstation_endpoints};
 
 use serde_json::json;
 
@@ -423,14 +423,20 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
     let http_port = bridge_cfg.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
     let http_active = probe_port(http_port);
 
-    let mut port_card = Card::new("NETWORK PORTS & SERVICES");
-    port_card.with_min_width(68);
-    port_card.with_badge(if git_active || ssh_active || runner_active { badge_online("ACTIVE WORKLOADS") } else { badge_offline("STANDBY") });
-    port_card.add_kv("Port 1080 (Git SOCKS5)", if git_active { "● ACTIVE (Tunnel open)" } else { "○ STANDBY (specter bridge start)" });
-    port_card.add_kv("Port 2222 (VPS SSH Tunnel)", if ssh_active { "● ACTIVE (CF Access tunnel)" } else { "○ STANDBY (specter bridge start)" });
-    port_card.add_kv("Port 8118 (Supabase HTTP)", if http_active { "● ACTIVE (HTTP-to-SOCKS5)" } else { "○ STANDBY (specter bridge start --http)" });
-    port_card.add_kv(format!("Port {} (Runner Worker)", runner_port), if runner_active { "● ACTIVE (Daemon online)" } else { "○ STANDBY (specter runner start)" });
-    port_card.with_footer("Tunnels run on demand. Start with 'specter bridge start' or 'specter runner start'");
+    let endpoints = default_workstation_endpoints(
+        git_port,
+        git_active,
+        http_port,
+        http_active,
+        ssh_port,
+        ssh_active,
+        Some((runner_port, runner_active)),
+    );
+    let port_card = create_network_topology_card(
+        "NETWORK TOPOLOGY & LISTENERS",
+        &endpoints,
+        Some("Tunnels run on demand. Start with 'specter bridge start' or 'specter runner start'"),
+    );
     port_card.print();
     println!();
 

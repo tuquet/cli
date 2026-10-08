@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
-use crate::ui::{badge_offline, badge_online, badge_warn, Card};
+use crate::ui::{badge_offline, badge_online, badge_warn, Card, create_network_topology_card, default_workstation_endpoints};
 
 pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
@@ -120,18 +120,25 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
     let http_port = bridge_config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
     let http_active = crate::infrastructure::bridge::probe_port(http_port);
 
-    let mut bridge_card = Card::new("NETWORK BRIDGE");
+    let endpoints = default_workstation_endpoints(
+        git_port,
+        git_active,
+        http_port,
+        http_active,
+        primary_ssh_port,
+        ssh_active,
+        None,
+    );
+    let mut bridge_card = create_network_topology_card(
+        "NETWORK BRIDGE",
+        &endpoints,
+        Some("Manage with 'specter bridge status' or 'specter bridge start'"),
+    );
     if git_active || ssh_active || http_active {
         bridge_card.with_badge(badge_online("CONNECTED"));
     } else {
         bridge_card.with_badge(badge_offline("DISCONNECTED"));
     }
-    bridge_card.with_min_width(68);
-    bridge_card.add_kv("Config Schema", crate::infrastructure::bridge::BridgeConfig::config_path().to_string_lossy().to_string());
-    bridge_card.add_kv("Git SOCKS5 (1080)", if git_active { "● ONLINE (Git push ready)" } else { "○ OFFLINE" });
-    bridge_card.add_kv("SSH VPS Tunnel (2222)", if ssh_active { "● ONLINE (CF Access active)" } else { "○ OFFLINE" });
-    bridge_card.add_kv("Supabase HTTP (8118)", if http_active { "● ONLINE (Pure Rust Adapter)" } else { "○ OFFLINE" });
-    bridge_card.with_footer("Manage with 'specter bridge status' or 'specter bridge start'");
 
     if json_output {
         let out = serde_json::json!({

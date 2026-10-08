@@ -5,12 +5,13 @@
 
   <p>
     <a href="https://github.com/tuquet/scoop-bucket"><img src="https://img.shields.io/badge/Scoop-specter-brightgreen.svg" alt="Scoop" /></a>
+    <a href="https://tuquet.github.io/docs/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Portal-blue.svg" alt="Documentation" /></a>
     <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-Clap%2FRatatui-orange.svg" alt="Rust" /></a>
-    <img src="https://img.shields.io/badge/Shell-Interactive%20Scoped-blue.svg" alt="Interactive Shell" />
     <a href="CHEATSHEET.md"><img src="https://img.shields.io/badge/Docs-Navigation%20Card-purple.svg" alt="Navigation Card" /></a>
+    <a href="https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md"><img src="https://img.shields.io/badge/Skill-%2Fspecter--help-purple.svg" alt="Specter Help Skill" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" /></a>
   </p>
-  <p><strong><a href="CHEATSHEET.md">📖 View Scope Navigation Card &rarr;</a> • <a href="https://github.com/tuquet/skills/blob/main/skills/tuquet-help/SKILL.md">⚡ Master Cheatsheet (`/tuquet-help`) &rarr;</a></strong></p>
+  <p><strong><a href="https://tuquet.github.io/docs/commands/">📖 Read Full Documentation in Portal &rarr;</a> • <a href="CHEATSHEET.md">🧭 Scope Navigation Card &rarr;</a> • <a href="https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md">⚡ Master Cheatsheet (`/specter-help`) &rarr;</a></strong></p>
 </div>
 
 ---
@@ -26,7 +27,7 @@ Modern automation environments are plagued by fragmented developer tooling: sepa
 | **Tool Fragmentation** | Developers juggle 5+ separate CLIs and scripts across different terminals. | **Interactive Scoped REPL** (`specter`) multiplexes all services into a unified context-aware shell. | **Zero Context Switching**; single binary orchestrates network, browser, and daemons. |
 | **Resource Overhead** | Node/Electron CLI wrappers consume 100MB+ RAM merely idling in background. | **Native Rust Binary** with sub-10MB footprint and instantaneous sub-millisecond startup. | **90% Resource Savings**; runs smoothly on lightweight developer workstations. |
 | **Configuration Sprawl** | Config files scattered across home folders, `.env` files, and registry keys. | **Single Source of Truth (SSOT)** strictly resolving to `~/.specter/` across 5 pillars. | **Zero Config Drift**; predictable, reproducible environments across multi-PC fleets. |
-| **AI Agent Ergonomics** | LLM copilots struggle with complex, brittle shell command syntax. | **Atomic Agent Skills Standard** (`tuquet-*`) with deterministic output contracts and slash commands. | **100% Reliable Automation**; zero agent hallucination when executing operational tasks. |
+| **AI Agent Ergonomics** | LLM copilots struggle with complex, brittle shell command syntax. | **Atomic Agent Skills Standard** (`specter-*`) with deterministic output contracts and slash commands. | **100% Reliable Automation**; zero agent hallucination when executing operational tasks. |
 
 ---
 
@@ -109,6 +110,14 @@ cd cli
 cargo build --release
 # Executable generated at: target/release/specter (or specter.exe on Windows)
 ```
+
+---
+
+## 📖 Comprehensive Documentation
+
+For complete architectural guides, benchmark analyses, and full 68-command reference, visit the official **Specter Documentation Portal**:
+
+👉 **[https://tuquet.github.io/docs/commands/](https://tuquet.github.io/docs/commands/)**
 
 ---
 

@@ -3,7 +3,7 @@ use crate::infrastructure::bridge::{
     check_dependencies, probe_port, BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge,
     DiagnosticLevel, ServerConfig, ServerSelector,
 };
-use crate::ui::{badge_offline, badge_online, badge_warn, Card, Column, Table};
+use crate::ui::{badge_online, badge_warn, Card, Column, Table, create_network_topology_card, default_workstation_endpoints};
 
 pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
     match subcmd {
@@ -100,31 +100,31 @@ pub async fn show_status() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Active Workload Status
     println!();
-    let mut workload_card = Card::new("WORKLOAD STATUS");
-    workload_card.with_min_width(74);
-
-    let git_port = config.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(1080);
+    let ssh_port = config.servers.get(default_server)
+        .or_else(|| config.servers.get("my-vps"))
+        .and_then(|s| s.local_ssh_port)
+        .unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
+    let ssh_online = probe_port(ssh_port);
+    let git_port = config.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
     let git_online = probe_port(git_port);
-    workload_card.add_kv(
-        "Git Operations (1080)",
-        if git_online {
-            format!("{} Active on 127.0.0.1:{} (git push ready)", badge_online("ONLINE"), git_port)
-        } else {
-            format!("{} Offline. Run 'specter bridge start' to activate", badge_offline("OFFLINE"))
-        },
-    );
-
-    let http_port = config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(8118);
+    let http_port = config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
     let http_online = probe_port(http_port);
-    workload_card.add_kv(
-        "Supabase HTTP Bridge (8118)",
-        if http_online {
-            format!("{} Pure Rust HTTP Adapter active on 127.0.0.1:{}", badge_online("ONLINE"), http_port)
-        } else {
-            format!("{} Offline (Run 'specter bridge start --http')", badge_offline("OFFLINE"))
-        },
-    );
 
+    let endpoints = default_workstation_endpoints(
+        git_port,
+        git_online,
+        http_port,
+        http_online,
+        ssh_port,
+        ssh_online,
+        None,
+    );
+    let mut workload_card = create_network_topology_card(
+        "WORKLOAD TOPOLOGY & LISTENERS",
+        &endpoints,
+        Some("Start workloads with 'specter bridge start' (add --http for Supabase)"),
+    );
+    workload_card.with_min_width(74);
     workload_card.print();
 
     // 3. System Tool Dependencies Check

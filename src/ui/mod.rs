@@ -182,7 +182,8 @@ impl Card {
             }
         }
 
-        let inner_width = self.min_width.max(header_w).max(max_row_w);
+        let footer_w = self.footer.as_ref().map(|f| visible_width(f) + 7).unwrap_or(0);
+        let inner_width = self.min_width.max(header_w).max(max_row_w).max(footer_w);
 
         let mut out = String::new();
         let border = colors::BORDER;
@@ -541,4 +542,182 @@ pub fn render_update_banner(current: &str, latest: &str) -> String {
   {amber}│{reset}  🔔 {bold}{white}Update available:{reset} {muted}v{current}{reset} → {cyan}v{latest}{reset}  {muted}(Run 'specter upgrade' or 'scoop update'){reset} {amber}│{reset}
   {amber}╰──────────────────────────────────────────────────────────────────────────╯{reset}"
     )
+}
+
+/// Represents an endpoint entry in the network topology table
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NetworkEndpoint {
+    pub protocol: String,
+    pub endpoint: String,
+    pub role: String,
+    pub active: bool,
+}
+
+impl NetworkEndpoint {
+    pub fn new(protocol: impl Into<String>, endpoint: impl Into<String>, role: impl Into<String>, active: bool) -> Self {
+        Self {
+            protocol: protocol.into(),
+            endpoint: endpoint.into(),
+            role: role.into(),
+            active,
+        }
+    }
+}
+
+/// Helper to build standard workstation endpoints for Specter services
+pub fn default_workstation_endpoints(
+    socks5_port: u16,
+    socks5_active: bool,
+    http_port: u16,
+    http_active: bool,
+    ssh_port: u16,
+    ssh_active: bool,
+    runner: Option<(u16, bool)>,
+) -> Vec<NetworkEndpoint> {
+    let mut items = vec![
+        NetworkEndpoint::new(
+            "SOCKS5",
+            format!("127.0.0.1:{socks5_port}"),
+            "Dynamic Proxy (SSH)",
+            socks5_active,
+        ),
+        NetworkEndpoint::new(
+            "HTTP Relay",
+            format!("127.0.0.1:{http_port}"),
+            format!("HTTP-to-SOCKS5 (:{socks5_port})"),
+            http_active,
+        ),
+        NetworkEndpoint::new(
+            "TCP Tunnel",
+            format!("127.0.0.1:{ssh_port}"),
+            "Cloudflare Access (VPS)",
+            ssh_active,
+        ),
+    ];
+    if let Some((r_port, r_active)) = runner {
+        items.push(NetworkEndpoint::new(
+            "Daemon API",
+            format!("127.0.0.1:{r_port}"),
+            "Runner Worker (RPC/WS)",
+            r_active,
+        ));
+    }
+    items
+}
+
+/// Create a standardized Network Topology & Listeners card (Option 1)
+pub fn create_network_topology_card(
+    title: &str,
+    endpoints: &[NetworkEndpoint],
+    custom_footer: Option<&str>,
+) -> Card {
+    let mut card = Card::new(title);
+    card.with_min_width(68);
+
+    let any_active = endpoints.iter().any(|e| e.active);
+    if any_active {
+        card.with_badge(badge_online("ACTIVE WORKLOADS"));
+    } else {
+        card.with_badge(badge_offline("STANDBY"));
+    }
+
+    // Header line: PROTOCOL     ENDPOINT         ROLE / TARGET             STATUS
+    let header_line = format!(
+        "{BOLD}{MUTED}{:<13}{:<17}{:<26}{}{RESET}",
+        "PROTOCOL", "ENDPOINT", "ROLE / TARGET", "STATUS",
+        BOLD = colors::BOLD,
+        MUTED = colors::MUTED,
+        RESET = colors::RESET,
+    );
+    card.add_line(header_line);
+
+    for ep in endpoints {
+        let status_str = if ep.active {
+            badge_online("ACTIVE")
+        } else {
+            badge_offline("STANDBY")
+        };
+        let row_line = format!(
+            "{BOLD_WHITE}{:<13}{RESET}{CYAN}{:<17}{RESET}{MUTED}{:<26}{RESET}{}",
+            ep.protocol, ep.endpoint, ep.role, status_str,
+            BOLD_WHITE = colors::BOLD_WHITE,
+            RESET = colors::RESET,
+            CYAN = colors::CYAN,
+            MUTED = colors::MUTED,
+        );
+        card.add_line(row_line);
+    }
+
+    if let Some(footer) = custom_footer {
+        card.with_footer(footer);
+    } else {
+        // Smart dynamic footer based on state
+        let socks5_active = endpoints.iter().find(|e| e.protocol == "SOCKS5").map(|e| e.active).unwrap_or(false);
+        let http_active = endpoints.iter().find(|e| e.protocol == "HTTP Relay").map(|e| e.active).unwrap_or(false);
+
+        if socks5_active && http_active {
+            card.with_footer("Egress ready for Git push, cURL, and Supabase CLI");
+        } else if socks5_active {
+            card.with_footer("Egress ready for Git & cURL. Run 'specter bridge start --http' for Supabase");
+        } else {
+            card.with_footer("Tunnels run on demand. Start with 'specter bridge start'");
+        }
+    }
+
+    card
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_network_topology_card_standby() {
+        let endpoints = default_workstation_endpoints(1080, false, 8118, false, 2222, false, Some((8765, false)));
+        assert_eq!(endpoints.len(), 4);
+
+        let card = create_network_topology_card("NETWORK TOPOLOGY & LISTENERS", &endpoints, None);
+        let rendered = card.render();
+
+        assert!(rendered.contains("NETWORK TOPOLOGY & LISTENERS"));
+        assert!(rendered.contains("STANDBY"));
+        assert!(rendered.contains("PROTOCOL"));
+        assert!(rendered.contains("ENDPOINT"));
+        assert!(rendered.contains("ROLE / TARGET"));
+        assert!(rendered.contains("STATUS"));
+        assert!(rendered.contains("SOCKS5"));
+        assert!(rendered.contains("127.0.0.1:1080"));
+        assert!(rendered.contains("Dynamic Proxy (SSH)"));
+        assert!(rendered.contains("HTTP Relay"));
+        assert!(rendered.contains("127.0.0.1:8118"));
+        assert!(rendered.contains("HTTP-to-SOCKS5 (:1080)"));
+        assert!(rendered.contains("TCP Tunnel"));
+        assert!(rendered.contains("127.0.0.1:2222"));
+        assert!(rendered.contains("Cloudflare Access (VPS)"));
+        assert!(rendered.contains("Daemon API"));
+        assert!(rendered.contains("127.0.0.1:8765"));
+        assert!(rendered.contains("Runner Worker (RPC/WS)"));
+    }
+
+    #[test]
+    fn test_create_network_topology_card_active() {
+        let endpoints = default_workstation_endpoints(1080, true, 8118, false, 2222, true, None);
+        assert_eq!(endpoints.len(), 3);
+
+        let card = create_network_topology_card("NETWORK BRIDGE & LISTENERS", &endpoints, Some("Custom footer tip"));
+        let rendered = card.render();
+
+        assert!(rendered.contains("ACTIVE WORKLOADS"));
+        assert!(rendered.contains("ACTIVE"));
+        assert!(rendered.contains("Custom footer tip"));
+    }
+
+    #[test]
+    fn test_visible_width_ansi_stripping() {
+        let badge = badge_online("ACTIVE");
+        assert_eq!(visible_width(&badge), 8); // '●' (1) + ' ' (1) + 'ACTIVE' (6)
+
+        let standby = badge_offline("STANDBY");
+        assert_eq!(visible_width(&standby), 9); // '○' (1) + ' ' (1) + 'STANDBY' (7)
+    }
 }
