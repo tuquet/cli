@@ -38,7 +38,7 @@ struct JsonRpcError {
 }
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    eprintln!("[tuquet-mcp] Starting Tuquet MCP Server (JSON-RPC 2.0 stdio)...");
+    eprintln!("[specter-mcp] Starting Specter MCP Server (JSON-RPC 2.0 stdio)...");
 
     let stdin = tokio::io::stdin();
     let mut reader = BufReader::new(stdin).lines();
@@ -85,7 +85,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             "resources/list" => handle_resources_list(id),
             "prompts/list" => handle_prompts_list(id),
             other => {
-                eprintln!("[tuquet-mcp] Unknown method requested: {}", other);
+                eprintln!("[specter-mcp] Unknown method requested: {}", other);
                 JsonRpcResponse {
                     jsonrpc: "2.0",
                     id,
@@ -105,7 +105,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         stdout.flush().await?;
     }
 
-    eprintln!("[tuquet-mcp] Stdio stream closed, exiting.");
+    eprintln!("[specter-mcp] Stdio stream closed, exiting.");
     Ok(())
 }
 
@@ -121,7 +121,7 @@ fn handle_initialize(id: Option<Value>) -> JsonRpcResponse {
                 }
             },
             "serverInfo": {
-                "name": "tuquet-mcp",
+                "name": "specter-mcp",
                 "version": env!("CARGO_PKG_VERSION")
             }
         })),
@@ -159,8 +159,8 @@ fn handle_prompts_list(id: Option<Value>) -> JsonRpcResponse {
 fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
     let tools = json!([
         {
-            "name": "tuquet_status",
-            "description": "Inspect unified status across Tuquet subsystems: Cloud enrollment identity, local Runner daemon health, and isolated Chromium runtime.",
+            "name": "specter_status",
+            "description": "Inspect unified status across Specter subsystems: Cloud enrollment identity, local Runner daemon health, and isolated Chromium runtime.",
             "inputSchema": {
                 "type": "object",
                 "properties": {},
@@ -168,7 +168,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_list",
+            "name": "specter_workflow_list",
             "description": "List all browser automation workflows stored in the local SQLite database and file vault (~/.specter/automa/workflows). Supports optional search filter.",
             "inputSchema": {
                 "type": "object",
@@ -181,7 +181,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_inspect",
+            "name": "specter_workflow_inspect",
             "description": "Inspect the structure of a workflow (blocks sequence, triggers, variables, parameters, node connections) by file path or stored workflow ID.",
             "inputSchema": {
                 "type": "object",
@@ -195,7 +195,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_run",
+            "name": "specter_workflow_run",
             "description": "Execute a browser automation workflow (by file path or stored ID) in headless or visible browser with optional variables and timeout.",
             "inputSchema": {
                 "type": "object",
@@ -226,7 +226,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_runner_probe",
+            "name": "specter_runner_probe",
             "description": "Probe local host hardware specs (CPU cores, memory), display capabilities, and runner automation driver capabilities.",
             "inputSchema": {
                 "type": "object",
@@ -234,15 +234,15 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_cloud_whoami",
-            "description": "Get current Tuquet Cloud workstation pairing identity, device ID, tenant, and endpoint configuration.",
+            "name": "specter_cloud_whoami",
+            "description": "Get current Specter Cloud workstation pairing identity, device ID, tenant, and endpoint configuration.",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
             }
         },
         {
-            "name": "tuquet_browser_status",
+            "name": "specter_browser_status",
             "description": "Check the status, version, executable path, and disk usage of the dedicated isolated Chromium runtime.",
             "inputSchema": {
                 "type": "object",
@@ -250,7 +250,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_tree",
+            "name": "specter_tree",
             "description": "Scan directory structure recursively up to a specified depth, ignoring build artifacts (.git, node_modules, target, dist, build, cache) and returning a clean visual tree.",
             "inputSchema": {
                 "type": "object",
@@ -271,7 +271,7 @@ fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_faker_generate",
+            "name": "specter_faker_generate",
             "description": "Generate synthetic persona and identity test data with legally compliant Vietnamese Citizen Identity numbers (CCCD), cohesive hierarchical addresses, enterprise credentials, and demographic distributions.",
             "inputSchema": {
                 "type": "object",
@@ -338,15 +338,15 @@ async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> JsonRpcR
     let arguments = p.get("arguments").cloned().unwrap_or(json!({}));
 
     let call_result = match tool_name {
-        "tuquet_status" => execute_tuquet_status().await,
-        "tuquet_workflow_list" => execute_tuquet_workflow_list(&arguments).await,
-        "tuquet_workflow_inspect" => execute_tuquet_workflow_inspect(&arguments).await,
-        "tuquet_workflow_run" => execute_tuquet_workflow_run(&arguments).await,
-        "tuquet_runner_probe" => execute_tuquet_runner_probe().await,
-        "tuquet_cloud_whoami" => execute_tuquet_cloud_whoami().await,
-        "tuquet_browser_status" => execute_tuquet_browser_status().await,
-        "tuquet_tree" => execute_tuquet_tree(&arguments).await,
-        "tuquet_faker_generate" => execute_tuquet_faker_generate(&arguments).await,
+        "specter_status" | "tuquet_status" => execute_tuquet_status().await,
+        "specter_workflow_list" | "tuquet_workflow_list" => execute_tuquet_workflow_list(&arguments).await,
+        "specter_workflow_inspect" | "tuquet_workflow_inspect" => execute_tuquet_workflow_inspect(&arguments).await,
+        "specter_workflow_run" | "tuquet_workflow_run" => execute_tuquet_workflow_run(&arguments).await,
+        "specter_runner_probe" | "tuquet_runner_probe" => execute_tuquet_runner_probe().await,
+        "specter_cloud_whoami" | "tuquet_cloud_whoami" => execute_tuquet_cloud_whoami().await,
+        "specter_browser_status" | "tuquet_browser_status" => execute_tuquet_browser_status().await,
+        "specter_tree" | "tuquet_tree" => execute_tuquet_tree(&arguments).await,
+        "specter_faker_generate" | "tuquet_faker_generate" => execute_tuquet_faker_generate(&arguments).await,
         other => {
             return JsonRpcResponse {
                 jsonrpc: "2.0",
