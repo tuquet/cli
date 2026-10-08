@@ -174,14 +174,14 @@ pub async fn check_and_save_latest_version() -> Result<UpdateInfo, Box<dyn std::
 
 /// Perform upgrade: checks if managed by Scoop, otherwise performs in-place self-update.
 pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\x1b[38;2;56;189;248m⚡ Specter Upgrade Manager\x1b[0m");
+    crate::ui::Notify::header("⚡ Specter Upgrade Manager");
     println!("Checking for latest release from GitHub ({})...", GITHUB_REPO);
 
     let current = env!("CARGO_PKG_VERSION");
     let info = match check_and_save_latest_version().await {
         Ok(info) => info,
         Err(e) => {
-            eprintln!("\x1b[38;2;248;113;113m[WARN]\x1b[0m Failed to reach GitHub API: {}. Trying local cache...", e);
+            crate::ui::Notify::warn(format!("Failed to reach GitHub API: {}. Trying local cache...", e));
             if let Some(cached) = get_cached_update() {
                 cached
             } else {
@@ -222,7 +222,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
 
         if has_scoop {
             println!();
-            println!("Detected \x1b[38;2;56;189;248mScoop\x1b[0m installation. Executing package upgrade...");
+            crate::ui::Notify::info("Detected Scoop installation. Executing package upgrade...");
             println!("\x1b[38;2;148;163;184m> scoop update specter\x1b[0m\n");
 
             let mut child = tokio::process::Command::new("powershell")
@@ -231,11 +231,8 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
 
             let status = child.wait().await?;
             if status.success() {
-                println!(
-                    "\n{} Successfully upgraded Specter to v{} via Scoop!",
-                    crate::ui::badge_online("SUCCESS"),
-                    info.latest_version
-                );
+                println!();
+                crate::ui::Notify::success(format!("Successfully upgraded Specter to v{} via Scoop!", info.latest_version));
                 return Ok(());
             }
         }

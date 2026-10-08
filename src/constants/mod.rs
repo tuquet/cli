@@ -120,9 +120,12 @@ pub mod tools {
     pub const PINNED_CHROMIUM_REVISION: &str = "134.0.6998.35";
 }
 
+pub mod messages;
+
 // Flat re-exports of common constants for ergonomics
 pub use endpoints::*;
 pub use envs::*;
+pub use messages::*;
 pub use paths::*;
 pub use pillars::*;
 pub use ports::*;

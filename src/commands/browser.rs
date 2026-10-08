@@ -141,7 +141,7 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("\n{} {}", badge_error("ERROR"), e);
+                    crate::ui::Notify::error(&e);
                     Err(e.to_string().into())
                 }
             }
@@ -642,7 +642,7 @@ pub async fn launch_browser(
         match crate::core::browser::BrowserProfile::load(&profile_arg, &base_dir) {
             Ok(p) => p,
             Err(e) => {
-                eprintln!("\n{} {}", badge_error("ERROR"), e);
+                crate::ui::Notify::error(&e);
                 eprintln!("Run 'specter browser profile list' to view available profiles, or 'profile create <name>'.\n");
                 return Err(e.into());
             }
@@ -691,14 +691,14 @@ pub async fn launch_browser(
     // 3. Resolve executable
     let exe_path = crate::core::browser::resolve_executable_path("default").await?;
     if !std::path::Path::new(&exe_path).exists() {
-        eprintln!("\n{} Dedicated Antidetect Chromium runtime not found at: {}", badge_error("ERROR"), exe_path);
+        crate::ui::Notify::error(format!("Dedicated Antidetect Chromium runtime not found at: {}", exe_path));
         eprintln!("Run 'specter browser install' to download and set up Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 
     // 4. Check port availability if running in Driver mode
     if !is_extension_mode && tokio::net::TcpListener::bind(format!("127.0.0.1:{}", effective_port)).await.is_err() {
-        eprintln!("\n{} Port {} is already occupied by another process.", badge_error("PORT IN USE"), effective_port);
+        crate::ui::Notify::error(format!("Port {} is already occupied by another process.", effective_port));
         eprintln!("Specify a different port using '--port <PORT>', or run with '--mode extension' / '--no-cdp' for zero-port stealth.\n");
         return Err(format!("Port {} occupied", effective_port).into());
     }
@@ -977,7 +977,7 @@ pub async fn handle_profile(
             let profile = match crate::core::browser::BrowserProfile::load(&id, &base_dir) {
                 Ok(p) => p,
                 Err(e) => {
-                    eprintln!("\n{} {}", badge_error("ERROR"), e);
+                    crate::ui::Notify::error(&e);
                     return Err(e.into());
                 }
             };
@@ -1039,7 +1039,7 @@ pub async fn handle_profile(
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("\n{} Failed to delete profile: {}", badge_error("ERROR"), e);
+                    crate::ui::Notify::error(format!("Failed to delete profile: {}", e));
                     Err(e.into())
                 }
             }
@@ -1051,7 +1051,7 @@ pub async fn handle_profile(
                     if json {
                         println!("{}", serde_json::json!({ "success": false, "error": e.to_string() }));
                     } else {
-                        eprintln!("\n{} {}", badge_error("ERROR"), e);
+                        crate::ui::Notify::error(&e);
                     }
                     return Err(e.into());
                 }
@@ -1099,7 +1099,7 @@ pub async fn handle_profile(
                 if json {
                     println!("{}", serde_json::json!({ "success": false, "error": format!("Archive file not found: {}", archive.display()) }));
                 } else {
-                    eprintln!("\n{} Archive file not found at: {}", badge_error("ERROR"), archive.display());
+                    crate::ui::Notify::error(format!("Archive file not found at: {}", archive.display()));
                 }
                 return Err("Archive not found".into());
             }
@@ -1110,7 +1110,7 @@ pub async fn handle_profile(
                     if json {
                         println!("{}", serde_json::json!({ "success": false, "error": e.to_string() }));
                     } else {
-                        eprintln!("\n{} Failed to restore profile: {}", badge_error("ERROR"), e);
+                        crate::ui::Notify::error(format!("Failed to restore profile: {}", e));
                     }
                     return Err(e.into());
                 }
@@ -1153,7 +1153,7 @@ pub async fn handle_profile(
                     if json {
                         println!("{}", serde_json::json!({ "success": false, "error": e.to_string() }));
                     } else {
-                        eprintln!("\n{} {}", badge_error("ERROR"), e);
+                        crate::ui::Notify::error(&e);
                     }
                     return Err(e.into());
                 }
@@ -1238,7 +1238,7 @@ pub async fn handle_profile_cloud(
     let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&app_config.data_dir).await {
         Some(c) => c,
         None => {
-            eprintln!("\n{} Workstation not enrolled with Specter Cloud fleet.", badge_error("NOT ENROLLED"));
+            crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
             eprintln!("Run 'specter login' to authenticate and pair your workstation first.\n");
             return Err("Workstation not enrolled with Specter Cloud".into());
         }
@@ -1265,7 +1265,7 @@ pub async fn handle_profile_cloud(
 
             if !res.status().is_success() {
                 let err_text = res.text().await.unwrap_or_default();
-                eprintln!("\n{} Failed to fetch cloud browser profiles: {}", badge_error("ERROR"), err_text);
+                crate::ui::Notify::error(format!("Failed to fetch cloud browser profiles: {}", err_text));
                 return Err(format!("Cloud RPC error: {}", err_text).into());
             }
 
@@ -1367,7 +1367,7 @@ pub async fn handle_profile_cloud(
                 if json {
                     println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
                 } else {
-                    eprintln!("\n{} {}", badge_error("ACQUIRE FAILED"), err_msg);
+                    crate::ui::Notify::error(format!("Acquire failed: {}", err_msg));
                     if let Some(locked_device) = body.get("locked_by_device_id").and_then(|v| v.as_str()) {
                         eprintln!("  • Profile currently locked by device: {}", locked_device);
                     }
@@ -1468,7 +1468,7 @@ pub async fn handle_profile_cloud(
                             if json {
                                 println!("{}", serde_json::json!({ "success": false, "error": err }));
                             } else {
-                                eprintln!("\n{} {}", badge_error("PROFILE NOT FOUND"), err);
+                                crate::ui::Notify::error(format!("Profile not found: {}", err));
                             }
                             return Err(err.into());
                         }
@@ -1509,7 +1509,7 @@ pub async fn handle_profile_cloud(
                 if json {
                     println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
                 } else {
-                    eprintln!("\n{} {}", badge_error("RELEASE FAILED"), err_msg);
+                    crate::ui::Notify::error(format!("Release failed: {}", err_msg));
                 }
                 return Err(err_msg.into());
             }
@@ -1615,7 +1615,7 @@ pub async fn verify_stealth_presentation(
     // 1. Resolve Antidetect Chromium binary
     let exe_path = crate::core::browser::resolve_executable_path("default").await?;
     if !std::path::Path::new(&exe_path).exists() {
-        eprintln!("\n{} Dedicated Antidetect Chromium binary not found at: {}", badge_error("ERROR"), exe_path);
+        crate::ui::Notify::error(format!("Dedicated Antidetect Chromium binary not found at: {}", exe_path));
         eprintln!("Run 'specter browser install' to provision Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
@@ -1666,7 +1666,7 @@ pub async fn verify_stealth_presentation(
         Err(e) => {
             let _ = child.kill();
             let _ = tokio::fs::remove_dir_all(&temp_profile).await;
-            eprintln!("\n{} Failed to attach CDP session: {}", badge_error("CDP ERROR"), e);
+            crate::ui::Notify::error(format!("Failed to attach CDP session: {}", e));
             return Err(e.into());
         }
     };

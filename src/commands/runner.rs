@@ -275,10 +275,10 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 pub async fn restart_daemon(detach: bool) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Stopping existing runner daemon...");
+    crate::ui::Notify::info(crate::constants::MSG_SERVER_STOPPING);
     let _ = stop_daemon(false).await;
     tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
-    println!("Starting runner daemon...");
+    crate::ui::Notify::info(crate::constants::MSG_SERVER_STARTING);
     run_server(None, None, detach, None, None, false).await
 }
 
@@ -510,7 +510,7 @@ pub async fn run_server(
     info!("Server listening on http://{}", listener.local_addr()?);
     let panic_log_path = PathBuf::from(&config.data_dir).join("panic.log");
     std::panic::set_hook(Box::new(move |info| {
-        let msg = format!("[AUTOMA-CORE PANIC] {:?}\n", info);
+        let msg = format!("[SPECTER-PANIC] {:?}\n", info);
         eprintln!("{}", msg);
         let _ = std::fs::write(&panic_log_path, &msg);
     }));
@@ -529,7 +529,7 @@ pub async fn run_server(
         {
             let _ = tokio::signal::ctrl_c().await;
         }
-        eprintln!("[AUTOMA-CORE SHUTDOWN TRIGGERED] SIGINT/Ctrl-C received!");
+        crate::ui::Notify::shutdown(crate::constants::MSG_SHUTDOWN_SIGNAL);
         info!("Shutdown signal received. Cleaning up child processes...");
         crate::core::browser::manager::BrowserManager::destroy_all().await;
         let _ = std::fs::remove_file(&pid_file_clone);
@@ -541,12 +541,12 @@ pub async fn run_server(
         .await
     {
         let _ = std::fs::remove_file(&pid_file_path);
-        eprintln!("[AUTOMA-CORE SERVER ERROR] {:?}", e);
+        crate::ui::Notify::error(format!("Server execution error: {:?}", e));
         return Err(e.into());
     }
 
     let _ = std::fs::remove_file(&pid_file_path);
-    eprintln!("[AUTOMA-CORE EXITED MAIN OK]");
+    crate::ui::Notify::shutdown_clean(crate::constants::MSG_SHUTDOWN_CLEAN);
     Ok(())
 }
 
@@ -589,7 +589,7 @@ pub async fn run_cloud_worker(
     let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&config.data_dir).await {
         Some(c) => c,
         None => {
-            eprintln!("\n{} Workstation not enrolled with Specter Cloud.", crate::ui::badge_error("NOT ENROLLED"));
+            crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
             eprintln!("Run 'specter runner enroll' to register this device.\n");
             return Err("Missing cloud device credentials".into());
         }
@@ -679,7 +679,8 @@ pub async fn run_cloud_worker(
         tokio::select! {
             _ = tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)) => {},
             _ = tokio::signal::ctrl_c() => {
-                println!("\n>> Worker shutdown signal received (Ctrl+C). Terminating gracefully.");
+                println!();
+                crate::ui::Notify::shutdown(crate::constants::MSG_SHUTDOWN_SIGNAL);
                 break;
             }
         }

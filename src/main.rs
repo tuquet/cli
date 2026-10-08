@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if let Err(e) = result {
-        eprintln!("\x1b[31m[ERROR] {}\x1b[0m", e);
+        automa_core::ui::Notify::error(e);
         std::process::exit(1);
     }
 

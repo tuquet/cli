@@ -1,3 +1,5 @@
+pub mod notify;
+pub use notify::Notify;
 
 pub mod colors {
     pub const CYAN: &str = "\x1b[38;2;56;189;248m";

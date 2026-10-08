@@ -364,22 +364,20 @@ pub async fn import_workflow(
         })
         .unwrap_or(0);
 
-    println!("============================================================");
-    println!(" ✔ Workflow Successfully Imported");
-    println!("============================================================");
-    println!(" ID:          {}", id);
-    println!(" Name:        {}", name);
-    println!(" Version:     {}", version);
+    crate::ui::Notify::header("Workflow Successfully Imported");
+    crate::ui::Notify::key_val("ID", &id);
+    crate::ui::Notify::key_val("Name", &name);
+    crate::ui::Notify::key_val("Version", &version);
     if let Some(ref d) = description {
-        println!(" Description: {}", d);
+        crate::ui::Notify::key_val("Description", d);
     }
-    println!(" Blocks:      {}", block_count);
-    println!(" Vault File:  {}", vault_file.display());
-    println!(" Database:    {}", db_path.display());
-    println!("------------------------------------------------------------");
+    crate::ui::Notify::key_val("Blocks", block_count);
+    crate::ui::Notify::key_val("Vault File", vault_file.display());
+    crate::ui::Notify::key_val("Database", db_path.display());
+    crate::ui::Notify::divider();
     println!(" 💡 Ready to execute:");
     println!("    specter automa run {} --headless", id);
-    println!("============================================================");
+    crate::ui::Notify::divider();
 
     Ok(())
 }
@@ -439,7 +437,7 @@ pub async fn export_workflow(
     }
     tokio::fs::write(&dest, final_content).await?;
 
-    println!("✔ Workflow '{}' exported successfully to: {:?}", id, dest);
+    crate::ui::Notify::success(format!("Workflow '{}' exported successfully to: {:?}", id, dest));
     Ok(())
 }
 
@@ -480,21 +478,19 @@ pub async fn delete_workflow(
     }
 
     if deleted_db || deleted_vault {
-        println!(
-            "✔ Workflow '{}' deleted successfully (Database: {}, Vault: {}).",
+        crate::ui::Notify::success(format!(
+            "Workflow '{}' deleted successfully (Database: {}, Vault: {}).",
             id, deleted_db, deleted_vault
-        );
+        ));
     } else {
-        println!("Workflow '{}' was not found in database or vault.", id);
+        crate::ui::Notify::warn(format!("Workflow '{}' was not found in database or vault.", id));
     }
 
     Ok(())
 }
 
 pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
-    println!("============================================================");
-    println!(" Automa Workflow Inspector");
-    println!("============================================================");
+    crate::ui::Notify::header("Automa Workflow Inspector");
 
     let (content, source_label) = {
         let target_path = Path::new(target);
@@ -812,10 +808,10 @@ pub async fn run_workflow(
         close_browser_on_finish: Some(true),
     };
 
-    println!(
-        ">> Submitting workflow to browser worker (Bridge Port: {})...",
+    crate::ui::Notify::info(format!(
+        "Submitting workflow to browser worker (Bridge Port: {})...",
         bound_port
-    );
+    ));
 
     use crate::core::engine::job_coordinator::JobCoordinator;
     let job_id = match JobCoordinator::submit(
@@ -833,19 +829,21 @@ pub async fn run_workflow(
         }
     };
 
-    println!(
-        ">> Workflow dispatched [Job ID: {}]. Waiting for worker execution...",
+    crate::ui::Notify::info(format!(
+        "Workflow dispatched [Job ID: {}]. Waiting for worker execution...",
         job_id
-    );
+    ));
 
     // Stream logs to console until job finishes or timeout/ctrl-c occurs
     let execution_result = tokio::select! {
         _ = tokio::signal::ctrl_c() => {
-            eprintln!("\n>> Execution interrupted by user (Ctrl+C). Cleaning up...");
+            eprintln!();
+            crate::ui::Notify::warn(crate::constants::MSG_JOB_CANCELLED);
             Err("Interrupted by user (SIGINT)")
         }
         _ = tokio::time::sleep(timeout_duration) => {
-            eprintln!("\n>> Execution timed out after {:?}.", timeout_duration);
+            eprintln!();
+            crate::ui::Notify::error(format!("Execution timed out after {:?}.", timeout_duration));
             Err("Workflow execution timed out")
         }
         res = async {
@@ -857,10 +855,10 @@ pub async fn run_workflow(
                             if let Some(event_type) = val.get("type").and_then(|v| v.as_str()) {
                                 if event_type == "job_failed" {
                                     failed = true;
-                                    println!(">> Job finished with event: {}", event_type);
+                                    crate::ui::Notify::info(format!("Job finished with event: {}", event_type));
                                     break;
                                 } else if event_type == "job_finish" || event_type == "job_completed" || event_type == "workflow_finished" {
-                                    println!(">> Job finished with event: {}", event_type);
+                                    crate::ui::Notify::info(format!("Job finished with event: {}", event_type));
                                     break;
                                 }
                             }
@@ -908,11 +906,11 @@ pub async fn run_workflow(
 
     match execution_result {
         Ok(_) => {
-            println!(">> Run completed successfully.");
+            crate::ui::Notify::success(crate::constants::MSG_JOB_COMPLETED);
             Ok(())
         }
         Err(e) => {
-            eprintln!(">> Run failed: {}", e);
+            crate::ui::Notify::error(format!("Run failed: {}", e));
             Err(e.into())
         }
     }
