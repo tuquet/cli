@@ -65,10 +65,10 @@ pub async fn handle(
 
 fn show_overview() {
     let m = manifest();
-    let root = crate::config::canonical_tuquet_dir();
+    let root = crate::config::canonical_specter_dir();
 
     println!();
-    let mut card = Card::new("TUQUET CLI SCHEMA MANIFEST");
+    let mut card = Card::new("SPECTER CLI SCHEMA MANIFEST");
     card.with_badge(badge_online(&format!("v{}", m.version)));
     card.with_min_width(70);
 

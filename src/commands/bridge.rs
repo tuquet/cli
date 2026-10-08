@@ -276,7 +276,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                 default_srv_socks
             );
         } else {
-            let current_exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("tuquet"));
+            let current_exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("specter"));
             let mut cmd = std::process::Command::new(current_exe);
             cmd.arg("bridge").arg("start").arg("--http").arg("--foreground");
             if let Some(srv) = opts.server {
@@ -296,9 +296,9 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             }
 
             if let Ok(child) = cmd.spawn() {
-                let pid_path = BridgeSupervisor::pids_dir().join("tuquet-http.json");
+                let pid_path = BridgeSupervisor::pids_dir().join("specter-http.json");
                 let pids = crate::infrastructure::bridge::supervisor::ServerPids {
-                    server_id: "tuquet-http".to_string(),
+                    server_id: "specter-http".to_string(),
                     cf_pid: Some(child.id()),
                     ssh_pid: None,
                 };

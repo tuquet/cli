@@ -72,7 +72,7 @@ pub struct McpDef {
 
 static MANIFEST_INSTANCE: OnceLock<CliManifest> = OnceLock::new();
 
-/// Get global parsed instance of the Tuquet CLI Manifest
+/// Get global parsed instance of the Specter CLI Manifest
 pub fn manifest() -> &'static CliManifest {
     MANIFEST_INSTANCE.get_or_init(|| {
         serde_json::from_str(MANIFEST_RAW_JSON)

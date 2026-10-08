@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_tuquet_dir, EnvExpander};
+use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemConfig {
@@ -22,7 +22,7 @@ fn default_machine_name() -> String {
         .or_else(|_| std::env::var("HOSTNAME"))
         .unwrap_or_else(|_| "WORKSTATION".to_string())
 }
-fn default_cloud_url() -> String { "https://cloud.tuquet.com".to_string() }
+fn default_cloud_url() -> String { "https://cloud.specter.dev".to_string() }
 fn default_true() -> bool { true }
 fn default_channel() -> String { "stable".to_string() }
 fn default_env() -> String { "production".to_string() }
@@ -41,7 +41,7 @@ impl Default for SystemConfig {
 
 impl SystemConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_tuquet_dir().join("system");
+        let dir = canonical_specter_dir().join("system");
         let _ = fs::create_dir_all(&dir);
         dir.join("system.json")
     }
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn test_system_config_defaults() {
         let config = SystemConfig::default();
-        assert_eq!(config.cloud_url, "https://cloud.tuquet.com");
+        assert_eq!(config.cloud_url, "https://cloud.specter.dev");
         assert_eq!(config.update_channel, "stable");
         assert!(config.auto_check_update);
     }

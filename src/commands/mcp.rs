@@ -338,15 +338,15 @@ async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> JsonRpcR
     let arguments = p.get("arguments").cloned().unwrap_or(json!({}));
 
     let call_result = match tool_name {
-        "specter_status" | "tuquet_status" => execute_tuquet_status().await,
-        "specter_workflow_list" | "tuquet_workflow_list" => execute_tuquet_workflow_list(&arguments).await,
-        "specter_workflow_inspect" | "tuquet_workflow_inspect" => execute_tuquet_workflow_inspect(&arguments).await,
-        "specter_workflow_run" | "tuquet_workflow_run" => execute_tuquet_workflow_run(&arguments).await,
-        "specter_runner_probe" | "tuquet_runner_probe" => execute_tuquet_runner_probe().await,
-        "specter_cloud_whoami" | "tuquet_cloud_whoami" => execute_tuquet_cloud_whoami().await,
-        "specter_browser_status" | "tuquet_browser_status" => execute_tuquet_browser_status().await,
-        "specter_tree" | "tuquet_tree" => execute_tuquet_tree(&arguments).await,
-        "specter_faker_generate" | "tuquet_faker_generate" => execute_tuquet_faker_generate(&arguments).await,
+        "specter_status" => execute_specter_status().await,
+        "specter_workflow_list" => execute_specter_workflow_list(&arguments).await,
+        "specter_workflow_inspect" => execute_specter_workflow_inspect(&arguments).await,
+        "specter_workflow_run" => execute_specter_workflow_run(&arguments).await,
+        "specter_runner_probe" => execute_specter_runner_probe().await,
+        "specter_cloud_whoami" => execute_specter_cloud_whoami().await,
+        "specter_browser_status" => execute_specter_browser_status().await,
+        "specter_tree" => execute_specter_tree(&arguments).await,
+        "specter_faker_generate" => execute_specter_faker_generate(&arguments).await,
         other => {
             return JsonRpcResponse {
                 jsonrpc: "2.0",
@@ -393,7 +393,7 @@ async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> JsonRpcR
     }
 }
 
-async fn execute_tuquet_status() -> Result<String, String> {
+async fn execute_specter_status() -> Result<String, String> {
     let config = AppConfig::load();
 
     // 1. Cloud
@@ -446,7 +446,7 @@ async fn execute_tuquet_status() -> Result<String, String> {
     });
 
     let result = json!({
-        "ecosystem": "tuquet",
+        "ecosystem": "specter",
         "cloud": cloud_info,
         "runner": runner_info,
         "browser": browser_info
@@ -455,7 +455,7 @@ async fn execute_tuquet_status() -> Result<String, String> {
     Ok(serde_json::to_string_pretty(&result).unwrap_or_default())
 }
 
-async fn execute_tuquet_workflow_list(args: &Value) -> Result<String, String> {
+async fn execute_specter_workflow_list(args: &Value) -> Result<String, String> {
     let search = args.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
     let config = AppConfig::load();
 
@@ -494,10 +494,10 @@ async fn execute_tuquet_workflow_list(args: &Value) -> Result<String, String> {
     }
 
     // 2. Vault Directory ~/.specter/automa/workflows
-    let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+    let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
-    for vdir in &[tuquet_vault, config_vault] {
+    for vdir in &[specter_vault, config_vault] {
         if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 let path = entry.path();
@@ -583,7 +583,7 @@ fn count_workflow_blocks(val: &Value) -> usize {
     }
 }
 
-async fn execute_tuquet_workflow_inspect(args: &Value) -> Result<String, String> {
+async fn execute_specter_workflow_inspect(args: &Value) -> Result<String, String> {
     let target = args
         .get("workflow")
         .and_then(|v| v.as_str())
@@ -665,12 +665,12 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
     }
 
     // Check Vault
-    let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+    let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
     let candidates = [
-        tuquet_vault.join(format!("{}.workflow.json", target)),
-        tuquet_vault.join(format!("{}.json", target)),
+        specter_vault.join(format!("{}.workflow.json", target)),
+        specter_vault.join(format!("{}.json", target)),
         config_vault.join(format!("{}.workflow.json", target)),
         config_vault.join(format!("{}.json", target)),
     ];
@@ -708,7 +708,7 @@ fn extract_nodes_array(val: &Value) -> Vec<Value> {
     }
 }
 
-async fn execute_tuquet_workflow_run(args: &Value) -> Result<String, String> {
+async fn execute_specter_workflow_run(args: &Value) -> Result<String, String> {
     let workflow = args
         .get("workflow")
         .and_then(|v| v.as_str())
@@ -765,9 +765,9 @@ async fn execute_tuquet_workflow_run(args: &Value) -> Result<String, String> {
     Ok(serde_json::to_string_pretty(&result).unwrap_or_default())
 }
 
-async fn execute_tuquet_runner_probe() -> Result<String, String> {
+async fn execute_specter_runner_probe() -> Result<String, String> {
     let manifest = json!({
-        "protocol": "tuquet.automa.v1",
+        "protocol": "specter.automa.v1",
         "name": "runner",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",
@@ -789,7 +789,7 @@ async fn execute_tuquet_runner_probe() -> Result<String, String> {
     Ok(serde_json::to_string_pretty(&manifest).unwrap_or_default())
 }
 
-async fn execute_tuquet_cloud_whoami() -> Result<String, String> {
+async fn execute_specter_cloud_whoami() -> Result<String, String> {
     let config = AppConfig::load();
     let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
 
@@ -806,13 +806,13 @@ async fn execute_tuquet_cloud_whoami() -> Result<String, String> {
     } else {
         let res = json!({
             "enrolled": false,
-            "message": "Workstation is not paired with Tuquet Cloud. Use 'specter login' to connect."
+            "message": "Workstation is not paired with Specter Cloud. Use 'specter login' to connect."
         });
         Ok(serde_json::to_string_pretty(&res).unwrap_or_default())
     }
 }
 
-async fn execute_tuquet_browser_status() -> Result<String, String> {
+async fn execute_specter_browser_status() -> Result<String, String> {
     let browser_status = crate::core::browser::resolver::get_runtime_status();
     let res = json!({
         "installed": browser_status.installed,
@@ -824,7 +824,7 @@ async fn execute_tuquet_browser_status() -> Result<String, String> {
     Ok(serde_json::to_string_pretty(&res).unwrap_or_default())
 }
 
-async fn execute_tuquet_tree(args: &Value) -> Result<String, String> {
+async fn execute_specter_tree(args: &Value) -> Result<String, String> {
     let target_path_str = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
     let max_depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(3).min(10) as usize;
     let show_hidden = args.get("show_hidden").and_then(|v| v.as_bool()).unwrap_or(false);
@@ -898,7 +898,7 @@ fn build_dir_tree(
     }
 }
 
-async fn execute_tuquet_faker_generate(args: &Value) -> Result<String, String> {
+async fn execute_specter_faker_generate(args: &Value) -> Result<String, String> {
     let count = args.get("count").and_then(|v| v.as_u64()).unwrap_or(1) as u32;
     let gender = args.get("gender").and_then(|v| v.as_str());
     let nat = args.get("nat").and_then(|v| v.as_str()).unwrap_or("VN");

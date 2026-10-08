@@ -266,7 +266,7 @@ impl CloudFleetOrchestrator {
         let creds = match CloudReporter::load_credentials(&app_config.data_dir).await {
             Some(c) => c,
             None => {
-                eprintln!("\n{} Workstation not enrolled with Tuquet Cloud.", badge_error("AUTH ERROR"));
+                eprintln!("\n{} Workstation not enrolled with Specter Cloud.", badge_error("AUTH ERROR"));
                 eprintln!("Run 'specter runner enroll' or login to configure device credentials.\n");
                 return Err("Missing cloud device credentials".into());
             }

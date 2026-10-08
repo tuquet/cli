@@ -293,7 +293,7 @@ impl BridgeSupervisor {
 
 pub(crate) fn is_valid_bridge_process_name(raw_name: &str) -> bool {
     let name = raw_name.to_lowercase();
-    name.contains("cloudflared") || name.contains("ssh") || name.contains("specter") || name.contains("tuquet")
+    name.contains("cloudflared") || name.contains("ssh") || name.contains("specter")
 }
 
 fn kill_pid(sys: &System, pid_u32: u32) {
@@ -325,8 +325,6 @@ mod tests {
         assert!(is_valid_bridge_process_name("ssh.exe"));
         assert!(is_valid_bridge_process_name("specter"));
         assert!(is_valid_bridge_process_name("specter.exe"));
-        assert!(is_valid_bridge_process_name("tuquet"));
-        assert!(is_valid_bridge_process_name("tuquet.exe"));
 
         // Innocent processes must NOT match
         assert!(!is_valid_bridge_process_name("explorer.exe"));

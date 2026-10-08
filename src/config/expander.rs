@@ -63,11 +63,6 @@ pub fn canonical_specter_dir() -> std::path::PathBuf {
     canonical_ssot_dir()
 }
 
-/// Backward-compatible alias for existing call-sites
-pub fn canonical_tuquet_dir() -> std::path::PathBuf {
-    canonical_ssot_dir()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -82,9 +77,9 @@ mod tests {
     #[test]
     fn test_expand_with_existing_env() {
         unsafe {
-            std::env::set_var("TEST_TUQUET_ENV_VAR", "injected_val");
+            std::env::set_var("TEST_SPECTER_ENV_VAR", "injected_val");
         }
-        let input = "Prefix_${TEST_TUQUET_ENV_VAR}_Suffix";
+        let input = "Prefix_${TEST_SPECTER_ENV_VAR}_Suffix";
         let output = EnvExpander::expand(input);
         assert_eq!(output, "Prefix_injected_val_Suffix");
     }
@@ -92,7 +87,7 @@ mod tests {
     #[test]
     fn test_canonical_ssot_dir() {
         let dir = canonical_ssot_dir();
-        assert!(dir.to_string_lossy().contains(".specter") || dir.to_string_lossy().contains(".tuquet"));
+        assert!(dir.to_string_lossy().contains(".specter"));
     }
 }
 

@@ -30,7 +30,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
   \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
   \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
-  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Tuquet Cloud
+  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Specter Cloud
   \x1b[1;32mupgrade\x1b[0m         Check and upgrade Specter CLI to the latest release
   \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
 
@@ -38,7 +38,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
   \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
-  \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing
+  \x1b[1;36mcloud\x1b[0m           Specter Cloud authentication & multi-tenant pairing
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
   \x1b[1;36mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
   \x1b[1;36mbridge\x1b[0m          Network bridge, multi-VPS mesh & proxy manager
@@ -83,7 +83,7 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Show unified status overview of Tuquet ecosystem
+    /// Show unified status overview of Specter ecosystem
     #[command(name = "status")]
     Status {
         /// Output status in raw JSON format for machine parsing
@@ -107,7 +107,7 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Inspect or edit unified service configurations across Tuquet microservice pillars
+    /// Inspect or edit unified service configurations across Specter microservice pillars
     #[command(name = "config")]
     Config {
         /// Optional target service (bridge, automa, runner, browser, cloud, system, faker)
@@ -123,14 +123,14 @@ pub enum Commands {
         show: bool,
     },
 
-    /// Show current Tuquet Cloud identity and enrollment status
+    /// Show current Specter Cloud identity and enrollment status
     #[command(name = "whoami")]
     Whoami,
 
-    /// Authenticate and pair workstation with Tuquet Cloud
+    /// Authenticate and pair workstation with Specter Cloud
     #[command(name = "login")]
     Login {
-        /// Tuquet Cloud endpoint URL
+        /// Specter Cloud endpoint URL
         #[arg(short, long)]
         url: Option<String>,
 
@@ -157,7 +157,7 @@ pub enum Commands {
         command: Option<RunnerSubcommands>,
     },
 
-    /// Tuquet Cloud authentication & multi-tenant pairing
+    /// Specter Cloud authentication & multi-tenant pairing
     #[command(name = "cloud")]
     Cloud {
         #[command(subcommand)]
@@ -237,7 +237,7 @@ pub enum Commands {
     #[command(name = "mcp")]
     Mcp,
 
-    /// Check and upgrade Tuquet CLI to the latest release
+    /// Check and upgrade Specter CLI to the latest release
     #[command(name = "upgrade", aliases = ["update"])]
     Upgrade,
 
@@ -626,9 +626,9 @@ pub enum RunnerSubcommands {
 
 #[derive(Subcommand, Debug)]
 pub enum CloudSubcommands {
-    /// Authenticate and enroll this workstation with Tuquet Cloud
+    /// Authenticate and enroll this workstation with Specter Cloud
     Login {
-        /// Tuquet Cloud endpoint URL (e.g. https://cloud.tuquet.com)
+        /// Specter Cloud endpoint URL (e.g. https://cloud.specter.dev)
         #[arg(short, long)]
         url: Option<String>,
 
@@ -641,10 +641,10 @@ pub enum CloudSubcommands {
         name: Option<String>,
     },
 
-    /// Log out and disconnect this workstation from Tuquet Cloud
+    /// Log out and disconnect this workstation from Specter Cloud
     Logout,
 
-    /// Show current Tuquet Cloud authentication and enrollment status
+    /// Show current Specter Cloud authentication and enrollment status
     #[command(name = "whoami")]
     Whoami,
 
@@ -974,14 +974,14 @@ pub enum ExtCommands {
     #[command(name = "list")]
     List,
 
-    /// Browse and search available extensions from tuquet-scoop-bucket
+    /// Browse and search available extensions from scoop catalog
     #[command(name = "catalog")]
     Catalog {
         /// Optional keyword to filter extensions
         query: Option<String>,
     },
 
-    /// Download and install an extension package from tuquet-scoop-bucket
+    /// Download and install an extension package from scoop catalog
     #[command(name = "install")]
     Install {
         /// Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')

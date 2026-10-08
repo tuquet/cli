@@ -5,7 +5,7 @@ use crate::ui::{badge_offline, badge_online, badge_warn, Card};
 
 pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
-    let canonical_root = crate::config::canonical_tuquet_dir().display().to_string();
+    let canonical_root = crate::config::canonical_specter_dir().display().to_string();
 
     // 1. SYSTEM & CLOUD
     let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
@@ -27,8 +27,8 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
         system_card.with_min_width(68);
         system_card.add_kv("Workstation", &hostname);
         system_card.add_kv("Canonical Root", &canonical_root);
-        system_card.add_kv("Cloud Target", "Not paired with Tuquet Cloud");
-        system_card.with_footer("Run 'specter login' to authenticate with Tuquet Cloud");
+        system_card.add_kv("Cloud Target", "Not paired with Specter Cloud");
+        system_card.with_footer("Run 'specter login' to authenticate with Specter Cloud");
     }
 
     // 2. AUTOMA (Runner Daemon + SQLite Database + Workflows)
@@ -135,7 +135,7 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
 
     if json_output {
         let out = serde_json::json!({
-            "ecosystem": "tuquet",
+            "ecosystem": "specter",
             "cloud": {
                 "enrolled": cloud_creds.is_some(),
                 "device_id": cloud_creds.as_ref().map(|c| c.device_id.as_str()),

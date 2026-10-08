@@ -18,7 +18,7 @@ pub async fn login(
     name: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
-    let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.tuquet.com".to_string());
+    let cloud_url = url.or(config.cloud_url).unwrap_or_else(|| "https://cloud.specter.dev".to_string());
     let enrollment_token = token.as_deref().or(config.cloud_enrollment_token.as_deref());
     match CloudReporter::login(&cloud_url, enrollment_token, name.as_deref(), &config.data_dir).await {
         Ok(creds) => {
@@ -29,7 +29,7 @@ pub async fn login(
             card.add_kv("Device Name", &creds.name);
             card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
             card.add_kv("Endpoint", creds.cloud_url.as_deref().unwrap_or(&cloud_url));
-            card.with_footer("Workstation successfully paired with Tuquet Cloud fleet");
+            card.with_footer("Workstation successfully paired with Specter Cloud fleet");
             println!();
             card.print();
             println!();
@@ -49,7 +49,7 @@ pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
             card.with_badge(badge_offline("LOGGED OUT"));
             card.with_min_width(64);
             card.add_line("Removed local cloud pairing credentials and session identity.");
-            card.with_footer("Run 'specter login' to enroll again with Tuquet Cloud");
+            card.with_footer("Run 'specter login' to enroll again with Specter Cloud");
             println!();
             card.print();
             println!();
@@ -91,7 +91,7 @@ pub async fn whoami() -> Result<(), Box<dyn std::error::Error>> {
         card.with_badge(badge_offline("DISCONNECTED"));
         card.with_min_width(64);
         card.add_line("Workstation not enrolled with cloud fleet.");
-        card.with_footer("Run 'specter login' to authenticate with Tuquet Cloud");
+        card.with_footer("Run 'specter login' to authenticate with Specter Cloud");
         println!();
         card.print();
         println!();

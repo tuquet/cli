@@ -97,12 +97,12 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::ws::ws_handler
     ),
     info(
-        title = "Tuquet CLI & Core Bridge API",
+        title = "Specter CLI & Core Bridge API",
         version = "1.0.0",
-        description = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for the Tuquet Ecosystem.",
+        description = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for the Specter Ecosystem.",
         contact(
-            name = "Tuquet Ecosystem",
-            url = "https://github.com/tuquet/tuquet-cli"
+            name = "Specter Ecosystem",
+            url = "https://github.com/tuquet/cli"
         ),
         license(
             name = "MIT"
@@ -126,7 +126,7 @@ pub struct ApiDoc;
 
 async fn root_handler() -> impl IntoResponse {
     axum::Json(serde_json::json!({
-        "service": "tuquet-cli",
+        "service": "specter-cli",
         "version": env!("CARGO_PKG_VERSION"),
         "role": "native-bridge-launcher",
         "status": "running",

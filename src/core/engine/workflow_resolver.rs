@@ -200,10 +200,10 @@ impl WorkflowResolver {
         }
 
         // Step 3: Check Vault candidate directories
-        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let local_vault = PathBuf::from(data_dir).join("workflows");
 
-        let mut vault_dirs = vec![tuquet_vault];
+        let mut vault_dirs = vec![specter_vault];
         if !vault_dirs.contains(&local_vault) {
             vault_dirs.push(local_vault);
         }

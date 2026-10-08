@@ -40,7 +40,7 @@ pub fn is_newer_version(current: &str, latest: &str) -> bool {
 }
 
 pub fn get_cache_file_path() -> PathBuf {
-    crate::config::canonical_tuquet_dir()
+    crate::config::canonical_specter_dir()
         .join("system")
         .join("update_check.json")
 }
@@ -78,7 +78,7 @@ fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, Box<dyn std:
     let mut builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(timeout_secs))
         .user_agent(format!(
-            "tuquet-cli/{} ({}; {})",
+            "specter/{} ({}; {})",
             env!("CARGO_PKG_VERSION"),
             std::env::consts::OS,
             std::env::consts::ARCH
@@ -94,7 +94,7 @@ fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, Box<dyn std:
             builder = builder.proxy(p);
         }
     } else {
-        // 2. Probe if Tuquet local SOCKS5 mesh bridge (port 1080) is actively listening
+        // 2. Probe if Specter local SOCKS5 mesh bridge (port 1080) is actively listening
         if let Ok(_) = std::net::TcpStream::connect_timeout(
             &std::net::SocketAddr::from(([127, 0, 0, 1], 1080)),
             Duration::from_millis(80),
@@ -174,7 +174,7 @@ pub async fn check_and_save_latest_version() -> Result<UpdateInfo, Box<dyn std::
 
 /// Perform upgrade: checks if managed by Scoop, otherwise performs in-place self-update.
 pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\x1b[38;2;56;189;248m⚡ Tuquet CLI Upgrade Manager\x1b[0m");
+    println!("\x1b[38;2;56;189;248m⚡ Specter Upgrade Manager\x1b[0m");
     println!("Checking for latest release from GitHub ({})...", GITHUB_REPO);
 
     let current = env!("CARGO_PKG_VERSION");
@@ -193,7 +193,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     if !info.has_update {
         println!();
         println!(
-            "{} Tuquet CLI is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
+            "{} Specter is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
             crate::ui::badge_online("UP TO DATE"),
             current
         );
@@ -232,7 +232,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             let status = child.wait().await?;
             if status.success() {
                 println!(
-                    "\n{} Successfully upgraded Tuquet CLI to v{} via Scoop!",
+                    "\n{} Successfully upgraded Specter to v{} via Scoop!",
                     crate::ui::badge_online("SUCCESS"),
                     info.latest_version
                 );
@@ -284,11 +284,10 @@ async fn perform_in_place_self_update(
     };
 
     let specter_prefix = format!("specter-{}-{}", os, arch);
-    let tuquet_prefix = format!("tuquet-{}-{}", os, arch);
 
     // Find best asset match:
-    // 1. Archive matching OS and Arch (e.g. specter-windows-x64.zip, tuquet-linux-x64.tar.gz)
-    // 2. Raw binary matching OS (specter.exe, specter, tuquet.exe, tuquet)
+    // 1. Archive matching OS and Arch (e.g. specter-windows-x64.zip, specter-linux-x64.tar.gz)
+    // 2. Raw binary matching OS (specter.exe, specter)
     let mut selected_asset: Option<(String, String, u64)> = None;
     let mut checksum_asset: Option<(String, String)> = None;
 
@@ -307,19 +306,17 @@ async fn perform_in_place_self_update(
                 checksum_asset = Some((name.to_string(), download_url.to_string()));
             }
 
-            // Match full prefix archive (specter or legacy tuquet)
-            if (name.starts_with(&specter_prefix) || name.starts_with(&tuquet_prefix))
-                && (name.ends_with(".zip") || name.ends_with(".tar.gz"))
-            {
+            // Match full prefix archive (specter)
+            if name.starts_with(&specter_prefix) && (name.ends_with(".zip") || name.ends_with(".tar.gz")) {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
                 break;
             }
-            // Match legacy naming (tuquet-v1.0.0-windows-x64.zip)
-            if name.contains(arch) && name.contains(os) && name.ends_with(".zip") {
+            // Match naming with arch and os
+            if name.contains("specter") && name.contains(arch) && name.contains(os) && name.ends_with(".zip") {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
             // Fallback raw binary
-            if selected_asset.is_none() && (name == "specter.exe" || name == "specter" || name == "tuquet.exe" || name == "tuquet") {
+            if selected_asset.is_none() && (name == "specter.exe" || name == "specter") {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
         }
@@ -382,7 +379,7 @@ async fn perform_in_place_self_update(
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let file_name = file.name().to_string();
-            if file_name.ends_with("specter.exe") || file_name.ends_with("specter") || file_name.ends_with("tuquet.exe") || file_name.ends_with("tuquet") {
+            if file_name.ends_with("specter.exe") || file_name.ends_with("specter") {
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
                 extracted = Some(buf);
@@ -400,7 +397,7 @@ async fn perform_in_place_self_update(
         for entry in tar_archive.entries()? {
             let mut entry = entry?;
             let path = entry.path()?.to_string_lossy().to_string();
-            if path.ends_with("specter") || path.ends_with("specter.exe") || path.ends_with("tuquet") || path.ends_with("tuquet.exe") {
+            if path.ends_with("specter") || path.ends_with("specter.exe") {
                 let mut buf = Vec::new();
                 entry.read_to_end(&mut buf)?;
                 extracted = Some(buf);

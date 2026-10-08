@@ -155,8 +155,8 @@ pub async fn get_system_info(
     (
         StatusCode::OK,
         Json(RunnerIdentityResponse {
-            service: "tuquet-cli".to_string(),
-            protocol: "tuquet.automa.v1".to_string(),
+            service: "specter-cli".to_string(),
+            protocol: "specter.automa.v1".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             status: "ready".to_string(),
             machine: MachineInfo {
@@ -260,7 +260,7 @@ pub async fn open_studio(
 pub struct CloudStatusResponse {
     /// Whether cloud telemetry reporting is configured
     pub enabled: bool,
-    /// Connected Tuquet Cloud URL
+    /// Connected Specter Cloud URL
     pub cloud_url: Option<String>,
     /// Whether this machine is enrolled with a device ID
     pub enrolled: bool,
@@ -297,7 +297,7 @@ pub struct CloudSyncResponse {
     get,
     path = "/api/v1/system/cloud/status",
     operation_id = "get_cloud_status",
-    summary = "Get Tuquet Cloud reporting and device enrollment status",
+    summary = "Get Specter Cloud reporting and device enrollment status",
     description = "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
     responses(
         (status = 200, description = "Cloud reporting status retrieved successfully", body = CloudStatusResponse)
@@ -335,8 +335,8 @@ pub async fn get_cloud_status(
     post,
     path = "/api/v1/system/cloud/sync",
     operation_id = "trigger_cloud_sync",
-    summary = "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
-    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
+    summary = "Trigger immediate inventory and heartbeat sync to Specter Cloud",
+    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Specter Cloud central hub.",
     responses(
         (status = 200, description = "Sync completed or attempted", body = CloudSyncResponse)
     )
@@ -372,9 +372,9 @@ pub async fn trigger_cloud_sync(
 
 #[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Request payload to enroll and authenticate runner with Tuquet Cloud
+/// Request payload to enroll and authenticate runner with Specter Cloud
 pub struct CloudLoginRequest {
-    /// Tuquet Cloud Base URL (e.g. "http://127.0.0.1:54321")
+    /// Specter Cloud Base URL (e.g. "http://127.0.0.1:54321")
     pub cloud_url: Option<String>,
     /// Organization / Tenant enrollment token or user JWT
     pub token: Option<String>,
@@ -415,8 +415,8 @@ pub struct CloudLogoutResponse {
     post,
     path = "/api/v1/system/cloud/login",
     operation_id = "cloud_login",
-    summary = "Enroll and authenticate this runner with Tuquet Cloud",
-    description = "Authenticates this workstation runner with Tuquet Cloud using an enrollment token or JWT and stores credentials locally.",
+    summary = "Enroll and authenticate this runner with Specter Cloud",
+    description = "Authenticates this workstation runner with Specter Cloud using an enrollment token or JWT and stores credentials locally.",
     request_body = CloudLoginRequest,
     responses(
         (status = 200, description = "Successfully enrolled workstation", body = CloudLoginResponse),
@@ -448,7 +448,7 @@ pub async fn cloud_login(
                 device_id: creds.device_id,
                 tenant_id: creds.tenant_id,
                 name: creds.name,
-                message: "Workstation enrolled successfully with Tuquet Cloud".to_string(),
+                message: "Workstation enrolled successfully with Specter Cloud".to_string(),
             }),
         ).into_response(),
         Err(e) => (
@@ -470,8 +470,8 @@ pub async fn cloud_login(
     post,
     path = "/api/v1/system/cloud/logout",
     operation_id = "cloud_logout",
-    summary = "Disconnect and unenroll this runner from Tuquet Cloud",
-    description = "Removes locally stored device credentials, disconnecting this workstation from Tuquet Cloud.",
+    summary = "Disconnect and unenroll this runner from Specter Cloud",
+    description = "Removes locally stored device credentials, disconnecting this workstation from Specter Cloud.",
     responses(
         (status = 200, description = "Successfully logged out", body = CloudLogoutResponse)
     )
@@ -484,7 +484,7 @@ pub async fn cloud_logout(
             StatusCode::OK,
             Json(CloudLogoutResponse {
                 success: true,
-                message: "Successfully logged out and disconnected from Tuquet Cloud".to_string(),
+                message: "Successfully logged out and disconnected from Specter Cloud".to_string(),
             }),
         ).into_response(),
         Err(e) => (

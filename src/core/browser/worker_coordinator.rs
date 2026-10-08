@@ -35,7 +35,6 @@ pub async fn ensure_browser_worker(
                 || name_lower.contains("chromium")
                 || name_lower.contains("msedge")
                 || name_lower.contains("specter")
-                || name_lower.contains("tuquet")
             {
                 tracing::info!("Terminating stale browser process PID {} ({})", _pid, raw_name);
                 #[cfg(target_os = "windows")]

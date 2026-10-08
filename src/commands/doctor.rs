@@ -1,5 +1,5 @@
 use std::path::Path;
-use crate::config::{canonical_ssot_dir, canonical_tuquet_dir, AppConfig};
+use crate::config::{canonical_ssot_dir, canonical_specter_dir, AppConfig};
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::infrastructure::bridge::probe_port;
 use crate::ui::{badge_offline, badge_online, badge_warn, badge_error, colors, Card, Column, Table};
@@ -18,7 +18,7 @@ pub struct DiagnosticItem {
 pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!(
-        "  {BOLD}{CYAN}TUQUET BOOTSTRAP{RESET} {MUTED}— Ecosystem Environment & Microservice Provisioning{RESET}",
+        "  {BOLD}{CYAN}SPECTER BOOTSTRAP{RESET} {MUTED}— Ecosystem Environment & Microservice Provisioning{RESET}",
         BOLD = colors::BOLD,
         CYAN = colors::CYAN,
         RESET = colors::RESET,
@@ -113,13 +113,15 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
             "args": ["mcp"]
         });
 
-        // Register both specter (primary) and tuquet (alias) for seamless agent ecosystem interop
-        config_val["mcpServers"]["specter"] = mcp_def.clone();
-        config_val["mcpServers"]["tuquet"] = mcp_def;
+        // Register specter MCP server and remove legacy tuquet if present
+        config_val["mcpServers"]["specter"] = mcp_def;
+        if let Some(servers) = config_val.get_mut("mcpServers").and_then(|v| v.as_object_mut()) {
+            servers.remove("tuquet");
+        }
 
         if let Ok(pretty) = serde_json::to_string_pretty(&config_val) {
             if std::fs::write(&mcp_config_file, pretty).is_ok() {
-                println!("  {GREEN}✓{RESET} Registered native specter/tuquet MCP stdio server in ~/.gemini/config/mcp_config.json",
+                println!("  {GREEN}✓{RESET} Registered native specter MCP stdio server in ~/.gemini/config/mcp_config.json",
                     GREEN = colors::GREEN,
                     RESET = colors::RESET,
                 );
@@ -167,7 +169,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     card.with_min_width(68);
     card.add_kv("SSOT Root", root.display().to_string());
     card.add_kv("SQLite Database", "automa.sqlite (Schema initialized)");
-    card.add_kv("MCP Agent Protocol", "specter/tuquet stdio server registered (~/.gemini/config/mcp_config.json)");
+    card.add_kv("MCP Agent Protocol", "specter stdio server registered (~/.gemini/config/mcp_config.json)");
     let b_status = crate::core::browser::resolver::get_runtime_status();
     card.add_kv("Browser Engine", if b_status.installed { "Golden LTS v148 (Antidetect Chromium)" } else { "Pending download (specter browser install)" });
     card.with_footer("Next: Run 'specter doctor' to inspect dependencies or 'specter status' for dashboard.");
@@ -350,7 +352,7 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
                 .join(", ")
         };
         browser_card.add_kv("Installed Versions", installed_desc);
-        let profiles_dir = canonical_tuquet_dir().join("browser").join("profiles");
+        let profiles_dir = canonical_specter_dir().join("browser").join("profiles");
         let profile_count = std::fs::read_dir(&profiles_dir)
             .map(|rd| rd.flatten().filter(|e| e.path().is_dir()).count())
             .unwrap_or(0);
@@ -369,7 +371,7 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
     // ─────────────────────────────────────────────────────────────────────────────
     // 3. Canonical Microservice Storage Pillars (~/.specter/)
     // ─────────────────────────────────────────────────────────────────────────────
-    let root = canonical_tuquet_dir();
+    let root = canonical_specter_dir();
     let mut pillar_items = Vec::new();
 
     let pillars = &[

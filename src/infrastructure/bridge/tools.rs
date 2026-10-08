@@ -52,7 +52,7 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
                 return Some(cf);
             }
         }
-        if name == "tuquet" || name == "specter" {
+        if name == "specter" {
             let bin = crate::config::canonical_ssot_dir()
                 .join("bin")
                 .join(format!("{}.exe", name));
@@ -93,7 +93,7 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
                 }
             }
         }
-        if name == "tuquet" || name == "specter" {
+        if name == "specter" {
             let bin = crate::config::canonical_ssot_dir().join("bin").join(name);
             if bin.is_file() {
                 return Some(bin);

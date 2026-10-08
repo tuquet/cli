@@ -310,7 +310,7 @@ pub async fn handle_ext(
             card.add_line("");
             card.add_line("Installation:");
             card.add_line("  specter browser ext install <id>     Download and install extension");
-            card.with_footer("Catalog Source: tuquet-scoop-bucket (GitHub / Local)");
+            card.with_footer("Catalog Source: scoop catalog (GitHub / Local)");
 
             println!();
             card.print();
@@ -390,7 +390,7 @@ pub async fn handle_ext(
                     card.with_badge(badge_online("REMOVED"));
                     card.with_min_width(64);
                     card.add_kv("Removed ID", id);
-                    card.add_line("Extension unregistered from local Tuquet registry.");
+                    card.add_line("Extension unregistered from local Specter registry.");
                     println!();
                     card.print();
                     println!();
@@ -672,7 +672,7 @@ pub async fn launch_browser(
                 card.add_line("  • The configured proxy server is offline or unreachable.");
                 card.add_line("  • Launch aborted to prevent session failure or real IP leakage.");
                 card.add_line("  • To bypass this guardrail, launch with '--skip-proxy-check'.");
-                card.with_footer("Test proxy directly with: tuquet proxy probe <url>");
+                card.with_footer("Test proxy directly with: specter proxy probe <url>");
                 card.print();
                 println!();
                 return Err("Proxy unreachable (pre-flight check failed)".into());
@@ -1238,9 +1238,9 @@ pub async fn handle_profile_cloud(
     let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&app_config.data_dir).await {
         Some(c) => c,
         None => {
-            eprintln!("\n{} Workstation not enrolled with Tuquet Cloud fleet.", badge_error("NOT ENROLLED"));
+            eprintln!("\n{} Workstation not enrolled with Specter Cloud fleet.", badge_error("NOT ENROLLED"));
             eprintln!("Run 'specter login' to authenticate and pair your workstation first.\n");
-            return Err("Workstation not enrolled with Tuquet Cloud".into());
+            return Err("Workstation not enrolled with Specter Cloud".into());
         }
     };
 
@@ -1277,7 +1277,7 @@ pub async fn handle_profile_cloud(
             }
 
             println!();
-            let mut header_card = Card::new("TUQUET CLOUD BROWSER FLEET");
+            let mut header_card = Card::new("SPECTER CLOUD BROWSER FLEET");
             header_card.with_badge(badge_online(&format!("{} FLEET PROFILES", browsers.len())));
             header_card.with_min_width(74);
             header_card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal"));
@@ -1600,7 +1600,7 @@ pub async fn verify_stealth_presentation(
     headless: bool,
     timeout_secs: u64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut header_card = Card::new("TUQUET BROWSER STEALTH VERIFICATION");
+    let mut header_card = Card::new("SPECTER BROWSER STEALTH VERIFICATION");
     header_card.with_badge(badge_online("LIVE PRESENTATION"));
     header_card.with_min_width(74);
     header_card.add_kv("Engine", "Chromium C++ Antidetect Engine (Blink/V8 Native Spoofing)");
@@ -1621,7 +1621,7 @@ pub async fn verify_stealth_presentation(
     }
 
     // 2. Create isolated ephemeral sandbox directory (Zero collision guarantee)
-    let temp_profile = std::env::temp_dir().join(format!("tuquet_verify_{}", uuid::Uuid::new_v4()));
+    let temp_profile = std::env::temp_dir().join(format!("specter_verify_{}", uuid::Uuid::new_v4()));
     tokio::fs::create_dir_all(&temp_profile).await?;
 
     println!("[1/4] Spawning Antidetect Chromium with dynamic ephemeral port...");
@@ -1644,7 +1644,7 @@ pub async fn verify_stealth_presentation(
         cmd.arg("--headless=new");
     }
 
-    // Check optional Tuquet Bridge proxy (port 1080)
+    // Check optional Specter Bridge proxy (port 1080)
     if std::net::TcpListener::bind("127.0.0.1:1080").is_err() {
         println!("      • Proxy Route:   SOCKS5 Bridge Active (127.0.0.1:1080)");
         cmd.arg("--proxy-server=socks5://127.0.0.1:1080")
@@ -1675,9 +1675,9 @@ pub async fn verify_stealth_presentation(
     // Visual pointer helper function
     async fn inject_visual_pointer(s: &tuquet_runner::CdpSession) {
         let _ = s.evaluate(r#"(() => {
-            if (document.getElementById('tuquet-visual-pointer')) return;
+            if (document.getElementById('specter-visual-pointer')) return;
             const dot = document.createElement('div');
-            dot.id = 'tuquet-visual-pointer';
+            dot.id = 'specter-visual-pointer';
             dot.style.position = 'fixed';
             dot.style.width = '18px';
             dot.style.height = '18px';
@@ -1771,7 +1771,7 @@ pub async fn verify_stealth_presentation(
 
     // 6. Presentation Scorecard
     println!();
-    let mut card = Card::new("TUQUET STEALTH VERIFICATION SCORECARD");
+    let mut card = Card::new("SPECTER STEALTH VERIFICATION SCORECARD");
     card.with_badge(badge_online("ALL PASS"));
     card.with_min_width(74);
     card.add_kv("Engine Architecture", "C++ Antidetect Chromium v148 ( adryfish )");

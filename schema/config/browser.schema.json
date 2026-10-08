@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "TuquetBrowserConfig",
-  "description": "Configuration schema for Tuquet Dedicated Isolated Chromium Runtime (~/.specter/browser/browser.json)",
+  "title": "SpecterBrowserConfig",
+  "description": "Configuration schema for Specter Dedicated Isolated Chromium Runtime (~/.specter/browser/browser.json)",
   "type": "object",
   "properties": {
     "$schema": {
@@ -34,7 +34,7 @@
     "default_profile": {
       "type": "string",
       "default": "default",
-      "description": "Default browser profile name when omitted in 'tuquet launch'"
+      "description": "Default browser profile name when omitted in 'specter launch'"
     }
   }
 }

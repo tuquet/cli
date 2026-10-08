@@ -54,7 +54,7 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
 
 pub fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
     let manifest = serde_json::json!({
-        "protocol": "tuquet.automa.v1",
+        "protocol": "specter.automa.v1",
         "name": "automa-runner",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",
@@ -181,7 +181,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
             continue;
         }
         let name = proc.name().to_string_lossy().to_lowercase();
-        if name.contains("specter") || name.contains("tuquet") {
+        if name.contains("specter") {
             let cmd = proc.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
             if cmd.contains("runner") && cmd.contains("start") && !found_pids.contains(&p_u32) {
                 found_pids.push(p_u32);
@@ -219,12 +219,12 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         let raw_name = proc.name().to_string_lossy();
         if !is_valid_runner_name(&raw_name) {
             tracing::warn!(
-                "Stale PID {} detected: process name '{}' does not match tuquet, tuquet-runner, or runner. Skipping kill.",
+                "Stale PID {} detected: process name '{}' does not match specter or runner. Skipping kill.",
                 pid,
                 raw_name
             );
             eprintln!(
-                "Warning: Stale PID {} detected: process name '{}' does not match tuquet/tuquet-runner/runner. Skipping kill.",
+                "Warning: Stale PID {} detected: process name '{}' does not match specter or runner. Skipping kill.",
                 pid,
                 raw_name
             );
@@ -435,7 +435,7 @@ pub async fn run_server(
         .finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
-    info!("Tuquet Automa Core Bridge starting in Native Launcher mode...");
+    info!("Specter Automa Core Bridge starting in Native Launcher mode...");
     info!("Environment: {}", config.environment);
     info!("Data Directory: {}", config.data_dir);
 
@@ -461,7 +461,7 @@ pub async fn run_server(
 
     let app = crate::api::routes::create_router(state.clone());
 
-    // Start background Cloud Telemetry & Inventory Reporter (runs if TUQUET_CLOUD_URL is configured)
+    // Start background Cloud Telemetry & Inventory Reporter (runs if SPECTER_CLOUD_URL is configured)
     let _reporter_handle =
         crate::infrastructure::cloud_reporter::CloudReporter::start_background_loop(state.clone());
 
@@ -589,7 +589,7 @@ pub async fn run_cloud_worker(
     let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&config.data_dir).await {
         Some(c) => c,
         None => {
-            eprintln!("\n{} Workstation not enrolled with Tuquet Cloud.", crate::ui::badge_error("NOT ENROLLED"));
+            eprintln!("\n{} Workstation not enrolled with Specter Cloud.", crate::ui::badge_error("NOT ENROLLED"));
             eprintln!("Run 'specter runner enroll' to register this device.\n");
             return Err("Missing cloud device credentials".into());
         }
@@ -691,7 +691,7 @@ pub async fn run_cloud_worker(
 pub(crate) fn is_valid_runner_name(raw_name: &str) -> bool {
     let name = raw_name.to_lowercase();
     let base_name = name.trim_end_matches(".exe");
-    base_name == "specter" || base_name == "tuquet" || base_name == "tuquet-runner" || base_name == "runner"
+    base_name == "specter" || base_name == "runner"
 }
 
 #[cfg(test)]
@@ -702,11 +702,7 @@ mod tests {
     fn test_is_valid_runner_name() {
         assert!(is_valid_runner_name("specter"));
         assert!(is_valid_runner_name("specter.exe"));
-        assert!(is_valid_runner_name("tuquet"));
-        assert!(is_valid_runner_name("tuquet.exe"));
-        assert!(is_valid_runner_name("TUQUET.EXE"));
-        assert!(is_valid_runner_name("tuquet-runner"));
-        assert!(is_valid_runner_name("tuquet-runner.exe"));
+        assert!(is_valid_runner_name("SPECTER.EXE"));
         assert!(is_valid_runner_name("runner"));
         assert!(is_valid_runner_name("runner.exe"));
 

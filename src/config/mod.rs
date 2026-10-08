@@ -7,7 +7,7 @@ pub mod system;
 
 pub use automa::AutomaConfig;
 pub use browser::BrowserConfig;
-pub use expander::{canonical_specter_dir, canonical_ssot_dir, canonical_tuquet_dir, EnvExpander};
+pub use expander::{canonical_specter_dir, canonical_ssot_dir, EnvExpander};
 pub use registry::ConfigRegistry;
 pub use runner::RunnerConfig;
 pub use system::SystemConfig;
@@ -29,11 +29,11 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn load() -> Self {
-        let mut server_host = env::var("TUQUET_HOST")
+        let mut server_host = env::var("SPECTER_HOST")
             .or_else(|_| env::var("AUTOMA_HOST"))
             .unwrap_or_else(|_| "127.0.0.1".to_string());
 
-        let mut server_port = env::var("TUQUET_PORT")
+        let mut server_port = env::var("SPECTER_PORT")
             .or_else(|_| env::var("AUTOMA_PORT"))
             .unwrap_or_else(|_| "8765".to_string())
             .parse()
@@ -51,20 +51,18 @@ impl AppConfig {
             }
         }
 
-        let environment = env::var("TUQUET_ENV")
+        let environment = env::var("SPECTER_ENV")
             .or_else(|_| env::var("AUTOMA_ENV"))
             .unwrap_or_else(|_| "development".to_string());
         
-        let log_level = env::var("TUQUET_LOG_LEVEL")
+        let log_level = env::var("SPECTER_LOG_LEVEL")
             .or_else(|_| env::var("AUTOMA_LOG_LEVEL"))
             .unwrap_or_else(|_| "info".to_string());
         
         let data_dir = env::var("SPECTER_DATA_DIR")
-            .or_else(|_| env::var("TUQUET_DATA_DIR"))
             .unwrap_or_else(|_| canonical_ssot_dir().join("automa").to_string_lossy().to_string());
 
         let mut cloud_url = env::var("SPECTER_CLOUD_URL")
-            .or_else(|_| env::var("TUQUET_CLOUD_URL"))
             .or_else(|_| env::var("AUTOMA_CLOUD_URL"))
             .ok()
             .filter(|s| !s.trim().is_empty());
@@ -82,7 +80,7 @@ impl AppConfig {
                             }
         }
 
-        let cloud_enrollment_token = env::var("TUQUET_ENROLLMENT_TOKEN")
+        let cloud_enrollment_token = env::var("SPECTER_ENROLLMENT_TOKEN")
             .or_else(|_| env::var("AUTOMA_ENROLLMENT_TOKEN"))
             .ok()
             .filter(|s| !s.trim().is_empty());

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_tuquet_dir, EnvExpander};
+use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserConfig {
@@ -53,7 +53,7 @@ impl Default for BrowserConfig {
 
 impl BrowserConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_tuquet_dir().join("browser");
+        let dir = canonical_specter_dir().join("browser");
         let _ = fs::create_dir_all(&dir);
         dir.join("browser.json")
     }

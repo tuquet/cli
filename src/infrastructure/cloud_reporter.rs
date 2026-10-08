@@ -47,7 +47,7 @@ pub struct CloudReporter;
 
 impl CloudReporter {
     pub fn get_credentials_path(_data_dir: &str) -> PathBuf {
-        crate::config::canonical_tuquet_dir().join("system").join(".identity.json")
+        crate::config::canonical_specter_dir().join("system").join(".identity.json")
     }
 
     pub fn generate_machine_fingerprint() -> String {
@@ -141,9 +141,10 @@ impl CloudReporter {
         });
 
         let target_url = format!("{}/rest/v1/rpc/enroll_device", cloud_url.trim_end_matches('/'));
-        info!("[CloudReporter] Enrolling workstation with Tuquet Cloud at: {}", target_url);
+        info!("[CloudReporter] Enrolling workstation with Specter Cloud at: {}", target_url);
 
-        let anon_key = std::env::var("TUQUET_API_KEY").unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let anon_key = std::env::var("SPECTER_API_KEY")
+            .unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let res = client.post(&target_url)
             .header("apikey", &anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
@@ -153,7 +154,7 @@ impl CloudReporter {
 
         if !res.status().is_success() {
             let err_text = res.text().await.unwrap_or_default();
-            return Err(format!("Failed to enroll device with Tuquet Cloud: {}", err_text).into());
+            return Err(format!("Failed to enroll device with Specter Cloud: {}", err_text).into());
         }
 
         let body: serde_json::Value = res.json().await?;
@@ -217,7 +218,8 @@ impl CloudReporter {
         });
 
         let target_url = format!("{}/rest/v1/rpc/enroll_device", cloud_url.trim_end_matches('/'));
-        let anon_key = std::env::var("TUQUET_API_KEY").unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let anon_key = std::env::var("SPECTER_API_KEY")
+            .unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let res = client.post(&target_url)
             .header("apikey", &anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
@@ -282,7 +284,7 @@ impl CloudReporter {
                     device_id: "".to_string(),
                     browsers_synced: 0,
                     heartbeat_sent: false,
-                    message: "Tuquet Cloud URL not configured (standalone mode)".to_string(),
+                    message: "Specter Cloud URL not configured (standalone mode)".to_string(),
                 });
             }
         };
@@ -321,7 +323,7 @@ impl CloudReporter {
 
         let browsers_count = browsers_payload.len();
 
-        let env_key = std::env::var("TUQUET_API_KEY").ok();
+        let env_key = std::env::var("SPECTER_API_KEY").ok();
         let anon_key = creds.api_key.as_deref()
             .or(env_key.as_deref())
             .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
@@ -341,7 +343,7 @@ impl CloudReporter {
 
         let browsers_synced = match report_res {
             Ok(res) if res.status().is_success() => {
-                info!("[CloudReporter] Synced {} local browser profiles to Tuquet Cloud", browsers_count);
+                info!("[CloudReporter] Synced {} local browser profiles to Specter Cloud", browsers_count);
                 browsers_count
             }
             Ok(res) => {
@@ -402,7 +404,7 @@ impl CloudReporter {
             device_id: creds.device_id,
             browsers_synced,
             heartbeat_sent,
-            message: format!("Successfully synced {} browsers and heartbeat to Tuquet Cloud", browsers_synced),
+            message: format!("Successfully synced {} browsers and heartbeat to Specter Cloud", browsers_synced),
         })
     }
 
@@ -415,7 +417,7 @@ impl CloudReporter {
                 .or_else(|| saved_creds.as_ref().and_then(|c| c.cloud_url.clone()));
 
             if active_url.is_none() {
-                info!("[CloudReporter] No TUQUET_CLOUD_URL or saved login found. Running in offline/standalone mode.");
+                info!("[CloudReporter] No SPECTER_CLOUD_URL or saved login found. Running in offline/standalone mode.");
                 return;
             }
 

@@ -101,7 +101,7 @@ impl ConfigRegistry {
 
     pub fn render_overview_card() {
         println!();
-        let mut card = Card::new("TUQUET ECOSYSTEM CONFIGURATION REGISTRY");
+        let mut card = Card::new("SPECTER ECOSYSTEM CONFIGURATION REGISTRY");
         card.with_badge(badge_online("SSOT READY"));
         card.with_min_width(74);
 
@@ -146,7 +146,7 @@ mod tests {
         assert!(pillars.contains(&"system"));
 
         for entry in list {
-            assert!(entry.path.to_string_lossy().contains(".specter") || entry.path.to_string_lossy().contains(".tuquet"));
+            assert!(entry.path.to_string_lossy().contains(".specter"));
         }
     }
 

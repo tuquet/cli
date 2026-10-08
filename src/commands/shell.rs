@@ -54,7 +54,7 @@ impl ShellScope {
         ("global", "Ecosystem dashboard & universal orchestrator"),
         ("automa", "Browser workflow automation engine"),
         ("runner", "Distributed daemon worker node"),
-        ("cloud", "Tuquet Cloud (Supabase) authentication"),
+        ("cloud", "Specter Cloud (Supabase) authentication"),
         ("browser", "Dedicated isolated Chromium LTS runtime"),
         ("bridge", "Network bridge & multi-VPS proxy mesh"),
         ("faker", "Synthetic persona & CCCD test data generator"),
@@ -82,7 +82,7 @@ impl ShellScope {
                 ("doctor", "Inspect ecosystem dependencies, required tools & environment health"),
                 ("config", "Inspect or edit configuration across all microservice pillars"),
                 ("whoami", "Check active cloud enrollment identity & device ID"),
-                ("login", "Authenticate workstation with Tuquet Cloud"),
+                ("login", "Authenticate workstation with Specter Cloud"),
                 ("logout", "Disconnect and remove local cloud credentials"),
                 ("upgrade", "Check and update Specter to latest release"),
                 ("update", "Alias for upgrade"),
@@ -125,7 +125,7 @@ impl ShellScope {
                 ("config", "Display path, inspect (--show), or edit (--edit) runner.json"),
             ],
             ShellScope::Cloud => &[
-                ("login", "Authenticate and pair device with Tuquet Cloud"),
+                ("login", "Authenticate and pair device with Specter Cloud"),
                 ("logout", "Log out and remove local cloud credentials"),
                 ("whoami", "Check active cloud pairing and enrollment"),
                 ("config", "Display path, inspect (--show), or edit (--edit) system.json"),
@@ -212,8 +212,6 @@ pub struct SpecterPrompt {
     pub cloud_env: String,
 }
 
-pub type TuquetPrompt = SpecterPrompt;
-
 impl Prompt for SpecterPrompt {
     fn render_prompt_left(&self) -> Cow<'_, str> {
         let border = colors::BORDER;
@@ -255,11 +253,11 @@ impl Prompt for SpecterPrompt {
     }
 }
 
-pub struct TuquetHighlighter {
+pub struct SpecterHighlighter {
     pub scope: ShellScope,
 }
 
-impl Highlighter for TuquetHighlighter {
+impl Highlighter for SpecterHighlighter {
     fn highlight(&self, line: &str, _cursor: usize) -> StyledText {
         let mut styled = StyledText::new();
         if line.is_empty() {
@@ -375,11 +373,11 @@ fn suggest_workflows(current_word: &str, span: Span, suggestions: &mut Vec<Sugge
     }
 }
 
-pub struct TuquetCompleter {
+pub struct SpecterCompleter {
     pub scope: ShellScope,
 }
 
-impl Completer for TuquetCompleter {
+impl Completer for SpecterCompleter {
     fn complete(&mut self, line: &str, pos: usize) -> CompletionResult {
         let prefix = if pos <= line.len() { &line[..pos] } else { line };
         let start = prefix.rfind(|c: char| c.is_whitespace()).map(|idx| idx + 1).unwrap_or(0);
@@ -791,8 +789,8 @@ impl Completer for TuquetCompleter {
                 match cmd.as_str() {
                     "login" => {
                         for (flag, desc) in &[
-                            ("-u", "Tuquet Cloud API endpoint URL"),
-                            ("--url", "Tuquet Cloud API endpoint URL"),
+                            ("-u", "Specter Cloud API endpoint URL"),
+                            ("--url", "Specter Cloud API endpoint URL"),
                             ("-t", "Cloud access / pairing token"),
                             ("--token", "Cloud access / pairing token"),
                             ("-n", "Workstation display name"),
@@ -1034,12 +1032,12 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
         .with_hinter(hinter);
 
     loop {
-        let prompt = TuquetPrompt {
+        let prompt = SpecterPrompt {
             scope,
             cloud_env: cloud_env_badge.clone(),
         };
-        let completer = Box::new(TuquetCompleter { scope });
-        let highlighter = Box::new(TuquetHighlighter { scope });
+        let completer = Box::new(SpecterCompleter { scope });
+        let highlighter = Box::new(SpecterHighlighter { scope });
 
         line_editor = line_editor
             .with_completer(completer)
@@ -1694,7 +1692,7 @@ fn print_scope_help(scope: ShellScope) {
             card.add_kv("  doctor", "Diagnose environment dependencies (Scoop, Cloudflared, SSH, Browser)");
             card.add_kv("  upgrade", "Check and update Specter to latest release");
             card.add_kv("  whoami", "Inspect cloud enrollment identity & device ID");
-            card.add_kv("  login [token]", "Authenticate workstation with Tuquet Cloud");
+            card.add_kv("  login [token]", "Authenticate workstation with Specter Cloud");
             card.add_kv("  card", "Display synthetic identity card (CCCD, credentials)");
             card.add_kv("  run <wf>", "Execute workflow (.json file or stored ID)");
             card.add_kv("  list [query]", "List stored workflows in vault & database");
@@ -1747,7 +1745,7 @@ fn print_scope_help(scope: ShellScope) {
             card.with_badge(badge_online("CLOUD SCOPE"));
             card.with_min_width(68);
             card.add_line(format!("{BOLD}Cloud Pairing Commands:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
-            card.add_kv("  login [token]", "Authenticate and pair device with Tuquet Cloud");
+            card.add_kv("  login [token]", "Authenticate and pair device with Specter Cloud");
             card.add_kv("  logout", "Log out and delete local cloud pairing");
             card.add_kv("  whoami", "Inspect current workstation identity and tenant");
             card.add_line(format!("{BOLD}Navigation:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
@@ -1869,7 +1867,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_valid_and_invalid_first_words() {
-        let hl = TuquetHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
 
         // Valid subcommand "status"
         let styled = hl.highlight("status", 0);
@@ -1886,7 +1884,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_use_scope_arguments() {
-        let hl = TuquetHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
 
         // "use automa" -> 'use' (cyan), ' ' (default), 'automa' (magenta)
         let styled = hl.highlight("use automa", 0);
@@ -1906,7 +1904,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_prefix_redundancy() {
-        let hl = TuquetHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
 
         // "bridge status" in Bridge scope -> 'bridge' (magenta), ' ' (default), 'status' (cyan)
         let styled = hl.highlight("bridge status", 0);
@@ -1934,7 +1932,7 @@ mod tests {
 
     #[test]
     fn test_completer_bridge_start_and_multiword() {
-        let mut completer = TuquetCompleter { scope: ShellScope::Bridge };
+        let mut completer = SpecterCompleter { scope: ShellScope::Bridge };
 
         // "start " -> suggestions should include "all" and server names
         let res = completer.complete("start ", 6);
@@ -1964,7 +1962,7 @@ mod tests {
 
     #[test]
     fn test_completer_faker_flags_and_values() {
-        let mut completer = TuquetCompleter { scope: ShellScope::Faker };
+        let mut completer = SpecterCompleter { scope: ShellScope::Faker };
 
         // "generate -g " -> should suggest gender values
         let res = completer.complete("generate -g ", 12);
@@ -1980,7 +1978,7 @@ mod tests {
 
     #[test]
     fn test_completer_global_delegation_and_case_insensitive() {
-        let mut completer = TuquetCompleter { scope: ShellScope::Global };
+        let mut completer = SpecterCompleter { scope: ShellScope::Global };
 
         // "bridge " -> should suggest bridge subcommands
         let res = completer.complete("bridge ", 7);

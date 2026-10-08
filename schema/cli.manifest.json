@@ -1,14 +1,14 @@
 {
   "$schema": "https://tuquet.github.io/schema/cli.manifest.schema.json",
-  "name": "tuquet",
+  "name": "specter",
   "version": "1.0.0",
-  "description": "Autonomous Browser Automation & Distributed Mesh Runtime",
+  "description": "Specter - Autonomous Browser Automation & Distributed Mesh Runtime",
   "homepage": "https://tuquet.github.io",
   "repository": "https://github.com/tuquet/cli",
   "brand": {
     "productName": "Specter",
     "cliAlias": "specter",
-    "canonicalRoot": "tuquet",
+    "canonicalRoot": "specter",
     "category": "Hạ tầng Tự động hóa & Trình duyệt Ẩn danh All-in-One",
     "tagline": "Vũ khí All-in-One miễn phí chuẩn kỹ thuật cao dành cho dân MMO, Dropshipping và Web Scraper.",
     "organization": "Tuquet",
@@ -26,7 +26,7 @@
   ],
   "commands": [
     {
-      "id": "tuquet.bootstrap",
+      "id": "specter.bootstrap",
       "route": [
         "bootstrap"
       ],
@@ -44,13 +44,13 @@
       ]
     },
     {
-      "id": "tuquet.config",
+      "id": "specter.config",
       "route": [
         "config"
       ],
       "pillar": "system",
       "title": "Unified Configuration Manager",
-      "description": "Inspect or edit configuration across Tuquet microservice pillars (~/.specter/).",
+      "description": "Inspect or edit configuration across Specter microservice pillars (~/.specter/).",
       "arguments": [
         {
           "name": "service",
@@ -86,7 +86,7 @@
       ]
     },
     {
-      "id": "tuquet.doctor",
+      "id": "specter.doctor",
       "route": [
         "doctor"
       ],
@@ -104,7 +104,7 @@
       ]
     },
     {
-      "id": "tuquet.mcp",
+      "id": "specter.mcp",
       "route": [
         "mcp"
       ],
@@ -113,7 +113,7 @@
       "description": "Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents."
     },
     {
-      "id": "tuquet.schema",
+      "id": "specter.schema",
       "route": [
         "schema"
       ],
@@ -131,7 +131,7 @@
       ]
     },
     {
-      "id": "tuquet.schema.commands",
+      "id": "specter.schema.commands",
       "route": [
         "schema",
         "commands"
@@ -156,7 +156,7 @@
       ]
     },
     {
-      "id": "tuquet.schema.config",
+      "id": "specter.schema.config",
       "route": [
         "schema",
         "config"
@@ -182,7 +182,7 @@
       ]
     },
     {
-      "id": "tuquet.schema.mcp",
+      "id": "specter.schema.mcp",
       "route": [
         "schema",
         "mcp"
@@ -192,12 +192,12 @@
       "description": "Export the AI Agent Model Context Protocol (MCP) tool schemas generated from this manifest."
     },
     {
-      "id": "tuquet.shell",
+      "id": "specter.shell",
       "route": [
         "shell"
       ],
       "pillar": "system",
-      "title": "Interactive Tuquet REPL Shell",
+      "title": "Interactive Specter REPL Shell",
       "description": "Launch interactive scoped terminal shell session with auto-completion and hotkeys.",
       "arguments": [
         {
@@ -209,7 +209,7 @@
       ]
     },
     {
-      "id": "tuquet.status",
+      "id": "specter.status",
       "route": [
         "status"
       ],
@@ -226,21 +226,21 @@
         }
       ],
       "mcp": {
-        "tool_name": "tuquet_status",
+        "tool_name": "specter_status",
         "exported": true
       }
     },
     {
-      "id": "tuquet.upgrade",
+      "id": "specter.upgrade",
       "route": [
         "upgrade"
       ],
       "pillar": "system",
-      "title": "Upgrade Tuquet CLI",
-      "description": "Check and atomically upgrade Tuquet CLI binary in-place to latest release."
+      "title": "Upgrade Specter CLI",
+      "description": "Check and atomically upgrade Specter CLI binary in-place to latest release."
     },
     {
-      "id": "tuquet.automa.inspect",
+      "id": "specter.automa.inspect",
       "route": [
         "automa",
         "inspect"
@@ -257,12 +257,12 @@
         }
       ],
       "mcp": {
-        "tool_name": "tuquet_workflow_inspect",
+        "tool_name": "specter_workflow_inspect",
         "exported": true
       }
     },
     {
-      "id": "tuquet.automa.probe",
+      "id": "specter.automa.probe",
       "route": [
         "automa",
         "probe"
@@ -272,7 +272,7 @@
       "description": "Probe Automa manifest capabilities and protocol version."
     },
     {
-      "id": "tuquet.automa.run",
+      "id": "specter.automa.run",
       "route": [
         "automa",
         "run"
@@ -315,12 +315,12 @@
         }
       ],
       "mcp": {
-        "tool_name": "tuquet_workflow_run",
+        "tool_name": "specter_workflow_run",
         "exported": true
       }
     },
     {
-      "id": "tuquet.automa.studio",
+      "id": "specter.automa.studio",
       "route": [
         "automa",
         "studio"
@@ -330,7 +330,7 @@
       "description": "Launch Automa Web Studio in default system browser."
     },
     {
-      "id": "tuquet.automa.workflow.delete",
+      "id": "specter.automa.workflow.delete",
       "route": [
         "automa",
         "workflow",
@@ -357,7 +357,7 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.export",
+      "id": "specter.automa.workflow.export",
       "route": [
         "automa",
         "workflow",
@@ -384,7 +384,7 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.import",
+      "id": "specter.automa.workflow.import",
       "route": [
         "automa",
         "workflow",
@@ -422,7 +422,7 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.info",
+      "id": "specter.automa.workflow.info",
       "route": [
         "automa",
         "workflow",
@@ -441,7 +441,7 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.list",
+      "id": "specter.automa.workflow.list",
       "route": [
         "automa",
         "workflow",
@@ -459,12 +459,12 @@
         }
       ],
       "mcp": {
-        "tool_name": "tuquet_workflow_list",
+        "tool_name": "specter_workflow_list",
         "exported": true
       }
     },
     {
-      "id": "tuquet.browser.clean",
+      "id": "specter.browser.clean",
       "route": [
         "browser",
         "clean"
@@ -474,7 +474,7 @@
       "description": "Delete installed browser runtime to reclaim disk space."
     },
     {
-      "id": "tuquet.browser.ext.add",
+      "id": "specter.browser.ext.add",
       "route": [
         "browser",
         "ext",
@@ -501,7 +501,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.catalog",
+      "id": "specter.browser.ext.catalog",
       "route": [
         "browser",
         "ext",
@@ -509,7 +509,7 @@
       ],
       "pillar": "browser",
       "title": "Browse Extensions Catalog",
-      "description": "Browse and search available extensions from tuquet-scoop-bucket.",
+      "description": "Browse and search available extensions from scoop catalog.",
       "arguments": [
         {
           "name": "query",
@@ -520,7 +520,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.disable",
+      "id": "specter.browser.ext.disable",
       "route": [
         "browser",
         "ext",
@@ -539,7 +539,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.enable",
+      "id": "specter.browser.ext.enable",
       "route": [
         "browser",
         "ext",
@@ -558,7 +558,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.info",
+      "id": "specter.browser.ext.info",
       "route": [
         "browser",
         "ext",
@@ -578,7 +578,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.install",
+      "id": "specter.browser.ext.install",
       "route": [
         "browser",
         "ext",
@@ -586,7 +586,7 @@
       ],
       "pillar": "browser",
       "title": "Install Extension Package",
-      "description": "Download and install an extension package from tuquet-scoop-bucket.",
+      "description": "Download and install an extension package from scoop catalog.",
       "arguments": [
         {
           "name": "id",
@@ -606,7 +606,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.launch",
+      "id": "specter.browser.ext.launch",
       "route": [
         "browser",
         "ext",
@@ -632,7 +632,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.list",
+      "id": "specter.browser.ext.list",
       "route": [
         "browser",
         "ext",
@@ -643,7 +643,7 @@
       "description": "List all registered browser extensions."
     },
     {
-      "id": "tuquet.browser.ext.path",
+      "id": "specter.browser.ext.path",
       "route": [
         "browser",
         "ext",
@@ -663,7 +663,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.ext.remove",
+      "id": "specter.browser.ext.remove",
       "route": [
         "browser",
         "ext",
@@ -682,7 +682,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.install",
+      "id": "specter.browser.install",
       "route": [
         "browser",
         "install"
@@ -709,7 +709,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.launch",
+      "id": "specter.browser.launch",
       "route": [
         "browser",
         "launch"
@@ -780,7 +780,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.list",
+      "id": "specter.browser.list",
       "route": [
         "browser",
         "list"
@@ -790,7 +790,7 @@
       "description": "List all locally installed Chromium runtimes on this workstation."
     },
     {
-      "id": "tuquet.browser.path",
+      "id": "specter.browser.path",
       "route": [
         "browser",
         "path"
@@ -800,7 +800,7 @@
       "description": "Print the absolute executable path of the browser (for scripting / integrations)."
     },
     {
-      "id": "tuquet.browser.profile.cloud.acquire",
+      "id": "specter.browser.profile.cloud.acquire",
       "route": [
         "browser",
         "profile",
@@ -828,7 +828,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.cloud.list",
+      "id": "specter.browser.profile.cloud.list",
       "route": [
         "browser",
         "profile",
@@ -848,7 +848,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.cloud.release",
+      "id": "specter.browser.profile.cloud.release",
       "route": [
         "browser",
         "profile",
@@ -876,7 +876,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.create",
+      "id": "specter.browser.profile.create",
       "route": [
         "browser",
         "profile",
@@ -929,7 +929,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.delete",
+      "id": "specter.browser.profile.delete",
       "route": [
         "browser",
         "profile",
@@ -957,7 +957,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.inspect",
+      "id": "specter.browser.profile.inspect",
       "route": [
         "browser",
         "profile",
@@ -976,7 +976,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.list",
+      "id": "specter.browser.profile.list",
       "route": [
         "browser",
         "profile",
@@ -987,7 +987,7 @@
       "description": "List all local browser profiles in ~/.specter/browser/profiles/."
     },
     {
-      "id": "tuquet.browser.profile.pack",
+      "id": "specter.browser.profile.pack",
       "route": [
         "browser",
         "profile",
@@ -1021,7 +1021,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.test_proxy",
+      "id": "specter.browser.profile.test_proxy",
       "route": [
         "browser",
         "profile",
@@ -1055,7 +1055,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.profile.unpack",
+      "id": "specter.browser.profile.unpack",
       "route": [
         "browser",
         "profile",
@@ -1081,7 +1081,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.search",
+      "id": "specter.browser.search",
       "route": [
         "browser",
         "search"
@@ -1100,7 +1100,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.status",
+      "id": "specter.browser.status",
       "route": [
         "browser",
         "status"
@@ -1109,12 +1109,12 @@
       "title": "Browser Engine Status",
       "description": "Display installation status, executable path, and disk usage of dedicated browser.",
       "mcp": {
-        "tool_name": "tuquet_browser_status",
+        "tool_name": "specter_browser_status",
         "exported": true
       }
     },
     {
-      "id": "tuquet.browser.use",
+      "id": "specter.browser.use",
       "route": [
         "browser",
         "use"
@@ -1132,7 +1132,7 @@
       ]
     },
     {
-      "id": "tuquet.browser.verify",
+      "id": "specter.browser.verify",
       "route": [
         "browser",
         "verify"
@@ -1163,7 +1163,7 @@
       ]
     },
     {
-      "id": "tuquet.bridge.check",
+      "id": "specter.bridge.check",
       "route": [
         "bridge",
         "check"
@@ -1173,7 +1173,7 @@
       "description": "Validate ~/.specter/bridge/bridge.json configuration schema, ports, and workloads."
     },
     {
-      "id": "tuquet.bridge.disable",
+      "id": "specter.bridge.disable",
       "route": [
         "bridge",
         "disable"
@@ -1191,7 +1191,7 @@
       ]
     },
     {
-      "id": "tuquet.bridge.enable",
+      "id": "specter.bridge.enable",
       "route": [
         "bridge",
         "enable"
@@ -1209,7 +1209,7 @@
       ]
     },
     {
-      "id": "tuquet.bridge.start",
+      "id": "specter.bridge.start",
       "route": [
         "bridge",
         "start"
@@ -1248,7 +1248,7 @@
       ]
     },
     {
-      "id": "tuquet.bridge.status",
+      "id": "specter.bridge.status",
       "route": [
         "bridge",
         "status"
@@ -1258,7 +1258,7 @@
       "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads."
     },
     {
-      "id": "tuquet.bridge.stop",
+      "id": "specter.bridge.stop",
       "route": [
         "bridge",
         "stop"
@@ -1276,7 +1276,7 @@
       ]
     },
     {
-      "id": "tuquet.proxy.probe",
+      "id": "specter.proxy.probe",
       "route": [
         "proxy",
         "probe"
@@ -1309,7 +1309,7 @@
       ]
     },
     {
-      "id": "tuquet.faker.card",
+      "id": "specter.faker.card",
       "route": [
         "faker",
         "card"
@@ -1327,7 +1327,7 @@
       ]
     },
     {
-      "id": "tuquet.faker.generate",
+      "id": "specter.faker.generate",
       "route": [
         "faker",
         "generate"
@@ -1381,12 +1381,12 @@
         }
       ],
       "mcp": {
-        "tool_name": "tuquet_faker_generate",
+        "tool_name": "specter_faker_generate",
         "exported": true
       }
     },
     {
-      "id": "tuquet.runner.logs",
+      "id": "specter.runner.logs",
       "route": [
         "runner",
         "logs"
@@ -1412,7 +1412,7 @@
       ]
     },
     {
-      "id": "tuquet.runner.probe",
+      "id": "specter.runner.probe",
       "route": [
         "runner",
         "probe"
@@ -1421,12 +1421,12 @@
       "title": "Probe Runner Capabilities",
       "description": "Active capability negotiation probe returning manifest JSON for Runner.",
       "mcp": {
-        "tool_name": "tuquet_runner_probe",
+        "tool_name": "specter_runner_probe",
         "exported": true
       }
     },
     {
-      "id": "tuquet.runner.restart",
+      "id": "specter.runner.restart",
       "route": [
         "runner",
         "restart"
@@ -1445,7 +1445,7 @@
       ]
     },
     {
-      "id": "tuquet.runner.start",
+      "id": "specter.runner.start",
       "route": [
         "runner",
         "start"
@@ -1471,7 +1471,7 @@
       ]
     },
     {
-      "id": "tuquet.runner.status",
+      "id": "specter.runner.status",
       "route": [
         "runner",
         "status"
@@ -1490,7 +1490,7 @@
       ]
     },
     {
-      "id": "tuquet.runner.stop",
+      "id": "specter.runner.stop",
       "route": [
         "runner",
         "stop"
@@ -1509,7 +1509,7 @@
       ]
     },
     {
-      "id": "tuquet.runner.worker",
+      "id": "specter.runner.worker",
       "route": [
         "runner",
         "worker"
@@ -1551,20 +1551,20 @@
       ]
     },
     {
-      "id": "tuquet.cloud.login",
+      "id": "specter.cloud.login",
       "route": [
         "cloud",
         "login"
       ],
       "pillar": "cloud",
       "title": "Cloud Authentication Login",
-      "description": "Authenticate and enroll this workstation with Tuquet Cloud.",
+      "description": "Authenticate and enroll this workstation with Specter Cloud.",
       "options": [
         {
           "name": "url",
           "short": "u",
           "type": "string",
-          "description": "Tuquet Cloud endpoint URL (e.g. https://cloud.tuquet.com)."
+          "description": "Specter Cloud endpoint URL (e.g. https://cloud.specter.dev)."
         },
         {
           "name": "token",
@@ -1581,26 +1581,26 @@
       ]
     },
     {
-      "id": "tuquet.cloud.logout",
+      "id": "specter.cloud.logout",
       "route": [
         "cloud",
         "logout"
       ],
       "pillar": "cloud",
       "title": "Cloud Disconnect & Logout",
-      "description": "Log out and disconnect this workstation from Tuquet Cloud."
+      "description": "Log out and disconnect this workstation from Specter Cloud."
     },
     {
-      "id": "tuquet.cloud.whoami",
+      "id": "specter.cloud.whoami",
       "route": [
         "cloud",
         "whoami"
       ],
       "pillar": "cloud",
       "title": "Display Cloud Enrollment Identity",
-      "description": "Show current Tuquet Cloud identity, enrolled device GUID, and tenant ID.",
+      "description": "Show current Specter Cloud identity, enrolled device GUID, and tenant ID.",
       "mcp": {
-        "tool_name": "tuquet_cloud_whoami",
+        "tool_name": "specter_cloud_whoami",
         "exported": true
       }
     }
