@@ -103,13 +103,19 @@ pub async fn check_status(url: &str, json_output: bool) -> Result<(), Box<dyn st
                 println!("{}", serde_json::to_string(&out)?);
                 return Ok(());
             }
-            let mut card = crate::ui::Card::new("RUNNER");
-            card.with_badge(crate::ui::badge_online("ONLINE (HTTP 200)"));
-            card.with_min_width(64);
-            card.add_kv("Endpoint", url);
-            card.add_kv("Worker Driver", "mv3_extension_worker (CDP Bridge)");
-            card.add_kv("Health Route", &target);
-            card.with_footer("Worker daemon is ready to receive and execute jobs");
+            let rows = vec![
+                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_online("ONLINE")),
+                crate::ui::TabularRow::new("Health Route", &target, "HTTP Keepalive (200)", crate::ui::badge_online("HEALTHY")),
+                crate::ui::TabularRow::new("Worker Driver", "mv3_extension", "Blink Automation Engine", crate::ui::badge_online("READY")),
+            ];
+            let card = crate::ui::create_tabular_card(
+                "RUNNER WORKER ENGINE",
+                Some(crate::ui::badge_online("ONLINE (HTTP 200)")),
+                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                &rows,
+                Some("Worker daemon is ready to receive and execute jobs"),
+                72,
+            );
             println!();
             card.print();
             println!();
@@ -125,10 +131,18 @@ pub async fn check_status(url: &str, json_output: bool) -> Result<(), Box<dyn st
                 println!("{}", serde_json::to_string(&out)?);
                 return Ok(());
             }
-            let mut card = crate::ui::Card::new("RUNNER");
-            card.with_badge(crate::ui::badge_error(&format!("HTTP {}", res.status())));
-            card.with_min_width(64);
-            card.add_kv("Endpoint", url);
+            let rows = vec![
+                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_error(&format!("HTTP {}", res.status()))),
+                crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_warn("DEGRADED")),
+            ];
+            let card = crate::ui::create_tabular_card(
+                "RUNNER WORKER ENGINE",
+                Some(crate::ui::badge_error(&format!("HTTP {}", res.status()))),
+                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                &rows,
+                Some("Server responded with error status. Inspect runner logs."),
+                72,
+            );
             println!();
             card.print();
             println!();
@@ -143,12 +157,18 @@ pub async fn check_status(url: &str, json_output: bool) -> Result<(), Box<dyn st
                 println!("{}", serde_json::to_string(&out)?);
                 return Ok(());
             }
-            let mut card = crate::ui::Card::new("RUNNER");
-            card.with_badge(crate::ui::badge_offline("OFFLINE"));
-            card.with_min_width(64);
-            card.add_kv("Endpoint", url);
-            card.add_kv("Diagnostic", format!("{}", e));
-            card.with_footer("Start local daemon with 'specter runner start -d'");
+            let rows = vec![
+                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_offline("OFFLINE")),
+                crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_offline("UNREACHABLE")),
+            ];
+            let card = crate::ui::create_tabular_card(
+                "RUNNER WORKER ENGINE",
+                Some(crate::ui::badge_offline("OFFLINE")),
+                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                &rows,
+                Some("Start local daemon with 'specter runner start -d'"),
+                72,
+            );
             println!();
             card.print();
             println!();

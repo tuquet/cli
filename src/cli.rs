@@ -908,6 +908,36 @@ pub enum ProfileCommands {
         json: bool,
     },
 
+    /// Push browser profile archive to Cloudflare R2 via Storage Hub Presigned URL
+    #[command(name = "push", aliases = ["upload"])]
+    Push {
+        /// Profile ID or name
+        id: String,
+
+        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        #[arg(long)]
+        storage_url: Option<String>,
+
+        /// Output result in raw JSON format
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Pull browser profile archive from Cloudflare R2 via Storage Hub Presigned URL
+    #[command(name = "pull", aliases = ["download"])]
+    Pull {
+        /// Profile ID or name
+        id: String,
+
+        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        #[arg(long)]
+        storage_url: Option<String>,
+
+        /// Output result in raw JSON format
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Manage cloud-synchronized browser profiles and distributed lease locks
     #[command(name = "cloud")]
     Cloud {
@@ -942,6 +972,36 @@ pub enum ProfileCloudSubcommands {
     Release {
         /// Cloud Browser Profile ID (UUID) or name
         id: String,
+
+        /// Output result in raw JSON format
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Push browser profile snapshot directly to Cloudflare R2 via Storage Hub Presigned URL
+    #[command(name = "push", aliases = ["upload"])]
+    Push {
+        /// Target Profile ID or name
+        id: String,
+
+        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        #[arg(long)]
+        storage_url: Option<String>,
+
+        /// Output result in raw JSON format
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Pull browser profile snapshot directly from Cloudflare R2 via Storage Hub Presigned URL
+    #[command(name = "pull", aliases = ["download"])]
+    Pull {
+        /// Target Profile ID or name
+        id: String,
+
+        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        #[arg(long)]
+        storage_url: Option<String>,
 
         /// Output result in raw JSON format
         #[arg(long)]

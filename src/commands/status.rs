@@ -1,35 +1,62 @@
 use std::path::PathBuf;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
-use crate::ui::{badge_offline, badge_online, badge_warn, Card, create_network_topology_card, default_workstation_endpoints};
+use crate::ui::{
+    badge_offline, badge_online, badge_warn, create_network_topology_card,
+    create_tabular_card, default_workstation_endpoints, TabularRow,
+};
 
 pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
-    let canonical_root = crate::config::canonical_specter_dir().display().to_string();
 
     // 1. SYSTEM & CLOUD
     let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
     let hostname = std::env::var("COMPUTERNAME")
         .or_else(|_| std::env::var("HOSTNAME"))
         .unwrap_or_else(|_| "WORKSTATION".to_string());
-    
-    let mut system_card = Card::new("SYSTEM & CLOUD");
-    if let Some(ref creds) = cloud_creds {
-        system_card.with_badge(badge_online("ENROLLED (PROD)"));
-        system_card.with_min_width(68);
-        system_card.add_kv("Workstation", &creds.name);
-        system_card.add_kv("Canonical Root", &canonical_root);
-        system_card.add_kv("Device ID", &creds.device_id);
-        system_card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
-        system_card.add_kv("Cloud Target", creds.cloud_url.as_deref().unwrap_or(crate::constants::DEFAULT_DEV_SUPABASE_URL));
+
+    let (system_badge, cloud_target_val, cloud_status) = if let Some(ref creds) = cloud_creds {
+        (
+            badge_online("ENROLLED (PROD)"),
+            creds.cloud_url.as_deref().unwrap_or(crate::constants::DEFAULT_DEV_SUPABASE_URL),
+            badge_online("CONNECTED"),
+        )
     } else {
-        system_card.with_badge(badge_offline("LOCAL ONLY"));
-        system_card.with_min_width(68);
-        system_card.add_kv("Workstation", &hostname);
-        system_card.add_kv("Canonical Root", &canonical_root);
-        system_card.add_kv("Cloud Target", "Not paired with Specter Cloud");
-        system_card.with_footer("Run 'specter login' to authenticate with Specter Cloud");
-    }
+        (
+            badge_offline("LOCAL ONLY"),
+            "Not paired with Cloud",
+            badge_offline("STANDBY"),
+        )
+    };
+
+    let workstation_val = cloud_creds.as_ref().map(|c| c.name.as_str()).unwrap_or(&hostname);
+    let tenant_val = cloud_creds.as_ref().and_then(|c| c.tenant_id.as_deref()).unwrap_or("Personal Workspace");
+
+    let cloud_display = cloud_target_val.trim_start_matches("https://").trim_end_matches('/');
+    let system_rows = vec![
+        TabularRow::new("Workstation", workstation_val, "Local Node Host", badge_online("READY")),
+        TabularRow::new("SSOT Storage", "~/.specter", "Microservices Root", badge_online("READY")),
+        TabularRow::new("Cloud Mesh", cloud_display, "Supabase Remote API", cloud_status),
+        TabularRow::new(
+            "Tenant Scope",
+            tenant_val,
+            "Workspace Organization",
+            if cloud_creds.is_some() { badge_online("ACTIVE") } else { badge_offline("STANDBY") },
+        ),
+    ];
+
+    let system_card = create_tabular_card(
+        "SYSTEM & CLOUD",
+        Some(system_badge),
+        ["COMPONENT", "IDENTITY / TARGET", "ROLE / DETAILS", "STATUS"],
+        &system_rows,
+        Some(if cloud_creds.is_some() {
+            "Workstation enrolled in Specter Cloud Mesh"
+        } else {
+            "Run 'specter login' to authenticate with Specter Cloud"
+        }),
+        72,
+    );
 
     // 2. AUTOMA (Runner Daemon + SQLite Database + Workflows)
     let host = std::env::var(crate::constants::ENV_AUTOMA_HOST).unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
@@ -67,49 +94,97 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
         "Not initialized".to_string()
     };
 
-    let mut automa_card = Card::new("AUTOMA");
-    if daemon_running {
-        automa_card.with_badge(badge_online("RUNNING"));
-    } else {
-        automa_card.with_badge(badge_online("READY"));
-    }
-    automa_card.with_min_width(68);
-    automa_card.add_kv(
-        "Worker Daemon",
-        if daemon_running {
-            format!("{} (● ONLINE)", daemon_url)
+    let daemon_status = if daemon_running { badge_online("ONLINE") } else { badge_offline("OFFLINE") };
+    let automa_rows = vec![
+        TabularRow::new("Worker RPC", format!("127.0.0.1:{}", port), "CDP Extension Worker", daemon_status),
+        TabularRow::new(
+            "SQLite State",
+            format!("automa.sqlite ({})", db_size_str),
+            "Workflow & Job DB",
+            if db_path.exists() { badge_online("READY") } else { badge_offline("STANDBY") },
+        ),
+        TabularRow::new("Vault DAGs", format!("{} workflow(s)", workflow_count), "JSON Workflow Vault", badge_online("READY")),
+    ];
+
+    let automa_card = create_tabular_card(
+        "AUTOMA & RUNNER",
+        Some(if daemon_running { badge_online("RUNNING") } else { badge_online("READY") }),
+        ["COMPONENT", "ENDPOINT / RESOURCE", "ROLE / DETAILS", "STATUS"],
+        &automa_rows,
+        Some(if daemon_running {
+            "Worker daemon active on local endpoint"
         } else {
-            format!("{} (○ OFFLINE)", daemon_url)
-        },
+            "Start worker daemon with 'specter runner start --port 8765'"
+        }),
+        72,
     );
-    automa_card.add_kv("Database", format!("automa.sqlite ({})", db_size_str));
-    automa_card.add_kv("Workflows", format!("{} workflows in {}", workflow_count, vault_dir.display()));
-    if !daemon_running {
-        automa_card.with_footer(format!("Start worker daemon with 'specter runner start --port {}'", port));
-    }
 
     // 3. BROWSER
     let browser_status = crate::core::browser::resolver::get_runtime_status();
-    let browser_card = if browser_status.installed {
-        let mut card = Card::new("BROWSER");
-        card.with_badge(badge_online("READY"));
-        card.with_min_width(68);
-        card.add_kv("Engine", "Chromium C++ Antidetect Engine (Blink/V8 Native Spoofing)");
-        card.add_kv("Active Version", &browser_status.pinned_version);
-        card.add_kv("Platform", &browser_status.platform);
-        card.add_kv("Executable", &browser_status.executable_path);
-        if let Some(mb) = browser_status.size_mb {
-            card.add_kv("Disk Usage", format!("{:.1} MB", mb));
-        }
-        card
+    let (browser_badge, engine_status, binary_status) = if browser_status.installed {
+        (badge_online("READY"), badge_online("READY"), badge_online("READY"))
     } else {
-        let mut card = Card::new("BROWSER");
-        card.with_badge(badge_warn("NOT INSTALLED"));
-        card.with_min_width(68);
-        card.add_line("Dedicated Chromium binary not found in ~/.specter/browser/runtimes/");
-        card.with_footer("Install dedicated runtime with 'specter browser install'");
-        card
+        (badge_warn("NOT INSTALLED"), badge_warn("MISSING"), badge_warn("MISSING"))
     };
+
+    let profile_dir = crate::config::canonical_specter_dir().join("browser").join("profiles");
+    let profile_count = std::fs::read_dir(&profile_dir)
+        .map(|entries| entries.flatten().filter(|e| e.path().is_dir()).count())
+        .unwrap_or(0);
+
+    let footprint_str = browser_status
+        .size_mb
+        .map(|mb| format!("{:.1} MB Physical Disk", mb))
+        .unwrap_or_else(|| "Physical Disk".to_string());
+
+    let version_clean = browser_status
+        .pinned_version
+        .split_whitespace()
+        .next()
+        .unwrap_or(&browser_status.pinned_version);
+
+    let exec_clean = if browser_status.executable_path.contains(".specter") {
+        format!(
+            "~/.specter{}",
+            browser_status
+                .executable_path
+                .split(".specter")
+                .nth(1)
+                .unwrap_or("")
+                .replace('\\', "/")
+        )
+    } else {
+        browser_status.executable_path.clone()
+    };
+
+    let browser_rows = vec![
+        TabularRow::new(
+            "Engine V8",
+            version_clean,
+            format!("Chromium Stealth ({})", browser_status.platform),
+            engine_status,
+        ),
+        TabularRow::new("Runtime Exec", exec_clean, footprint_str, binary_status),
+        TabularRow::new(
+            "Sandbox Fleet",
+            format!("{} profile sandbox(es)", profile_count),
+            "Isolated Antidetect Paths",
+            badge_online("READY"),
+        ),
+    ];
+
+    let browser_card = create_tabular_card(
+        "ANTIDETECT BROWSER",
+        Some(browser_badge),
+        ["COMPONENT", "VERSION / PATH", "ROLE / DETAILS", "STATUS"],
+        &browser_rows,
+        Some(if browser_status.installed {
+            "Engine ready. Run 'specter browser list' to manage profiles"
+        } else {
+            "Install dedicated runtime with 'specter browser install'"
+        }),
+        72,
+    );
 
     // 4. NETWORK BRIDGE
     let bridge_config = crate::infrastructure::bridge::BridgeConfig::load().unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());

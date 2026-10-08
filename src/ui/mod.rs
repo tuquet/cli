@@ -605,41 +605,89 @@ pub fn default_workstation_endpoints(
     items
 }
 
-/// Create a standardized Network Topology & Listeners card (Option 1)
-pub fn create_network_topology_card(
+/// Represents a row entry in a standardized 4-column tabular card
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TabularRow {
+    pub col1: String, // Component / Protocol (14 chars visible width)
+    pub col2: String, // Endpoint / Resource / Version (20 chars visible width)
+    pub col3: String, // Role / Details (26 chars visible width)
+    pub status: String, // Formatted badge string
+}
+
+impl TabularRow {
+    pub fn new(
+        col1: impl Into<String>,
+        col2: impl Into<String>,
+        col3: impl Into<String>,
+        status: impl Into<String>,
+    ) -> Self {
+        Self {
+            col1: col1.into(),
+            col2: col2.into(),
+            col3: col3.into(),
+            status: status.into(),
+        }
+    }
+}
+
+/// Generalized generator for 4-column Tabular Cards across all microservice pillars
+pub fn create_tabular_card(
     title: &str,
-    endpoints: &[NetworkEndpoint],
-    custom_footer: Option<&str>,
+    badge: Option<String>,
+    headers: [&str; 4],
+    rows: &[TabularRow],
+    footer: Option<&str>,
+    min_width: usize,
 ) -> Card {
     let mut card = Card::new(title);
-    card.with_min_width(68);
 
-    let any_active = endpoints.iter().any(|e| e.active);
-    if any_active {
-        card.with_badge(badge_online("ACTIVE WORKLOADS"));
-    } else {
-        card.with_badge(badge_offline("STANDBY"));
+    if let Some(b) = badge {
+        card.with_badge(b);
     }
 
-    // Header line: PROTOCOL     ENDPOINT         ROLE / TARGET             STATUS
+    // Dynamically calculate required column widths based on longest content + at least 2 spaces gap
+    let mut w0 = visible_width(headers[0]);
+    let mut w1 = visible_width(headers[1]);
+    let mut w2 = visible_width(headers[2]);
+
+    for row in rows {
+        w0 = w0.max(visible_width(&row.col1));
+        w1 = w1.max(visible_width(&row.col2));
+        w2 = w2.max(visible_width(&row.col3));
+    }
+
+    let c0_width = w0.max(14) + 2;
+    let c1_width = w1.max(18) + 2;
+    let c2_width = w2.max(24) + 2;
+
+    let table_inner_width = c0_width + c1_width + c2_width + 12;
+    card.with_min_width(min_width.max(table_inner_width));
+
+    let pad0_hdr = " ".repeat(c0_width.saturating_sub(visible_width(headers[0])));
+    let pad1_hdr = " ".repeat(c1_width.saturating_sub(visible_width(headers[1])));
+    let pad2_hdr = " ".repeat(c2_width.saturating_sub(visible_width(headers[2])));
+
+    // Header line
     let header_line = format!(
-        "{BOLD}{MUTED}{:<13}{:<17}{:<26}{}{RESET}",
-        "PROTOCOL", "ENDPOINT", "ROLE / TARGET", "STATUS",
+        "{BOLD}{MUTED}{}{}{}{}{}{}{}{RESET}",
+        headers[0], pad0_hdr,
+        headers[1], pad1_hdr,
+        headers[2], pad2_hdr,
+        headers[3],
         BOLD = colors::BOLD,
         MUTED = colors::MUTED,
         RESET = colors::RESET,
     );
     card.add_line(header_line);
 
-    for ep in endpoints {
-        let status_str = if ep.active {
-            badge_online("ACTIVE")
-        } else {
-            badge_offline("STANDBY")
-        };
+    for row in rows {
+        let pad0 = " ".repeat(c0_width.saturating_sub(visible_width(&row.col1)));
+        let pad1 = " ".repeat(c1_width.saturating_sub(visible_width(&row.col2)));
+        let pad2 = " ".repeat(c2_width.saturating_sub(visible_width(&row.col3)));
+
         let row_line = format!(
-            "{BOLD_WHITE}{:<13}{RESET}{CYAN}{:<17}{RESET}{MUTED}{:<26}{RESET}{}",
-            ep.protocol, ep.endpoint, ep.role, status_str,
+            "{BOLD_WHITE}{}{pad0}{RESET}{CYAN}{}{pad1}{RESET}{MUTED}{}{pad2}{RESET}{}",
+            row.col1, row.col2, row.col3, row.status,
             BOLD_WHITE = colors::BOLD_WHITE,
             RESET = colors::RESET,
             CYAN = colors::CYAN,
@@ -648,23 +696,61 @@ pub fn create_network_topology_card(
         card.add_line(row_line);
     }
 
-    if let Some(footer) = custom_footer {
-        card.with_footer(footer);
+    if let Some(f) = footer {
+        card.with_footer(f);
+    }
+
+    card
+}
+
+/// Create a standardized Network Topology & Listeners card (Option 1)
+pub fn create_network_topology_card(
+    title: &str,
+    endpoints: &[NetworkEndpoint],
+    custom_footer: Option<&str>,
+) -> Card {
+    let any_active = endpoints.iter().any(|e| e.active);
+    let badge = if any_active {
+        badge_online("ACTIVE WORKLOADS")
     } else {
-        // Smart dynamic footer based on state
+        badge_offline("STANDBY")
+    };
+
+    let rows: Vec<TabularRow> = endpoints
+        .iter()
+        .map(|ep| {
+            let status = if ep.active {
+                badge_online("ACTIVE")
+            } else {
+                badge_offline("STANDBY")
+            };
+            TabularRow::new(&ep.protocol, &ep.endpoint, &ep.role, status)
+        })
+        .collect();
+
+    let dynamic_footer = if let Some(footer) = custom_footer {
+        footer.to_string()
+    } else {
         let socks5_active = endpoints.iter().find(|e| e.protocol == "SOCKS5").map(|e| e.active).unwrap_or(false);
         let http_active = endpoints.iter().find(|e| e.protocol == "HTTP Relay").map(|e| e.active).unwrap_or(false);
 
         if socks5_active && http_active {
-            card.with_footer("Egress ready for Git push, cURL, and Supabase CLI");
+            "Egress ready for Git push, cURL, and Supabase CLI".to_string()
         } else if socks5_active {
-            card.with_footer("Egress ready for Git & cURL. Run 'specter bridge start --http' for Supabase");
+            "Egress ready for Git & cURL. Run 'specter bridge start --http' for Supabase".to_string()
         } else {
-            card.with_footer("Tunnels run on demand. Start with 'specter bridge start'");
+            "Tunnels run on demand. Start with 'specter bridge start'".to_string()
         }
-    }
+    };
 
-    card
+    create_tabular_card(
+        title,
+        Some(badge),
+        ["PROTOCOL", "ENDPOINT", "ROLE / TARGET", "STATUS"],
+        &rows,
+        Some(&dynamic_footer),
+        72,
+    )
 }
 
 #[cfg(test)]
@@ -719,5 +805,29 @@ mod tests {
 
         let standby = badge_offline("STANDBY");
         assert_eq!(visible_width(&standby), 9); // '○' (1) + ' ' (1) + 'STANDBY' (7)
+    }
+
+    #[test]
+    fn test_create_tabular_card_generic() {
+        let rows = vec![
+            TabularRow::new("Workstation", "HNDW-NDTU6", "Local Node Host", badge_online("READY")),
+            TabularRow::new("Cloud Target", "supabase.co", "Cloud Mesh API", badge_online("ENROLLED")),
+        ];
+        let card = create_tabular_card(
+            "SYSTEM & CLOUD TOPOLOGY",
+            Some(badge_online("PROD")),
+            ["COMPONENT", "IDENTITY / TARGET", "ROLE / DETAILS", "STATUS"],
+            &rows,
+            Some("System operational"),
+            72,
+        );
+        let rendered = card.render();
+        assert!(rendered.contains("SYSTEM & CLOUD TOPOLOGY"));
+        assert!(rendered.contains("PROD"));
+        assert!(rendered.contains("Workstation"));
+        assert!(rendered.contains("HNDW-NDTU6"));
+        assert!(rendered.contains("Local Node Host"));
+        assert!(rendered.contains("READY"));
+        assert!(rendered.contains("System operational"));
     }
 }

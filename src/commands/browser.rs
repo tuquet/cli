@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use crate::cli::{BrowserCommands, ExtCommands, ProfileCloudSubcommands, ProfileCommands};
-use crate::ui::{badge_error, badge_online, badge_warn, Card, Column, Table};
+use crate::ui::{badge_error, badge_online, badge_warn, Card, Column, Table, create_tabular_card, TabularRow};
 use crate::core::browser::{Extension, ExtensionRegistry};
 
 pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::Error>> {
@@ -154,23 +154,64 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
             } else {
                 badge_warn("NOT INSTALLED")
             };
-            let mut card = Card::new("ANTIDETECT BROWSER STATUS");
-            card.with_badge(badge);
-            card.with_min_width(74);
 
-            card.add_kv("Engine", "Chromium C++ Antidetect Engine (Blink/V8 Native Spoofing)");
-            card.add_kv("Active Version", format!("v{}", active_ver));
-            card.add_kv("Platform", &status.platform);
-            card.add_kv("Executable", &status.executable_path);
-            card.add_kv("Directory", &status.directory);
-            if let Some(mb) = status.size_mb {
-                card.add_kv("Disk Footprint", format!("{:.1} MB", mb));
-            }
-            if !status.installed {
-                card.with_footer("Run 'specter browser install' to download Golden LTS v148");
+            let footprint_str = status
+                .size_mb
+                .map(|mb| format!("{:.1} MB Physical Disk", mb))
+                .unwrap_or_else(|| "Physical Disk".to_string());
+
+            let exec_clean = if status.executable_path.contains(".specter") {
+                format!(
+                    "~/.specter{}",
+                    status
+                        .executable_path
+                        .split(".specter")
+                        .nth(1)
+                        .unwrap_or("")
+                        .replace('\\', "/")
+                )
             } else {
-                card.with_footer("Engine ready. Run 'specter browser list' or 'use <version>' to manage.");
-            }
+                status.executable_path.clone()
+            };
+
+            let profile_dir = crate::config::canonical_specter_dir().join("browser").join("profiles");
+            let profile_count = std::fs::read_dir(&profile_dir)
+                .map(|entries| entries.flatten().filter(|e| e.path().is_dir()).count())
+                .unwrap_or(0);
+
+            let rows = vec![
+                TabularRow::new(
+                    "Engine Core",
+                    format!("v{}", active_ver),
+                    format!("Blink/V8 Stealth ({})", status.platform),
+                    if status.installed { badge_online("READY") } else { badge_warn("MISSING") },
+                ),
+                TabularRow::new(
+                    "Runtime Exec",
+                    exec_clean,
+                    footprint_str,
+                    if status.installed { badge_online("READY") } else { badge_warn("MISSING") },
+                ),
+                TabularRow::new(
+                    "Sandbox Root",
+                    "~/.specter/browser/profiles",
+                    format!("{} Profile Sandbox(es)", profile_count),
+                    badge_online("READY"),
+                ),
+            ];
+
+            let card = create_tabular_card(
+                "ANTIDETECT BROWSER ENGINE",
+                Some(badge),
+                ["COMPONENT", "VERSION / PATH", "ROLE / DETAILS", "STATUS"],
+                &rows,
+                Some(if !status.installed {
+                    "Run 'specter browser install' to download Golden LTS v148"
+                } else {
+                    "Engine ready. Run 'specter browser list' or 'use <version>' to manage."
+                }),
+                72,
+            );
             println!();
             card.print();
             println!();
@@ -1227,6 +1268,8 @@ pub async fn handle_profile(
             println!();
             Ok(())
         }
+        Some(ProfileCommands::Push { id, storage_url, json }) => handle_profile_push(&id, storage_url.as_deref(), json).await,
+        Some(ProfileCommands::Pull { id, storage_url, json }) => handle_profile_pull(&id, storage_url.as_deref(), json).await,
         Some(ProfileCommands::Cloud { command }) => handle_profile_cloud(command).await,
     }
 }
@@ -1542,7 +1585,241 @@ pub async fn handle_profile_cloud(
             println!();
             Ok(())
         }
+        ProfileCloudSubcommands::Push { id, storage_url, json } => {
+            handle_profile_push(&id, storage_url.as_deref(), json).await
+        }
+        ProfileCloudSubcommands::Pull { id, storage_url, json } => {
+            handle_profile_pull(&id, storage_url.as_deref(), json).await
+        }
     }
+}
+
+pub async fn handle_profile_push(
+    id: &str,
+    storage_url_opt: Option<&str>,
+    json: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let app_config = crate::config::AppConfig::load();
+    let base_dir = crate::core::browser::resolve_data_dir();
+
+    // Load local profile
+    let profile = match crate::core::browser::BrowserProfile::load(id, &base_dir) {
+        Ok(p) => p,
+        Err(_) => {
+            let all = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
+            match all.into_iter().find(|p| p.cloud_id.as_deref() == Some(id) || p.name == id) {
+                Some(p) => p,
+                None => {
+                    let err = format!("Local profile '{}' not found", id);
+                    if json {
+                        println!("{}", serde_json::json!({ "success": false, "error": err }));
+                    } else {
+                        crate::ui::Notify::error(&err);
+                    }
+                    return Err(err.into());
+                }
+            }
+        }
+    };
+
+    // Pack profile into archive (.tar.zst) with cache sanitization
+    let report = profile.pack(&base_dir, None)?;
+
+    // Resolve Storage Hub URL
+    let storage_base_url = storage_url_opt
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("SPECTER_STORAGE_URL").ok())
+        .unwrap_or_else(|| "http://127.0.0.1:8080".to_string());
+    let storage_base = storage_base_url.trim_end_matches('/');
+
+    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&app_config.data_dir).await;
+    let device_token = creds.as_ref().map(|c| c.device_token.as_str()).unwrap_or("specter-local-token");
+    let device_id = creds.as_ref().map(|c| c.device_id.as_str()).unwrap_or("specter-workstation");
+
+    let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
+
+    // 1. Request presigned upload URL from Storage Hub
+    let presigned_endpoint = format!("{}/api/profiles/upload-url", storage_base);
+    let presigned_res = client.post(&presigned_endpoint)
+        .header("X-Device-Token", device_token)
+        .header("X-Device-Id", device_id)
+        .header("X-Tenant-Id", "default")
+        .json(&serde_json::json!({
+            "profile_id": profile.id,
+            "name": profile.name,
+            "zip_size": report.compressed_bytes
+        }))
+        .send()
+        .await?;
+
+    if !presigned_res.status().is_success() {
+        let err_body = presigned_res.text().await.unwrap_or_default();
+        let err_msg = format!("Failed to request Presigned URL from Storage Hub: {}", err_body);
+        if json {
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+        } else {
+            crate::ui::Notify::error(&err_msg);
+        }
+        return Err(err_msg.into());
+    }
+
+    let presigned_json: serde_json::Value = presigned_res.json().await?;
+    let upload_url = presigned_json["upload_url"].as_str().ok_or("Missing upload_url in response")?;
+    let storage_path = presigned_json["storage_path"].as_str().unwrap_or("").to_string();
+
+    // 2. Stream upload archive directly to Cloudflare R2
+    let file_bytes = std::fs::read(&report.archive_path)?;
+    let put_res = client.put(upload_url)
+        .header("Content-Type", "application/octet-stream")
+        .body(file_bytes)
+        .send()
+        .await?;
+
+    if !put_res.status().is_success() {
+        let err_status = put_res.status();
+        let err_msg = format!("R2 direct upload failed with status {}: {:?}", err_status, put_res.text().await.ok());
+        if json {
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+        } else {
+            crate::ui::Notify::error(&err_msg);
+        }
+        return Err(err_msg.into());
+    }
+
+    // 3. Complete profile registration in Storage Hub D1
+    let complete_endpoint = format!("{}/api/profiles/complete", storage_base);
+    let _ = client.post(&complete_endpoint)
+        .header("X-Device-Token", device_token)
+        .header("X-Device-Id", device_id)
+        .header("X-Tenant-Id", "default")
+        .json(&serde_json::json!({
+            "profile_id": profile.id,
+            "name": profile.name,
+            "storage_path": storage_path,
+            "zip_size": report.compressed_bytes,
+            "checksum_sha256": report.sha256_hash,
+            "status": "idle"
+        }))
+        .send()
+        .await;
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+            "success": true,
+            "profile_id": profile.id,
+            "name": profile.name,
+            "storage_path": storage_path,
+            "compressed_bytes": report.compressed_bytes,
+            "sha256": report.sha256_hash,
+            "compression_ratio": report.compression_ratio,
+        }))?);
+        return Ok(());
+    }
+
+    println!();
+    let mut card = Card::new("SPECTER PROFILE PUSHED (CLOUDFLARE R2)");
+    card.with_badge(badge_online("R2 SYNCED"));
+    card.with_min_width(74);
+    card.add_kv("Profile ID", &profile.id);
+    card.add_kv("Profile Name", &profile.name);
+    card.add_kv("Remote Key", &storage_path);
+    card.add_kv("Archive Size", format!("{} bytes ({:.1}% ratio)", report.compressed_bytes, report.compression_ratio));
+    card.add_kv("SHA-256 Digest", &report.sha256_hash);
+    card.with_footer("Profile snapshot uploaded directly to R2 object storage with 0đ egress.");
+    card.print();
+    println!();
+
+    Ok(())
+}
+
+pub async fn handle_profile_pull(
+    id: &str,
+    storage_url_opt: Option<&str>,
+    json: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let app_config = crate::config::AppConfig::load();
+    let base_dir = crate::core::browser::resolve_data_dir();
+
+    let storage_base_url = storage_url_opt
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("SPECTER_STORAGE_URL").ok())
+        .unwrap_or_else(|| "http://127.0.0.1:8080".to_string());
+    let storage_base = storage_base_url.trim_end_matches('/');
+
+    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&app_config.data_dir).await;
+    let device_token = creds.as_ref().map(|c| c.device_token.as_str()).unwrap_or("specter-local-token");
+    let device_id = creds.as_ref().map(|c| c.device_id.as_str()).unwrap_or("specter-workstation");
+
+    let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
+
+    // 1. Request presigned download URL from Storage Hub
+    let download_url_endpoint = format!("{}/api/profiles/{}/download-url", storage_base, id);
+    let download_res = client.get(&download_url_endpoint)
+        .header("X-Device-Token", device_token)
+        .header("X-Device-Id", device_id)
+        .header("X-Tenant-Id", "default")
+        .send()
+        .await?;
+
+    if !download_res.status().is_success() {
+        let err_body = download_res.text().await.unwrap_or_default();
+        let err_msg = format!("Failed to request Download URL from Storage Hub: {}", err_body);
+        if json {
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+        } else {
+            crate::ui::Notify::error(&err_msg);
+        }
+        return Err(err_msg.into());
+    }
+
+    let download_json: serde_json::Value = download_res.json().await?;
+    let download_url = download_json["download_url"].as_str().ok_or("Missing download_url in response")?;
+    let storage_path = download_json["storage_path"].as_str().unwrap_or("");
+
+    // 2. Stream download archive from Cloudflare R2
+    let get_res = client.get(download_url).send().await?;
+    if !get_res.status().is_success() {
+        let err_msg = format!("Failed to stream archive from R2: status {}", get_res.status());
+        if json {
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+        } else {
+            crate::ui::Notify::error(&err_msg);
+        }
+        return Err(err_msg.into());
+    }
+
+    let archive_bytes = get_res.bytes().await?;
+    let target_archive = base_dir.join(format!("{}.tar.zst", id));
+    std::fs::write(&target_archive, &archive_bytes)?;
+
+    // 3. Unpack into local profile directory
+    let profile = crate::core::browser::BrowserProfile::unpack_archive(&target_archive, &base_dir, None)?;
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+            "success": true,
+            "profile_id": profile.id,
+            "name": profile.name,
+            "sandbox_dir": profile.get_sandbox_dir(&base_dir).display().to_string(),
+            "downloaded_bytes": archive_bytes.len(),
+            "storage_path": storage_path,
+        }))?);
+        return Ok(());
+    }
+
+    println!();
+    let mut card = Card::new("SPECTER PROFILE PULLED (CLOUDFLARE R2)");
+    card.with_badge(badge_online("RESTORED"));
+    card.with_min_width(74);
+    card.add_kv("Profile ID", &profile.id);
+    card.add_kv("Profile Name", &profile.name);
+    card.add_kv("Sandbox Directory", profile.get_sandbox_dir(&base_dir).display().to_string());
+    card.add_kv("Downloaded Bytes", format!("{} bytes", archive_bytes.len()));
+    card.with_footer(format!("Ready for stealth automation. Launch with: specter browser launch {}", profile.id));
+    card.print();
+    println!();
+
+    Ok(())
 }
 
 pub async fn handle_proxy(
