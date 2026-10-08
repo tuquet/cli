@@ -29,15 +29,15 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn load() -> Self {
-        let mut server_host = env::var("SPECTER_HOST")
-            .or_else(|_| env::var("AUTOMA_HOST"))
-            .unwrap_or_else(|_| "127.0.0.1".to_string());
+        let mut server_host = env::var(crate::constants::ENV_SPECTER_HOST)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_HOST))
+            .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
 
-        let mut server_port = env::var("SPECTER_PORT")
-            .or_else(|_| env::var("AUTOMA_PORT"))
-            .unwrap_or_else(|_| "8765".to_string())
+        let mut server_port = env::var(crate::constants::ENV_SPECTER_PORT)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_PORT))
+            .unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string())
             .parse()
-            .unwrap_or(8765);
+            .unwrap_or(crate::constants::DEFAULT_RUNNER_PORT);
 
         // Check command line arguments for --port / -p, --host / -H
         let args: Vec<String> = env::args().collect();
@@ -51,24 +51,24 @@ impl AppConfig {
             }
         }
 
-        let environment = env::var("SPECTER_ENV")
-            .or_else(|_| env::var("AUTOMA_ENV"))
+        let environment = env::var(crate::constants::ENV_SPECTER_ENV)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_ENV))
             .unwrap_or_else(|_| "development".to_string());
         
-        let log_level = env::var("SPECTER_LOG_LEVEL")
-            .or_else(|_| env::var("AUTOMA_LOG_LEVEL"))
+        let log_level = env::var(crate::constants::ENV_SPECTER_LOG_LEVEL)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_LOG_LEVEL))
             .unwrap_or_else(|_| "info".to_string());
         
-        let data_dir = env::var("SPECTER_DATA_DIR")
-            .unwrap_or_else(|_| canonical_ssot_dir().join("automa").to_string_lossy().to_string());
+        let data_dir = env::var(crate::constants::ENV_SPECTER_DATA_DIR)
+            .unwrap_or_else(|_| canonical_ssot_dir().join(crate::constants::PILLAR_AUTOMA).to_string_lossy().to_string());
 
-        let mut cloud_url = env::var("SPECTER_CLOUD_URL")
-            .or_else(|_| env::var("AUTOMA_CLOUD_URL"))
+        let mut cloud_url = env::var(crate::constants::ENV_SPECTER_CLOUD_URL)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_CLOUD_URL))
             .ok()
             .filter(|s| !s.trim().is_empty());
 
         if cloud_url.is_none() {
-            let identity_path = canonical_ssot_dir().join("system").join(".identity.json");
+            let identity_path = canonical_ssot_dir().join(crate::constants::PILLAR_SYSTEM).join(crate::constants::FILE_IDENTITY_JSON);
             let device_path = std::path::Path::new(&data_dir).join("device.json");
             let target_path = if identity_path.exists() { identity_path } else { device_path };
             if target_path.exists()
@@ -80,15 +80,15 @@ impl AppConfig {
                             }
         }
 
-        let cloud_enrollment_token = env::var("SPECTER_ENROLLMENT_TOKEN")
-            .or_else(|_| env::var("AUTOMA_ENROLLMENT_TOKEN"))
+        let cloud_enrollment_token = env::var(crate::constants::ENV_SPECTER_ENROLLMENT_TOKEN)
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_ENROLLMENT_TOKEN))
             .ok()
             .filter(|s| !s.trim().is_empty());
 
-        let cloud_heartbeat_interval_secs = env::var("AUTOMA_HEARTBEAT_INTERVAL")
+        let cloud_heartbeat_interval_secs = env::var(crate::constants::ENV_AUTOMA_HEARTBEAT_INTERVAL)
             .ok()
             .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or(30);
+            .unwrap_or(crate::constants::DEFAULT_HEARTBEAT_INTERVAL_SECS);
 
         Self {
             server_host,

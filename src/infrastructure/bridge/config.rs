@@ -136,7 +136,7 @@ impl BridgeConfig {
 
     /// Single Canonical config path: ~/.specter/bridge/bridge.json (SSOT)
     pub fn config_path() -> PathBuf {
-        crate::config::canonical_ssot_dir().join("bridge").join("bridge.json")
+        crate::config::canonical_ssot_dir().join(crate::constants::PILLAR_BRIDGE).join(crate::constants::FILE_BRIDGE_JSON)
     }
 
     /// Load the configuration with dynamic environment variable expansion
@@ -184,16 +184,16 @@ impl BridgeConfig {
                 server_type: "cloudflare".to_string(),
                 cf_hostname: Some("vps.example.com".to_string()),
                 host: None,
-                local_ssh_port: Some(2222),
+                local_ssh_port: Some(crate::constants::DEFAULT_SSH_TUNNEL_PORT),
                 remote_user: Some("root".to_string()),
                 identity_file: Some("~/.ssh/id_ed25519".to_string()),
-                socks_port: Some(1080),
+                socks_port: Some(crate::constants::DEFAULT_SOCKS5_PORT),
                 ciphers: Some(vec![
                     "chacha20-poly1305@openssh.com".to_string(),
                     "aes128-gcm@openssh.com".to_string(),
                 ]),
-                server_alive_interval: Some(15),
-                server_alive_count_max: Some(3),
+                server_alive_interval: Some(crate::constants::DEFAULT_SSH_ALIVE_INTERVAL),
+                server_alive_count_max: Some(crate::constants::DEFAULT_SSH_ALIVE_COUNT_MAX),
                 description: Some("Primary VPS for Git SOCKS5 proxy and management".to_string()),
                 enabled: Some(true),
                 tags: vec!["primary".to_string(), "git".to_string()],
@@ -210,12 +210,12 @@ impl BridgeConfig {
             workloads: Some(WorkloadsConfig {
                 git: Some(WorkloadGit {
                     server: "my-vps".to_string(),
-                    port: 1080,
+                    port: crate::constants::DEFAULT_SOCKS5_PORT,
                 }),
                 supabase: Some(WorkloadSupabase {
                     server: "my-vps".to_string(),
-                    socks_port: 1080,
-                    http_port: 8118,
+                    socks_port: crate::constants::DEFAULT_SOCKS5_PORT,
+                    http_port: crate::constants::DEFAULT_HTTP_BRIDGE_PORT,
                 }),
             }),
         }

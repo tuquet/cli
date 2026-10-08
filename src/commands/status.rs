@@ -21,7 +21,7 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
         system_card.add_kv("Canonical Root", &canonical_root);
         system_card.add_kv("Device ID", &creds.device_id);
         system_card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
-        system_card.add_kv("Cloud Target", creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"));
+        system_card.add_kv("Cloud Target", creds.cloud_url.as_deref().unwrap_or(crate::constants::DEFAULT_DEV_SUPABASE_URL));
     } else {
         system_card.with_badge(badge_offline("LOCAL ONLY"));
         system_card.with_min_width(68);
@@ -32,8 +32,8 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
     }
 
     // 2. AUTOMA (Runner Daemon + SQLite Database + Workflows)
-    let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| config.server_port.to_string());
+    let host = std::env::var(crate::constants::ENV_AUTOMA_HOST).unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
+    let port = std::env::var(crate::constants::ENV_AUTOMA_PORT).unwrap_or_else(|_| config.server_port.to_string());
     let daemon_url = format!("http://{}:{}", host, port);
     let health_url = format!("{}/api/v1/health", daemon_url);
 
@@ -56,7 +56,7 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
         })
         .unwrap_or(0);
 
-    let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
     let db_size_str = if db_path.exists() {
         if let Ok(meta) = std::fs::metadata(&db_path) {
             format!("{:.2} KB", meta.len() as f64 / 1024.0)
@@ -113,11 +113,11 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
 
     // 4. NETWORK BRIDGE
     let bridge_config = crate::infrastructure::bridge::BridgeConfig::load().unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
-    let git_port = bridge_config.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(1080);
+    let git_port = bridge_config.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
     let git_active = crate::infrastructure::bridge::probe_port(git_port);
-    let primary_ssh_port = bridge_config.servers.get("my-vps").and_then(|s| s.local_ssh_port).unwrap_or(2222);
+    let primary_ssh_port = bridge_config.servers.get("my-vps").and_then(|s| s.local_ssh_port).unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
     let ssh_active = crate::infrastructure::bridge::probe_port(primary_ssh_port);
-    let http_port = bridge_config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(8118);
+    let http_port = bridge_config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
     let http_active = crate::infrastructure::bridge::probe_port(http_port);
 
     let mut bridge_card = Card::new("NETWORK BRIDGE");

@@ -23,9 +23,9 @@ pub struct BrowserConfig {
     pub autoload_extensions: Vec<String>,
 }
 
-fn default_browser_name() -> String { "chromium".to_string() }
-fn default_width() -> u32 { 1280 }
-fn default_height() -> u32 { 800 }
+fn default_browser_name() -> String { crate::constants::DEFAULT_BROWSER_NAME.to_string() }
+fn default_width() -> u32 { crate::constants::DEFAULT_VIEWPORT_WIDTH }
+fn default_height() -> u32 { crate::constants::DEFAULT_VIEWPORT_HEIGHT }
 fn default_args() -> Vec<String> {
     vec![
         "--disable-blink-features=AutomationControlled".to_string(),
@@ -33,14 +33,14 @@ fn default_args() -> Vec<String> {
     ]
 }
 fn default_extensions() -> Vec<String> {
-    vec!["automa".to_string()]
+    vec![crate::constants::PILLAR_AUTOMA.to_string()]
 }
 
 impl Default for BrowserConfig {
     fn default() -> Self {
         Self {
             default_browser: default_browser_name(),
-            chromium_revision: Some("134.0.6998.35".to_string()),
+            chromium_revision: Some(crate::constants::PINNED_CHROMIUM_REVISION.to_string()),
             headless: false,
             viewport_width: default_width(),
             viewport_height: default_height(),
@@ -53,9 +53,9 @@ impl Default for BrowserConfig {
 
 impl BrowserConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join("browser");
+        let dir = canonical_specter_dir().join(crate::constants::PILLAR_BROWSER);
         let _ = fs::create_dir_all(&dir);
-        dir.join("browser.json")
+        dir.join(crate::constants::FILE_BROWSER_JSON)
     }
 
     pub fn load() -> Self {

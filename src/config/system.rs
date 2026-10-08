@@ -22,9 +22,9 @@ fn default_machine_name() -> String {
         .or_else(|_| std::env::var("HOSTNAME"))
         .unwrap_or_else(|_| "WORKSTATION".to_string())
 }
-fn default_cloud_url() -> String { "https://cloud.specter.dev".to_string() }
+fn default_cloud_url() -> String { crate::constants::DEFAULT_CLOUD_URL.to_string() }
 fn default_true() -> bool { true }
-fn default_channel() -> String { "stable".to_string() }
+fn default_channel() -> String { crate::constants::DEFAULT_UPDATE_CHANNEL.to_string() }
 fn default_env() -> String { "production".to_string() }
 
 impl Default for SystemConfig {
@@ -41,9 +41,9 @@ impl Default for SystemConfig {
 
 impl SystemConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join("system");
+        let dir = canonical_specter_dir().join(crate::constants::PILLAR_SYSTEM);
         let _ = fs::create_dir_all(&dir);
-        dir.join("system.json")
+        dir.join(crate::constants::FILE_SYSTEM_JSON)
     }
 
     pub fn load() -> Self {

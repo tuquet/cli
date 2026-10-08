@@ -33,14 +33,14 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     // ─────────────────────────────────────────────────────────────────────────────
     let dirs = [
         root.join("bin"),
-        root.join("system"),
-        root.join("automa").join("workflows"),
-        root.join("browser").join("profiles"),
-        root.join("browser").join("runtimes"),
-        root.join("browser").join("extensions"),
-        root.join("bridge").join("bin"),
-        root.join("bridge").join("pids"),
-        root.join("faker"),
+        root.join(crate::constants::PILLAR_SYSTEM),
+        root.join(crate::constants::PILLAR_AUTOMA).join(crate::constants::DIR_WORKFLOWS),
+        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_PROFILES),
+        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_RUNTIMES),
+        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_EXTENSIONS),
+        root.join(crate::constants::PILLAR_BRIDGE).join("bin"),
+        root.join(crate::constants::PILLAR_BRIDGE).join(crate::constants::DIR_PIDS),
+        root.join(crate::constants::PILLAR_FAKER),
     ];
 
     for d in &dirs {
@@ -55,7 +55,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     // ─────────────────────────────────────────────────────────────────────────────
     // 2. Initialize Automa SQLite Database
     // ─────────────────────────────────────────────────────────────────────────────
-    let db_path = root.join("automa").join("automa.sqlite");
+    let db_path = root.join(crate::constants::PILLAR_AUTOMA).join(crate::constants::FILE_AUTOMA_SQLITE);
     match crate::infrastructure::db::AutomaDb::new(&db_path) {
         Ok(_) => {
             println!("  {GREEN}✓{RESET} SQLite database initialized: {}",
@@ -352,7 +352,7 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
                 .join(", ")
         };
         browser_card.add_kv("Installed Versions", installed_desc);
-        let profiles_dir = canonical_specter_dir().join("browser").join("profiles");
+        let profiles_dir = canonical_specter_dir().join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_PROFILES);
         let profile_count = std::fs::read_dir(&profiles_dir)
             .map(|rd| rd.flatten().filter(|e| e.path().is_dir()).count())
             .unwrap_or(0);
@@ -375,11 +375,11 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
     let mut pillar_items = Vec::new();
 
     let pillars = &[
-        ("system", "specter/cli (System)", "Identity (.identity.json), CLI history, machine ID"),
-        ("automa", "specter/automa (Web Studio)", "Workflow DAG definitions, SQLite DB (automa.sqlite)"),
-        ("browser", "specter/browser (Sandbox)", "Antidetect Chromium runtimes, sandbox profiles"),
-        ("bridge", "specter/bridge (Mesh)", "Multi-VPS mesh configuration (bridge.json), PID locks"),
-        ("faker", "specter/faker (Identity)", "Synthetic persona schemas, CCCD template data"),
+        (crate::constants::PILLAR_SYSTEM, "specter/cli (System)", "Identity (.identity.json), CLI history, machine ID"),
+        (crate::constants::PILLAR_AUTOMA, "specter/automa (Web Studio)", "Workflow DAG definitions, SQLite DB (automa.sqlite)"),
+        (crate::constants::PILLAR_BROWSER, "specter/browser (Sandbox)", "Antidetect Chromium runtimes, sandbox profiles"),
+        (crate::constants::PILLAR_BRIDGE, "specter/bridge (Mesh)", "Multi-VPS mesh configuration (bridge.json), PID locks"),
+        (crate::constants::PILLAR_FAKER, "specter/faker (Identity)", "Synthetic persona schemas, CCCD template data"),
     ];
 
     for (pillar, service, desc) in pillars {
@@ -416,11 +416,11 @@ pub async fn run(fix: bool) -> Result<(), Box<dyn std::error::Error>> {
     let runner_active = probe_port(runner_port);
 
     let bridge_cfg = crate::infrastructure::bridge::BridgeConfig::load().unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
-    let git_port = bridge_cfg.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(1080);
+    let git_port = bridge_cfg.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
     let git_active = probe_port(git_port);
-    let ssh_port = bridge_cfg.servers.get("my-vps").and_then(|s| s.local_ssh_port).unwrap_or(2222);
+    let ssh_port = bridge_cfg.servers.get("my-vps").and_then(|s| s.local_ssh_port).unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
     let ssh_active = probe_port(ssh_port);
-    let http_port = bridge_cfg.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(8118);
+    let http_port = bridge_cfg.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
     let http_active = probe_port(http_port);
 
     let mut port_card = Card::new("NETWORK PORTS & SERVICES");

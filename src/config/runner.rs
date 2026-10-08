@@ -19,11 +19,11 @@ pub struct RunnerConfig {
     pub auto_restart: bool,
 }
 
-fn default_host() -> String { "127.0.0.1".to_string() }
-fn default_port() -> u16 { 8765 }
+fn default_host() -> String { crate::constants::DEFAULT_HOST.to_string() }
+fn default_port() -> u16 { crate::constants::DEFAULT_RUNNER_PORT }
 fn default_log_level() -> String { "info".to_string() }
-fn default_heartbeat() -> u64 { 30 }
-fn default_concurrency() -> usize { 2 }
+fn default_heartbeat() -> u64 { crate::constants::DEFAULT_HEARTBEAT_INTERVAL_SECS }
+fn default_concurrency() -> usize { crate::constants::DEFAULT_MAX_CONCURRENT_JOBS }
 fn default_true() -> bool { true }
 
 impl Default for RunnerConfig {
@@ -41,9 +41,9 @@ impl Default for RunnerConfig {
 
 impl RunnerConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join("automa");
+        let dir = canonical_specter_dir().join(crate::constants::PILLAR_AUTOMA);
         let _ = fs::create_dir_all(&dir);
-        dir.join("runner.json")
+        dir.join(crate::constants::FILE_RUNNER_JSON)
     }
 
     pub fn load() -> Self {

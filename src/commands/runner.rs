@@ -11,11 +11,11 @@ use crate::infrastructure::db::AutomaDb;
 use crate::AppState;
 
 pub fn get_pid_file_path(data_dir: &str) -> PathBuf {
-    Path::new(data_dir).join("runner.pid")
+    Path::new(data_dir).join(crate::constants::FILE_RUNNER_PID)
 }
 
 pub fn get_log_file_path(data_dir: &str) -> PathBuf {
-    Path::new(data_dir).join("logs").join("runner.log")
+    Path::new(data_dir).join(crate::constants::DIR_LOGS).join(crate::constants::FILE_RUNNER_LOG)
 }
 
 pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error::Error>> {
@@ -39,8 +39,8 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
         RunnerSubcommands::Restart { detach } => restart_daemon(detach).await,
         RunnerSubcommands::Status { url, json } => {
             let target_url = url.unwrap_or_else(|| {
-                let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-                let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| "8765".to_string());
+                let host = std::env::var(crate::constants::ENV_AUTOMA_HOST).unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
+                let port = std::env::var(crate::constants::ENV_AUTOMA_PORT).unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string());
                 format!("http://{}:{}", host, port)
             });
             check_status(&target_url, json).await
@@ -54,7 +54,7 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
 
 pub fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
     let manifest = serde_json::json!({
-        "protocol": "specter.automa.v1",
+        "protocol": crate::constants::PROTOCOL_AUTOMA_V1,
         "name": "automa-runner",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",

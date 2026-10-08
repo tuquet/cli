@@ -17,15 +17,7 @@ pub struct PillarConfigEntry {
 pub struct ConfigRegistry;
 
 impl ConfigRegistry {
-    pub const ALL_SERVICES: &'static [&'static str] = &[
-        "bridge",
-        "faker",
-        "browser",
-        "automa",
-        "runner",
-        "cloud",
-        "system",
-    ];
+    pub const ALL_SERVICES: &'static [&'static str] = crate::constants::ALL_PILLARS;
 
     pub fn list_all() -> Vec<PillarConfigEntry> {
         let bridge_path = BridgeConfig::config_path();
@@ -37,37 +29,37 @@ impl ConfigRegistry {
 
         vec![
             PillarConfigEntry {
-                pillar: "bridge",
+                pillar: crate::constants::PILLAR_BRIDGE,
                 title: "Network Bridge & Multi-VPS Mesh",
                 exists: bridge_path.exists(),
                 path: bridge_path,
             },
             PillarConfigEntry {
-                pillar: "faker",
+                pillar: crate::constants::PILLAR_FAKER,
                 title: "Synthetic Identity & Persona Generator",
                 exists: faker_path.exists(),
                 path: faker_path,
             },
             PillarConfigEntry {
-                pillar: "browser",
+                pillar: crate::constants::PILLAR_BROWSER,
                 title: "Dedicated Isolated Chromium Runtime",
                 exists: browser_path.exists(),
                 path: browser_path,
             },
             PillarConfigEntry {
-                pillar: "automa",
+                pillar: crate::constants::PILLAR_AUTOMA,
                 title: "Browser Automation Workflow Engine",
                 exists: automa_path.exists(),
                 path: automa_path,
             },
             PillarConfigEntry {
-                pillar: "runner",
+                pillar: crate::constants::PILLAR_RUNNER,
                 title: "Distributed Worker Daemon & Host Node",
                 exists: runner_path.exists(),
                 path: runner_path,
             },
             PillarConfigEntry {
-                pillar: "system",
+                pillar: crate::constants::PILLAR_SYSTEM,
                 title: "Machine Identity & Cloud Fleet Enrollment",
                 exists: system_path.exists(),
                 path: system_path,
@@ -77,24 +69,24 @@ impl ConfigRegistry {
 
     pub fn canonical_service(service: &str) -> Option<&'static str> {
         match service.to_ascii_lowercase().as_str() {
-            "bridge" | "tunnel" | "vps" => Some("bridge"),
-            "faker" | "user" | "persona" => Some("faker"),
-            "browser" | "chromium" | "chrome" => Some("browser"),
-            "automa" | "workflow" => Some("automa"),
-            "runner" | "worker" | "daemon" => Some("runner"),
-            "cloud" | "system" => Some("system"),
+            "bridge" | "tunnel" | "vps" => Some(crate::constants::PILLAR_BRIDGE),
+            "faker" | "user" | "persona" => Some(crate::constants::PILLAR_FAKER),
+            "browser" | "chromium" | "chrome" => Some(crate::constants::PILLAR_BROWSER),
+            "automa" | "workflow" => Some(crate::constants::PILLAR_AUTOMA),
+            "runner" | "worker" | "daemon" => Some(crate::constants::PILLAR_RUNNER),
+            "cloud" | "system" => Some(crate::constants::PILLAR_SYSTEM),
             _ => None,
         }
     }
 
     pub fn resolve_service_path(service: &str) -> Option<PathBuf> {
         match Self::canonical_service(service) {
-            Some("bridge") => Some(BridgeConfig::config_path()),
-            Some("faker") => Some(FakerConfig::config_path()),
-            Some("browser") => Some(BrowserConfig::config_path()),
-            Some("automa") => Some(AutomaConfig::config_path()),
-            Some("runner") => Some(RunnerConfig::config_path()),
-            Some("system") => Some(SystemConfig::config_path()),
+            Some(crate::constants::PILLAR_BRIDGE) => Some(BridgeConfig::config_path()),
+            Some(crate::constants::PILLAR_FAKER) => Some(FakerConfig::config_path()),
+            Some(crate::constants::PILLAR_BROWSER) => Some(BrowserConfig::config_path()),
+            Some(crate::constants::PILLAR_AUTOMA) => Some(AutomaConfig::config_path()),
+            Some(crate::constants::PILLAR_RUNNER) => Some(RunnerConfig::config_path()),
+            Some(crate::constants::PILLAR_SYSTEM) => Some(SystemConfig::config_path()),
             _ => None,
         }
     }

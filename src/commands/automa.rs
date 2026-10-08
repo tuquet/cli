@@ -72,7 +72,7 @@ pub fn open_studio() -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
     let port = config.server_port;
     let url = std::env::var("AUTOMA_STUDIO_URL").unwrap_or_else(|_| {
-        format!("https://automa-studio.vercel.app?port={}", port)
+        format!("{}?port={}", crate::constants::DEFAULT_AUTOMA_STUDIO_URL, port)
     });
     println!("Opening Automa Web Studio at: {}", url);
     #[cfg(target_os = "windows")]
@@ -106,7 +106,7 @@ pub async fn list_workflows(
 
     // 1. Fetch from SQLite Database if not vault_only
     if !vault_only {
-        let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+        let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
         if db_path.exists()
             && let Ok(db) = AutomaDb::new(&db_path)
                 && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref()) {
@@ -156,7 +156,7 @@ pub async fn list_workflows(
     // 2. Fetch from Vault if not db_only
     if !db_only {
         let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-        let config_vault = PathBuf::from(&config.data_dir).join("workflows");
+        let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
         let vault_dirs = [specter_vault, config_vault];
         for vdir in &vault_dirs {
@@ -392,7 +392,7 @@ pub async fn export_workflow(
     let mut workflow_json: Option<String> = None;
 
     // 1. Check persistent SQLite DB
-    let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
             && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id) {
@@ -402,7 +402,7 @@ pub async fn export_workflow(
     // 2. Check Vault
     if workflow_json.is_none() {
         let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-        let config_vault = PathBuf::from(&config.data_dir).join("workflows");
+        let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
         let candidates = [
             specter_vault.join(format!("{}.workflow.json", id)),
@@ -509,7 +509,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
             let mut resolved = None;
 
             // Check SQLite DB
-            let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+            let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
             if db_path.exists()
                 && let Ok(db) = AutomaDb::new(&db_path)
                     && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target) {
@@ -519,7 +519,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
             // Check Vault
             if resolved.is_none() {
                 let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-                let config_vault = PathBuf::from(&config.data_dir).join("workflows");
+                let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
                 let candidates = [
                     specter_vault.join(format!("{}.workflow.json", target)),

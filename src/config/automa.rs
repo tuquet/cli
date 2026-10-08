@@ -22,9 +22,9 @@ pub struct AutomaConfig {
     pub variables: HashMap<String, String>,
 }
 
-fn default_timeout() -> u64 { 300 }
-fn default_browser() -> String { "chromium".to_string() }
-fn default_studio_port() -> u16 { 8765 }
+fn default_timeout() -> u64 { crate::constants::DEFAULT_TIMEOUT_SECS }
+fn default_browser() -> String { crate::constants::DEFAULT_BROWSER_NAME.to_string() }
+fn default_studio_port() -> u16 { crate::constants::DEFAULT_RUNNER_PORT }
 fn default_true() -> bool { true }
 
 impl Default for AutomaConfig {
@@ -45,9 +45,9 @@ impl Default for AutomaConfig {
 
 impl AutomaConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join("automa");
+        let dir = canonical_specter_dir().join(crate::constants::PILLAR_AUTOMA);
         let _ = fs::create_dir_all(&dir);
-        dir.join("automa.json")
+        dir.join(crate::constants::FILE_AUTOMA_JSON)
     }
 
     pub fn load() -> Self {

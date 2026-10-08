@@ -613,7 +613,7 @@ pub async fn launch_browser(
     skip_proxy_check: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let base_dir = crate::core::browser::resolve_data_dir();
-    let profiles_dir = base_dir.join("profiles");
+    let profiles_dir = base_dir.join(crate::constants::DIR_PROFILES);
     let _ = std::fs::create_dir_all(&profiles_dir);
 
     let is_extension_mode = no_cdp || mode.eq_ignore_ascii_case("extension");

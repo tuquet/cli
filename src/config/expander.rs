@@ -42,11 +42,11 @@ impl EnvExpander {
     }
 }
 
-pub const DEFAULT_SSOT_DIR_NAME: &str = ".specter";
+pub use crate::constants::DEFAULT_SSOT_ROOT_DIR as DEFAULT_SSOT_DIR_NAME;
 
 /// Resolves the canonical SSOT root directory (~/.specter/ or $SPECTER_HOME)
 pub fn canonical_ssot_dir() -> std::path::PathBuf {
-    if let Ok(dir) = std::env::var("SPECTER_HOME") {
+    if let Ok(dir) = std::env::var(crate::constants::ENV_SPECTER_HOME) {
         if !dir.trim().is_empty() {
             return std::path::PathBuf::from(dir);
         }
@@ -55,7 +55,7 @@ pub fn canonical_ssot_dir() -> std::path::PathBuf {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    std::path::PathBuf::from(home).join(DEFAULT_SSOT_DIR_NAME)
+    std::path::PathBuf::from(home).join(crate::constants::DEFAULT_SSOT_ROOT_DIR)
 }
 
 /// Canonical root directory for Specter (~/.specter/)
