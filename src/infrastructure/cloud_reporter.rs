@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use tracing::{info, warn};
 use crate::AppState;
 
-pub const DEFAULT_SUPABASE_ANON_KEY: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzd2hhY3NvYXhncGZua2F4bmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyOTEzMzcsImV4cCI6MjEwNTg2NzMzN30.QRdxE3CPCF8CtliOtSUcSFO-jbKi99uM2AKlJgKt6RQ";
+pub const DEFAULT_SUPABASE_ANON_KEY: &str = "specter-placeholder-supabase-anon-key";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceCredentials {
