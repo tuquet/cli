@@ -1,17 +1,17 @@
 <div align="center">
-  <img src="https://tuquet.github.io/icons/cli.svg" width="76" height="76" alt="CLI Logo" />
+  <img src="https://tuquet.com/icons/cli.svg" width="76" height="76" alt="CLI Logo" />
   <h1>Specter Master CLI (`specter`)</h1>
   <p><strong>Interactive Scoped Shell, Service Multiplexer & High-Performance Automation Terminal in Rust</strong></p>
 
   <p>
-    <a href="https://tuquet.github.io/docs/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Hub-blue.svg" alt="Documentation Hub" /></a>
+    <a href="https://specter.tuquet.com/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Hub-blue.svg" alt="Documentation Hub" /></a>
     <a href="https://github.com/tuquet/scoop-bucket"><img src="https://img.shields.io/badge/Scoop-specter-brightgreen.svg" alt="Scoop" /></a>
     <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-Clap%2FRatatui-orange.svg" alt="Rust" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" /></a>
   </p>
 
   <p>
-    <strong><a href="https://tuquet.github.io/docs/commands/">📖 Đọc toàn bộ tài liệu 68 lệnh CLI tại Documentation Hub &rarr;</a></strong>
+    <strong><a href="https://specter.tuquet.com/commands/">📖 Đọc toàn bộ tài liệu 68 lệnh CLI tại Documentation Hub &rarr;</a></strong>
   </p>
 </div>
 
@@ -38,4 +38,4 @@ specter doctor
 
 Toàn bộ danh mục 68 lệnh CLI, bảng tham số cờ, hướng dẫn tương tác REPL và phím tắt được bảo trì duy nhất tại Documentation Hub:
 
-👉 **[https://tuquet.github.io/docs/commands/](https://tuquet.github.io/docs/commands/)**
+👉 **[https://specter.tuquet.com/commands/](https://specter.tuquet.com/commands/)**

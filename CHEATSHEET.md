@@ -8,9 +8,9 @@
 ## ⚡ Canonical Command Reference (SSOT)
 
 > [!IMPORTANT]
-> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in the **[Specter Documentation Portal](https://tuquet.github.io/docs/commands/)** and **[Specter Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
+> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in the **[Specter Documentation Portal](https://specter.tuquet.com/commands/)** and **[Specter Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
 > - In AI Agent terminals (Antigravity, Claude Code, Cursor), invoke: **`/specter-help`**
-> - In web browser: View the [**Specter Master CLI Reference**](https://tuquet.github.io/docs/commands/) & [**`specter-help` Skill Card**](https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md)
+> - In web browser: View the [**Specter Master CLI Reference**](https://specter.tuquet.com/commands/) & [**`specter-help` Skill Card**](https://github.com/tuquet/skills/blob/main/skills/specter-help/SKILL.md)
 
 ---
 
