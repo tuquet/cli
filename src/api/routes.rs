@@ -191,6 +191,9 @@ pub fn create_router(state: crate::AppState) -> Router {
                         || s.starts_with("http://127.0.0.1:")
                         || s == "https://automa-studio.vercel.app"
                         || s == "https://tuquet.github.io"
+                        || s == "https://tuquet.com"
+                        || s == "https://docs.tuquet.com"
+                        || s == "https://specter.tuquet.com"
                 } else {
                     false
                 }

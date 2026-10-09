@@ -14,6 +14,8 @@ pub mod ports {
     pub const DEFAULT_SSH_TUNNEL_PORT: u16 = 2222;
     /// Default port for local Docker Supabase stack
     pub const DEFAULT_LOCAL_DOCKER_SUPABASE_PORT: u16 = 54321;
+    /// Default port for Specter Inbox webhook listener daemon
+    pub const DEFAULT_INBOX_PORT: u16 = 9123;
 }
 
 pub mod protocols {
@@ -33,6 +35,7 @@ pub mod pillars {
     pub const PILLAR_RUNNER: &str = "runner";
     pub const PILLAR_CLOUD: &str = "cloud";
     pub const PILLAR_SYSTEM: &str = "system";
+    pub const PILLAR_INBOX: &str = "inbox";
 
     pub const ALL_PILLARS: &[&str] = &[
         PILLAR_BRIDGE,
@@ -42,6 +45,7 @@ pub mod pillars {
         PILLAR_RUNNER,
         PILLAR_CLOUD,
         PILLAR_SYSTEM,
+        PILLAR_INBOX,
     ];
 }
 
@@ -76,7 +80,7 @@ pub mod endpoints {
     pub const DEFAULT_CLOUD_URL: &str = "https://cloud.specter.dev";
     pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
     pub const DEFAULT_AUTOMA_STUDIO_URL: &str = "https://automa-studio.vercel.app";
-    pub const DEFAULT_DOCS_URL: &str = "https://tuquet.github.io";
+    pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/specter";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
     pub const GITHUB_REPO: &str = "tuquet/cli";
 }
@@ -91,6 +95,8 @@ pub mod paths {
     pub const FILE_AUTOMA_JSON: &str = "automa.json";
     pub const FILE_RUNNER_JSON: &str = "runner.json";
     pub const FILE_SYSTEM_JSON: &str = "system.json";
+    pub const FILE_INBOX_JSON: &str = "inbox.json";
+    pub const FILE_INBOX_SQLITE: &str = "inbox.sqlite";
     pub const FILE_IDENTITY_JSON: &str = ".identity.json";
     pub const FILE_ENVIRONMENTS_JSON: &str = "environments.json";
     pub const FILE_RUNNER_PID: &str = "runner.pid";
