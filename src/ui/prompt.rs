@@ -118,7 +118,7 @@ mod platform_impl {
 
 #[cfg(not(windows))]
 mod platform_impl {
-    use std::io::{self, BufRead};
+    use std::io;
 
     pub fn read_hidden() -> io::Result<String> {
         let mut line = String::new();

@@ -657,6 +657,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "faker"
+version = "1.0.0"
+dependencies = [
+ "clap",
+ "rand 0.8.7",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "fallible-iterator"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2215,7 +2226,9 @@ dependencies = [
  "axum",
  "base64",
  "cbc",
+ "chrono",
  "clap",
+ "faker",
  "flate2",
  "futures",
  "hex",
@@ -2224,6 +2237,7 @@ dependencies = [
  "nu-ansi-term",
  "rand 0.8.7",
  "reedline",
+ "regex",
  "reqwest",
  "runner",
  "rusqlite",
@@ -2231,6 +2245,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "socket2",
+ "specter-browser",
  "sysinfo",
  "tar",
  "thiserror",
@@ -2241,12 +2256,34 @@ dependencies = [
  "tower-http 0.7.0",
  "tracing",
  "tracing-subscriber",
- "tuquet-browser",
- "tuquet-faker",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
  "zip 0.6.6",
+]
+
+[[package]]
+name = "specter-browser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "command-group",
+ "futures",
+ "hex",
+ "ignore",
+ "libc",
+ "lzma-rs",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sysinfo",
+ "tar",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "zip 0.6.6",
+ "zstd 0.14.0",
 ]
 
 [[package]]
@@ -2698,42 +2735,6 @@ dependencies = [
  "rand 0.9.5",
  "sha1",
  "thiserror",
-]
-
-[[package]]
-name = "tuquet-browser"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "command-group",
- "futures",
- "hex",
- "ignore",
- "libc",
- "lzma-rs",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "sysinfo",
- "tar",
- "tokio",
- "tracing",
- "utoipa",
- "zip 0.6.6",
- "zstd 0.14.0",
-]
-
-[[package]]
-name = "tuquet-faker"
-version = "1.0.0"
-dependencies = [
- "chrono",
- "clap",
- "rand 0.8.7",
- "serde",
- "serde_json",
- "uuid",
 ]
 
 [[package]]
