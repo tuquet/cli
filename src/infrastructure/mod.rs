@@ -1,4 +1,5 @@
 pub mod db;
+pub mod cloud;
 pub mod cloud_reporter;
 pub mod updater;
 pub mod bridge;

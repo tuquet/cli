@@ -25,10 +25,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Runner { command }) => dispatch_scoped("runner", command, commands::runner::handle).await,
         Some(Commands::Cloud { command }) => dispatch_scoped("cloud", command, commands::cloud::handle).await,
         Some(Commands::Browser { command }) => dispatch_scoped("browser", command, commands::browser::handle).await,
-        Some(Commands::Profile { command }) => commands::browser::handle_profile(command).await,
-        Some(Commands::Launch { profile, port, headless, url, detach, proxy, mode, no_cdp, skip_proxy_check }) => {
-            commands::browser::launch_browser(profile, port, headless, url, detach, proxy, mode, no_cdp, skip_proxy_check).await
-        }
         Some(Commands::Proxy { command }) => commands::browser::handle_proxy(command).await,
         Some(Commands::Faker { command }) => commands::faker::handle(command).await,
         Some(Commands::Bridge { command }) => commands::bridge::handle(command).await,

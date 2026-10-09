@@ -7,20 +7,13 @@ use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::id::BrowserId;
 use crate::api::handlers::jobs::connected_browsers;
+use crate::core::browser::archive::{get_browsers_base_path, unzip_browser_folder, zip_browser_folder};
+
 
 fn is_valid_id(id: &str) -> bool {
     BrowserId::new(id).is_valid()
 }
 
-async fn get_browsers_base_path(data_dir: &str) -> String {
-    let settings_path = std::path::Path::new(data_dir).join("settings.json");
-    if let Ok(content) = tokio::fs::read_to_string(&settings_path).await
-        && let Ok(json) = serde_json::from_str::<serde_json::Value>(&content)
-            && let Some(path) = json.get("browsersPath").and_then(|p| p.as_str()) {
-                return path.to_string();
-            }
-    "browsers".to_string()
-}
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -736,155 +729,7 @@ pub async fn stop_browser(
     }))
 }
 
-fn should_skip_zip_entry(name: &str, skip_folders: &[&str]) -> bool {
-    skip_folders.iter().any(|skip| name.starts_with(skip))
-}
 
-fn append_entry_to_zip<W: std::io::Write + std::io::Seek>(
-    zip: &mut zip::ZipWriter<W>,
-    path: &std::path::Path,
-    name: &str,
-    options: zip::write::FileOptions,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    if path.is_dir() {
-        let _ = zip.add_directory(name, options);
-    } else if path.is_file() {
-        zip.start_file(name, options)?;
-        if let Ok(mut f) = std::fs::File::open(path) {
-            let _ = std::io::copy(&mut f, zip);
-        }
-    }
-    Ok(())
-}
-
-async fn zip_browser_folder(id: &str, data_dir: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let browsers_base_path = get_browsers_base_path(data_dir).await;
-    
-    let user_data_dir = std::path::PathBuf::from(data_dir)
-        .join(&browsers_base_path)
-        .join(id);
-
-    let zip_path = std::path::PathBuf::from(data_dir)
-        .join(&browsers_base_path)
-        .join(format!("{}.zip", id));
-
-    if !user_data_dir.exists() {
-        return Ok(());
-    }
-
-    // Pre-sanitize profile before zipping: remove locks and volatile cache
-    crate::core::browser::manager::sanitize_browser_profile(&user_data_dir, false).await;
-
-    let user_data_dir_clone = user_data_dir.clone();
-    let zip_path_clone = zip_path.clone();
-    
-    tokio::task::spawn_blocking(move || {
-        let file = std::fs::File::create(&zip_path_clone)?;
-        let mut zip = zip::ZipWriter::new(file);
-        let options = zip::write::FileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated)
-            .unix_permissions(0o755);
-
-        // Note: NEVER skip "Network" as modern Chromium (96+) stores cookies in Default/Network/Cookies!
-        let skip_folders = vec![
-            "Cache",
-            "Code Cache",
-            "GPUCache",
-            "DawnCache",
-            "ShaderCache",
-            "Crashpad",
-            "Default/Cache",
-            "Default/Code Cache",
-            "Default/GPUCache",
-            "Default/DawnCache",
-            "Default/ShaderCache",
-        ];
-
-        let mut dirs = vec![user_data_dir_clone.clone()];
-        while let Some(dir) = dirs.pop() {
-            let Ok(entries) = std::fs::read_dir(&dir) else {
-                continue;
-            };
-
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let name = path.strip_prefix(&user_data_dir_clone)
-                    .unwrap_or(path.as_path())
-                    .to_string_lossy()
-                    .replace("\\", "/");
-                
-                if should_skip_zip_entry(&name, &skip_folders) {
-                    continue;
-                }
-                if entry.file_type().map(|t| t.is_symlink()).unwrap_or(false) {
-                    continue;
-                }
-
-                if path.is_dir() {
-                    dirs.push(path.clone());
-                }
-                let _ = append_entry_to_zip(&mut zip, &path, &name, options);
-            }
-        }
-        zip.finish()?;
-        Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
-    }).await??;
-
-    let _ = tokio::fs::remove_dir_all(user_data_dir).await;
-    Ok(())
-}
-
-async fn unzip_browser_folder(id: &str, data_dir: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let browsers_base_path = get_browsers_base_path(data_dir).await;
-    
-    let user_data_dir = std::path::PathBuf::from(data_dir)
-        .join(&browsers_base_path)
-        .join(id);
-
-    let zip_path = std::path::PathBuf::from(data_dir)
-        .join(&browsers_base_path)
-        .join(format!("{}.zip", id));
-
-    if !zip_path.exists() {
-        return Ok(());
-    }
-
-    if user_data_dir.exists() {
-        tracing::warn!("Browser folder already exists alongside zip. Skipping unzip to preserve crash state.");
-        return Ok(());
-    }
-
-    let user_data_dir_clone = user_data_dir.clone();
-    let zip_path_clone = zip_path.clone();
-    
-    tokio::task::spawn_blocking(move || {
-        let file = std::fs::File::open(&zip_path_clone)?;
-        let mut archive = zip::ZipArchive::new(file)?;
-        
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
-            let outpath = match file.enclosed_name() {
-                Some(path) => user_data_dir_clone.join(path),
-                None => continue,
-            };
-
-            if (*file.name()).ends_with('/') {
-                std::fs::create_dir_all(&outpath)?;
-            } else {
-                if let Some(p) = outpath.parent()
-                    && !p.exists() {
-                        std::fs::create_dir_all(p)?;
-                    }
-                let mut outfile = std::fs::File::create(&outpath)?;
-                std::io::copy(&mut file, &mut outfile)?;
-            }
-        }
-        Ok::<(), Box<dyn std::error::Error + Send + Sync>>(())
-    }).await??;
-
-    let _ = tokio::fs::remove_file(zip_path).await;
-    Ok(())
-}
 
 #[derive(serde::Deserialize, utoipa::ToSchema)]
 #[schema(example = json!({"csv_string": "id,name,userAgent,timezone\nprofile1,Main Profile,,UTC"}))]
@@ -924,21 +769,8 @@ pub async fn import_csv(
     State(state): State<crate::AppState>,
     Json(payload): Json<ImportCsvPayload>,
 ) -> axum::response::Json<ImportCsvResponse> {
-    let mut imported = 0;
     let db = state.db.lock().await;
-    for line in payload.csv_string.lines().skip(1) {
-        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-        if parts.is_empty() || parts[0].is_empty() {
-            continue;
-        }
-        let id = parts[0].to_string();
-        let name = parts.get(1).unwrap_or(&"").to_string();
-        let user_agent = parts.get(2).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let timezone = parts.get(3).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let proxy = parts.get(4).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let _ = db.browsers().create_browser(&id, &name, user_agent.as_deref(), timezone.as_deref(), proxy.as_deref(), None);
-        imported += 1;
-    }
+    let imported = crate::core::browser::importer::import_csv_into_db(&db, &payload.csv_string);
 
     axum::response::Json(ImportCsvResponse {
         status: "success".to_string(),

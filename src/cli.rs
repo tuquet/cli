@@ -171,53 +171,6 @@ pub enum Commands {
         command: Option<BrowserCommands>,
     },
 
-    /// Manage isolated browser profiles with deterministic antidetect fingerprints
-    #[command(name = "profile", aliases = ["profiles"])]
-    Profile {
-        #[command(subcommand)]
-        command: Option<ProfileCommands>,
-    },
-
-    /// Launch browser profile with direct CDP DevTools bridge
-    #[command(name = "launch")]
-    Launch {
-        /// Target profile ID or name (default: "default")
-        #[arg(value_name = "PROFILE", default_value = "default")]
-        profile: String,
-
-        /// Chrome DevTools Protocol (CDP) port for Playwright / Puppeteer automation
-        #[arg(short, long, default_value_t = 9222)]
-        port: u16,
-
-        /// Run browser in headless mode
-        #[arg(long)]
-        headless: bool,
-
-        /// Initial URL to navigate to
-        #[arg(short, long)]
-        url: Option<String>,
-
-        /// Run in background without keeping terminal attached
-        #[arg(short, long)]
-        detach: bool,
-
-        /// Override proxy server (e.g. socks5://127.0.0.1:1080)
-        #[arg(long)]
-        proxy: Option<String>,
-
-        /// Automation mode: 'driver' (CDP DevTools bridge on port) or 'extension' (Zero-port ultra-stealth)
-        #[arg(short, long, default_value = "driver")]
-        mode: String,
-
-        /// Shortcut for --mode extension (disables remote debugging port completely)
-        #[arg(long)]
-        no_cdp: bool,
-
-        /// Bypass pre-flight proxy healthcheck and launch immediately
-        #[arg(long)]
-        skip_proxy_check: bool,
-    },
-
     /// Enterprise synthetic persona & identity generator (CCCD, addresses, credentials)
     #[command(name = "faker", aliases = ["user", "persona"])]
     Faker {
