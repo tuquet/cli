@@ -47,7 +47,7 @@ Each interactive scope maps 1-to-1 with a specialized, atomic **Specter Skill**:
 | **`bridge`** | `[bridge]` (Magenta) | Multi-VPS mesh, Cloudflare tunnels, SOCKS5 & HTTP 8118 | [`/specter-bridge`](https://github.com/tuquet/skills/blob/main/skills/specter-bridge/SKILL.md) |
 | **`browser`** | `[browser]` (Blue) | Isolated Chromium LTS runtime, profile sandboxes | [`/specter-browser`](https://github.com/tuquet/skills/blob/main/skills/specter-browser/SKILL.md) |
 | **`automa`** | `[automa]` (Amber) | Visual workflow execution, CDP engine, local SQLite | [`/specter-automa`](https://github.com/tuquet/skills/blob/main/skills/specter-automa/SKILL.md) |
-| **`runner`** | `[runner]` (Green) | Background supervisor daemon (8765), Win32 Job Object | [`/specter-runner`](https://github.com/tuquet/skills/blob/main/skills/specter-runner/SKILL.md) |
+| **`runner`** | `[runner]` (Green) | Background supervisor daemon (port 8765), auto-cleanup | [`/specter-runner`](https://github.com/tuquet/skills/blob/main/skills/specter-runner/SKILL.md) |
 | **`cloud`** | `[cloud]` (Purple) | Supabase device enrollment, tenant pairing & DB push | [`/specter-cloud`](https://github.com/tuquet/skills/blob/main/skills/specter-cloud/SKILL.md) |
 | **`faker`** | `[faker]` (Cyan) | Synthetic persona generator (CCCD, addresses, emails) | [`/specter-faker`](https://github.com/tuquet/skills/blob/main/skills/specter-faker/SKILL.md) |
 
