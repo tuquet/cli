@@ -220,7 +220,15 @@ impl BridgeConfig {
             }),
         }
     }
+}
 
+impl Default for BridgeConfig {
+    fn default() -> Self {
+        Self::default_config()
+    }
+}
+
+impl BridgeConfig {
     /// Validate workloads binding to servers
     pub fn validate_workloads(&self) -> Vec<ConfigDiagnostic> {
         let mut diags = Vec::new();
@@ -355,7 +363,7 @@ mod tests {
                 name: "Disabled VPS".to_string(),
                 server_type: "direct_ssh".to_string(),
                 cf_hostname: None,
-                host: Some("1.2.3.4".to_string()),
+                host: Some("198.51.100.24".to_string()),
                 local_ssh_port: Some(2223),
                 remote_user: Some("root".to_string()),
                 identity_file: None,

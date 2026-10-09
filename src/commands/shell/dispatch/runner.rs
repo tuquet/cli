@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+use super::parse_format;
 
 pub async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "status" => {
-            let target_url = args.first().copied().unwrap_or("http://127.0.0.1:8765");
-            crate::commands::runner::check_status(target_url, false).await?;
+            let target_url = args.iter().find(|&&a| !a.starts_with('-')).copied().unwrap_or("http://127.0.0.1:8765");
+            let format = parse_format(args);
+            crate::commands::runner::check_status(target_url, format).await?;
         }
         "start" => {
             let detach = args.contains(&"-d") || args.contains(&"--detach");
@@ -41,7 +43,12 @@ pub async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         "config" => {
             let edit = args.contains(&"--edit") || args.contains(&"-e");
             let show = args.contains(&"--show") || args.contains(&"-s");
-            crate::commands::runner::manage_config(edit, show)?;
+            let positional: Vec<String> = args
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .map(|s| s.to_string())
+                .collect();
+            crate::commands::runner::manage_config(&positional, edit, show)?;
         }
         other => {
             println!("Unknown runner command '{}'. Type 'help' to see valid commands.", other);

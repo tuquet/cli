@@ -217,7 +217,7 @@ impl Completer for SpecterCompleter {
                                 }
                             }
                         } else if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = tuquet_faker::FakerConfig::load();
+                            let faker_cfg = specter_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(d.as_str(), "Configured email domain", span));
@@ -253,7 +253,7 @@ impl Completer for SpecterCompleter {
                     }
                     "config" => {
                         if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = tuquet_faker::FakerConfig::load();
+                            let faker_cfg = specter_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(d.as_str(), "Configured email domain", span));

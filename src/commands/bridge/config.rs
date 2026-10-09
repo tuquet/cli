@@ -1,5 +1,5 @@
 use crate::infrastructure::bridge::{BridgeConfig, DiagnosticLevel};
-use crate::ui::{badge_online, badge_warn, Card};
+use crate::ui::{badge_online, badge_warn};
 
 pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = BridgeConfig::config_path();
@@ -41,34 +41,6 @@ pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn manage_config(edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let path = BridgeConfig::config_path();
-
-    if edit {
-        crate::config::ConfigRegistry::open_in_editor(&path)?;
-    } else if show {
-        let config = BridgeConfig::load().unwrap_or_else(|_| BridgeConfig::default_config());
-        println!();
-        let mut card = Card::new("BRIDGE CONFIGURATION");
-        card.with_badge(badge_online("SSOT READY"));
-        card.with_min_width(70);
-        card.add_kv("Config File", path.display().to_string());
-        if let Some(ref w) = config.workstation {
-            card.add_kv("Workstation", &w.name);
-            card.add_kv(
-                "Default Server",
-                w.default_server.as_deref().unwrap_or("none"),
-            );
-        }
-        card.add_kv("Configured VPS", format!("{} server(s)", config.servers.len()));
-        card.with_footer(
-            "Tip: edit with 'specter bridge config --edit' or validate via 'specter bridge check'",
-        );
-        card.print();
-        println!();
-    } else {
-        println!("{}", path.display());
-    }
-
-    Ok(())
+pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+    crate::config::ConfigController::handle_dispatch("bridge", args, edit, show)
 }

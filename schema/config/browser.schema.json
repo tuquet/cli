@@ -8,33 +8,64 @@
       "type": "string",
       "description": "JSON Schema reference URL"
     },
-    "default_cdp_port": {
-      "type": "integer",
-      "default": 9222,
-      "description": "Default DevTools CDP debugging port for browser automation"
+    "active_version": {
+      "type": "string",
+      "default": "148.0.7778.215",
+      "description": "Active Chromium Golden LTS engine revision"
+    },
+    "active_runtime": {
+      "type": "string",
+      "default": "stealth",
+      "description": "Active runtime engine descriptor or alias ('stealth', 'lts')"
+    },
+    "default_browser": {
+      "type": "string",
+      "default": "chromium",
+      "enum": ["chromium", "chrome", "edge", "brave"],
+      "description": "Primary dedicated browser family"
     },
     "headless": {
       "type": "boolean",
       "default": false,
-      "description": "Launch browser in headless mode by default"
+      "description": "Launch browser in headless background mode by default"
     },
-    "lts_version": {
-      "type": "string",
-      "default": "148",
-      "description": "Target Chromium Golden LTS engine version"
+    "viewport_width": {
+      "type": "integer",
+      "default": 1280,
+      "description": "Default window and viewport render width in pixels"
     },
-    "custom_binary_path": {
-      "type": "string",
-      "description": "Optional absolute path override to custom Chromium executable"
+    "viewport_height": {
+      "type": "integer",
+      "default": 800,
+      "description": "Default window and viewport render height in pixels"
     },
     "default_proxy": {
       "type": "string",
       "description": "Default proxy server URL for launched browser sessions (e.g. socks5://127.0.0.1:1080)"
     },
-    "default_profile": {
+    "default_cdp_port": {
+      "type": "integer",
+      "default": 9222,
+      "description": "Default DevTools CDP debugging port for browser automation when --cdp is enabled without port"
+    },
+    "autoload_extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["automa"],
+      "description": "List of extensions automatically injected into newly launched profiles"
+    },
+    "extra_args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra Chromium command-line switches passed on every profile launch"
+    },
+    "custom_binary_path": {
       "type": "string",
-      "default": "default",
-      "description": "Default browser profile name when omitted in 'specter browser launch'"
+      "description": "Optional absolute path override to custom Chromium executable"
     }
   }
 }

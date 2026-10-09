@@ -1,5 +1,5 @@
-pub use tuquet_browser::coordinator::*;
-use tuquet_browser::{BrowserManager, BrowserManagerOptions, browser_registry};
+pub use specter_browser::coordinator::*;
+use specter_browser::{BrowserManager, BrowserManagerOptions, browser_registry};
 
 pub async fn ensure_browser_worker(
     browser_id: &str,
@@ -66,7 +66,7 @@ pub async fn ensure_browser_worker(
         }
     }
 
-    let profile_ext_paths = tuquet_browser::resolve_profile_extension_paths(&["automa".to_string()], true).await;
+    let profile_ext_paths = specter_browser::resolve_profile_extension_paths(&["automa".to_string()], true).await;
     let mut ext_path_strings: Vec<String> = profile_ext_paths
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())

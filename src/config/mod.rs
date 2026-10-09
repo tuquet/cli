@@ -1,6 +1,8 @@
 pub mod automa;
 pub mod browser;
 pub mod expander;
+pub mod inbox;
+pub mod inspector;
 pub mod registry;
 pub mod runner;
 pub mod system;
@@ -8,6 +10,8 @@ pub mod system;
 pub use automa::AutomaConfig;
 pub use browser::BrowserConfig;
 pub use expander::{canonical_specter_dir, canonical_ssot_dir, EnvExpander};
+pub use inbox::InboxConfig;
+pub use inspector::{ConfigController, ConfigOptionDef};
 pub use registry::ConfigRegistry;
 pub use runner::RunnerConfig;
 pub use system::SystemConfig;

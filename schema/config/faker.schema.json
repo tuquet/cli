@@ -1,17 +1,48 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "SpecterFakerConfig",
-  "description": "Configuration schema for Specter Synthetic Persona Generator (~/.specter/faker/faker.json)",
+  "description": "Configuration schema for Specter Synthetic Persona & Identity Generator (~/.specter/faker/faker.json)",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string",
       "description": "JSON Schema reference URL"
     },
+    "default_nat": {
+      "type": "string",
+      "default": "US",
+      "enum": ["US", "VN", "JP", "all"],
+      "description": "Default nationality code for persona address, phone, and national ID structures"
+    },
+    "default_avatar": {
+      "type": "string",
+      "default": "real",
+      "enum": ["real", "svg"],
+      "description": "Default avatar generation style ('real' for photography, 'svg' for vector)"
+    },
+    "default_domain": {
+      "type": "string",
+      "default": "flowup.io.vn",
+      "description": "Primary default email domain used when no custom domain or override is supplied"
+    },
+    "email_pattern": {
+      "type": "string",
+      "default": "first.last",
+      "enum": ["first.last", "last.first", "first", "username"],
+      "description": "Email address generation pattern structure"
+    },
+    "email_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["flowup.io.vn"],
+      "description": "List of available email domains used for rotation in generated personas"
+    },
     "locale": {
       "type": "string",
-      "default": "vi_VN",
-      "description": "Primary identity localization locale (e.g. vi_VN, en_US, ja_JP)"
+      "default": "en_US",
+      "description": "Primary identity localization locale (e.g. en_US, vi_VN, ja_JP)"
     },
     "custom_templates_dir": {
       "type": "string",

@@ -1,6 +1,6 @@
 use std::path::Path;
 use serde_json::Value;
-use tuquet_browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
+use specter_browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
 
 use crate::infrastructure::cloud_reporter::{CloudReporter, DeviceCredentials, DEFAULT_SUPABASE_ANON_KEY};
 use crate::ui::{badge_error, badge_online, badge_step, Card};
@@ -257,7 +257,7 @@ impl CloudFleetOrchestrator {
         variables: Vec<String>,
         timeout_opt: Option<u64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let base_dir = tuquet_browser::resolve_data_dir();
+        let base_dir = specter_browser::resolve_data_dir();
         let app_config = crate::config::AppConfig::load();
 
         println!();

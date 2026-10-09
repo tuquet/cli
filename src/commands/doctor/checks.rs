@@ -178,8 +178,8 @@ pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
 
 pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
     let browser_status = crate::core::browser::resolver::get_runtime_status();
-    let installed_runtimes = tuquet_browser::list_installed_runtimes();
-    let active_version = tuquet_browser::get_active_version();
+    let installed_runtimes = specter_browser::list_installed_runtimes();
+    let active_version = specter_browser::get_active_version();
 
     let mut browser_card = Card::new("ANTIDETECT BROWSER ENGINE");
     browser_card.with_min_width(68);

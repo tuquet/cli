@@ -9,3 +9,6 @@ pub mod status;
 pub mod bridge;
 pub mod doctor;
 pub mod schema;
+pub mod inbox;
+pub mod tenant;
+

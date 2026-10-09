@@ -239,7 +239,7 @@ async fn handle_command(input: &str, scope: &mut ShellScope) -> Result<bool, Box
             return Ok(false);
         }
         "doctor" => {
-            crate::commands::doctor::run(false).await?;
+            crate::commands::doctor::run(false, crate::ui::OutputFormat::Card).await?;
             return Ok(false);
         }
         _ => {}

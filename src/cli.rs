@@ -1,5 +1,5 @@
 use clap::builder::styling::{AnsiColor, Effects, Styles};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 
 pub fn get_styles() -> Styles {
@@ -86,17 +86,19 @@ pub enum Commands {
     /// Show unified status overview of Specter ecosystem
     #[command(name = "status")]
     Status {
-        /// Output status in raw JSON format for machine parsing
-        #[arg(short, long)]
-        json: bool,
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// Check system dependencies, required tools & environment health
     #[command(name = "doctor")]
     Doctor {
         /// Attempt automatic fix / installation of missing dependencies where supported
-        #[arg(short, long)]
+        #[arg(long)]
         fix: bool,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// One-command workstation onboarding & ecosystem bootstrap (SSOT directories, DB, MCP, browser)
@@ -110,9 +112,13 @@ pub enum Commands {
     /// Inspect or edit unified service configurations across Specter microservice pillars
     #[command(name = "config")]
     Config {
-        /// Optional target service (bridge, automa, runner, browser, cloud, system, faker)
+        /// Optional target service (bridge, automa, runner, browser, cloud, system, faker, inbox)
         #[arg(value_name = "SERVICE")]
         service: Option<String>,
+
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
 
         /// Open configuration file in default editor
         #[arg(short, long)]
@@ -125,22 +131,63 @@ pub enum Commands {
 
     /// Show current Specter Cloud identity and enrollment status
     #[command(name = "whoami")]
-    Whoami,
+    Whoami {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
 
-    /// Authenticate and pair workstation with Specter Cloud
+    /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     #[command(name = "login")]
     Login {
-        /// Specter Cloud endpoint URL
+        /// Specter Cloud / Supabase endpoint URL
         #[arg(short, long)]
         url: Option<String>,
 
-        /// Organization / Tenant enrollment token
+        /// Operator account email for Supabase GoTrue authentication
+        #[arg(short, long)]
+        email: Option<String>,
+
+        /// Operator account password
+        #[arg(short, long)]
+        password: Option<String>,
+
+        /// Request and authenticate via One-Time Passcode (OTP / Magic Code)
+        #[arg(long)]
+        otp: bool,
+
+        /// Pre-supplied 6-digit One-Time Passcode (OTP)
+        #[arg(short, long)]
+        code: Option<String>,
+
+        /// JWT access token or organization enrollment token
         #[arg(short, long)]
         token: Option<String>,
+
+        /// Pre-select target workspace by slug or ID
+        #[arg(long)]
+        tenant: Option<String>,
 
         /// Custom workstation name (defaults to machine hostname)
         #[arg(short, long)]
         name: Option<String>,
+
+        /// Optional custom Supabase API key (publishable or anon key)
+        #[arg(long)]
+        api_key: Option<String>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Disconnect workstation and remove local session credentials
+    #[command(name = "logout")]
+    Logout,
+
+    /// Manage accessible multi-tenant workspaces and active context
+    #[command(name = "tenant", aliases = ["workspace", "ws"])]
+    Tenant {
+        #[command(subcommand)]
+        command: Option<TenantSubcommands>,
     },
 
     /// Automa browser workflow automation engine
@@ -176,6 +223,9 @@ pub enum Commands {
     Faker {
         #[command(subcommand)]
         command: Option<FakerSubcommands>,
+
+        #[command(flatten)]
+        args: FakerGenerateArgs,
     },
 
     /// Launch interactive scoped shell session
@@ -208,6 +258,13 @@ pub enum Commands {
         command: Option<BridgeSubcommands>,
     },
 
+    /// Universal Catch-All Email & OTP Interceptor Subsystem
+    #[command(name = "inbox", aliases = ["mail", "otp"])]
+    Inbox {
+        #[command(subcommand)]
+        command: Option<InboxSubcommands>,
+    },
+
     /// Inspect and export CLI command manifests and microservice JSON schemas
     #[command(name = "schema", aliases = ["manifest"])]
     Schema {
@@ -229,9 +286,8 @@ pub enum SchemaSubcommands {
         #[arg(short, long)]
         pillar: Option<String>,
 
-        /// Output catalog in raw JSON format
-        #[arg(short, long)]
-        json: bool,
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// Export the JSON Schema definition for a microservice configuration file
@@ -251,7 +307,10 @@ pub enum SchemaSubcommands {
 pub enum BridgeSubcommands {
     /// Show health check dashboard of all configured VPSs, ports, and workloads
     #[command(name = "status")]
-    Status,
+    Status {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
 
     /// Start a bridge connection for configured servers (default: all enabled)
     #[command(name = "start")]
@@ -308,6 +367,10 @@ pub enum BridgeSubcommands {
     /// Display, inspect, or edit the canonical bridge configuration file
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open ~/.specter/bridge/bridge.json in your default editor
         #[arg(short, long)]
         edit: bool,
@@ -318,39 +381,205 @@ pub enum BridgeSubcommands {
     },
 }
 
-#[derive(Subcommand, Debug)]
-pub enum FakerSubcommands {
-    /// Generate synthetic identity profiles with validated CCCD and addresses
-    #[command(name = "generate", aliases = ["gen", "g"])]
-    Generate {
-        /// Number of profiles to generate
-        #[arg(short = 'n', long, default_value = "1")]
-        count: u32,
+#[derive(Subcommand, Debug, Clone)]
+pub enum InboxSubcommands {
+    /// Retrieve latest OTP code for a recipient email address
+    #[command(name = "otp")]
+    Otp {
+        /// Target email recipient (e.g. acc1@domain.com)
+        #[arg(value_name = "RECIPIENT")]
+        recipient: String,
 
-        /// Filter by gender: male, female, or all
-        #[arg(short = 'g', long)]
-        gender: Option<String>,
+        /// Wait and poll until OTP arrives
+        #[arg(short, long)]
+        wait: bool,
 
-        /// Filter by nationality: VN, US, JP, or all
-        #[arg(long, default_value = "VN")]
-        nat: Option<String>,
+        /// Maximum wait time in seconds (default: 60)
+        #[arg(short, long, default_value_t = 60)]
+        timeout: u64,
 
-        /// Avatar style: real (portrait photo) or svg (vector avatar)
-        #[arg(long, default_value = "real")]
-        avatar: Option<String>,
+        /// Output raw OTP code only (ideal for shell pipes & automation)
+        #[arg(short, long)]
+        raw: bool,
 
-        /// Custom email domain (e.g. flowup.io.vn), overrides faker.json
-        #[arg(short = 'd', long)]
-        domain: Option<String>,
+        /// Do not mark OTP as consumed
+        #[arg(long)]
+        no_consume: bool,
 
-        /// Output format: table, card, json, or csv
-        #[arg(short = 'f', long, default_value = "table")]
-        format: String,
+        /// Auto-copy intercepted OTP code to system clipboard
+        #[arg(long)]
+        copy: bool,
 
-        /// Optional file path to export output to
-        #[arg(short = 'o', long)]
-        output: Option<PathBuf>,
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
+
+    /// Retrieve latest verification or magic link for a recipient email address
+    #[command(name = "link")]
+    Link {
+        /// Target email recipient (e.g. acc1@domain.com)
+        #[arg(value_name = "RECIPIENT")]
+        recipient: String,
+
+        /// Optional link type filter (verification, reset_password, magic_link)
+        #[arg(short, long)]
+        link_type: Option<String>,
+
+        /// Open link automatically in default browser
+        #[arg(short, long)]
+        open: bool,
+
+        /// Output raw URL only
+        #[arg(short, long)]
+        raw: bool,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// List recent emails, OTPs, and verification links
+    #[command(name = "list", aliases = ["ls"])]
+    List {
+        /// Filter by recipient email address
+        #[arg(short, long)]
+        recipient: Option<String>,
+
+        /// Maximum records to display (default: 20)
+        #[arg(short, long, default_value_t = 20)]
+        limit: usize,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Start the local catch-all webhook listener daemon
+    #[command(name = "start")]
+    Start {
+        /// Custom listening port (default from inbox.json: 9123)
+        #[arg(short, long)]
+        port: Option<u16>,
+
+        /// Custom listening host (default: 127.0.0.1)
+        #[arg(long)]
+        host: Option<String>,
+
+        /// Run in foreground instead of background daemon
+        #[arg(short, long)]
+        foreground: bool,
+    },
+
+    /// Stop the running inbox daemon
+    #[command(name = "stop")]
+    Stop,
+
+    /// Show status of the inbox subsystem, daemon health, and database metrics
+    #[command(name = "status")]
+    Status {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Execute one-click acceptance test verifying local storage, cloud discovery, and OTP interception
+    #[command(name = "test")]
+    Test {
+        /// Force simulated local loop test even when online
+        #[arg(short, long)]
+        simulate: bool,
+
+        /// Verify connectivity to remote cloud endpoint
+        #[arg(short, long)]
+        remote: bool,
+
+        /// Output results in JSON format
+        #[arg(short, long)]
+        json: bool,
+    },
+
+    /// Generate Cloudflare Email Routing Worker script for 1-click catch-all deployment
+    #[command(name = "setup-worker")]
+    SetupWorker {
+        /// Write generated script to target file path
+        #[arg(short, long)]
+        output: Option<String>,
+
+        /// Custom webhook secret token
+        #[arg(short, long)]
+        secret: Option<String>,
+    },
+
+    /// Synchronize recent emails and OTPs from Supabase Cloud
+    #[command(name = "sync")]
+    Sync {
+        /// Number of recent emails to pull from cloud (default: 50)
+        #[arg(short, long, default_value_t = 50)]
+        limit: usize,
+    },
+
+    /// Inspect or edit inbox configuration (~/.specter/inbox/inbox.json)
+    #[command(name = "config")]
+    Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
+        /// Open configuration file in default editor
+        #[arg(short, long)]
+        edit: bool,
+
+        /// Display structured configuration details and summary card
+        #[arg(short, long)]
+        show: bool,
+    },
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct FakerGenerateArgs {
+    /// Number of profiles to generate (default: 1)
+    #[arg(short = 'n', long, default_value = "1")]
+    pub count: u32,
+
+    /// Filter by gender: male, female, or all
+    #[arg(short = 'g', long)]
+    pub gender: Option<String>,
+
+    /// Filter by nationality: US, VN, JP, or all
+    #[arg(long)]
+    pub nat: Option<String>,
+
+    /// Avatar style: real (portrait photo) or svg (vector avatar)
+    #[arg(long, default_value = "real")]
+    pub avatar: Option<String>,
+
+    /// Custom email domain (e.g. flowup.io.vn), overrides faker.json
+    #[arg(short = 'd', long)]
+    pub domain: Option<String>,
+
+    /// Output format: json, table, card, or csv (default: json)
+    #[arg(short = 'f', long, default_value = "json")]
+    pub format: String,
+
+    /// Display rich visual identity card (shortcut for -f card)
+    #[arg(short = 'c', long)]
+    pub card: bool,
+
+    /// Display rounded ANSI tabular overview (shortcut for -f table)
+    #[arg(short = 't', long)]
+    pub table: bool,
+
+    /// Export to RFC-compliant CSV (shortcut for -f csv)
+    #[arg(long)]
+    pub csv: bool,
+
+    /// Optional file path to export output to
+    #[arg(short = 'o', long)]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum FakerSubcommands {
+    /// Generate synthetic identity profiles with validated national ID and addresses
+    #[command(name = "generate", aliases = ["gen", "g"])]
+    Generate(FakerGenerateArgs),
 
     /// Inspect a single detailed persona card with full credentials
     #[command(name = "card", aliases = ["show", "inspect"])]
@@ -359,8 +588,8 @@ pub enum FakerSubcommands {
         #[arg(short = 'g', long)]
         gender: Option<String>,
 
-        /// Filter by nationality: VN, US, JP, or all
-        #[arg(long, default_value = "VN")]
+        /// Filter by nationality: US, VN, JP, or all
+        #[arg(long)]
         nat: Option<String>,
 
         /// Avatar style: real or svg
@@ -370,11 +599,38 @@ pub enum FakerSubcommands {
         /// Custom email domain (e.g. flowup.io.vn), overrides faker.json
         #[arg(short = 'd', long)]
         domain: Option<String>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// List supported nationalities, ID schemas, and provider metadata
+    #[command(name = "nationalities", aliases = ["nats", "locales"])]
+    Nationalities {
+        /// Display catalog in formatted ANSI table
+        #[arg(short = 't', long)]
+        table: bool,
+    },
+
+    /// Generate isolated national ID with mathematically valid checksum (SSN, CCCD, My Number)
+    #[command(name = "id", aliases = ["ssn", "cccd", "national-id"])]
+    Id {
+        /// Filter by nationality: US, VN, JP (default from faker.json)
+        #[arg(long)]
+        nat: Option<String>,
+
+        /// Output raw ID string only (ideal for scripts & automation)
+        #[arg(short = 'r', long)]
+        raw: bool,
     },
 
     /// Manage synthetic persona configuration (~/.specter/faker/faker.json)
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open faker.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
@@ -453,6 +709,10 @@ pub enum AutomaSubcommands {
     /// Display, inspect, or edit Automa configuration (~/.specter/automa/automa.json)
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open automa.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
@@ -537,9 +797,8 @@ pub enum RunnerSubcommands {
         #[arg(short, long)]
         url: Option<String>,
 
-        /// Output status in raw JSON format for machine parsing
-        #[arg(short, long)]
-        json: bool,
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// View or tail runner daemon execution and telemetry logs
@@ -567,6 +826,10 @@ pub enum RunnerSubcommands {
     /// Display, inspect, or edit Runner daemon configuration (~/.specter/automa/runner.json)
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open runner.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
@@ -579,19 +842,46 @@ pub enum RunnerSubcommands {
 
 #[derive(Subcommand, Debug)]
 pub enum CloudSubcommands {
-    /// Authenticate and enroll this workstation with Specter Cloud
+    /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     Login {
-        /// Specter Cloud endpoint URL (e.g. https://cloud.specter.dev)
+        /// Specter Cloud / Supabase endpoint URL (e.g. https://dswhacsoaxgpfnkaxnhz.supabase.co)
         #[arg(short, long)]
         url: Option<String>,
 
-        /// Organization / Tenant enrollment token
+        /// Operator account email for Supabase GoTrue authentication
+        #[arg(short, long)]
+        email: Option<String>,
+
+        /// Operator account password
+        #[arg(short, long)]
+        password: Option<String>,
+
+        /// Request and authenticate via One-Time Passcode (OTP / Magic Code)
+        #[arg(long)]
+        otp: bool,
+
+        /// Pre-supplied 6-digit One-Time Passcode (OTP)
+        #[arg(short, long)]
+        code: Option<String>,
+
+        /// JWT access token or organization enrollment token
         #[arg(short, long)]
         token: Option<String>,
+
+        /// Pre-select target workspace by slug or ID
+        #[arg(long)]
+        tenant: Option<String>,
 
         /// Custom workstation name (defaults to machine hostname)
         #[arg(short, long)]
         name: Option<String>,
+
+        /// Optional custom Supabase API key (publishable or anon key)
+        #[arg(long)]
+        api_key: Option<String>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// Log out and disconnect this workstation from Specter Cloud
@@ -599,11 +889,25 @@ pub enum CloudSubcommands {
 
     /// Show current Specter Cloud authentication and enrollment status
     #[command(name = "whoami")]
-    Whoami,
+    Whoami {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Manage accessible multi-tenant workspaces and active context
+    #[command(name = "tenant", aliases = ["workspace", "ws"])]
+    Tenant {
+        #[command(subcommand)]
+        command: Option<TenantSubcommands>,
+    },
 
     /// Display, inspect, or edit System & Cloud configuration (~/.specter/system/system.json)
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open system.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
@@ -611,6 +915,34 @@ pub enum CloudSubcommands {
         /// Display structured configuration details and summary card
         #[arg(short = 's', long)]
         show: bool,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum TenantSubcommands {
+    /// List all accessible multi-tenant workspaces for the authenticated operator
+    #[command(name = "list", aliases = ["ls"])]
+    List {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Switch active workspace context for this workstation
+    #[command(name = "switch", aliases = ["use", "select"])]
+    Switch {
+        /// Target workspace slug or UUID
+        #[arg(value_name = "TARGET")]
+        target: String,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Display current active workspace details and membership role
+    #[command(name = "current", aliases = ["show"])]
+    Current {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 }
 
@@ -632,7 +964,10 @@ pub enum BrowserCommands {
 
     /// Display installation status, executable path, and disk usage of dedicated browser
     #[command(name = "status")]
-    Status,
+    Status {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
 
     /// Search and list available engine releases from the curated manifest
     #[command(name = "search", aliases = ["releases"])]
@@ -644,7 +979,10 @@ pub enum BrowserCommands {
 
     /// List all locally installed browser runtimes on this machine
     #[command(name = "list", aliases = ["ls"])]
-    List,
+    List {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
 
     /// Switch the active C++ Antidetect Chromium version (e.g. '148', 'v148', '144', 'lts')
     #[command(name = "use")]
@@ -677,51 +1015,86 @@ pub enum BrowserCommands {
         extension_path: Option<PathBuf>,
     },
 
-    /// Launch an antidetect browser profile with direct CDP DevTools bridge
+    /// Launch an antidetect browser profile (zero-port stealth & detached by default)
     #[command(name = "launch", aliases = ["start", "open"])]
     Launch {
-        /// Target profile ID or name (default: "default")
-        #[arg(value_name = "PROFILE", default_value = "default")]
-        profile: String,
+        /// Target profile ID or target URL if single argument is a URL
+        #[arg(value_name = "PROFILE_OR_URL")]
+        target: Option<String>,
 
-        /// Chrome DevTools Protocol (CDP) port for Playwright / Puppeteer automation
-        #[arg(short, long, default_value_t = 9222)]
+        /// Optional target URL to navigate to when profile is specified
+        #[arg(value_name = "URL")]
+        url: Option<String>,
+
+        /// Enable Chrome DevTools Protocol (CDP) for automation (auto-allocates free port if --port is omitted)
+        #[arg(long)]
+        cdp: bool,
+
+        /// Chrome DevTools Protocol (CDP) port (defaults to 0 for stealth; when --cdp is set without port, picks next free from 9222)
+        #[arg(short, long, default_value_t = 0)]
         port: u16,
+
+        /// Run in foreground and keep terminal attached (default is detached background)
+        #[arg(short = 'f', long)]
+        foreground: bool,
 
         /// Run browser in headless mode
         #[arg(long)]
         headless: bool,
 
-        /// Initial URL to navigate to
-        #[arg(short, long)]
-        url: Option<String>,
-
-        /// Run in background without keeping terminal attached
-        #[arg(short, long)]
+        /// Run in background without keeping terminal attached (default behavior)
+        #[arg(short = 'd', long)]
         detach: bool,
 
         /// Override proxy server (e.g. socks5://127.0.0.1:1080)
         #[arg(long)]
         proxy: Option<String>,
 
-        /// Automation mode: 'driver' (CDP DevTools bridge on port) or 'extension' (Zero-port ultra-stealth)
-        #[arg(short, long, default_value = "driver")]
+        /// Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools bridge)
+        #[arg(short, long, default_value = "extension")]
         mode: String,
 
-        /// Shortcut for --mode extension (disables remote debugging port completely)
+        /// Shortcut for zero-port extension stealth mode
         #[arg(long)]
         no_cdp: bool,
+
+        /// Force launch even if profile is already running
+        #[arg(long)]
+        force: bool,
 
         /// Bypass pre-flight proxy healthcheck and launch immediately
         #[arg(long)]
         skip_proxy_check: bool,
     },
 
+    /// List active running antidetect browser profiles
+    #[command(name = "ps", aliases = ["running", "processes", "ls-running"])]
+    Ps {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Terminate running browser profile process tree cleanly
+    #[command(name = "stop", aliases = ["kill", "close"])]
+    Stop {
+        /// Target profile ID or name
+        #[arg(value_name = "PROFILE")]
+        profile: Option<String>,
+
+        /// Stop all running browser profiles
+        #[arg(short, long)]
+        all: bool,
+
+        /// Force immediate termination
+        #[arg(short, long)]
+        force: bool,
+    },
+
     /// Live visual verification & stealth presentation (Cloudflare Turnstile, Bézier mouse, smooth scroll)
     #[command(name = "verify", aliases = ["demo", "inspect-live", "live"])]
     Verify {
         /// Target URL to test (defaults to Cloudflare Turnstile managed challenge test)
-        #[arg(short, long)]
+        #[arg(value_name = "URL")]
         url: Option<String>,
 
         /// Run in headless mode (default: false for visual presentation)
@@ -743,6 +1116,10 @@ pub enum BrowserCommands {
     /// Display, inspect, or edit dedicated browser configuration (~/.specter/browser/browser.json)
     #[command(name = "config")]
     Config {
+        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
+        #[arg(value_name = "ARGS")]
+        args: Vec<String>,
+
         /// Open browser.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
@@ -757,7 +1134,10 @@ pub enum BrowserCommands {
 pub enum ProfileCommands {
     /// List all local browser profiles
     #[command(name = "list", aliases = ["ls"])]
-    List,
+    List {
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
 
     /// Create a new browser profile with deterministic hardware specs
     #[command(name = "create", aliases = ["new", "add"])]
@@ -799,6 +1179,9 @@ pub enum ProfileCommands {
     Inspect {
         /// Profile ID or name
         id: String,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// Probe and test the proxy configured for a specific profile
@@ -1082,6 +1465,9 @@ pub enum WorkflowCommands {
         /// Only list workflows from Vault directory (~/.specter/automa/workflows)
         #[arg(long)]
         vault_only: bool,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
     },
 
     /// Import a workflow file (.json) into SQLite database and vault

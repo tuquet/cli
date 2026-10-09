@@ -16,7 +16,7 @@ pub async fn handle(
                 show_overview();
             }
         }
-        Some(SchemaSubcommands::Commands { pillar, json }) => {
+        Some(SchemaSubcommands::Commands { pillar, format }) => {
             let m = manifest();
             let filtered: Vec<&CommandDef> = if let Some(ref p) = pillar {
                 m.commands
@@ -27,11 +27,12 @@ pub async fn handle(
                 m.commands.iter().collect()
             };
 
-            if json || json_output {
+            let fmt = format.resolve();
+            if fmt.is_table() {
+                show_commands_table(&filtered, pillar.as_deref());
+            } else {
                 let pretty = serde_json::to_string_pretty(&filtered)?;
                 println!("{}", pretty);
-            } else {
-                show_commands_table(&filtered, pillar.as_deref());
             }
         }
         Some(SchemaSubcommands::Config { service }) => {
@@ -41,7 +42,7 @@ pub async fn handle(
                         println!("{}", schema.trim());
                     } else {
                         eprintln!(
-                            "  {RED}Error:{RESET} Unknown service '{srv}'. Available services: bridge, browser, automa, runner, faker, system",
+                            "  {RED}Error:{RESET} Unknown service '{srv}'. Available services: bridge, browser, automa, runner, faker, system, inbox",
                             RED = colors::RED,
                             RESET = colors::RESET,
                         );
@@ -185,7 +186,7 @@ fn show_config_overview() {
     card.with_min_width(70);
 
     card.add_kv("Standard", "JSON Schema Specification (Draft 2020-12)");
-    card.add_kv("Supported Services", "bridge, browser, automa, runner, faker, system");
+    card.add_kv("Supported Services", "bridge, browser, automa, runner, faker, system, inbox");
     card.add_line("");
     card.add_line(format!(
         "  {BOLD_WHITE}Usage Example:{RESET}",
@@ -219,8 +220,9 @@ const AUTOMA_SCHEMA: &str = include_str!("../../schema/config/automa.schema.json
 const RUNNER_SCHEMA: &str = include_str!("../../schema/config/runner.schema.json");
 const FAKER_SCHEMA: &str = include_str!("../../schema/config/faker.schema.json");
 const SYSTEM_SCHEMA: &str = include_str!("../../schema/config/system.schema.json");
+const INBOX_SCHEMA: &str = include_str!("../../schema/config/inbox.schema.json");
 
-fn get_config_schema(service: &str) -> Option<&'static str> {
+pub fn get_config_schema(service: &str) -> Option<&'static str> {
     match crate::config::ConfigRegistry::canonical_service(service)? {
         "bridge" => Some(BRIDGE_SCHEMA),
         "browser" => Some(BROWSER_SCHEMA),
@@ -228,6 +230,7 @@ fn get_config_schema(service: &str) -> Option<&'static str> {
         "runner" => Some(RUNNER_SCHEMA),
         "faker" => Some(FAKER_SCHEMA),
         "system" => Some(SYSTEM_SCHEMA),
+        "inbox" => Some(INBOX_SCHEMA),
         _ => None,
     }
 }

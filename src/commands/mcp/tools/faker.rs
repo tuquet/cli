@@ -12,14 +12,14 @@ pub async fn execute_specter_faker_generate(args: &Value) -> Result<String, Stri
     let gender_opt = gender.filter(|&g| g != "all");
     let nat_opt = if nat == "all" { None } else { Some(nat) };
 
-    let data = tuquet_faker::generate_users(count, gender_opt, nat_opt, Some(avatar), domain);
+    let data = specter_faker::generate_users(count, gender_opt, nat_opt, Some(avatar), domain);
     let users = data["results"]
         .as_array()
         .ok_or_else(|| "Failed to generate user list: invalid result structure".to_string())?;
 
     let output_text = match format_str.to_lowercase().as_str() {
-        "csv" => tuquet_faker::to_csv(users),
-        _ => tuquet_faker::to_json(users, true).map_err(|e| e.to_string())?,
+        "csv" => specter_faker::to_csv(users),
+        _ => specter_faker::to_json(users, true).map_err(|e| e.to_string())?,
     };
 
     if let Some(path_str) = output_file {

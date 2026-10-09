@@ -1,25 +1,58 @@
 use super::{
     dispatch_automa, dispatch_bridge, dispatch_browser, dispatch_cloud, dispatch_faker,
-    dispatch_runner,
+    dispatch_runner, parse_format,
 };
 
 pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "status" => {
-            crate::commands::status::show_dashboard(false).await?;
+            let fmt = parse_format(args);
+            crate::commands::status::show_dashboard(fmt).await?;
         }
         "doctor" => {
-            crate::commands::doctor::run(false).await?;
+            let fmt = parse_format(args);
+            crate::commands::doctor::run(false, fmt).await?;
         }
         "whoami" => {
-            crate::commands::cloud::whoami().await?;
+            let fmt = parse_format(args);
+            crate::commands::cloud::whoami(fmt).await.map_err(|e| format!("{}", e))?;
         }
         "login" => {
             let token = args.first().map(|s| s.to_string());
-            crate::commands::cloud::login(None, token, None).await?;
+            let fmt = parse_format(args);
+            crate::commands::cloud::login(None, None, None, false, None, token, None, None, None, fmt)
+                .await
+                .map_err(|e| format!("{}", e))?;
         }
         "logout" => {
-            crate::commands::cloud::logout().await?;
+            crate::commands::cloud::logout().await.map_err(|e| format!("{}", e))?;
+        }
+        "tenant" | "workspace" => {
+            let sub = args.first().copied().unwrap_or("current");
+            let sub_args = if args.is_empty() { &[][..] } else { &args[1..] };
+            let fmt = parse_format(sub_args);
+
+            match sub {
+                "list" | "ls" => {
+                    crate::commands::tenant::list_tenants(fmt)
+                        .await
+                        .map_err(|e| format!("{}", e))?;
+                }
+                "switch" | "use" | "select" => {
+                    if let Some(target) = args.get(1) {
+                        crate::commands::tenant::switch_tenant(target, fmt)
+                            .await
+                            .map_err(|e| format!("{}", e))?;
+                    } else {
+                        eprintln!("Usage: tenant switch <slug|uuid>");
+                    }
+                }
+                _ => {
+                    crate::commands::tenant::show_current_tenant(fmt)
+                        .await
+                        .map_err(|e| format!("{}", e))?;
+                }
+            }
         }
         "upgrade" | "update" => {
             crate::infrastructure::updater::run_upgrade().await?;
@@ -27,36 +60,29 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         "config" => {
             let edit = args.contains(&"--edit") || args.contains(&"-e");
             let show = args.contains(&"--show") || args.contains(&"-s");
-            let service_opt = args.iter().find(|a| !a.starts_with('-')).copied();
-            match service_opt {
+            let non_flag_args: Vec<String> = args
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .map(|s| s.to_string())
+                .collect();
+
+            let (service, sub_args) = if non_flag_args.is_empty() {
+                (None, &[][..])
+            } else {
+                (Some(non_flag_args[0].as_str()), &non_flag_args[1..])
+            };
+
+            match service {
                 None => {
                     if edit {
                         println!("Please specify a service to edit: config <service> --edit");
-                        println!("Available: bridge, faker, browser, automa, runner, cloud, system");
+                        println!("Available: bridge, faker, browser, automa, runner, cloud, system, inbox");
                     } else {
                         crate::config::ConfigRegistry::render_overview_card();
                     }
                 }
-                Some("bridge" | "tunnel" | "vps") => {
-                    crate::commands::bridge::manage_config(edit, show)?;
-                }
-                Some("faker" | "user" | "persona") => {
-                    crate::commands::faker::manage_config(edit, show, None)?;
-                }
-                Some("browser" | "chromium" | "chrome") => {
-                    crate::commands::browser::manage_config(edit, show)?;
-                }
-                Some("automa" | "workflow") => {
-                    crate::commands::automa::manage_config(edit, show)?;
-                }
-                Some("runner" | "daemon") => {
-                    crate::commands::runner::manage_config(edit, show)?;
-                }
-                Some("cloud" | "system") => {
-                    crate::commands::cloud::manage_config(edit, show)?;
-                }
-                Some(unknown) => {
-                    println!("Unknown service '{}'. Available: bridge, faker, browser, automa, runner, cloud, system", unknown);
+                Some(srv) => {
+                    crate::config::ConfigController::handle_dispatch(srv, sub_args, edit, show)?;
                 }
             }
         }

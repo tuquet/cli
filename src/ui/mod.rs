@@ -2,14 +2,22 @@ pub mod badges;
 pub mod banner;
 pub mod card;
 pub mod colors;
+pub mod format;
 pub mod notify;
+pub mod prompt;
+pub mod response;
 pub mod table;
 
 pub use badges::{badge_error, badge_offline, badge_online, badge_step, badge_warn, status_pill};
 pub use banner::{render_hero, render_update_banner};
 pub use card::Card;
 pub use colors::visible_width;
+pub use format::{FormatArgs, OutputFormat};
 pub use notify::Notify;
+pub use prompt::{prompt_input, prompt_password, prompt_select};
+pub use response::{
+    respond, respond_action, respond_error, respond_with, ActionEnvelope, CliRender,
+};
 pub use table::{
     create_network_topology_card, create_tabular_card, default_workstation_endpoints, Column,
     NetworkEndpoint, Table, TabularRow,

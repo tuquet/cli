@@ -1,5 +1,5 @@
 # ==============================================================================
-# Tuquet Ecosystem - Modern One-Liner Web Installer (Windows x64)
+# Specter CLI - Modern One-Liner Web Installer (Windows x64)
 # ==============================================================================
 # Usage (Clean/Blank Machine):
 #   powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
@@ -26,13 +26,14 @@ function Write-Notice {
 }
 
 Write-Host ""
-Write-Host "  ______          ____                  __ " -ForegroundColor Cyan
-Write-Host " /_  __/_  __    / __ \__  __  ___     / /_" -ForegroundColor Cyan
-Write-Host "  / /  / / / /  / / / // / / // _ \   / __/   v1.0.0" -ForegroundColor Cyan
-Write-Host " / /  / /_/ /  / /_/ // /_/ //  __/  / /_  " -ForegroundColor Cyan
-Write-Host "/_/   \__,_/   \___\_\\__,_/ \___/   \__/  " -ForegroundColor Cyan
+Write-Host "   _____                 __            " -ForegroundColor Cyan
+Write-Host "  / ___/____  ___  _____/ /____  _____ " -ForegroundColor Cyan
+Write-Host "  \__ \/ __ \/ _ \/ ___/ __/ _ \/ ___/ " -ForegroundColor Cyan
+Write-Host " ___/ / /_/ /  __/ /__/ /_/  __/ /     v1.0.0" -ForegroundColor Cyan
+Write-Host "/____/ .___/\___/\___/\__/\___/_/      " -ForegroundColor Cyan
+Write-Host "    /_/                                " -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Tuquet Unified Zero-Dependency Installer" -ForegroundColor White
+Write-Host "  Specter Unified Zero-Dependency Installer" -ForegroundColor White
 Write-Host "  Autonomous Browser Automation & Distributed Mesh Runtime" -ForegroundColor Gray
 Write-Host ""
 
@@ -67,8 +68,7 @@ $LocalBuildCandidates = @(
     (Join-Path (Get-Location) "target\x86_64-pc-windows-gnu\release\specter.exe"),
     (Join-Path (Get-Location) "target\release\specter.exe"),
     (Join-Path (Get-Location) "cli\target\x86_64-pc-windows-gnu\release\specter.exe"),
-    (Join-Path (Get-Location) "cli\target\release\specter.exe"),
-    (Join-Path $PSScriptRoot "cli\target\release\tuquet.exe")
+    (Join-Path (Get-Location) "cli\target\release\specter.exe")
 )
 
 $FoundLocal = $false
@@ -82,31 +82,31 @@ foreach ($Cand in $LocalBuildCandidates) {
 }
 
 if (-not $FoundLocal) {
-    Write-Step "Downloading latest tuquet release for Windows x64..."
+    Write-Step "Downloading latest specter release for Windows x64..."
     $ReleaseBase = "https://github.com/tuquet/cli/releases/latest/download"
     $ZipUrls = @(
-        "$ReleaseBase/tuquet-windows-x64.zip",
-        "$ReleaseBase/tuquet-v1.0.0-windows-x64.zip"
+        "$ReleaseBase/specter-windows-x64.zip",
+        "$ReleaseBase/specter-v1.0.0-windows-x64.zip"
     )
-    $ExeUrl = "$ReleaseBase/tuquet.exe"
+    $ExeUrl = "$ReleaseBase/specter.exe"
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $Downloaded = $false
 
     # Try downloading and extracting release ZIP asset
-    $TempZip = Join-Path $env:TEMP "tuquet_dl_$([guid]::NewGuid().ToString('N')).zip"
-    $TempDir = Join-Path $env:TEMP "tuquet_ext_$([guid]::NewGuid().ToString('N'))"
+    $TempZip = Join-Path $env:TEMP "specter_dl_$([guid]::NewGuid().ToString('N')).zip"
+    $TempDir = Join-Path $env:TEMP "specter_ext_$([guid]::NewGuid().ToString('N'))"
 
     foreach ($ZipUrl in $ZipUrls) {
         try {
             Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -ErrorAction Stop
             if (Test-Path $TempZip) {
                 Expand-Archive -Path $TempZip -DestinationPath $TempDir -Force
-                $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "tuquet.exe" -Recurse | Select-Object -First 1
+                $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "specter.exe" -Recurse | Select-Object -First 1
                 if ($ExtractedExe) {
                     Copy-Item -Path $ExtractedExe.FullName -Destination $TargetExe -Force
                     $Downloaded = $true
-                    Write-Success "Downloaded and extracted tuquet.exe from $ZipUrl"
+                    Write-Success "Downloaded and extracted specter.exe from $ZipUrl"
                     break
                 }
             }
@@ -123,11 +123,11 @@ if (-not $FoundLocal) {
         try {
             Invoke-WebRequest -Uri $ExeUrl -OutFile $TargetExe -UseBasicParsing -ErrorAction Stop
             $Downloaded = $true
-            Write-Success "Downloaded tuquet.exe directly from $ExeUrl"
+            Write-Success "Downloaded specter.exe directly from $ExeUrl"
         } catch {
             Write-Notice "Could not download from release assets. Checking local fallback..."
             if (-not (Test-Path $TargetExe)) {
-                Write-Error "Failed to acquire tuquet.exe binary. Error: $_"
+                Write-Error "Failed to acquire specter.exe binary. Error: $_"
                 exit 1
             }
         }
@@ -164,7 +164,7 @@ Write-Host ""
 
 Write-Host ""
 Write-Host "==============================================================================" -ForegroundColor Green
-Write-Host "  SPECTER & TUQUET INSTALLATION COMPLETED SUCCESSFULLY" -ForegroundColor Green
+Write-Host "  SPECTER CLI INSTALLATION COMPLETED SUCCESSFULLY" -ForegroundColor Green
 Write-Host "==============================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  To get started, open a new shell or run immediately:" -ForegroundColor White

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpecterInboxConfig",
+  "description": "Configuration schema for Specter Catch-All Mail & OTP Interceptor Subsystem (~/.specter/inbox/inbox.json)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "host": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "description": "Local HTTP webhook server binding host IP"
+    },
+    "port": {
+      "type": "integer",
+      "default": 9123,
+      "description": "Local HTTP webhook server listening port"
+    },
+    "webhook_secret": {
+      "type": "string",
+      "description": "Shared authentication secret token for validating incoming webhooks from Cloudflare Workers"
+    },
+    "cloud_sync": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable real-time cloud synchronization with Specter Cloud hub"
+    },
+    "supabase_url": {
+      "type": "string",
+      "description": "Optional custom Supabase Cloud endpoint URL"
+    },
+    "supabase_anon_key": {
+      "type": "string",
+      "description": "Optional custom Supabase anonymous or publishable client API key"
+    },
+    "catch_all_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of active Catch-All domains monitored by this workstation"
+    },
+    "retention_days": {
+      "type": "integer",
+      "default": 14,
+      "description": "Number of days to retain raw email messages in local SQLite database"
+    },
+    "default_timeout_secs": {
+      "type": "integer",
+      "default": 30,
+      "description": "Default timeout in seconds when awaiting OTP arrival in CLI commands"
+    }
+  }
+}

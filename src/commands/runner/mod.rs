@@ -32,7 +32,7 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
         } => run_cloud_worker(cloud_profile, workflow, headless, interval, once).await,
         RunnerSubcommands::Stop { force } => stop_daemon(force).await,
         RunnerSubcommands::Restart { detach } => restart_daemon(detach).await,
-        RunnerSubcommands::Status { url, json } => {
+        RunnerSubcommands::Status { url, format } => {
             let target_url = url.unwrap_or_else(|| {
                 let host = std::env::var(crate::constants::ENV_AUTOMA_HOST)
                     .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
@@ -40,12 +40,12 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
                     .unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string());
                 format!("http://{}:{}", host, port)
             });
-            check_status(&target_url, json).await
+            check_status(&target_url, format.resolve()).await
         }
         RunnerSubcommands::Logs { follow, lines } => show_logs(follow, lines).await,
         RunnerSubcommands::Probe => print_probe_manifest(),
         RunnerSubcommands::ExportOpenapi { output } => export_openapi(&output),
-        RunnerSubcommands::Config { edit, show } => manage_config(edit, show),
+        RunnerSubcommands::Config { edit, show, args } => manage_config(&args, edit, show),
     }
 }
 

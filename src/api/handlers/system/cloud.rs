@@ -29,9 +29,18 @@ pub async fn get_cloud_status(
     let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&state.config.data_dir).await;
     let fingerprint = crate::infrastructure::cloud_reporter::CloudReporter::generate_machine_fingerprint();
 
-    let (enrolled, device_id, device_name) = match creds {
-        Some(c) => (true, Some(c.device_id), Some(c.name)),
-        None => (false, None, None),
+    let (enrolled, device_id, device_name, user_email, tenant_id, tenant_slug, tenant_name, tenant_role) = match creds {
+        Some(c) => (
+            true,
+            Some(c.device_id),
+            Some(c.name),
+            c.email,
+            c.tenant_id,
+            c.tenant_slug,
+            c.tenant_name,
+            c.tenant_role,
+        ),
+        None => (false, None, None, None, None, None, None, None),
     };
 
     (
@@ -44,6 +53,11 @@ pub async fn get_cloud_status(
             device_name,
             machine_fingerprint: fingerprint,
             heartbeat_interval_secs: state.config.cloud_heartbeat_interval_secs,
+            user_email,
+            tenant_id,
+            tenant_slug,
+            tenant_name,
+            tenant_role,
         }),
     ).into_response()
 }
@@ -106,29 +120,58 @@ pub async fn cloud_login(
     Json(payload): Json<CloudLoginRequest>,
 ) -> impl IntoResponse {
     let cloud_url = payload.cloud_url
-        .or_else(|| state.config.cloud_url.clone())
-        .unwrap_or_else(|| "http://127.0.0.1:54321".to_string());
+        .or_else(|| state.config.cloud_url.clone());
     
-    let token = payload.token.as_deref().or(state.config.cloud_enrollment_token.as_deref());
-    let custom_name = payload.name.as_deref();
+    let is_otp = payload.otp.unwrap_or(false);
 
-    match crate::infrastructure::cloud_reporter::CloudReporter::login(
-        &cloud_url,
-        token,
-        custom_name,
-        &state.config.data_dir,
+    match crate::commands::cloud::login(
+        cloud_url,
+        payload.email,
+        payload.password,
+        is_otp,
+        payload.code,
+        payload.token,
+        payload.tenant,
+        payload.name,
+        payload.api_key,
+        crate::ui::OutputFormat::Json,
     ).await {
-        Ok(creds) => (
-            StatusCode::OK,
-            Json(CloudLoginResponse {
-                success: true,
-                enrolled: true,
-                device_id: creds.device_id,
-                tenant_id: creds.tenant_id,
-                name: creds.name,
-                message: "Workstation enrolled successfully with Specter Cloud".to_string(),
-            }),
-        ).into_response(),
+        Ok(()) => {
+            let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&state.config.data_dir).await;
+            if let Some(c) = creds {
+                (
+                    StatusCode::OK,
+                    Json(CloudLoginResponse {
+                        success: true,
+                        enrolled: true,
+                        device_id: c.device_id,
+                        tenant_id: c.tenant_id,
+                        tenant_slug: c.tenant_slug,
+                        tenant_name: c.tenant_name,
+                        tenant_role: c.tenant_role,
+                        user_email: c.email,
+                        name: c.name,
+                        message: "Workstation authenticated and paired successfully with Specter Cloud".to_string(),
+                    }),
+                ).into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(CloudLoginResponse {
+                        success: false,
+                        enrolled: false,
+                        device_id: "".to_string(),
+                        tenant_id: None,
+                        tenant_slug: None,
+                        tenant_name: None,
+                        tenant_role: None,
+                        user_email: None,
+                        name: "".to_string(),
+                        message: "Enrollment succeeded but failed to reload credentials".to_string(),
+                    }),
+                ).into_response()
+            }
+        }
         Err(e) => (
             StatusCode::BAD_REQUEST,
             Json(CloudLoginResponse {
@@ -136,6 +179,10 @@ pub async fn cloud_login(
                 enrolled: false,
                 device_id: "".to_string(),
                 tenant_id: None,
+                tenant_slug: None,
+                tenant_name: None,
+                tenant_role: None,
+                user_email: None,
                 name: "".to_string(),
                 message: format!("Enrollment failed: {}", e),
             }),

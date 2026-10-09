@@ -1,9 +1,9 @@
 {
-  "$schema": "https://tuquet.github.io/schema/cli.manifest.schema.json",
+  "$schema": "https://tuquet.com/schema/cli.manifest.schema.json",
   "name": "specter",
   "version": "1.0.0",
   "description": "Specter - Autonomous Browser Automation & Distributed Mesh Runtime",
-  "homepage": "https://tuquet.github.io",
+  "homepage": "https://tuquet.com",
   "repository": "https://github.com/tuquet/cli",
   "brand": {
     "productName": "Specter",
@@ -22,7 +22,8 @@
     "bridge",
     "faker",
     "runner",
-    "cloud"
+    "cloud",
+    "inbox"
   ],
   "commands": [
     {
@@ -64,7 +65,8 @@
             "browser",
             "cloud",
             "system",
-            "faker"
+            "faker",
+            "inbox"
           ]
         }
       ],
@@ -96,10 +98,36 @@
       "options": [
         {
           "name": "fix",
-          "short": "f",
           "type": "boolean",
           "default": false,
           "description": "Attempt automatic remediation of missing dependencies where supported."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ]
     },
@@ -147,11 +175,31 @@
           "description": "Filter commands by microservice pillar domain."
         },
         {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
           "name": "json",
           "short": "j",
           "type": "boolean",
-          "default": false,
-          "description": "Output catalog in raw JSON format."
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ]
     },
@@ -218,11 +266,31 @@
       "description": "Show unified status overview across Cloud, Runner, Bridge, and Antidetect Browser.",
       "options": [
         {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual dashboard cards (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
           "name": "json",
           "short": "j",
           "type": "boolean",
-          "default": false,
-          "description": "Output status in raw JSON format for machine parsing and automation pipelines."
+          "default": true,
+          "description": "Output status in raw JSON format (default)."
         }
       ],
       "mcp": {
@@ -238,6 +306,268 @@
       "pillar": "system",
       "title": "Upgrade Specter CLI",
       "description": "Check and atomically upgrade Specter CLI binary in-place to latest release."
+    },
+    {
+      "id": "specter.whoami",
+      "route": [
+        "whoami"
+      ],
+      "pillar": "system",
+      "title": "Show Cloud Identity & Enrollment",
+      "description": "Show current Specter Cloud identity, enrolled device GUID, operator account, and tenant ID.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.login",
+      "route": [
+        "login"
+      ],
+      "pillar": "system",
+      "title": "Operator Authentication Login",
+      "description": "Authenticate operator account, resolve multi-tenant workspace, and pair workstation.",
+      "options": [
+        {
+          "name": "url",
+          "short": "u",
+          "type": "string",
+          "description": "Specter Cloud endpoint URL."
+        },
+        {
+          "name": "email",
+          "short": "e",
+          "type": "string",
+          "description": "Operator account email for Supabase GoTrue authentication."
+        },
+        {
+          "name": "password",
+          "short": "p",
+          "type": "string",
+          "description": "Operator account password."
+        },
+        {
+          "name": "otp",
+          "type": "boolean",
+          "default": false,
+          "description": "Request and authenticate via One-Time Passcode (OTP)."
+        },
+        {
+          "name": "code",
+          "short": "c",
+          "type": "string",
+          "description": "Pre-supplied 6-digit One-Time Passcode (OTP)."
+        },
+        {
+          "name": "token",
+          "short": "t",
+          "type": "string",
+          "description": "JWT access token or organization enrollment token."
+        },
+        {
+          "name": "tenant",
+          "type": "string",
+          "description": "Pre-select target workspace by slug or ID."
+        },
+        {
+          "name": "name",
+          "short": "n",
+          "type": "string",
+          "description": "Custom workstation name (defaults to machine hostname)."
+        },
+        {
+          "name": "api-key",
+          "type": "string",
+          "description": "Custom Supabase API publishable or anon key."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.logout",
+      "route": [
+        "logout"
+      ],
+      "pillar": "system",
+      "title": "Operator Logout",
+      "description": "Log out operator account, clear session credentials, and disconnect workstation."
+    },
+    {
+      "id": "specter.tenant.list",
+      "route": [
+        "tenant",
+        "list"
+      ],
+      "pillar": "system",
+      "title": "List Accessible Workspaces",
+      "description": "List all accessible multi-tenant workspaces for the authenticated operator.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output list in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.tenant.switch",
+      "route": [
+        "tenant",
+        "switch"
+      ],
+      "pillar": "system",
+      "title": "Switch Active Workspace",
+      "description": "Switch active workspace context for this workstation and re-pair device.",
+      "arguments": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Target workspace slug or UUID."
+        }
+      ],
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.tenant.current",
+      "route": [
+        "tenant",
+        "current"
+      ],
+      "pillar": "system",
+      "title": "Display Current Workspace",
+      "description": "Display current active workspace details and membership role.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
     },
     {
       "id": "specter.automa.inspect",
@@ -456,6 +786,33 @@
           "short": "s",
           "type": "string",
           "description": "Filter workflows by keyword."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ],
       "mcp": {
@@ -716,35 +1073,47 @@
       ],
       "pillar": "browser",
       "title": "Launch Browser In Profile",
-      "description": "Launch an antidetect browser profile with direct CDP DevTools bridge.",
+      "description": "Launch an antidetect browser profile (zero-port stealth & detached by default).",
       "arguments": [
         {
-          "name": "profile",
+          "name": "target",
           "type": "string",
           "required": false,
-          "default": "default",
-          "description": "Target profile ID or name (default: 'default')."
+          "description": "Target profile ID or target URL if single argument is a URL."
+        },
+        {
+          "name": "url",
+          "type": "string",
+          "required": false,
+          "description": "Optional target URL to navigate to when profile is specified."
         }
       ],
       "options": [
         {
+          "name": "cdp",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Chrome DevTools Protocol (CDP) for automation."
+        },
+        {
           "name": "port",
           "short": "p",
           "type": "integer",
-          "default": 9222,
-          "description": "Chrome DevTools Protocol (CDP) port for Playwright / Puppeteer automation."
+          "default": 0,
+          "description": "Chrome DevTools Protocol (CDP) port (defaults to 0 for stealth; when --cdp is set without port, picks next free from 9222)."
+        },
+        {
+          "name": "foreground",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in foreground and keep terminal attached (default is detached background)."
         },
         {
           "name": "headless",
           "type": "boolean",
           "default": false,
           "description": "Run browser in headless mode."
-        },
-        {
-          "name": "url",
-          "short": "u",
-          "type": "string",
-          "description": "Initial URL to navigate to."
         },
         {
           "name": "detach",
@@ -762,14 +1131,20 @@
           "name": "mode",
           "short": "m",
           "type": "string",
-          "default": "driver",
-          "description": "Automation mode: 'driver' or 'extension'."
+          "default": "extension",
+          "description": "Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools bridge)."
         },
         {
           "name": "no_cdp",
           "type": "boolean",
           "default": false,
-          "description": "Shortcut for --mode extension (disables remote debugging port completely)."
+          "description": "Shortcut for zero-port extension stealth mode."
+        },
+        {
+          "name": "force",
+          "type": "boolean",
+          "default": false,
+          "description": "Force launch even if profile is already running."
         },
         {
           "name": "skip_proxy_check",
@@ -787,7 +1162,36 @@
       ],
       "pillar": "browser",
       "title": "List Installed Browser Engines",
-      "description": "List all locally installed Chromium runtimes on this workstation."
+      "description": "List all locally installed Chromium runtimes on this workstation.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
     },
     {
       "id": "specter.browser.path",
@@ -973,6 +1377,35 @@
           "required": true,
           "description": "Profile identifier or display name."
         }
+      ],
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
       ]
     },
     {
@@ -984,7 +1417,36 @@
       ],
       "pillar": "browser",
       "title": "List Browser Profiles",
-      "description": "List all local browser profiles in ~/.specter/browser/profiles/."
+      "description": "List all local browser profiles in ~/.specter/browser/profiles/.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
     },
     {
       "id": "specter.browser.profile.pack",
@@ -1081,6 +1543,45 @@
       ]
     },
     {
+      "id": "specter.browser.ps",
+      "route": [
+        "browser",
+        "ps"
+      ],
+      "pillar": "browser",
+      "title": "List Running Browser Profiles",
+      "description": "List active running antidetect browser profiles.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
       "id": "specter.browser.search",
       "route": [
         "browser",
@@ -1108,10 +1609,73 @@
       "pillar": "browser",
       "title": "Browser Engine Status",
       "description": "Display installation status, executable path, and disk usage of dedicated browser.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ],
       "mcp": {
         "tool_name": "specter_browser_status",
         "exported": true
       }
+    },
+    {
+      "id": "specter.browser.stop",
+      "route": [
+        "browser",
+        "stop"
+      ],
+      "pillar": "browser",
+      "title": "Stop Browser Profile",
+      "description": "Terminate running browser profile process tree cleanly.",
+      "arguments": [
+        {
+          "name": "profile",
+          "type": "string",
+          "required": false,
+          "description": "Target profile ID or name."
+        }
+      ],
+      "options": [
+        {
+          "name": "all",
+          "short": "a",
+          "type": "boolean",
+          "default": false,
+          "description": "Stop all running browser profiles."
+        },
+        {
+          "name": "force",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Force immediate termination."
+        }
+      ]
     },
     {
       "id": "specter.browser.use",
@@ -1140,13 +1704,15 @@
       "pillar": "browser",
       "title": "Live Stealth Verification Demo",
       "description": "Live visual verification & stealth presentation (Cloudflare Turnstile, Bézier mouse, smooth scroll).",
-      "options": [
+      "arguments": [
         {
           "name": "url",
-          "short": "u",
           "type": "string",
+          "required": false,
           "description": "Target URL to test (defaults to Cloudflare Turnstile challenge test)."
-        },
+        }
+      ],
+      "options": [
         {
           "name": "headless",
           "type": "boolean",
@@ -1255,7 +1821,36 @@
       ],
       "pillar": "bridge",
       "title": "Bridge Mesh Status",
-      "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads."
+      "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
     },
     {
       "id": "specter.bridge.stop",
@@ -1323,6 +1918,33 @@
           "short": "g",
           "type": "string",
           "description": "Filter by gender."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ]
     },
@@ -1357,21 +1979,41 @@
         {
           "name": "nat",
           "type": "string",
-          "default": "VN",
-          "description": "Filter by nationality (VN, US, JP)."
+          "default": "US",
+          "description": "Filter by nationality (US, VN, JP)."
         },
         {
           "name": "format",
           "short": "f",
           "type": "choice",
-          "default": "table",
-          "description": "Output format: table, card, json, or csv.",
+          "default": "json",
+          "description": "Output format: json, table, card, or csv.",
           "choices": [
+            "json",
             "table",
             "card",
-            "json",
             "csv"
           ]
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual identity card (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "short": "t",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rounded ANSI tabular overview (shortcut for -f table)."
+        },
+        {
+          "name": "csv",
+          "type": "boolean",
+          "default": false,
+          "description": "Export to RFC-compliant CSV (shortcut for -f csv)."
         },
         {
           "name": "output",
@@ -1384,6 +2026,49 @@
         "tool_name": "specter_faker_generate",
         "exported": true
       }
+    },
+    {
+      "id": "specter.faker.nationalities",
+      "route": [
+        "faker",
+        "nationalities"
+      ],
+      "pillar": "faker",
+      "title": "List Supported Nationalities & Schemas",
+      "description": "List supported nationalities, ID schemas, and provider metadata.",
+      "options": [
+        {
+          "name": "table",
+          "short": "t",
+          "type": "boolean",
+          "default": false,
+          "description": "Display catalog in formatted ANSI table."
+        }
+      ]
+    },
+    {
+      "id": "specter.faker.id",
+      "route": [
+        "faker",
+        "id"
+      ],
+      "pillar": "faker",
+      "title": "Generate Isolated National ID",
+      "description": "Generate isolated national ID with mathematically valid checksum (SSN, CCCD, My Number).",
+      "options": [
+        {
+          "name": "nat",
+          "type": "string",
+          "description": "Filter by nationality: US, VN, JP."
+        },
+        {
+          "name": "raw",
+          "short": "r",
+          "type": "boolean",
+          "default": false,
+          "description": "Output raw ID string only without JSON wrapper."
+        }
+      ]
     },
     {
       "id": "specter.runner.logs",
@@ -1481,11 +2166,31 @@
       "description": "Inspect local runner daemon status and health check endpoint.",
       "options": [
         {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
           "name": "json",
           "short": "j",
           "type": "boolean",
-          "default": false,
-          "description": "Output status in raw JSON format."
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ]
     },
@@ -1558,7 +2263,7 @@
       ],
       "pillar": "cloud",
       "title": "Cloud Authentication Login",
-      "description": "Authenticate and enroll this workstation with Specter Cloud.",
+      "description": "Authenticate operator identity, resolve multi-tenant workspace, and pair workstation with Specter Cloud.",
       "options": [
         {
           "name": "url",
@@ -1567,16 +2272,77 @@
           "description": "Specter Cloud endpoint URL (e.g. https://cloud.specter.dev)."
         },
         {
+          "name": "email",
+          "short": "e",
+          "type": "string",
+          "description": "Operator account email for Supabase GoTrue authentication."
+        },
+        {
+          "name": "password",
+          "short": "p",
+          "type": "string",
+          "description": "Operator account password."
+        },
+        {
+          "name": "otp",
+          "type": "boolean",
+          "default": false,
+          "description": "Request and authenticate via One-Time Passcode (OTP)."
+        },
+        {
+          "name": "code",
+          "short": "c",
+          "type": "string",
+          "description": "Pre-supplied 6-digit One-Time Passcode (OTP)."
+        },
+        {
           "name": "token",
           "short": "t",
           "type": "string",
-          "description": "Organization / Tenant enrollment token."
+          "description": "Organization / Tenant enrollment token or JWT."
+        },
+        {
+          "name": "tenant",
+          "type": "string",
+          "description": "Pre-select target workspace by slug or ID."
         },
         {
           "name": "name",
           "short": "n",
           "type": "string",
           "description": "Custom workstation name (defaults to machine hostname)."
+        },
+        {
+          "name": "api-key",
+          "type": "string",
+          "description": "Custom Supabase API publishable or anon key."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
         }
       ]
     },
@@ -1599,10 +2365,555 @@
       "pillar": "cloud",
       "title": "Display Cloud Enrollment Identity",
       "description": "Show current Specter Cloud identity, enrolled device GUID, and tenant ID.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ],
       "mcp": {
         "tool_name": "specter_cloud_whoami",
         "exported": true
       }
+    },
+    {
+      "id": "specter.cloud.tenant.list",
+      "route": [
+        "cloud",
+        "tenant",
+        "list"
+      ],
+      "pillar": "cloud",
+      "title": "List Accessible Workspaces",
+      "description": "List all accessible multi-tenant workspaces for the authenticated operator.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output list in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.cloud.tenant.switch",
+      "route": [
+        "cloud",
+        "tenant",
+        "switch"
+      ],
+      "pillar": "cloud",
+      "title": "Switch Active Workspace",
+      "description": "Switch active workspace context for this workstation and re-pair device.",
+      "arguments": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": true,
+          "description": "Target workspace slug or UUID."
+        }
+      ],
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.cloud.tenant.current",
+      "route": [
+        "cloud",
+        "tenant",
+        "current"
+      ],
+      "pillar": "cloud",
+      "title": "Display Current Workspace",
+      "description": "Display current active workspace details and membership role.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.otp",
+      "route": [
+        "inbox",
+        "otp"
+      ],
+      "pillar": "inbox",
+      "title": "Fetch or Intercept OTP",
+      "description": "Retrieve latest OTP code for a recipient with optional wait polling and auto-consumption.",
+      "arguments": [
+        {
+          "name": "recipient",
+          "type": "string",
+          "required": true,
+          "description": "Target email recipient (e.g. acc1@domain.com)"
+        }
+      ],
+      "options": [
+        {
+          "name": "wait",
+          "short": "w",
+          "type": "boolean",
+          "default": false,
+          "description": "Wait and poll until OTP arrives"
+        },
+        {
+          "name": "timeout",
+          "short": "t",
+          "type": "integer",
+          "default": 60,
+          "description": "Maximum wait time in seconds (default: 60)"
+        },
+        {
+          "name": "raw",
+          "short": "r",
+          "type": "boolean",
+          "default": false,
+          "description": "Output raw OTP code only (ideal for shell pipes & automation)"
+        },
+        {
+          "name": "no-consume",
+          "type": "boolean",
+          "default": false,
+          "description": "Do not mark OTP as consumed"
+        },
+        {
+          "name": "copy",
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-copy intercepted OTP code to system clipboard"
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ],
+      "mcp": {
+        "tool_name": "specter_inbox_otp",
+        "exported": true
+      }
+    },
+    {
+      "id": "specter.inbox.link",
+      "route": [
+        "inbox",
+        "link"
+      ],
+      "pillar": "inbox",
+      "title": "Fetch Verification or Magic Link",
+      "description": "Extract latest verification, password reset, or magic link from recipient inbox.",
+      "arguments": [
+        {
+          "name": "recipient",
+          "type": "string",
+          "required": true,
+          "description": "Target email recipient (e.g. acc1@domain.com)"
+        }
+      ],
+      "options": [
+        {
+          "name": "link-type",
+          "short": "l",
+          "type": "string",
+          "description": "Optional link type filter (verification, reset_password, magic_link)"
+        },
+        {
+          "name": "open",
+          "short": "o",
+          "type": "boolean",
+          "default": false,
+          "description": "Open link automatically in default browser"
+        },
+        {
+          "name": "raw",
+          "short": "r",
+          "type": "boolean",
+          "default": false,
+          "description": "Output raw URL only"
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.list",
+      "route": [
+        "inbox",
+        "list"
+      ],
+      "pillar": "inbox",
+      "title": "List Inbound Emails and OTPs",
+      "description": "List recent caught emails and extracted OTPs in local storage.",
+      "options": [
+        {
+          "name": "recipient",
+          "short": "r",
+          "type": "string",
+          "description": "Filter by recipient email address"
+        },
+        {
+          "name": "limit",
+          "short": "l",
+          "type": "integer",
+          "default": 20,
+          "description": "Maximum records to display (default: 20)"
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.start",
+      "route": [
+        "inbox",
+        "start"
+      ],
+      "pillar": "inbox",
+      "title": "Start Catch-All Webhook Daemon",
+      "description": "Start the local Axum webhook listener daemon to receive Cloudflare email routing events.",
+      "options": [
+        {
+          "name": "port",
+          "short": "p",
+          "type": "integer",
+          "description": "Custom listening port (default from inbox.json: 9123)"
+        },
+        {
+          "name": "host",
+          "type": "string",
+          "description": "Custom listening host (default: 127.0.0.1)"
+        },
+        {
+          "name": "foreground",
+          "short": "f",
+          "type": "boolean",
+          "default": false,
+          "description": "Run in foreground instead of background daemon"
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.stop",
+      "route": [
+        "inbox",
+        "stop"
+      ],
+      "pillar": "inbox",
+      "title": "Stop Inbox Daemon",
+      "description": "Stop running inbox webhook listener daemon process."
+    },
+    {
+      "id": "specter.inbox.status",
+      "route": [
+        "inbox",
+        "status"
+      ],
+      "pillar": "inbox",
+      "title": "Inbox Subsystem Status",
+      "description": "Inspect daemon PID, port, database statistics, and cloud synchronization status.",
+      "options": [
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "json",
+          "description": "Output format: json, table, or card (default: json)."
+        },
+        {
+          "name": "table",
+          "type": "boolean",
+          "default": false,
+          "description": "Display formatted terminal table view (shortcut for -f table)."
+        },
+        {
+          "name": "card",
+          "short": "c",
+          "type": "boolean",
+          "default": false,
+          "description": "Display rich visual card view (shortcut for -f card)."
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": true,
+          "description": "Output results in raw JSON format (default)."
+        }
+      ],
+      "mcp": {
+        "tool_name": "specter_inbox_status",
+        "exported": true
+      }
+    },
+    {
+      "id": "specter.inbox.test",
+      "route": [
+        "inbox",
+        "test"
+      ],
+      "pillar": "inbox",
+      "title": "One-Click Inbox Acceptance Test",
+      "description": "Execute one-click acceptance test verifying local storage, cloud discovery, and OTP interception.",
+      "options": [
+        {
+          "name": "simulate",
+          "short": "s",
+          "type": "boolean",
+          "default": false,
+          "description": "Force simulated local loop test even when online"
+        },
+        {
+          "name": "remote",
+          "short": "r",
+          "type": "boolean",
+          "default": false,
+          "description": "Verify connectivity to remote cloud endpoint"
+        },
+        {
+          "name": "json",
+          "short": "j",
+          "type": "boolean",
+          "default": false,
+          "description": "Output results in JSON format"
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.setup-worker",
+      "route": [
+        "inbox",
+        "setup-worker"
+      ],
+      "pillar": "inbox",
+      "title": "Generate Cloudflare Email Worker",
+      "description": "Export ready-to-deploy Cloudflare Email Routing Worker script for 1-click catch-all.",
+      "options": [
+        {
+          "name": "output",
+          "short": "o",
+          "type": "string",
+          "description": "Write generated script to target file path"
+        },
+        {
+          "name": "secret",
+          "short": "s",
+          "type": "string",
+          "description": "Custom webhook secret token"
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.sync",
+      "route": [
+        "inbox",
+        "sync"
+      ],
+      "pillar": "inbox",
+      "title": "Sync Inbound Emails from Cloud",
+      "description": "Synchronize latest incoming emails and OTPs from Supabase Cloud.",
+      "options": [
+        {
+          "name": "limit",
+          "short": "l",
+          "type": "integer",
+          "default": 50,
+          "description": "Number of recent emails to pull from cloud (default: 50)"
+        }
+      ]
+    },
+    {
+      "id": "specter.inbox.config",
+      "route": [
+        "inbox",
+        "config"
+      ],
+      "pillar": "inbox",
+      "title": "Manage Inbox Configuration",
+      "description": "Display, inspect, or edit the canonical inbox configuration file (~/.specter/inbox/inbox.json).",
+      "options": [
+        {
+          "name": "edit",
+          "short": "e",
+          "type": "boolean",
+          "default": false,
+          "description": "Open ~/.specter/inbox/inbox.json in your default editor"
+        },
+        {
+          "name": "show",
+          "short": "s",
+          "type": "boolean",
+          "default": false,
+          "description": "Display raw configuration file path or content"
+        }
+      ]
     }
   ]
 }

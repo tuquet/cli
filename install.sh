@@ -1,6 +1,6 @@
 #!/bin/sh
 # ==============================================================================
-# Tuquet Ecosystem - Modern Universal Web Installer (macOS & Linux)
+# Specter CLI - Modern Universal Web Installer (macOS & Linux)
 # ==============================================================================
 # Usage (Clean/Blank Machine):
 #   curl -fsSL https://raw.githubusercontent.com/tuquet/cli/main/install.sh | sh
@@ -37,13 +37,14 @@ write_error() {
 }
 
 printf "\n"
-printf "${CYAN}  ______          ____                  __ ${RESET}\n"
-printf "${CYAN} /_  __/_  __    / __ \__  __  ___     / /_${RESET}\n"
-printf "${CYAN}  / /  / / / /  / / / // / / // _ \   / __/   ${BOLD}v1.0.0${RESET}\n"
-printf "${CYAN} / /  / /_/ /  / /_/ // /_/ //  __/  / /_  ${RESET}\n"
-printf "${CYAN}/_/   \__,_/   \___\_\\__,_/ \___/   \__/  ${RESET}\n"
+printf "${CYAN}   _____                 __            ${RESET}\n"
+printf "${CYAN}  / ___/____  ___  _____/ /____  _____ ${RESET}\n"
+printf "${CYAN}  \__ \/ __ \/ _ \/ ___/ __/ _ \/ ___/ ${RESET}\n"
+printf "${CYAN} ___/ / /_/ /  __/ /__/ /_/  __/ /     ${BOLD}v1.0.0${RESET}\n"
+printf "${CYAN}/____/ .___/\___/\___/\__/\___/_/      ${RESET}\n"
+printf "${CYAN}    /_/                                ${RESET}\n"
 printf "\n"
-printf "  ${BOLD}Tuquet Unified Zero-Dependency Installer (Unix)${RESET}\n"
+printf "  ${BOLD}Specter Unified Zero-Dependency Installer (Unix)${RESET}\n"
 printf "  ${GRAY}Autonomous Browser Automation & Distributed Mesh Runtime${RESET}\n\n"
 
 # 1. Detect Operating System and Architecture
@@ -71,12 +72,12 @@ case "$ARCH" in
         TARGET_ARCH="arm64"
         ;;
     *)
-        write_error "Unsupported CPU architecture: $ARCH. Tuquet supports x86_64 and arm64."
+        write_error "Unsupported CPU architecture: $ARCH. Specter supports x86_64 and arm64."
         exit 1
         ;;
 esac
 
-RELEASE_NAME="tuquet-${PLATFORM}-${TARGET_ARCH}"
+RELEASE_NAME="specter-${PLATFORM}-${TARGET_ARCH}"
 write_step "Detected environment: ${BOLD}${PLATFORM} (${TARGET_ARCH})${RESET}"
 
 # 2. Determine Canonical SSOT Paths
@@ -100,8 +101,6 @@ elif [ -f "./cli/target/release/specter" ]; then
     LOCAL_BIN="./cli/target/release/specter"
 elif [ -f "./target/release/specter" ]; then
     LOCAL_BIN="./target/release/specter"
-elif [ -f "./cli/target/release/tuquet" ]; then
-    LOCAL_BIN="./cli/target/release/tuquet"
 fi
 
 if [ -n "$LOCAL_BIN" ]; then
@@ -116,23 +115,23 @@ else
     write_step "Downloading ${RELEASE_NAME} from GitHub Releases..."
 
     DOWNLOADED=0
-    TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'tuquet')"
+    TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'specter')"
 
     if command -v curl >/dev/null 2>&1; then
-        if curl -fsSL "${TARBALL_URL}" -o "${TMP_DIR}/tuquet.tar.gz" 2>/dev/null; then
-            tar -xzf "${TMP_DIR}/tuquet.tar.gz" -C "${TMP_DIR}"
-            if [ -f "${TMP_DIR}/tuquet" ]; then
-                mv -f "${TMP_DIR}/tuquet" "${TARGET_EXE}"
+        if curl -fsSL "${TARBALL_URL}" -o "${TMP_DIR}/specter.tar.gz" 2>/dev/null; then
+            tar -xzf "${TMP_DIR}/specter.tar.gz" -C "${TMP_DIR}"
+            if [ -f "${TMP_DIR}/specter" ]; then
+                mv -f "${TMP_DIR}/specter" "${TARGET_EXE}"
                 DOWNLOADED=1
             fi
         elif curl -fsSL "${FALLBACK_BIN_URL}" -o "${TARGET_EXE}" 2>/dev/null; then
             DOWNLOADED=1
         fi
     elif command -v wget >/dev/null 2>&1; then
-        if wget -q "${TARBALL_URL}" -O "${TMP_DIR}/tuquet.tar.gz" 2>/dev/null; then
-            tar -xzf "${TMP_DIR}/tuquet.tar.gz" -C "${TMP_DIR}"
-            if [ -f "${TMP_DIR}/tuquet" ]; then
-                mv -f "${TMP_DIR}/tuquet" "${TARGET_EXE}"
+        if wget -q "${TARBALL_URL}" -O "${TMP_DIR}/specter.tar.gz" 2>/dev/null; then
+            tar -xzf "${TMP_DIR}/specter.tar.gz" -C "${TMP_DIR}"
+            if [ -f "${TMP_DIR}/specter" ]; then
+                mv -f "${TMP_DIR}/specter" "${TARGET_EXE}"
                 DOWNLOADED=1
             fi
         elif wget -q "${FALLBACK_BIN_URL}" -O "${TARGET_EXE}" 2>/dev/null; then
@@ -148,7 +147,7 @@ else
 
     if [ "$DOWNLOADED" -eq 1 ]; then
         chmod +x "${TARGET_EXE}"
-        write_success "Downloaded and installed tuquet binary to ${TARGET_EXE}"
+        write_success "Downloaded and installed specter binary to ${TARGET_EXE}"
     else
         write_notice "Release asset ${RELEASE_NAME} not found on latest release. Checking existing local installation..."
         if [ ! -x "${TARGET_EXE}" ]; then
@@ -181,7 +180,7 @@ CONFIGURED_ANY=0
 for PROFILE in $SHELL_PROFILES; do
     if [ -f "$PROFILE" ]; then
         if ! grep -q "\.specter/bin" "$PROFILE" 2>/dev/null && ! grep -q "\.tuquet/bin" "$PROFILE" 2>/dev/null; then
-            printf "\n# Specter / Tuquet CLI\n%s\n" "${PATH_LINE}" >> "$PROFILE"
+            printf "\n# Specter CLI\n%s\n" "${PATH_LINE}" >> "$PROFILE"
             write_success "Added Specter to PATH in ${PROFILE}"
             CONFIGURED_ANY=1
         fi
@@ -202,7 +201,7 @@ export PATH="${SPECTER_BIN_DIR}:${PATH}"
 
 printf "\n"
 printf "${GREEN}==============================================================================${RESET}\n"
-printf "${GREEN}  SPECTER & TUQUET INSTALLATION COMPLETED SUCCESSFULLY${RESET}\n"
+printf "${GREEN}  SPECTER CLI INSTALLATION COMPLETED SUCCESSFULLY${RESET}\n"
 printf "${GREEN}==============================================================================${RESET}\n\n"
 printf "  To get started, reload your shell or run immediately:\n"
 printf "    ${CYAN}specter browser launch${RESET}  Launch Antidetect Chromium browser sandbox\n"

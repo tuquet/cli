@@ -12,7 +12,8 @@ use crate::cli::BridgeSubcommands;
 
 pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
     match subcmd {
-        Some(BridgeSubcommands::Status) | None => show_status().await?,
+        Some(BridgeSubcommands::Status { format }) => show_status(format.resolve()).await?,
+        None => show_status(crate::ui::OutputFormat::Json).await?,
         Some(BridgeSubcommands::Start {
             server,
             tag,
@@ -33,7 +34,7 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
         Some(BridgeSubcommands::Enable { server }) => toggle_server(&server, true)?,
         Some(BridgeSubcommands::Disable { server }) => toggle_server(&server, false)?,
         Some(BridgeSubcommands::Check) => check_config()?,
-        Some(BridgeSubcommands::Config { edit, show }) => manage_config(edit, show)?,
+        Some(BridgeSubcommands::Config { edit, show, args }) => manage_config(&args, edit, show)?,
     }
     Ok(())
 }

@@ -12,7 +12,7 @@ fn test_manifest_schema_and_json_validity() {
     assert!(!m.description.is_empty(), "Manifest description must not be empty");
 
     // 2. Canonical pillars check (5 microservice storage pillars + execution runtimes)
-    let required_pillars = ["system", "automa", "browser", "bridge", "faker", "runner", "cloud"];
+    let required_pillars = ["system", "automa", "browser", "bridge", "faker", "runner", "cloud", "inbox"];
     for p in &required_pillars {
         assert!(
             m.pillars.iter().any(|item| item.eq_ignore_ascii_case(p)),
@@ -161,7 +161,7 @@ fn test_runtime_manifest_queries() {
 
 #[test]
 fn test_config_schemas_contract() {
-    let services = ["bridge", "browser", "automa", "runner", "faker", "system"];
+    let services = ["bridge", "browser", "automa", "runner", "faker", "system", "inbox"];
     for s in services {
         let path = std::path::Path::new("schema/config").join(format!("{}.schema.json", s));
         assert!(path.exists(), "Schema file {:?} must exist", path);

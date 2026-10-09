@@ -76,8 +76,27 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
             println!("{}", table.render());
             Ok(())
         }
-        BrowserCommands::List => {
+        BrowserCommands::List { format } => {
             let runtimes = crate::core::browser::resolver::list_installed_runtimes();
+            let format = format.resolve();
+
+            if format.is_json() {
+                let json_runtimes: Vec<serde_json::Value> = runtimes
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "version": r.version,
+                            "channel": r.status_badge,
+                            "size_mb": r.size_mb,
+                            "active": r.is_active,
+                            "executable_path": r.path
+                        })
+                    })
+                    .collect();
+                println!("{}", serde_json::to_string_pretty(&json_runtimes)?);
+                return Ok(());
+            }
+
             println!();
             let mut card = Card::new("INSTALLED ANTIDETECT BROWSER VERSIONS");
             card.with_badge(badge_online("INSPECTED"));
@@ -144,9 +163,30 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 }
             }
         }
-        BrowserCommands::Status => {
+        BrowserCommands::Status { format } => {
             let status = crate::core::browser::resolver::get_runtime_status();
             let active_ver = crate::core::browser::resolver::get_active_version();
+            let profile_dir = crate::config::canonical_specter_dir().join("browser").join("profiles");
+            let profile_count = std::fs::read_dir(&profile_dir)
+                .map(|entries| entries.flatten().filter(|e| e.path().is_dir()).count())
+                .unwrap_or(0);
+            let format = format.resolve();
+
+            if format.is_json() {
+                let payload = serde_json::json!({
+                    "installed": status.installed,
+                    "active_version": active_ver,
+                    "pinned_version": status.pinned_version,
+                    "platform": status.platform,
+                    "executable_path": status.executable_path,
+                    "size_mb": status.size_mb,
+                    "profiles_count": profile_count,
+                    "sandbox_root": "~/.specter/browser/profiles"
+                });
+                println!("{}", serde_json::to_string_pretty(&payload)?);
+                return Ok(());
+            }
+
             let badge = if status.installed {
                 badge_online("INSTALLED")
             } else {
@@ -172,10 +212,6 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 status.executable_path.clone()
             };
 
-            let profile_dir = crate::config::canonical_specter_dir().join("browser").join("profiles");
-            let profile_count = std::fs::read_dir(&profile_dir)
-                .map(|entries| entries.flatten().filter(|e| e.path().is_dir()).count())
-                .unwrap_or(0);
 
             let rows = vec![
                 TabularRow::new(
@@ -244,39 +280,11 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 }
             }
         }
-        BrowserCommands::Config { edit, show } => manage_config(edit, show),
+        BrowserCommands::Config { edit, show, args } => manage_config(&args, edit, show),
         _ => Err("Invalid runtime command".into()),
     }
 }
 
-pub fn manage_config(edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let path = crate::config::BrowserConfig::config_path();
-
-    if edit {
-        crate::config::ConfigRegistry::open_in_editor(&path)?;
-    } else if show {
-        let config = crate::config::BrowserConfig::load();
-        println!();
-        let mut card = Card::new("BROWSER CONFIGURATION");
-        card.with_badge(badge_online("SSOT READY"));
-        card.with_min_width(70);
-        card.add_kv("Config File", path.display().to_string());
-        card.add_kv("Default Browser", &config.default_browser);
-        card.add_kv("Chromium Revision", config.chromium_revision.as_deref().unwrap_or("auto"));
-        card.add_kv("Headless", if config.headless { "true" } else { "false" });
-        card.add_kv("Viewport", format!("{}x{}", config.viewport_width, config.viewport_height));
-        let exts = if config.autoload_extensions.is_empty() {
-            "none".to_string()
-        } else {
-            config.autoload_extensions.join(", ")
-        };
-        card.add_kv("Autoload Exts", exts);
-        card.with_footer("Tip: edit with 'specter browser config --edit'");
-        card.print();
-        println!();
-    } else {
-        println!("{}", path.display());
-    }
-
-    Ok(())
+pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+    crate::config::ConfigController::handle_dispatch("browser", args, edit, show)
 }

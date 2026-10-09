@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tuquet.github.io/schema/cli.manifest.schema.json",
-  "title": "TuquetCliManifest",
-  "description": "Declarative JSON Schema definition for Tuquet Ecosystem CLI commands, pillars, and capabilities (VS Code Contributes pattern).",
+  "$id": "https://tuquet.com/schema/cli.manifest.schema.json",
+  "title": "SpecterCliManifest",
+  "description": "Declarative JSON Schema definition for Specter CLI commands, pillars, and capabilities (VS Code Contributes pattern).",
   "type": "object",
   "required": ["$schema", "name", "version", "description", "pillars", "commands"],
   "properties": {
     "$schema": { "type": "string" },
-    "name": { "type": "string", "const": "tuquet" },
+    "name": { "type": "string", "const": "specter" },
     "version": { "type": "string" },
     "description": { "type": "string" },
     "homepage": { "type": "string" },
@@ -35,7 +35,7 @@
       "properties": {
         "productName": { "type": "string", "description": "Commercial product brand name (e.g. Specter)." },
         "cliAlias": { "type": "string", "description": "Commercial CLI command alias (e.g. specter)." },
-        "canonicalRoot": { "type": "string", "description": "Core ecosystem engine command name (e.g. tuquet)." },
+        "canonicalRoot": { "type": "string", "description": "Core ecosystem engine command name (e.g. specter)." },
         "category": { "type": "string", "description": "Market product category (e.g. Agentic Antidetect Browser)." },
         "tagline": { "type": "string", "description": "Punchy commercial value proposition." },
         "organization": { "type": "string", "description": "Parent organization or platform umbrella (e.g. Tuquet)." },
@@ -50,7 +50,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique namespaced identifier (e.g. tuquet.browser.launch, tuquet.doctor)."
+          "description": "Unique namespaced identifier (e.g. specter.browser.launch, specter.doctor)."
         },
         "route": {
           "type": "array",

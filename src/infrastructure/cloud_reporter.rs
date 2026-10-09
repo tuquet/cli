@@ -42,7 +42,7 @@ impl CloudReporter {
             return Ok(existing);
         }
 
-        let creds = CloudApiClient::enroll(client, cloud_url, None, enrollment_token, None).await?;
+        let creds = CloudApiClient::enroll(client, cloud_url, None, enrollment_token, None, None).await?;
         Self::save_credentials(data_dir, &creds).await?;
         info!("[CloudReporter] Workstation enrolled successfully [Device ID: {}]", creds.device_id);
         Ok(creds)
@@ -53,9 +53,10 @@ impl CloudReporter {
         enrollment_token: Option<&str>,
         custom_name: Option<&str>,
         data_dir: &str,
+        bearer_token: Option<&str>,
     ) -> Result<DeviceCredentials, Box<dyn std::error::Error + Send + Sync>> {
         let client = Self::build_http_client();
-        let creds = CloudApiClient::enroll(&client, cloud_url, custom_name, enrollment_token, Some("cli_login")).await?;
+        let creds = CloudApiClient::enroll(&client, cloud_url, custom_name, enrollment_token, Some("cli_login"), bearer_token).await?;
         Self::save_credentials(data_dir, &creds).await?;
         Ok(creds)
     }

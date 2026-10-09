@@ -15,9 +15,9 @@ name = "specter"
 path = "src/main.rs"
 
 [dependencies]
-tuquet-faker = { path = "../faker" }
-tuquet-browser = { path = "../browser", features = ["utoipa"] }
-tuquet-runner = { package = "runner", path = "../runner" }
+specter-faker = { package = "faker", path = "../faker" }
+specter-browser = { path = "../browser", features = ["utoipa"] }
+specter-runner = { package = "runner", path = "../runner" }
 axum = { version = "0.8.9", features = ["ws"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -50,6 +50,8 @@ nu-ansi-term = "0.50.3"
 socket2 = "0.6"
 flate2 = "1.0"
 tar = "0.4"
+regex = "1.11"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 
 [dev-dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }

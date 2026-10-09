@@ -181,6 +181,36 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
                     }
                 }
             }
+        },
+        {
+            "name": "specter_inbox_otp",
+            "description": "Retrieve or wait for latest OTP verification code for an email address from Catch-All inbox with automatic consumption.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "recipient": {
+                        "type": "string",
+                        "description": "Target recipient email address (e.g. 'acc01@domain.com')."
+                    },
+                    "wait": {
+                        "type": "boolean",
+                        "description": "Whether to wait and poll until email/OTP arrives (default: true)."
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Maximum wait timeout in seconds (default: 60)."
+                    }
+                },
+                "required": ["recipient"]
+            }
+        },
+        {
+            "name": "specter_inbox_status",
+            "description": "Inspect Catch-All inbox subsystem health, local webhook daemon status, cached email counts, and cloud sync status.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
         }
     ]);
 

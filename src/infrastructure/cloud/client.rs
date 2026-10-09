@@ -30,6 +30,7 @@ impl CloudApiClient {
         custom_name: Option<&str>,
         enrollment_token: Option<&str>,
         login_source: Option<&str>,
+        bearer_token: Option<&str>,
     ) -> Result<DeviceCredentials, Box<dyn std::error::Error + Send + Sync>> {
         let hostname = custom_name.unwrap_or("").trim();
         let default_host = std::env::var("COMPUTERNAME")
@@ -70,9 +71,14 @@ impl CloudApiClient {
 
         let anon_key = std::env::var("SPECTER_API_KEY")
             .unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let auth_header = match bearer_token {
+            Some(tok) if !tok.trim().is_empty() => format!("Bearer {}", tok.trim()),
+            _ => format!("Bearer {}", anon_key),
+        };
+
         let res = client.post(&target_url)
             .header("apikey", &anon_key)
-            .header("Authorization", format!("Bearer {}", anon_key))
+            .header("Authorization", auth_header)
             .json(&payload)
             .send()
             .await?;
@@ -97,6 +103,15 @@ impl CloudApiClient {
             api_key: Some(anon_key),
             machine_fingerprint: fingerprint,
             registered_at: Some(epoch_secs_now()),
+            user_id: None,
+            email: None,
+            access_token: bearer_token.map(|s| s.to_string()),
+            refresh_token: None,
+            token_expires_at: None,
+            tenant_slug: None,
+            tenant_name: None,
+            tenant_role: None,
+            available_tenants: None,
         })
     }
 }

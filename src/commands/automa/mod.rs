@@ -56,7 +56,8 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
                 search,
                 db_only,
                 vault_only,
-            } => list_workflows(search, db_only, vault_only).await,
+                format,
+            } => list_workflows(search, db_only, vault_only, format.resolve()).await,
             WorkflowCommands::Import {
                 file,
                 id,
@@ -70,6 +71,6 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
         AutomaSubcommands::Inspect { workflow } => inspect_workflow(&workflow),
         AutomaSubcommands::Studio => open_studio(),
         AutomaSubcommands::Probe => crate::commands::runner::print_probe_manifest(),
-        AutomaSubcommands::Config { edit, show } => manage_config(edit, show),
+        AutomaSubcommands::Config { edit, show, args } => manage_config(&args, edit, show),
     }
 }

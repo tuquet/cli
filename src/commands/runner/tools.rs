@@ -32,30 +32,6 @@ pub fn export_openapi(output_path: &Path) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-pub fn manage_config(edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let path = crate::config::RunnerConfig::config_path();
-
-    if edit {
-        crate::config::ConfigRegistry::open_in_editor(&path)?;
-    } else if show {
-        let config = crate::config::RunnerConfig::load();
-        println!();
-        let mut card = crate::ui::Card::new("RUNNER CONFIGURATION");
-        card.with_badge(crate::ui::badge_online("SSOT READY"));
-        card.with_min_width(70);
-        card.add_kv("Config File", path.display().to_string());
-        card.add_kv("Listen Host", &config.host);
-        card.add_kv("Listen Port", config.port.to_string());
-        card.add_kv("Log Level", &config.log_level);
-        card.add_kv("Heartbeat", format!("{}s", config.heartbeat_interval_secs));
-        card.add_kv("Max Concurrency", config.max_concurrent_jobs.to_string());
-        card.add_kv("Auto Restart", if config.auto_restart { "enabled" } else { "disabled" });
-        card.with_footer("Tip: edit with 'specter runner config --edit'");
-        card.print();
-        println!();
-    } else {
-        println!("{}", path.display());
-    }
-
-    Ok(())
+pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+    crate::config::ConfigController::handle_dispatch("runner", args, edit, show)
 }

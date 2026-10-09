@@ -3,10 +3,10 @@ use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
 use crate::ui::{
     badge_offline, badge_online, badge_warn, create_network_topology_card,
-    create_tabular_card, default_workstation_endpoints, TabularRow,
+    create_tabular_card, default_workstation_endpoints, respond_with, OutputFormat, TabularRow,
 };
 
-pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
 
     // 1. SYSTEM & CLOUD
@@ -189,11 +189,14 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
     // 4. NETWORK BRIDGE
     let bridge_config = crate::infrastructure::bridge::BridgeConfig::load().unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
     let git_port = bridge_config.workloads.as_ref().and_then(|w| w.git.as_ref()).map(|g| g.port).unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
-    let git_active = crate::infrastructure::bridge::probe_port(git_port);
     let primary_ssh_port = bridge_config.servers.get("my-vps").and_then(|s| s.local_ssh_port).unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
-    let ssh_active = crate::infrastructure::bridge::probe_port(primary_ssh_port);
     let http_port = bridge_config.workloads.as_ref().and_then(|w| w.supabase.as_ref()).map(|s| s.http_port).unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
-    let http_active = crate::infrastructure::bridge::probe_port(http_port);
+
+    let (git_active, ssh_active, http_active) = tokio::join!(
+        crate::infrastructure::bridge::probe_port_async(git_port),
+        crate::infrastructure::bridge::probe_port_async(primary_ssh_port),
+        crate::infrastructure::bridge::probe_port_async(http_port),
+    );
 
     let endpoints = default_workstation_endpoints(
         git_port,
@@ -215,58 +218,54 @@ pub async fn show_dashboard(json_output: bool) -> Result<(), Box<dyn std::error:
         bridge_card.with_badge(badge_offline("DISCONNECTED"));
     }
 
-    if json_output {
-        let out = serde_json::json!({
-            "ecosystem": "specter",
-            "cloud": {
-                "enrolled": cloud_creds.is_some(),
-                "device_id": cloud_creds.as_ref().map(|c| c.device_id.as_str()),
-                "device_name": cloud_creds.as_ref().map(|c| c.name.as_str()),
-                "tenant_id": cloud_creds.as_ref().and_then(|c| c.tenant_id.as_deref()),
-                "endpoint": cloud_creds.as_ref().and_then(|c| c.cloud_url.as_deref())
-            },
-            "runner": {
-                "online": daemon_running,
-                "endpoint": daemon_url,
-                "port": port
-            },
-            "automa": {
-                "workflows_count": workflow_count,
-                "database": db_size_str
-            },
-            "browser": {
-                "installed": browser_status.installed,
-                "platform": browser_status.platform,
-                "executable_path": browser_status.executable_path,
-                "pinned_version": browser_status.pinned_version,
-                "size_mb": browser_status.size_mb
-            },
-            "bridge": {
-                "git_1080": git_active,
-                "ssh_2222": ssh_active,
-                "http_8118": http_active
-            }
-        });
-        println!("{}", serde_json::to_string(&out)?);
-        return Ok(());
-    }
+    let payload = serde_json::json!({
+        "ecosystem": "specter",
+        "cloud": {
+            "enrolled": cloud_creds.is_some(),
+            "device_id": cloud_creds.as_ref().map(|c| c.device_id.as_str()),
+            "device_name": cloud_creds.as_ref().map(|c| c.name.as_str()),
+            "tenant_id": cloud_creds.as_ref().and_then(|c| c.tenant_id.as_deref()),
+            "endpoint": cloud_creds.as_ref().and_then(|c| c.cloud_url.as_deref())
+        },
+        "runner": {
+            "online": daemon_running,
+            "endpoint": daemon_url,
+            "port": port
+        },
+        "automa": {
+            "workflows_count": workflow_count,
+            "database": db_size_str
+        },
+        "browser": {
+            "installed": browser_status.installed,
+            "platform": browser_status.platform,
+            "executable_path": browser_status.executable_path,
+            "pinned_version": browser_status.pinned_version,
+            "size_mb": browser_status.size_mb
+        },
+        "bridge": {
+            "git_1080": git_active,
+            "ssh_2222": ssh_active,
+            "http_8118": http_active
+        }
+    });
 
-    if let Some(info) = crate::infrastructure::updater::get_cached_update()
-        && info.has_update
-    {
+    respond_with(format, &payload, |_| {
+        if let Some(info) = crate::infrastructure::updater::get_cached_update()
+            && info.has_update
+        {
+            println!();
+            println!("{}", crate::ui::render_update_banner(&info.current_version, &info.latest_version));
+        }
+
         println!();
-        println!("{}", crate::ui::render_update_banner(&info.current_version, &info.latest_version));
-    }
-
-    println!();
-    system_card.print();
-    println!();
-    automa_card.print();
-    println!();
-    browser_card.print();
-    println!();
-    bridge_card.print();
-    println!();
-
-    Ok(())
+        system_card.print();
+        println!();
+        automa_card.print();
+        println!();
+        browser_card.print();
+        println!();
+        bridge_card.print();
+        println!();
+    })
 }

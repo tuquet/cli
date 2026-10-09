@@ -1,88 +1,70 @@
 use std::fs;
-use std::path::PathBuf;
-use crate::cli::FakerSubcommands;
+use crate::cli::{FakerGenerateArgs, FakerSubcommands};
 use crate::ui::{badge_online, Card, Column, Table};
-use tuquet_faker::{generate_users, to_csv, to_json, FakerConfig};
+use specter_faker::{
+    generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value,
+};
 
-pub async fn handle(subcommand: Option<FakerSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle(
+    subcommand: Option<FakerSubcommands>,
+    args: FakerGenerateArgs,
+) -> Result<(), Box<dyn std::error::Error>> {
     match subcommand {
-        Some(FakerSubcommands::Generate {
-            count,
-            gender,
-            nat,
-            avatar,
-            domain,
-            format,
-            output,
-        }) => {
-            run_generate(count, gender.as_deref(), nat.as_deref(), avatar.as_deref(), domain.as_deref(), &format, output).await?;
+        Some(FakerSubcommands::Generate(gen_args)) => {
+            run_generate(gen_args).await?;
         }
-        Some(FakerSubcommands::Card { gender, nat, avatar, domain }) => {
-            run_card(gender.as_deref(), nat.as_deref(), avatar.as_deref(), domain.as_deref()).await?;
+        Some(FakerSubcommands::Card { gender, nat, avatar, domain, format }) => {
+            run_card(gender.as_deref(), nat.as_deref(), avatar.as_deref(), domain.as_deref(), format.resolve()).await?;
         }
-        Some(FakerSubcommands::Config { edit, show, domain }) => {
-            manage_config(edit, show, domain.as_deref())?;
+        Some(FakerSubcommands::Nationalities { table }) => {
+            run_nationalities(table)?;
+        }
+        Some(FakerSubcommands::Id { nat, raw }) => {
+            run_id(nat.as_deref(), raw)?;
+        }
+        Some(FakerSubcommands::Config { edit, show, domain, args }) => {
+            manage_config(&args, edit, show, domain.as_deref())?;
         }
         None => {
-            // Default to generating 1 profile in Card view
-            run_card(None, Some("VN"), Some("real"), None).await?;
+            // Root invocation: specter faker [-n <count>] [--card] [--table] [--csv]
+            run_generate(args).await?;
         }
     }
 
     Ok(())
 }
 
-pub async fn run_generate(
-    count: u32,
-    gender: Option<&str>,
-    nat: Option<&str>,
-    avatar: Option<&str>,
-    domain: Option<&str>,
-    format: &str,
-    output: Option<PathBuf>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let gender_opt = gender.filter(|&g| g != "all");
-    let nat_opt = nat.filter(|&n| n != "all");
+pub async fn run_generate(args: FakerGenerateArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let gender_opt = args.gender.as_deref().filter(|&g| g != "all");
+    let nat_opt = args.nat.as_deref().filter(|&n| n != "all");
 
-    let data = generate_users(count, gender_opt, nat_opt, avatar, domain);
+    let data = generate_users(
+        args.count,
+        gender_opt,
+        nat_opt,
+        args.avatar.as_deref(),
+        args.domain.as_deref(),
+    );
     let users = data["results"].as_array().expect("results should be an array");
 
-    match format.to_lowercase().as_str() {
-        "json" => {
-            let json_str = to_json(users, true)?;
-            if let Some(ref path) = output {
-                fs::write(path, json_str.as_bytes())?;
-                println!(
-                    "{} Exported {} identity profile(s) to {:?}",
-                    badge_online("SUCCESS"),
-                    users.len(),
-                    path
-                );
-            } else {
-                println!("{}", json_str);
-            }
-        }
-        "csv" => {
-            let csv_str = to_csv(users);
-            if let Some(ref path) = output {
-                fs::write(path, csv_str.as_bytes())?;
-                println!(
-                    "{} Exported {} identity profile(s) to {:?}",
-                    badge_online("SUCCESS"),
-                    users.len(),
-                    path
-                );
-            } else {
-                println!("{}", csv_str);
-            }
-        }
+    let format_lower = args.format.to_lowercase();
+    let effective_format = if args.card {
+        "card"
+    } else if args.table {
+        "table"
+    } else if args.csv {
+        "csv"
+    } else {
+        format_lower.as_str()
+    };
+
+    match effective_format {
         "card" => {
             for u in users {
                 render_single_card(u);
             }
         }
-        _ => {
-            // Default: Modern Table
+        "table" => {
             let columns = vec![
                 Column { title: "STT".to_string(), min_width: 4, align_right: false },
                 Column { title: "Họ và tên".to_string(), min_width: 20, align_right: false },
@@ -125,8 +107,85 @@ pub async fn run_generate(
             );
             println!("{}", table.with_footer(footer).render());
         }
+        "csv" => {
+            let csv_str = to_csv(users);
+            if let Some(ref path) = args.output {
+                fs::write(path, csv_str.as_bytes())?;
+                println!(
+                    "{} Exported {} identity profile(s) to {:?}",
+                    badge_online("SUCCESS"),
+                    users.len(),
+                    path
+                );
+            } else {
+                println!("{}", csv_str);
+            }
+        }
+        _ => {
+            // Default: pure JSON matching RandomUser standard {"results": [...], "info": {...}}
+            let json_str = to_json_value(&data, true)?;
+            if let Some(ref path) = args.output {
+                fs::write(path, json_str.as_bytes())?;
+                println!(
+                    "{} Exported {} identity profile(s) to {:?}",
+                    badge_online("SUCCESS"),
+                    users.len(),
+                    path
+                );
+            } else {
+                println!("{}", json_str);
+            }
+        }
     }
 
+    Ok(())
+}
+
+pub fn run_nationalities(table: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let list = list_nationality_metadata();
+    if table {
+        let columns = vec![
+            Column { title: "Code".to_string(), min_width: 6, align_right: false },
+            Column { title: "Country".to_string(), min_width: 18, align_right: false },
+            Column { title: "ID Type".to_string(), min_width: 12, align_right: false },
+            Column { title: "Phone Prefix".to_string(), min_width: 14, align_right: false },
+            Column { title: "Timezone".to_string(), min_width: 10, align_right: false },
+            Column { title: "Address Hierarchy".to_string(), min_width: 32, align_right: false },
+        ];
+        let mut t = Table::new(columns);
+        for item in &list {
+            t.add_row(vec![
+                item.code.to_string(),
+                item.country.to_string(),
+                item.id_type.to_string(),
+                item.phone_prefix.to_string(),
+                item.timezone.to_string(),
+                item.address_hierarchy.to_string(),
+            ]);
+        }
+        let footer = format!("{} supported nationality provider(s)", list.len());
+        println!("{}", t.with_footer(footer).render());
+    } else {
+        let json_str = to_json_value(&list, true)?;
+        println!("{}", json_str);
+    }
+    Ok(())
+}
+
+pub fn run_id(nat: Option<&str>, raw: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let nat_opt = nat.filter(|&n| n != "all");
+    let id_val = generate_id_only(nat_opt);
+
+    if raw {
+        if let Some(val_str) = id_val["value"].as_str() {
+            println!("{}", val_str);
+        } else {
+            println!("{}", id_val["value"]);
+        }
+    } else {
+        let json_str = to_json_value(&id_val, true)?;
+        println!("{}", json_str);
+    }
     Ok(())
 }
 
@@ -135,6 +194,7 @@ pub async fn run_card(
     nat: Option<&str>,
     avatar: Option<&str>,
     domain: Option<&str>,
+    format: crate::ui::OutputFormat,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let gender_opt = gender.filter(|&g| g != "all");
     let nat_opt = nat.filter(|&n| n != "all");
@@ -142,49 +202,22 @@ pub async fn run_card(
     let data = generate_users(1, gender_opt, nat_opt, avatar, domain);
     let users = data["results"].as_array().expect("results is array");
     if let Some(user) = users.first() {
-        render_single_card(user);
+        if format.is_card() {
+            render_single_card(user);
+        } else {
+            let json_str = to_json_value(user, true)?;
+            println!("{}", json_str);
+        }
     }
 
     Ok(())
 }
 
-pub fn manage_config(edit: bool, show: bool, set_domain: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
-    let mut config = FakerConfig::load();
-    let config_path = FakerConfig::config_path();
-
+pub fn manage_config(args: &[String], edit: bool, show: bool, set_domain: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(domain) = set_domain {
-        let clean = tuquet_faker::config::clean_domain(domain);
-        if !clean.is_empty() {
-            config.default_domain = clean.clone();
-            if !config.email_domains.contains(&clean) {
-                config.email_domains.insert(0, clean);
-            }
-            config.save()?;
-            println!("{} Default email domain set to: \x1b[1;36m@{}\x1b[0m", badge_online("SAVED"), config.default_domain);
-        }
+        return crate::config::ConfigController::set_key("faker", "default_domain", domain);
     }
-
-    if edit {
-        crate::config::ConfigRegistry::open_in_editor(&config_path)?;
-    } else if show || set_domain.is_some() {
-        println!();
-        let mut card = Card::new("FAKER CONFIGURATION");
-        card.with_badge(badge_online("SSOT READY"));
-        card.with_min_width(70);
-        card.add_kv("Config File", config_path.to_string_lossy().to_string());
-        card.add_kv("Default Domain", format!("@{}", config.default_domain));
-        card.add_kv("Domain Pool", config.email_domains.iter().map(|d| format!("@{}", d)).collect::<Vec<_>>().join(", "));
-        card.add_kv("Email Pattern", &config.email_pattern);
-        card.add_kv("Default Locale", &config.default_nat);
-        card.add_kv("Default Avatar", &config.default_avatar);
-        card.with_footer("Tip: edit with 'specter faker config --edit' or quick set via '-d <domain>'");
-        card.print();
-        println!();
-    } else {
-        println!("{}", config_path.display());
-    }
-
-    Ok(())
+    crate::config::ConfigController::handle_dispatch("faker", args, edit, show)
 }
 
 fn render_single_card(u: &serde_json::Value) {

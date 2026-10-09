@@ -3,7 +3,10 @@ use super::get_flag_value;
 pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "status" => {
-            crate::commands::browser::handle(crate::cli::BrowserCommands::Status).await?;
+            let format = super::parse_format(args);
+            crate::commands::browser::handle(crate::cli::BrowserCommands::Status {
+                format: format.into(),
+            }).await?;
         }
         "install" => {
             let force = args.contains(&"--force");
@@ -14,7 +17,10 @@ pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn st
             crate::commands::browser::handle(crate::cli::BrowserCommands::Search { remote: false }).await?;
         }
         "list" | "ls" => {
-            crate::commands::browser::handle(crate::cli::BrowserCommands::List).await?;
+            let format = super::parse_format(args);
+            crate::commands::browser::handle(crate::cli::BrowserCommands::List {
+                format: format.into(),
+            }).await?;
         }
         "use" => {
             if let Some(target) = args.first() {
@@ -80,21 +86,53 @@ pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn st
             crate::commands::browser::handle_ext(ext_subcmd, "chrome", None).await?;
         }
         "launch" | "start" | "open" => {
-            let profile = args.iter().find(|&&a| !a.starts_with('-')).copied().unwrap_or("default").to_string();
+            let positional_args: Vec<&str> = args.iter().filter(|&&a| !a.starts_with('-')).copied().collect();
+            let target = positional_args.first().copied();
+            let url_arg = positional_args.get(1).copied();
+
+            let (profile, url) = match (target, url_arg) {
+                (Some(t), Some(u)) => (t.to_string(), Some(u.to_string())),
+                (Some(t), None) => {
+                    if t.starts_with("http://")
+                        || t.starts_with("https://")
+                        || t.starts_with("about:")
+                        || t.starts_with("chrome://")
+                        || t.starts_with("file://")
+                    {
+                        ("default".to_string(), Some(t.to_string()))
+                    } else {
+                        (t.to_string(), None)
+                    }
+                }
+                _ => ("default".to_string(), None),
+            };
+
+            let cdp = args.contains(&"--cdp");
             let port = get_flag_value(args, "-p", "--port")
                 .and_then(|p| p.parse::<u16>().ok())
-                .unwrap_or(9222);
+                .unwrap_or(0);
+            let foreground = args.contains(&"-f") || args.contains(&"--foreground");
             let headless = args.contains(&"--headless");
-            let url = get_flag_value(args, "-u", "--url").map(|s| s.to_string());
             let detach = args.contains(&"-d") || args.contains(&"--detach");
-            let proxy = get_flag_value(args, "-x", "--proxy").map(|s| s.to_string());
-            let mode = get_flag_value(args, "-m", "--mode").unwrap_or("driver").to_string();
+            let proxy = get_flag_value(args, "--proxy", "--proxy").map(|s| s.to_string());
+            let mode = get_flag_value(args, "-m", "--mode").unwrap_or("extension").to_string();
             let no_cdp = args.contains(&"--no-cdp");
+            let force = args.contains(&"--force");
             let skip_proxy_check = args.contains(&"--skip-proxy-check");
-            crate::commands::browser::launch_browser(profile, port, headless, url, detach, proxy, mode, no_cdp, skip_proxy_check).await?;
+            crate::commands::browser::launch_browser(profile, cdp, port, foreground, headless, url, detach, proxy, mode, no_cdp, force, skip_proxy_check).await?;
+        }
+        "ps" | "running" | "processes" => {
+            let format = super::parse_format(args);
+            crate::commands::browser::handle_ps(format).await?;
+        }
+        "stop" | "kill" | "close" => {
+            let profile = args.iter().find(|&&a| !a.starts_with('-')).map(|s| s.to_string());
+            let all = args.contains(&"-a") || args.contains(&"--all");
+            let force = args.contains(&"-f") || args.contains(&"--force");
+            crate::commands::browser::handle_stop(profile, all, force).await?;
         }
         "verify" | "demo" | "live" => {
-            let url = get_flag_value(args, "-u", "--url").map(|s| s.to_string());
+            let url = args.iter().find(|&&a| !a.starts_with('-')).map(|s| s.to_string());
             let headless = args.contains(&"--headless");
             let timeout = get_flag_value(args, "-t", "--timeout")
                 .and_then(|t| t.parse::<u64>().ok())
@@ -106,7 +144,8 @@ pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn st
             let sub_args = if args.len() > 1 { &args[1..] } else { &[] };
             match subcmd {
                 None | Some("list") | Some("ls") => {
-                    crate::commands::browser::handle_profile(Some(crate::cli::ProfileCommands::List)).await?;
+                    let format = super::parse_format(sub_args);
+                    crate::commands::browser::handle_profile(Some(crate::cli::ProfileCommands::List { format: format.into() })).await?;
                 }
                 Some("create") | Some("new") | Some("add") => {
                     let name = sub_args.iter().find(|&&a| !a.starts_with('-')).copied();
@@ -134,7 +173,8 @@ pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn st
                 }
                 Some("inspect") | Some("show") | Some("info") => {
                     if let Some(id) = sub_args.first() {
-                        crate::commands::browser::handle_profile(Some(crate::cli::ProfileCommands::Inspect { id: id.to_string() })).await?;
+                        let format = super::parse_format(sub_args);
+                        crate::commands::browser::handle_profile(Some(crate::cli::ProfileCommands::Inspect { id: id.to_string(), format: format.into() })).await?;
                     } else {
                         println!("Usage: profile inspect <id>");
                     }
@@ -218,7 +258,12 @@ pub async fn dispatch_browser(cmd: &str, args: &[&str]) -> Result<(), Box<dyn st
         "config" => {
             let edit = args.contains(&"--edit") || args.contains(&"-e");
             let show = args.contains(&"--show") || args.contains(&"-s");
-            crate::commands::browser::manage_config(edit, show)?;
+            let positional: Vec<String> = args
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .map(|s| s.to_string())
+                .collect();
+            crate::commands::browser::manage_config(&positional, edit, show)?;
         }
         other => {
             println!("Unknown browser command '{}'. Type 'help' to see valid commands.", other);

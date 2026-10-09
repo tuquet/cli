@@ -1,11 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Tuquet Automa Core Bridge API",
-    "description": "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for Automa WebExtension.",
+    "title": "Specter CLI & Core Bridge API",
+    "description": "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for the Specter Ecosystem.",
     "contact": {
-      "name": "Tuquet Ecosystem",
-      "url": "https://github.com/tuquet/tuquet-automa"
+      "name": "Specter Ecosystem",
+      "url": "https://github.com/tuquet/cli"
     },
     "license": {
       "name": "MIT"
@@ -1338,7 +1338,7 @@
           "Lint"
         ],
         "summary": "Validate and lint Automa assets (Bridge Stub)",
-        "description": "Bridge passthrough stub. In the Tuquet architecture, workflow graph validation is performed client-side by Web Studio and runtime blocks are executed by the browser worker.",
+        "description": "Bridge passthrough stub. In the Specter architecture, workflow graph validation is performed client-side by Web Studio and runtime blocks are executed by the browser worker.",
         "operationId": "lint_workflow",
         "requestBody": {
           "content": {
@@ -2595,7 +2595,7 @@
         "tags": [
           "System"
         ],
-        "summary": "Get Tuquet Cloud reporting and device enrollment status",
+        "summary": "Get Specter Cloud reporting and device enrollment status",
         "description": "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
         "operationId": "get_cloud_status",
         "responses": {
@@ -2617,8 +2617,8 @@
         "tags": [
           "System"
         ],
-        "summary": "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
-        "description": "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
+        "summary": "Trigger immediate inventory and heartbeat sync to Specter Cloud",
+        "description": "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Specter Cloud central hub.",
         "operationId": "trigger_cloud_sync",
         "responses": {
           "200": {
@@ -3088,7 +3088,7 @@
               "string",
               "null"
             ],
-            "description": "Connected Tuquet Cloud URL"
+            "description": "Connected Specter Cloud URL"
           },
           "deviceId": {
             "type": [

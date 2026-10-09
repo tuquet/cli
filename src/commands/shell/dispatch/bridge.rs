@@ -4,7 +4,8 @@ use crate::commands::shell::{print_scope_help, ShellScope};
 pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "status" => {
-            crate::commands::bridge::show_status().await?;
+            let format = super::parse_format(args);
+            crate::commands::bridge::show_status(format).await?;
         }
         "start" => {
             let start_http = args.contains(&"--http");
@@ -58,7 +59,12 @@ pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         "config" => {
             let edit = args.contains(&"--edit") || args.contains(&"-e");
             let show = args.contains(&"--show") || args.contains(&"-s");
-            crate::commands::bridge::manage_config(edit, show)?;
+            let positional: Vec<String> = args
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .map(|s| s.to_string())
+                .collect();
+            crate::commands::bridge::manage_config(&positional, edit, show)?;
         }
         "help" => {
             print_scope_help(ShellScope::Bridge);

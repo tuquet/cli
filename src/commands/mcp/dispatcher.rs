@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 use super::protocol::JsonRpcResponse;
-use super::tools::{faker, runner, status, tree, workflow};
+use super::tools::{faker, inbox, runner, status, tree, workflow};
 
 pub async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> JsonRpcResponse {
     let p = match params {
@@ -24,6 +24,8 @@ pub async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> Json
         "specter_browser_status" => status::execute_specter_browser_status().await,
         "specter_tree" => tree::execute_specter_tree(&arguments).await,
         "specter_faker_generate" => faker::execute_specter_faker_generate(&arguments).await,
+        "specter_inbox_otp" => inbox::execute_specter_inbox_otp(&arguments).await,
+        "specter_inbox_status" => inbox::execute_specter_inbox_status().await,
         other => {
             return JsonRpcResponse::err(id, -32601, format!("Tool not found: {}", other));
         }

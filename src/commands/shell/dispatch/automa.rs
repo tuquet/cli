@@ -19,8 +19,9 @@ pub async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             }
         }
         "list" => {
-            let search = args.first().map(|s| s.to_string());
-            crate::commands::automa::list_workflows(search, false, false).await?;
+            let format = super::parse_format(args);
+            let search = args.iter().find(|a| !a.starts_with('-')).map(|s| s.to_string());
+            crate::commands::automa::list_workflows(search, false, false, format).await?;
         }
         "inspect" => {
             if args.is_empty() {
@@ -63,7 +64,12 @@ pub async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         "config" => {
             let edit = args.contains(&"--edit") || args.contains(&"-e");
             let show = args.contains(&"--show") || args.contains(&"-s");
-            crate::commands::automa::manage_config(edit, show)?;
+            let positional: Vec<String> = args
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .map(|s| s.to_string())
+                .collect();
+            crate::commands::automa::manage_config(&positional, edit, show)?;
         }
         other => {
             println!("Unknown automa command '{}'. Type 'help' to see valid commands.", other);

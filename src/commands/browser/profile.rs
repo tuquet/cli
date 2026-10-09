@@ -7,8 +7,54 @@ pub async fn handle_profile(
     let base_dir = crate::core::browser::resolve_data_dir();
 
     match command {
-        None | Some(ProfileCommands::List) => {
+        None => {
             let profiles = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
+            let serialized = profiles
+                .iter()
+                .map(|p| {
+                    let bytes = p.calculate_disk_size(&base_dir);
+                    serde_json::json!({
+                        "id": p.id,
+                        "name": p.name,
+                        "seed": p.fingerprint_seed,
+                        "os": p.os_platform,
+                        "browser": p.browser_brand,
+                        "cores": p.hardware_concurrency,
+                        "ram_gb": p.device_memory_gb,
+                        "proxy": p.proxy,
+                        "disk_bytes": bytes,
+                        "sandbox_path": p.get_sandbox_dir(&base_dir).display().to_string(),
+                    })
+                })
+                .collect::<Vec<_>>();
+            println!("{}", serde_json::to_string_pretty(&serialized)?);
+            Ok(())
+        }
+        Some(ProfileCommands::List { format }) => {
+            let profiles = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
+            if format.resolve().is_json() {
+                let serialized = profiles
+                    .iter()
+                    .map(|p| {
+                        let bytes = p.calculate_disk_size(&base_dir);
+                        serde_json::json!({
+                            "id": p.id,
+                            "name": p.name,
+                            "seed": p.fingerprint_seed,
+                            "os": p.os_platform,
+                            "browser": p.browser_brand,
+                            "cores": p.hardware_concurrency,
+                            "ram_gb": p.device_memory_gb,
+                            "proxy": p.proxy,
+                            "disk_bytes": bytes,
+                            "sandbox_path": p.get_sandbox_dir(&base_dir).display().to_string(),
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                println!("{}", serde_json::to_string_pretty(&serialized)?);
+                return Ok(());
+            }
+
             println!();
             let mut header_card = Card::new("ANTIDETECT BROWSER PROFILES");
             header_card.with_badge(badge_online(&format!("{} REGISTERED", profiles.len())));
@@ -101,7 +147,7 @@ pub async fn handle_profile(
             println!();
             Ok(())
         }
-        Some(ProfileCommands::Inspect { id }) => {
+        Some(ProfileCommands::Inspect { id, format }) => {
             let profile = match crate::core::browser::BrowserProfile::load(&id, &base_dir) {
                 Ok(p) => p,
                 Err(e) => {
@@ -109,6 +155,11 @@ pub async fn handle_profile(
                     return Err(e.into());
                 }
             };
+
+            if format.resolve().is_json() {
+                println!("{}", serde_json::to_string_pretty(&profile)?);
+                return Ok(());
+            }
 
             let bytes = profile.calculate_disk_size(&base_dir);
             let size_str = if bytes > 1024 * 1024 {

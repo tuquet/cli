@@ -592,7 +592,7 @@ pub async fn start_browser(
 
     // Edge Cases 1.1, 1.2, 2.1, 2.2: Resolve profile extension paths with JIT provisioning and safe ordering
     let profile_ext_ids = db_extensions.unwrap_or_else(|| vec!["automa".to_string()]);
-    let resolved_ext_paths = tuquet_browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
+    let resolved_ext_paths = specter_browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
     let mut ext_path_strings: Vec<String> = resolved_ext_paths
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())

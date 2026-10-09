@@ -23,7 +23,9 @@ pub fn is_valid_runner_name(raw_name: &str) -> bool {
     base_name == "specter" || base_name == "runner"
 }
 
-pub async fn check_status(url: &str, json_output: bool) -> Result<(), Box<dyn std::error::Error>> {
+use crate::ui::{respond_with, OutputFormat};
+
+pub async fn check_status(url: &str, format: OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
     let target = format!("{}/api/v1/health", url.trim_end_matches('/'));
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_millis(1500))
@@ -31,89 +33,82 @@ pub async fn check_status(url: &str, json_output: bool) -> Result<(), Box<dyn st
 
     match client.get(&target).send().await {
         Ok(res) if res.status().is_success() => {
-            if json_output {
-                let out = serde_json::json!({
-                    "status": "online",
-                    "code": 200,
-                    "endpoint": url,
-                    "health_route": target,
-                    "driver": "mv3_extension_worker"
-                });
-                println!("{}", serde_json::to_string(&out)?);
-                return Ok(());
-            }
-            let rows = vec![
-                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_online("ONLINE")),
-                crate::ui::TabularRow::new("Health Route", &target, "HTTP Keepalive (200)", crate::ui::badge_online("HEALTHY")),
-                crate::ui::TabularRow::new("Worker Driver", "mv3_extension", "Blink Automation Engine", crate::ui::badge_online("READY")),
-            ];
-            let card = crate::ui::create_tabular_card(
-                "RUNNER WORKER ENGINE",
-                Some(crate::ui::badge_online("ONLINE (HTTP 200)")),
-                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
-                &rows,
-                Some("Worker daemon is ready to receive and execute jobs"),
-                72,
-            );
-            println!();
-            card.print();
-            println!();
+            let out = serde_json::json!({
+                "status": "online",
+                "code": 200,
+                "endpoint": url,
+                "health_route": target,
+                "driver": "mv3_extension_worker"
+            });
+            respond_with(format, &out, |_| {
+                let rows = vec![
+                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_online("ONLINE")),
+                    crate::ui::TabularRow::new("Health Route", &target, "HTTP Keepalive (200)", crate::ui::badge_online("HEALTHY")),
+                    crate::ui::TabularRow::new("Worker Driver", "mv3_extension", "Blink Automation Engine", crate::ui::badge_online("READY")),
+                ];
+                let card = crate::ui::create_tabular_card(
+                    "RUNNER WORKER ENGINE",
+                    Some(crate::ui::badge_online("ONLINE (HTTP 200)")),
+                    ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                    &rows,
+                    Some("Worker daemon is ready to receive and execute jobs"),
+                    72,
+                );
+                println!();
+                card.print();
+                println!();
+            })
         }
         Ok(res) => {
-            if json_output {
-                let out = serde_json::json!({
-                    "status": "error",
-                    "code": res.status().as_u16(),
-                    "endpoint": url,
-                    "health_route": target
-                });
-                println!("{}", serde_json::to_string(&out)?);
-                return Ok(());
-            }
-            let rows = vec![
-                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_error(&format!("HTTP {}", res.status()))),
-                crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_warn("DEGRADED")),
-            ];
-            let card = crate::ui::create_tabular_card(
-                "RUNNER WORKER ENGINE",
-                Some(crate::ui::badge_error(&format!("HTTP {}", res.status()))),
-                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
-                &rows,
-                Some("Server responded with error status. Inspect runner logs."),
-                72,
-            );
-            println!();
-            card.print();
-            println!();
+            let out = serde_json::json!({
+                "status": "error",
+                "code": res.status().as_u16(),
+                "endpoint": url,
+                "health_route": target
+            });
+            respond_with(format, &out, |_| {
+                let rows = vec![
+                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_error(&format!("HTTP {}", res.status()))),
+                    crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_warn("DEGRADED")),
+                ];
+                let card = crate::ui::create_tabular_card(
+                    "RUNNER WORKER ENGINE",
+                    Some(crate::ui::badge_error(&format!("HTTP {}", res.status()))),
+                    ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                    &rows,
+                    Some("Server responded with error status. Inspect runner logs."),
+                    72,
+                );
+                println!();
+                card.print();
+                println!();
+            })
         }
         Err(e) => {
-            if json_output {
-                let out = serde_json::json!({
-                    "status": "offline",
-                    "endpoint": url,
-                    "error": format!("{}", e)
-                });
-                println!("{}", serde_json::to_string(&out)?);
-                return Ok(());
-            }
-            let rows = vec![
-                crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_offline("OFFLINE")),
-                crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_offline("UNREACHABLE")),
-            ];
-            let card = crate::ui::create_tabular_card(
-                "RUNNER WORKER ENGINE",
-                Some(crate::ui::badge_offline("OFFLINE")),
-                ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
-                &rows,
-                Some("Start local daemon with 'specter runner start -d'"),
-                72,
-            );
-            println!();
-            card.print();
-            println!();
+            let out = serde_json::json!({
+                "status": "offline",
+                "endpoint": url,
+                "error": format!("{}", e)
+            });
+            respond_with(format, &out, |_| {
+                let rows = vec![
+                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_offline("OFFLINE")),
+                    crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_offline("UNREACHABLE")),
+                ];
+                let card = crate::ui::create_tabular_card(
+                    "RUNNER WORKER ENGINE",
+                    Some(crate::ui::badge_offline("OFFLINE")),
+                    ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
+                    &rows,
+                    Some("Start local daemon with 'specter runner start -d'"),
+                    72,
+                );
+                println!();
+                card.print();
+                println!();
+            })
         }
     }
-    Ok(())
 }
 
 pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> {

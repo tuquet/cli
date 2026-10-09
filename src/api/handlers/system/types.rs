@@ -88,6 +88,16 @@ pub struct CloudStatusResponse {
     pub machine_fingerprint: String,
     /// Heartbeat interval in seconds
     pub heartbeat_interval_secs: u64,
+    /// Authenticated operator email
+    pub user_email: Option<String>,
+    /// Active tenant workspace ID
+    pub tenant_id: Option<String>,
+    /// Active tenant workspace vanity slug
+    pub tenant_slug: Option<String>,
+    /// Active tenant workspace display name
+    pub tenant_name: Option<String>,
+    /// Operator role within active workspace
+    pub tenant_role: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -112,12 +122,24 @@ pub struct CloudSyncResponse {
 #[serde(rename_all = "camelCase")]
 /// Request payload to enroll and authenticate runner with Specter Cloud
 pub struct CloudLoginRequest {
-    /// Specter Cloud Base URL (e.g. "http://127.0.0.1:54321")
+    /// Specter Cloud Base URL (e.g. "https://dswhacsoaxgpfnkaxnhz.supabase.co")
     pub cloud_url: Option<String>,
     /// Organization / Tenant enrollment token or user JWT
     pub token: Option<String>,
     /// Optional friendly device name
     pub name: Option<String>,
+    /// Operator email for Supabase GoTrue authentication
+    pub email: Option<String>,
+    /// Operator password
+    pub password: Option<String>,
+    /// Request One-Time Passcode (OTP)
+    pub otp: Option<bool>,
+    /// Pre-supplied 6-digit OTP code
+    pub code: Option<String>,
+    /// Pre-select target workspace slug or ID
+    pub tenant: Option<String>,
+    /// Optional custom Supabase API key
+    pub api_key: Option<String>,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -132,6 +154,14 @@ pub struct CloudLoginResponse {
     pub device_id: String,
     /// Tenant or organization ID
     pub tenant_id: Option<String>,
+    /// Active tenant slug
+    pub tenant_slug: Option<String>,
+    /// Active tenant name
+    pub tenant_name: Option<String>,
+    /// Operator role in active tenant
+    pub tenant_role: Option<String>,
+    /// Operator email
+    pub user_email: Option<String>,
     /// Device name
     pub name: String,
     /// Status or error message
