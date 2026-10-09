@@ -32,7 +32,7 @@ Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục 
 | **Pillar 1** | Cài đặt & Khởi tạo Môi trường | `specter doctor`, `specter status` | Môi trường sạch, cấu trúc `~/.specter/` tự sinh đúng 5 domain |
 | **Pillar 2** | Nhận diện & Xác thực Đám mây | `specter runner enroll`, `specter cloud whoami` | Máy nhận diện được hardware GUID và liên kết Supabase Tenant |
 | **Pillar 3** | Cầu nối Mạng & Proxy Mesh | `specter bridge start`, `specter proxy probe` | Tunnel SOCKS5 `127.0.0.1:1080` mở, kiểm tra Egress IP thành công |
-| **Pillar 4** | Trình duyệt C++ & Quản lý Hồ sơ | `specter browser install`, `specter profile pack` | Nhân Chromium C++ cài đặt, nén delta session `.tar.zst` < 1KB |
+| **Pillar 4** | Trình duyệt C++ & Quản lý Hồ sơ | `specter browser install`, `specter browser profile pack` | Nhân Chromium C++ cài đặt, nén delta session `.tar.zst` < 1KB |
 | **Pillar 5** | Kiểm định Vân tay Stealth Trực quan | `specter browser verify` | Vượt Cloudflare Turnstile, vẽ quỹ đạo Bézier chuột tự nhiên |
 | **Pillar 6** | Tự động hóa Động cơ kép | `specter automa run <wf.json>` | Chạy workflow headless/headful, hỗ trợ Extension mode & CDP |
 | **Pillar 7** | Điều phối Cloud Fleet Mesh | `specter runner worker --cloud-profile` | Thuê độc quyền (Acquire) -> Giải nén delta -> Chạy -> Trả lease (Release) |
@@ -143,7 +143,7 @@ specter browser install
 
 #### Bước 4.2: Tạo Hồ Sơ Trình Duyệt Ẩn Danh Cục Bộ
 ```powershell
-specter profile create --name "Shopee-Seller-VN" --os windows --cores 8 --ram 16 --timezone "Asia/Ho_Chi_Minh" --locale "vi-VN"
+specter browser profile create --name "Shopee-Seller-VN" --os windows --cores 8 --ram 16 --timezone "Asia/Ho_Chi_Minh" --locale "vi-VN"
 ```
 - **Kỳ vọng:**
   - Sinh PRNG seed phần cứng duy nhất (Deterministic Hardware).
@@ -151,7 +151,7 @@ specter profile create --name "Shopee-Seller-VN" --os windows --cores 8 --ram 16
 
 #### Bước 4.3: Đóng Gói Hồ Sơ Delta Snapshot (`.tar.zst`)
 ```powershell
-specter profile pack Shopee-Seller-VN
+specter browser profile pack Shopee-Seller-VN
 ```
 - **Kỳ vọng:**
   - Tự động lọc bỏ các file rác/cache không cần thiết (GPUCache, Code Cache, Crashpad).
@@ -160,7 +160,7 @@ specter profile pack Shopee-Seller-VN
 
 #### Bước 4.4: Kiểm Tra Khôi Phục Hồ Sơ Từ Snapshot (Unpack)
 ```powershell
-specter profile unpack Shopee-Seller-VN
+specter browser profile unpack Shopee-Seller-VN
 ```
 - **Kỳ vọng:** Xác thực SHA-256 thành công và giải nén nguyên vẹn các bảng cookie LevelDB.
 
@@ -209,7 +209,7 @@ specter automa run fixtures/google_search.workflow.json -p keyword="Tuquet Steal
 
 #### Bước 7.1: Tra cứu Đội ngũ Trình duyệt Đám mây (Fleet Inventory)
 ```powershell
-specter profile cloud list
+specter browser profile cloud list
 ```
 - **Kỳ vọng:**
   - Kết nối Supabase qua Smart Proxy Auto-detect (cổng 1080/8118 nếu có).
@@ -217,7 +217,7 @@ specter profile cloud list
 
 #### Bước 7.2: Thuê Độc Quyền Hồ Sơ Đám Mây (Distributed Acquire)
 ```powershell
-specter profile cloud acquire c0000000-0000-0000-0000-000000000001
+specter browser profile cloud acquire c0000000-0000-0000-0000-000000000001
 ```
 - **Kỳ vọng:**
   - Khóa hàng cấp cơ sở dữ liệu (`FOR UPDATE`) gán cho thiết bị hiện tại.
@@ -227,7 +227,7 @@ specter profile cloud acquire c0000000-0000-0000-0000-000000000001
 
 #### Bước 7.3: Giải Phóng Hồ Sơ & Đẩy Delta Lên Đám Mây (Release & Sync)
 ```powershell
-specter profile cloud release c0000000-0000-0000-0000-000000000001
+specter browser profile cloud release c0000000-0000-0000-0000-000000000001
 ```
 - **Kỳ vọng:**
   - Tự động nén delta LevelDB của profile thành file `.tar.zst`.

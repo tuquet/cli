@@ -34,7 +34,7 @@
     "default_profile": {
       "type": "string",
       "default": "default",
-      "description": "Default browser profile name when omitted in 'specter launch'"
+      "description": "Default browser profile name when omitted in 'specter browser launch'"
     }
   }
 }
