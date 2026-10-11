@@ -68,7 +68,7 @@ Bên cạnh vai trò CLI & Scoped REPL Terminal, `specter` (cùng core crate `au
 - **Bảo Mật & Zero Secret Leakage**: Toàn bộ session tokens, refresh tokens và Tenant RLS được Rust quản lý trong secure local store (`~/.specter/system/`). Frontend không bao giờ tiếp xúc với secret keys.
 - **Full CORS cho Tauri & Extensions**: Cổng BFF đã cấu hình CORS cho phép các origin:
   - Tauri Native Desktop: `tauri://*`, `http://tauri.localhost`, `https://tauri.localhost`, `*://asset.localhost`
-  - Web Portal & Studio: `https://specter.tuquet.com`, `http://specter.tuquet.com`, `https://*.tuquet.com`, `https://automa-studio.vercel.app`
+  - Web Portal & Admin: `https://admin.tuquet.com`, `https://specter.tuquet.com`, `http://specter.tuquet.com`, `https://*.tuquet.com`, `https://automa-studio.vercel.app`
   - Browser Extensions: `chrome-extension://*`, `moz-extension://*`
   - Local Dev Servers: `http://localhost:*`, `http://127.0.0.1:*`
 

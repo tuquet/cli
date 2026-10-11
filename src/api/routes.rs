@@ -14,7 +14,7 @@ use crate::api::handlers::jobs::{
 use crate::api::handlers::system::{
     open_studio, kill_browsers, get_metrics, get_system_info,
     get_cloud_status, trigger_cloud_sync, cloud_login, cloud_logout,
-    get_tenants, switch_tenant
+    get_tenants, switch_tenant, start_desktop_auth, desktop_auth_callback, desktop_auth_callback_post
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::storage::{
@@ -61,6 +61,9 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::system::cloud_logout,
         crate::api::handlers::system::get_tenants,
         crate::api::handlers::system::switch_tenant,
+        crate::api::handlers::system::start_desktop_auth,
+        crate::api::handlers::system::desktop_auth_callback,
+        crate::api::handlers::system::desktop_auth_callback_post,
         crate::api::handlers::lint::lint_workflow,
         crate::api::handlers::storage::get_variables,
         crate::api::handlers::storage::add_variable,
@@ -207,6 +210,8 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/cloud/sync", post(trigger_cloud_sync))
         .route("/system/cloud/login", post(cloud_login))
         .route("/system/cloud/logout", post(cloud_logout))
+        .route("/system/cloud/auth/start", post(start_desktop_auth))
+        .route("/auth/callback", get(desktop_auth_callback).post(desktop_auth_callback_post))
         .route("/system/tenants", get(get_tenants))
         .route("/system/tenants/switch", post(switch_tenant))
         .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
@@ -273,7 +278,8 @@ pub fn create_router(state: crate::AppState) -> Router {
             },
         ))
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers(Any)
+        .allow_private_network(true);
 
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
@@ -334,6 +340,8 @@ mod tests {
             "https://specter.tuquet.com",
             "http://specter.tuquet.com",
             "https://app.tuquet.com",
+            "https://admin.tuquet.com",
+            "http://admin.tuquet.com",
             "http://localhost:5173",
             "http://127.0.0.1:8765",
             "chrome-extension://abcdefghijklmnop",
@@ -381,6 +389,8 @@ mod tests {
         let json_str = json_result.unwrap();
         assert!(json_str.contains("Specter CLI & Core Bridge API"));
         assert!(json_str.contains("/api/v1/system/tenants"));
+        assert!(json_str.contains("/api/v1/system/cloud/auth/start"));
+        assert!(json_str.contains("/api/v1/auth/callback"));
         assert!(json_str.contains("/api/v1/browsers"));
     }
 }

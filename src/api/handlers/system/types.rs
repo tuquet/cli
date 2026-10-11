@@ -177,3 +177,50 @@ pub struct CloudLogoutResponse {
     /// Confirmation message
     pub message: String,
 }
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "authUrl": "https://admin.tuquet.com/auth/desktop?state=xyz&port=8765&machine_name=DESKTOP-1",
+    "state": "xyz",
+    "port": 8765
+}))]
+/// Response descriptor containing Desktop SSO authorization URL
+pub struct DesktopAuthStartResponse {
+    /// Generated authorization URL on Tuquet Admin
+    pub auth_url: String,
+    /// CSRF state token
+    pub state: String,
+    /// Local loopback port
+    pub port: u16,
+}
+
+#[derive(Serialize, Deserialize, utoipa::IntoParams, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Parameters received by loopback auth callback (via Query or JSON body)
+pub struct DesktopAuthCallbackParams {
+    /// Delegation access token or JWT
+    pub token: Option<String>,
+    /// Long-lived refresh token for silent session renewal
+    pub refresh_token: Option<String>,
+    /// CSRF state token
+    pub state: Option<String>,
+    /// Selected Tenant / Workspace ID
+    pub tenant_id: Option<String>,
+    /// Machine hostname
+    pub machine_name: Option<String>,
+}
+
+#[derive(Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+/// Response returned after processing loopback auth callback
+pub struct DesktopAuthCallbackResponse {
+    /// Whether pairing succeeded
+    pub success: bool,
+    /// Confirmation message
+    pub message: String,
+    /// Authenticated user email
+    pub user_email: Option<String>,
+    /// Active tenant identifier
+    pub tenant_id: Option<String>,
+}
