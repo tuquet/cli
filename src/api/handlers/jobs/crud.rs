@@ -240,14 +240,14 @@ pub async fn get_active_jobs(
         ("job_id" = String, Path, description = "Unique job identifier")
     ),
     responses(
-        (status = 200, description = "Job terminated successfully"),
+        (status = 200, description = "Job terminated successfully", body = JobControlResponse),
         (status = 404, description = "Job not found or not active", body = crate::core::error::ApiErrorResponse)
     )
 )]
 pub async fn kill_job(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<Json<JobControlResponse>, AutomaError> {
     JobCoordinator::kill(&state, &job_id)
         .await
         .map_err(|e| match e {
@@ -256,7 +256,12 @@ pub async fn kill_job(
             }
             other => AutomaError::Internal(other.to_string()),
         })?;
-    Ok(StatusCode::OK)
+    Ok(Json(JobControlResponse {
+        success: true,
+        message: format!("Job '{}' terminated successfully", job_id),
+        job_id: job_id.to_string(),
+        status: "terminated".to_string(),
+    }))
 }
 
 #[utoipa::path(

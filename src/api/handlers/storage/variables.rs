@@ -62,6 +62,15 @@ pub async fn add_variable(
 ) -> Result<Json<StorageVariable>, AutomaError> {
     let db = state.db.lock().await;
     let res = db.storage().save_variable(&payload)?;
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "variable",
+        "action": "upsert",
+        "id": res.id.as_deref().unwrap_or_default(),
+        "name": res.name.as_deref().unwrap_or_default()
+    }).to_string());
+
     Ok(Json(res))
 }
 
@@ -76,7 +85,7 @@ pub async fn add_variable(
         ("id" = String, Path, description = "Variable ID or unique key")
     ),
     responses(
-        (status = 200, description = "Variable deleted successfully"),
+        (status = 200, description = "Variable deleted successfully", body = super::StorageActionResponse),
         (status = 404, description = "Variable not found", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Database deletion error", body = crate::core::error::ApiErrorResponse)
     )
@@ -84,8 +93,20 @@ pub async fn add_variable(
 pub async fn delete_variable(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomaError> {
     let db = state.db.lock().await;
     db.storage().delete_variable(&id)?;
-    Ok(StatusCode::OK)
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "variable",
+        "action": "delete",
+        "id": id
+    }).to_string());
+
+    Ok(Json(super::StorageActionResponse {
+        success: true,
+        id,
+        message: "Variable deleted successfully".to_string(),
+    }))
 }

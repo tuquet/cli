@@ -62,6 +62,15 @@ pub async fn add_credential(
 ) -> Result<Json<StorageCredential>, AutomaError> {
     let db = state.db.lock().await;
     let res = db.storage().save_credential(&payload)?;
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "credential",
+        "action": "upsert",
+        "id": res.id.as_deref().unwrap_or_default(),
+        "name": res.name.as_deref().unwrap_or_default()
+    }).to_string());
+
     Ok(Json(res))
 }
 
@@ -76,7 +85,7 @@ pub async fn add_credential(
         ("id" = String, Path, description = "Credential ID or unique key")
     ),
     responses(
-        (status = 200, description = "Credential deleted successfully"),
+        (status = 200, description = "Credential deleted successfully", body = super::StorageActionResponse),
         (status = 404, description = "Credential not found", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Database deletion error", body = crate::core::error::ApiErrorResponse)
     )
@@ -84,8 +93,20 @@ pub async fn add_credential(
 pub async fn delete_credential(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomaError> {
     let db = state.db.lock().await;
     db.storage().delete_credential(&id)?;
-    Ok(StatusCode::OK)
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "credential",
+        "action": "delete",
+        "id": id
+    }).to_string());
+
+    Ok(Json(super::StorageActionResponse {
+        success: true,
+        id,
+        message: "Credential deleted successfully".to_string(),
+    }))
 }

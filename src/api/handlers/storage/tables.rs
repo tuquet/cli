@@ -67,6 +67,18 @@ pub async fn add_table(
     let db = state.db.lock().await;
     db.tables().save_table(&payload)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+
+    let table_id = payload.id.clone().unwrap_or_default();
+    let table_name = payload.name.clone().unwrap_or_default();
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "table",
+        "action": "upsert",
+        "id": table_id,
+        "name": table_name
+    }).to_string());
+
     Ok(Json(payload))
 }
 
@@ -81,7 +93,7 @@ pub async fn add_table(
         ("id" = String, Path, description = "Unique table identifier")
     ),
     responses(
-        (status = 200, description = "Table and rows deleted successfully"),
+        (status = 200, description = "Table and rows deleted successfully", body = super::StorageActionResponse),
         (status = 404, description = "Table not found", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Database deletion error", body = crate::core::error::ApiErrorResponse)
     )
@@ -89,11 +101,23 @@ pub async fn add_table(
 pub async fn delete_table(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomaError> {
     let db = state.db.lock().await;
     db.tables().delete_table(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    Ok(StatusCode::OK)
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "table",
+        "action": "delete",
+        "id": id
+    }).to_string());
+
+    Ok(Json(super::StorageActionResponse {
+        success: true,
+        id,
+        message: "Table deleted successfully".to_string(),
+    }))
 }
 
 #[derive(Deserialize, IntoParams)]
@@ -193,6 +217,14 @@ pub async fn add_table_row(
     let db = state.db.lock().await;
     db.tables().add_table_row(&row_id, &table_id, &data_str)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+
+    let _ = state.tx.send(serde_json::json!({
+        "type": "storage_changed",
+        "entity": "table_row",
+        "action": "insert",
+        "tableId": table_id,
+        "id": row_id
+    }).to_string());
 
     Ok(Json(AddTableRowResponse { id: row_id, table_id }))
 }

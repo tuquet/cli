@@ -13,7 +13,8 @@ use crate::api::handlers::jobs::{
 };
 use crate::api::handlers::system::{
     open_studio, kill_browsers, get_metrics, get_system_info,
-    get_cloud_status, trigger_cloud_sync, cloud_login, cloud_logout
+    get_cloud_status, trigger_cloud_sync, cloud_login, cloud_logout,
+    get_tenants, switch_tenant
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::storage::{
@@ -58,6 +59,8 @@ use crate::api::handlers::ws::ws_handler;
         crate::api::handlers::system::trigger_cloud_sync,
         crate::api::handlers::system::cloud_login,
         crate::api::handlers::system::cloud_logout,
+        crate::api::handlers::system::get_tenants,
+        crate::api::handlers::system::switch_tenant,
         crate::api::handlers::lint::lint_workflow,
         crate::api::handlers::storage::get_variables,
         crate::api::handlers::storage::add_variable,
@@ -99,7 +102,7 @@ use crate::api::handlers::ws::ws_handler;
     info(
         title = "Specter CLI & Core Bridge API",
         version = "1.0.0",
-        description = "Lightweight native process launcher, WebSocket event hub, and SQLite storage bridge for the Specter Ecosystem.",
+        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Specter Ecosystem.",
         contact(
             name = "Specter Ecosystem",
             url = "https://github.com/tuquet/cli"
@@ -110,6 +113,64 @@ use crate::api::handlers::ws::ws_handler;
     ),
     servers(
         (url = "http://127.0.0.1:8765", description = "Local Daemon Bridge Server")
+    ),
+    components(
+        schemas(
+            crate::core::error::ApiErrorResponse,
+            crate::api::handlers::health::HealthResponse,
+            crate::api::handlers::system::TenantListResponse,
+            crate::api::handlers::system::SwitchTenantRequest,
+            crate::api::handlers::system::SwitchTenantResponse,
+            crate::infrastructure::cloud::TenantInfo,
+            crate::api::handlers::system::CloudStatusResponse,
+            crate::api::handlers::system::CloudSyncResponse,
+            crate::api::handlers::system::CloudLoginRequest,
+            crate::api::handlers::system::CloudLoginResponse,
+            crate::api::handlers::system::CloudLogoutResponse,
+            crate::api::handlers::system::SystemMetricsResponse,
+            crate::api::handlers::system::RunnerIdentityResponse,
+            crate::api::handlers::system::SystemResponse,
+            crate::api::handlers::browsers::BrowserResponse,
+            crate::api::handlers::browsers::CreateBrowserRequest,
+            crate::api::handlers::browsers::CreateBrowserResponse,
+            crate::api::handlers::browsers::UpdateBrowserRequest,
+            crate::api::handlers::browsers::UpdateBrowserResponse,
+            crate::api::handlers::browsers::DeleteBrowserResponse,
+            crate::api::handlers::browsers::StartBrowserSessionRequest,
+            crate::api::handlers::browsers::StartBrowserSessionResponse,
+            crate::api::handlers::browsers::StopBrowserResponse,
+            crate::api::handlers::browsers::SetDefaultBrowserResponse,
+            crate::api::handlers::browsers::ImportCsvPayload,
+            crate::api::handlers::browsers::ImportCsvResponse,
+            crate::api::handlers::browsers::SideloadExtensionPayload,
+            crate::api::handlers::browsers::SideloadExtensionResponse,
+            crate::api::handlers::jobs::SubmitJobPayload,
+            crate::api::handlers::jobs::SubmitJobResponse,
+            crate::api::handlers::jobs::ActiveJobResponse,
+            crate::api::handlers::jobs::JobStatusResponse,
+            crate::api::handlers::jobs::JobControlResponse,
+            crate::api::handlers::jobs::JobLogPayload,
+            crate::api::handlers::history::HistoryActionResponse,
+            crate::api::handlers::lint::LintWorkflowRequest,
+            crate::api::handlers::lint::LintWorkflowResponse,
+            crate::api::handlers::lint::LintIssue,
+            crate::api::handlers::storage::StorageActionResponse,
+            crate::core::models::storage::StorageVariable,
+            crate::core::models::storage::StorageCredential,
+            crate::core::models::storage::StorageTable,
+            crate::core::models::storage::TableRow,
+            crate::api::handlers::storage::AddTableRowResponse,
+            crate::api::handlers::storage::AddTableRowPayload,
+            crate::api::handlers::storage::WorkflowStorageItem,
+            crate::api::handlers::storage::CreateWorkflowStorageRequest,
+            crate::api::handlers::storage::UpdateWorkflowStorageRequest,
+            crate::api::handlers::storage::DeleteWorkflowResponse,
+            crate::api::handlers::storage::RestoreBackupRequest,
+            crate::api::handlers::storage::RestoreBackupResponse,
+            crate::api::handlers::storage::ExportBackupResponse,
+            crate::core::models::settings::AppSettings,
+            crate::core::models::settings::UpdateAppSettingsRequest
+        )
     ),
     tags(
         (name = "Health", description = "System health check endpoints"),
@@ -128,7 +189,7 @@ async fn root_handler() -> impl IntoResponse {
     axum::Json(serde_json::json!({
         "service": "specter-cli",
         "version": env!("CARGO_PKG_VERSION"),
-        "role": "native-bridge-launcher",
+        "role": "embedded-bff-gateway",
         "status": "running",
         "docs": "/swagger-ui/",
         "api": "/api/v1"
@@ -146,6 +207,8 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/cloud/sync", post(trigger_cloud_sync))
         .route("/system/cloud/login", post(cloud_login))
         .route("/system/cloud/logout", post(cloud_logout))
+        .route("/system/tenants", get(get_tenants))
+        .route("/system/tenants/switch", post(switch_tenant))
         .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))
@@ -185,15 +248,25 @@ pub fn create_router(state: crate::AppState) -> Router {
         .allow_origin(tower_http::cors::AllowOrigin::predicate(
             |origin: &axum::http::HeaderValue, _parts: &axum::http::request::Parts| {
                 if let Ok(s) = origin.to_str() {
-                    s.starts_with("chrome-extension://")
-                        || s.starts_with("moz-extension://")
-                        || s.starts_with("http://localhost:")
-                        || s.starts_with("http://127.0.0.1:")
-                        || s == "https://automa-studio.vercel.app"
-                        || s == "https://tuquet.github.io"
-                        || s == "https://tuquet.com"
-                        || s == "https://docs.tuquet.com"
-                        || s == "https://specter.tuquet.com"
+                    let s_trimmed = s.trim_end_matches('/');
+                    let host_with_port = s_trimmed
+                        .strip_prefix("https://")
+                        .or_else(|| s_trimmed.strip_prefix("http://"))
+                        .unwrap_or(s_trimmed);
+                    let host = host_with_port.split(':').next().unwrap_or(host_with_port);
+
+                    s_trimmed.starts_with("chrome-extension://")
+                        || s_trimmed.starts_with("moz-extension://")
+                        || s_trimmed.starts_with("tauri://")
+                        || host == "localhost"
+                        || host == "127.0.0.1"
+                        || host == "tauri.localhost"
+                        || host == "asset.localhost"
+                        || host == "specter.tuquet.com"
+                        || host == "tuquet.com"
+                        || host.ends_with(".tuquet.com")
+                        || s_trimmed == "https://automa-studio.vercel.app"
+                        || s_trimmed == "https://tuquet.github.io"
                 } else {
                     false
                 }
@@ -243,5 +316,71 @@ mod tests {
 
         let res_root = app.clone().oneshot(Request::builder().uri("/").body(axum::body::Body::empty()).unwrap()).await.unwrap();
         assert_eq!(res_root.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_cors_origins() {
+        let state = create_test_state();
+        let app = create_router(state);
+
+        use tower::ServiceExt;
+        use axum::http::{Request, StatusCode};
+
+        let valid_origins = [
+            "tauri://localhost",
+            "http://tauri.localhost",
+            "https://tauri.localhost",
+            "http://asset.localhost",
+            "https://specter.tuquet.com",
+            "http://specter.tuquet.com",
+            "https://app.tuquet.com",
+            "http://localhost:5173",
+            "http://127.0.0.1:8765",
+            "chrome-extension://abcdefghijklmnop",
+        ];
+
+        for origin in valid_origins {
+            let req = Request::builder()
+                .method("OPTIONS")
+                .uri("/api/v1/health")
+                .header("Origin", origin)
+                .header("Access-Control-Request-Method", "GET")
+                .body(axum::body::Body::empty())
+                .unwrap();
+
+            let res = app.clone().oneshot(req).await.unwrap();
+            assert_eq!(res.status(), StatusCode::OK, "Failed for origin: {}", origin);
+            let allow_origin = res.headers().get("access-control-allow-origin");
+            assert!(allow_origin.is_some(), "CORS header missing for origin: {}", origin);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_system_tenants() {
+        let state = create_test_state();
+        let app = create_router(state);
+
+        use tower::ServiceExt;
+        use axum::http::{Request, StatusCode};
+
+        let req = Request::builder()
+            .method("GET")
+            .uri("/api/v1/system/tenants")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        let res = app.oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+    }
+
+    #[test]
+    fn test_openapi_spec_generation() {
+        let openapi = ApiDoc::openapi();
+        let json_result = openapi.to_pretty_json();
+        assert!(json_result.is_ok(), "OpenAPI spec serialization failed: {:?}", json_result.err());
+        let json_str = json_result.unwrap();
+        assert!(json_str.contains("Specter CLI & Core Bridge API"));
+        assert!(json_str.contains("/api/v1/system/tenants"));
+        assert!(json_str.contains("/api/v1/browsers"));
     }
 }

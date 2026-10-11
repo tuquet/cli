@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 pub const DEFAULT_SUPABASE_ANON_KEY: &str = "specter-placeholder-supabase-anon-key";
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct TenantInfo {
     pub id: String,
     pub slug: String,

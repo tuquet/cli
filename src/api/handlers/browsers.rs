@@ -115,6 +115,51 @@ pub struct StopBrowserResponse {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "success": true,
+    "id": "profile_1",
+    "message": "Browser created"
+}))]
+/// Response payload when a browser profile is created
+pub struct CreateBrowserResponse {
+    /// Whether creation succeeded
+    pub success: bool,
+    /// Identifier of the created profile
+    pub id: String,
+    /// Confirmation message
+    pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "success": true,
+    "message": "Browser updated"
+}))]
+/// Response payload when a browser profile is updated
+pub struct UpdateBrowserResponse {
+    /// Whether update succeeded
+    pub success: bool,
+    /// Confirmation message
+    pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({
+    "success": true,
+    "message": "Browser deleted"
+}))]
+/// Response payload when a browser profile is deleted
+pub struct DeleteBrowserResponse {
+    /// Whether deletion succeeded
+    pub success: bool,
+    /// Confirmation message
+    pub message: String,
+}
+
 #[derive(Deserialize, IntoParams)]
 pub struct GetBrowsersQuery {
     /// Maximum number of browser profiles to return
@@ -189,7 +234,7 @@ pub async fn get_browsers(
     description = "Persists a new isolated browser profile with custom fingerprint settings (User-Agent, Timezone, Proxy, Extensions) in SQLite.",
     request_body = CreateBrowserRequest,
     responses(
-        (status = 200, description = "Browser profile created successfully", body = Value),
+        (status = 200, description = "Browser profile created successfully", body = CreateBrowserResponse),
         (status = 400, description = "Invalid browser ID or missing name", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Failed to create browser profile in database", body = crate::core::error::ApiErrorResponse)
     )
@@ -197,7 +242,7 @@ pub async fn get_browsers(
 pub async fn create_browser(
     State(state): State<AppState>,
     Json(req): Json<CreateBrowserRequest>,
-) -> Result<Json<Value>, AutomaError> {
+) -> Result<Json<CreateBrowserResponse>, AutomaError> {
     let final_id = req.id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     if !is_valid_id(&final_id) {
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
@@ -206,7 +251,19 @@ pub async fn create_browser(
     let exts = req.extensions.as_deref();
     db.browsers().create_browser(&final_id, &req.name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    Ok(Json(json!({"success": true, "id": final_id, "message": "Browser created"})))
+
+    // Broadcast SSE creation event for reactive UI cache invalidation
+    let _ = state.tx.send(json!({
+        "type": "browser_changed",
+        "action": "create",
+        "id": final_id
+    }).to_string());
+
+    Ok(Json(CreateBrowserResponse {
+        success: true,
+        id: final_id,
+        message: "Browser created".to_string(),
+    }))
 }
 
 #[utoipa::path(
@@ -221,7 +278,7 @@ pub async fn create_browser(
     ),
     request_body = UpdateBrowserRequest,
     responses(
-        (status = 200, description = "Browser profile updated successfully", body = Value),
+        (status = 200, description = "Browser profile updated successfully", body = UpdateBrowserResponse),
         (status = 400, description = "Invalid browser ID", body = crate::core::error::ApiErrorResponse),
         (status = 404, description = "Browser profile not found", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Database update error", body = crate::core::error::ApiErrorResponse)
@@ -231,7 +288,7 @@ pub async fn update_browser(
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(req): Json<UpdateBrowserRequest>,
-) -> Result<Json<Value>, AutomaError> {
+) -> Result<Json<UpdateBrowserResponse>, AutomaError> {
     if !is_valid_id(&id) {
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
@@ -240,7 +297,18 @@ pub async fn update_browser(
     let exts = req.extensions.as_deref();
     db.browsers().update_browser(&id, &name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    Ok(Json(json!({"success": true, "message": "Browser updated"})))
+
+    // Broadcast SSE update event for reactive UI cache invalidation
+    let _ = state.tx.send(json!({
+        "type": "browser_changed",
+        "action": "update",
+        "id": id
+    }).to_string());
+
+    Ok(Json(UpdateBrowserResponse {
+        success: true,
+        message: "Browser updated".to_string(),
+    }))
 }
 
 #[utoipa::path(
@@ -254,7 +322,7 @@ pub async fn update_browser(
         ("id" = String, Path, description = "Unique browser profile identifier")
     ),
     responses(
-        (status = 200, description = "Browser profile deleted successfully", body = Value),
+        (status = 200, description = "Browser profile deleted successfully", body = DeleteBrowserResponse),
         (status = 400, description = "Invalid browser ID", body = crate::core::error::ApiErrorResponse),
         (status = 404, description = "Browser profile not found", body = crate::core::error::ApiErrorResponse),
         (status = 500, description = "Database deletion error", body = crate::core::error::ApiErrorResponse)
@@ -263,7 +331,7 @@ pub async fn update_browser(
 pub async fn delete_browser(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<Value>, AutomaError> {
+) -> Result<Json<DeleteBrowserResponse>, AutomaError> {
     if !is_valid_id(&id) {
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
@@ -271,7 +339,18 @@ pub async fn delete_browser(
     let db = state.db.lock().await;
     db.browsers().delete_browser(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    Ok(Json(json!({"success": true, "message": "Browser deleted"})))
+
+    // Broadcast SSE deletion event for reactive UI cache invalidation
+    let _ = state.tx.send(json!({
+        "type": "browser_changed",
+        "action": "delete",
+        "id": id
+    }).to_string());
+
+    Ok(Json(DeleteBrowserResponse {
+        success: true,
+        message: "Browser deleted".to_string(),
+    }))
 }
 
 #[utoipa::path(
@@ -818,15 +897,86 @@ pub struct SideloadExtensionResponse {
     )
 )]
 pub async fn sideload_extension(
-    State(_state): State<crate::AppState>,
-    Path(_id): Path<String>,
-    Json(_payload): Json<SideloadExtensionPayload>,
-) -> axum::response::Json<SideloadExtensionResponse> {
-    axum::response::Json(SideloadExtensionResponse {
+    State(state): State<crate::AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<SideloadExtensionPayload>,
+) -> Result<Json<SideloadExtensionResponse>, AutomaError> {
+    if !is_valid_id(&id) {
+        return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
+    }
+
+    let ext_path = std::path::Path::new(&payload.extension_path);
+    if !ext_path.exists() {
+        return Err(AutomaError::BadRequest(format!(
+            "Extension directory does not exist: {}",
+            payload.extension_path
+        )));
+    }
+
+    let manifest_path = ext_path.join("manifest.json");
+    if !manifest_path.exists() {
+        return Err(AutomaError::BadRequest(format!(
+            "manifest.json not found in extension directory: {}",
+            payload.extension_path
+        )));
+    }
+
+    // Read manifest name if available
+    let ext_name = std::fs::read_to_string(&manifest_path)
+        .ok()
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(&c).ok())
+        .and_then(|v| v.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+        .unwrap_or_else(|| {
+            ext_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "custom-extension".to_string())
+        });
+
+    let canonical_path = ext_path
+        .canonicalize()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|_| payload.extension_path.clone());
+
+    let db = state.db.lock().await;
+    let browser = db
+        .browsers()
+        .get_browser(&id)
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
+        .ok_or_else(|| AutomaError::NotFound(format!("Browser profile '{}' not found", id)))?;
+
+    let mut extensions = browser.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
+    if !extensions.contains(&canonical_path) {
+        extensions.push(canonical_path);
+    }
+
+    let exts_slice = extensions.as_slice();
+    db.browsers()
+        .update_browser(
+            &id,
+            &browser.name,
+            browser.user_agent.as_deref(),
+            browser.timezone.as_deref(),
+            browser.proxy.as_deref(),
+            Some(exts_slice),
+        )
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+
+    // Broadcast SSE update event
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "browser_changed",
+            "action": "update",
+            "id": id
+        })
+        .to_string(),
+    );
+
+    Ok(Json(SideloadExtensionResponse {
         status: "success".to_string(),
-        message: "Extension configured for profile".to_string(),
+        message: format!("Extension '{}' sideloaded successfully", ext_name),
         success: true,
-    })
+    }))
 }
 
 #[utoipa::path(

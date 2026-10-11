@@ -1,4 +1,20 @@
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
 pub use crate::core::models::storage::{StorageCredential, StorageTable, StorageVariable, TableRow};
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+#[schema(example = json!({"success": true, "id": "item_123", "message": "Storage item deleted"}))]
+/// General storage deletion or modification response
+pub struct StorageActionResponse {
+    /// Whether action succeeded
+    pub success: bool,
+    /// Identifier of the affected entity
+    pub id: String,
+    /// Confirmation message
+    pub message: String,
+}
 
 pub mod variables;
 pub mod credentials;
@@ -58,8 +74,8 @@ mod tests {
         assert_eq!(vars[0].name.as_deref(), Some("API_KEY"));
 
         // 3. Delete variable
-        let del_status = delete_variable(State(state.clone()), Path("var_test_1".to_string())).await.unwrap();
-        assert_eq!(del_status, StatusCode::OK);
+        let del_res = delete_variable(State(state.clone()), Path("var_test_1".to_string())).await.unwrap();
+        assert!(del_res.success);
 
         let vars_after = get_variables(State(state), Query(GetVariablesQuery { limit: None, offset: None, search: None })).await.unwrap();
         assert_eq!(vars_after.len(), 0);
@@ -85,8 +101,8 @@ mod tests {
         assert_eq!(creds[0].name.as_deref(), Some("AWS Token"));
 
         // 3. Delete credential
-        let del_status = delete_credential(State(state.clone()), Path("cred_test_1".to_string())).await.unwrap();
-        assert_eq!(del_status, StatusCode::OK);
+        let del_res = delete_credential(State(state.clone()), Path("cred_test_1".to_string())).await.unwrap();
+        assert!(del_res.success);
 
         let creds_after = get_credentials(State(state), Query(GetCredentialsQuery { limit: None, offset: None, search: None })).await.unwrap();
         assert_eq!(creds_after.len(), 0);
@@ -131,8 +147,8 @@ mod tests {
         assert_eq!(rows[0].table_id, "tbl_users");
 
         // 5. Delete table
-        let del_status = delete_table(State(state.clone()), Path("tbl_users".to_string())).await.unwrap();
-        assert_eq!(del_status, StatusCode::OK);
+        let del_res = delete_table(State(state.clone()), Path("tbl_users".to_string())).await.unwrap();
+        assert!(del_res.success);
 
         let tables_after = get_tables(State(state), Query(GetTablesQuery { limit: None, offset: None, search: None })).await.unwrap();
         assert_eq!(tables_after.len(), 0);
