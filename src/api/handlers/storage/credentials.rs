@@ -1,7 +1,4 @@
-use axum::{
-    extract::{Path, Json, Query, State},
-    http::StatusCode,
-};
+use axum::extract::{Path, Json, Query, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::storage::StorageCredential;

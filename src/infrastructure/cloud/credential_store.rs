@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 
 pub const DEFAULT_SUPABASE_ANON_KEY: &str = "specter-placeholder-supabase-anon-key";
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct TenantInfo {
     pub id: String,
     pub slug: String,
@@ -17,7 +17,7 @@ pub struct TenantInfo {
     pub is_active: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DeviceCredentials {
     #[serde(default)]
     pub cloud_url: Option<String>,

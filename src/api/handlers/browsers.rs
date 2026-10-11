@@ -1,7 +1,7 @@
 use axum::extract::{Path, State, Json, Query};
 use axum::body::Bytes;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 use utoipa::{IntoParams, ToSchema};
 use crate::AppState;
 use crate::core::error::AutomaError;
