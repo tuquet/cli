@@ -1089,8 +1089,8 @@ mod tests {
         };
 
         let create_res = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
-        assert_eq!(create_res.0["id"], "test_browser_profile_1");
-        assert_eq!(create_res.0["success"], true);
+        assert_eq!(create_res.0.id, "test_browser_profile_1");
+        assert!(create_res.0.success);
 
         let query = GetBrowsersQuery { limit: None, offset: None, search: None };
         let list_res = get_browsers(State(state.clone()), Query(query)).await.unwrap();
@@ -1126,7 +1126,7 @@ mod tests {
             extensions: Some(vec!["automa".to_string(), "cookie-injector".to_string()]),
         };
         let update_res = update_browser(State(state.clone()), Path("test_browser_profile_2".to_string()), Json(update_req)).await.unwrap();
-        assert_eq!(update_res.0["success"], true);
+        assert!(update_res.0.success);
 
         let detail_res = get_browser_detail(State(state.clone()), Path("test_browser_profile_2".to_string())).await.unwrap();
         assert_eq!(detail_res.proxy.as_deref(), Some("http://proxy.local:8080"));

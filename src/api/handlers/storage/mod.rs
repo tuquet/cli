@@ -32,7 +32,6 @@ pub use backup::*;
 mod tests {
     use super::*;
     use axum::extract::{Path, Json, Query, State};
-    use axum::http::StatusCode;
     use crate::AppState;
     use crate::config::AppConfig;
     use crate::infrastructure::db::AutomaDb;
