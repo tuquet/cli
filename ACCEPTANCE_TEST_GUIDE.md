@@ -44,11 +44,10 @@ Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục 
 
 ### Giai đoạn 1: Cài đặt & Khởi tạo Hệ thống (Zero-Touch Provisioning)
 
-#### Bước 1.1: Cài đặt Specter CLI qua Scoop (Khuyên dùng)
+#### Bước 1.1: Cài đặt Specter CLI qua One-Liner Web Installer (Khuyên dùng)
 ```powershell
-# Thêm bucket Tuquet và cài đặt binary chính thức
-scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
-scoop install specter
+# Cài đặt trực tiếp standalone binary không cần package manager
+powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
 
 # Kiểm tra phiên bản thực thi
 specter --version

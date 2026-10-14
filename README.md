@@ -5,7 +5,6 @@
 
   <p>
     <a href="https://docs.tuquet.com/en/specter/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Hub-blue.svg" alt="Documentation Hub" /></a>
-    <a href="https://github.com/tuquet/scoop-bucket"><img src="https://img.shields.io/badge/Scoop-specter-brightgreen.svg" alt="Scoop" /></a>
     <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-Clap%2FRatatui-orange.svg" alt="Rust" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" /></a>
   </p>
@@ -23,6 +22,20 @@
 
 * **68 Lệnh Chuẩn hóa**: Bao quát toàn bộ 5 trụ cột microservice (`browser`, `runner`, `automa`, `bridge`, `faker`, `cloud`, `system`).
 * **Lưu trữ SSOT**: Tự động giải quyết cấu hình và trạng thái về gốc chuẩn duy nhất `~/.specter/`.
+
+## 📦 Cài Đặt Nhanh (Modern One-Liner Installation)
+
+Cài đặt trực tiếp standalone binary không cần cài đặt package manager hay dependencies:
+
+```powershell
+# Windows 10/11 (PowerShell)
+powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
+```
+
+```bash
+# macOS & Linux (curl)
+curl -fsSL https://raw.githubusercontent.com/tuquet/cli/main/install.sh | sh
+```
 
 ## ⚡ Sử Dụng Nhanh (Quickstart)
 

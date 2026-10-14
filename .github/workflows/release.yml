@@ -129,18 +129,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  trigger-scoop:
-    name: Trigger Scoop Bucket Update
-    needs: [build-release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Scoop Bucket Excavator
-        run: |
-          echo "Triggering scoop-bucket excavator auto-update..."
-          gh workflow run excavator.yml -R tuquet/scoop-bucket || true
-        env:
-          GH_TOKEN: ${{ secrets.SCOOP_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
-
   notify:
     name: Notify Telegram
     needs: [build-release]
