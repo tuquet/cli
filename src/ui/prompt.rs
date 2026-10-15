@@ -198,6 +198,7 @@ pub fn clack_select(
     clear_rendered_lines(&mut stdout, rendered_lines)?;
     let _ = execute!(stdout, cursor::Show);
     terminal::disable_raw_mode()?;
+    platform_impl::ensure_normal_console_mode();
 
     match result {
         Ok(Some(idx)) => {
@@ -482,12 +483,29 @@ mod platform_impl {
     type DWORD = u32;
 
     const STD_INPUT_HANDLE: DWORD = 0xFFFFFFF6; // ((DWORD)-10)
+    const ENABLE_PROCESSED_INPUT: DWORD = 0x0001;
+    const ENABLE_LINE_INPUT: DWORD = 0x0002;
     const ENABLE_ECHO_INPUT: DWORD = 0x0004;
 
     unsafe extern "system" {
         fn GetStdHandle(nStdHandle: DWORD) -> HANDLE;
         fn GetConsoleMode(hConsoleHandle: HANDLE, lpMode: *mut DWORD) -> BOOL;
         fn SetConsoleMode(hConsoleHandle: HANDLE, dwMode: DWORD) -> BOOL;
+    }
+
+    pub fn ensure_normal_console_mode() {
+        unsafe {
+            let handle = GetStdHandle(STD_INPUT_HANDLE);
+            if !handle.is_null() && handle as isize != -1 {
+                let mut mode: DWORD = 0;
+                if GetConsoleMode(handle, &mut mode) != 0 {
+                    SetConsoleMode(
+                        handle,
+                        mode | ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT,
+                    );
+                }
+            }
+        }
     }
 
     pub fn read_hidden() -> io::Result<String> {
@@ -526,6 +544,8 @@ mod platform_impl {
 #[cfg(not(windows))]
 mod platform_impl {
     use std::io;
+
+    pub fn ensure_normal_console_mode() {}
 
     pub fn read_hidden() -> io::Result<String> {
         let mut line = String::new();

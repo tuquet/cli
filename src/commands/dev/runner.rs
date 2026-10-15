@@ -1,8 +1,13 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use crate::ui::{clack_outro, colors};
 use super::history::record_history;
 use super::scanner::DiscoveredPackage;
+
+static ACTIVE_CHILD_PID: AtomicU32 = AtomicU32::new(0);
+static ACTIVE_JOB_HANDLE: AtomicUsize = AtomicUsize::new(0);
+static CTRL_C_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
 /// Execute a script/target from a discovered project using the detected (or overridden) toolchain
 pub fn run_package_script(
@@ -62,12 +67,15 @@ pub fn run_package_script(
         child_cmd.env("JAVA_HOME", java_home);
     }
 
-    let status = child_cmd
+    #[cfg(windows)]
+    win_process_guard::ensure_console_ctrl_c_enabled();
+
+    let mut child = child_cmd
         .current_dir(&pkg.dir)
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .status()
+        .spawn()
         .map_err(|e| {
             format!(
                 "Failed to spawn '{} ({})' in {}: {}",
@@ -78,17 +86,92 @@ pub fn run_package_script(
             )
         })?;
 
+    let child_pid = child.id();
+    CTRL_C_INTERRUPTED.store(false, Ordering::SeqCst);
+    ACTIVE_CHILD_PID.store(child_pid, Ordering::SeqCst);
+
+    #[cfg(windows)]
+    let _guard = win_process_guard::ChildTreeGuard::attach(&child);
+
+    let wait_res = child.wait();
+
+    // Ensure any remaining child/grandchild processes are terminated when the command exits
+    let remaining_pid = ACTIVE_CHILD_PID.swap(0, Ordering::SeqCst);
+    let interrupted = CTRL_C_INTERRUPTED.swap(false, Ordering::SeqCst);
+
+    #[cfg(windows)]
+    drop(_guard);
+
+    if interrupted && remaining_pid != 0 {
+        kill_process_tree(remaining_pid);
+    }
+
+    let status = wait_res.map_err(|e| {
+        format!(
+            "Error while waiting for '{} ({})' (PID {}): {}",
+            pm, script, child_pid, e
+        )
+    })?;
+
+    if interrupted {
+        println!();
+        clack_outro(&format!(
+            "{AMBER}■{RESET} Stopped {BOLD}{pm} ({script}){RESET} {MUTED}— terminated process tree (PID {child_pid}){RESET}",
+            AMBER = colors::AMBER,
+            BOLD = colors::BOLD,
+            MUTED = colors::MUTED,
+            RESET = colors::RESET,
+        ));
+        return Ok(());
+    }
+
     if !status.success() {
         let code = status.code().unwrap_or(1);
         // Ignore standard Ctrl+C exit code on Windows (-1073741510 / 0xc000013a or 130)
-        if code != 130 && code != -1073741510 {
-            return Err(
-                format!("Command '{} ({})' exited with status code {}", pm, script, code).into(),
-            );
+        if code == 130 || code == -1073741510 {
+            println!();
+            clack_outro(&format!(
+                "{AMBER}■{RESET} Stopped {BOLD}{pm} ({script}){RESET} {MUTED}— terminated process tree (PID {child_pid}){RESET}",
+                AMBER = colors::AMBER,
+                BOLD = colors::BOLD,
+                MUTED = colors::MUTED,
+                RESET = colors::RESET,
+            ));
+            return Ok(());
         }
+        return Err(
+            format!("Command '{} ({})' exited with status code {}", pm, script, code).into(),
+        );
     }
 
     Ok(())
+}
+
+pub fn kill_process_tree(pid: u32) {
+    if pid == 0 {
+        return;
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let _ = Command::new("taskkill")
+            .args(["/F", "/T", "/PID", &pid.to_string()])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
 }
 
 fn build_toolchain_command(
@@ -164,6 +247,11 @@ fn build_toolchain_command(
 fn spawn_shell_cmd(program: &str) -> Command {
     #[cfg(target_os = "windows")]
     {
+        // Prefer direct .exe execution (e.g. pnpm.exe, cargo.exe, bun.exe, docker.exe)
+        // so cmd.exe never intercepts Ctrl+C with "Terminate batch job (Y/N)?"
+        if let Some(exe_path) = resolve_windows_direct_exe(program) {
+            return Command::new(exe_path);
+        }
         let mut c = Command::new("cmd");
         c.arg("/C").arg(program);
         c
@@ -172,6 +260,26 @@ fn spawn_shell_cmd(program: &str) -> Command {
     {
         Command::new(program)
     }
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_windows_direct_exe(program: &str) -> Option<PathBuf> {
+    if program.contains('\\') || program.contains('/') || program.ends_with(".cmd") || program.ends_with(".bat") {
+        return None;
+    }
+    let exe_name = if program.to_lowercase().ends_with(".exe") {
+        program.to_string()
+    } else {
+        format!("{}.exe", program)
+    };
+    let path_var = std::env::var_os("PATH")?;
+    for dir in std::env::split_paths(&path_var) {
+        let candidate = dir.join(&exe_name);
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    None
 }
 
 pub fn detect_required_jdk_from_framework(framework: Option<&str>) -> Option<String> {
@@ -205,4 +313,214 @@ pub fn resolve_scoop_jdk_home(version: &str) -> Option<(String, PathBuf)> {
         }
     }
     None
+}
+
+#[cfg(windows)]
+#[allow(non_snake_case, clippy::upper_case_acronyms)]
+mod win_process_guard {
+    use std::ffi::c_void;
+    use std::os::windows::io::AsRawHandle;
+    use std::process::Child;
+    use std::sync::atomic::Ordering;
+    use super::{kill_process_tree, ACTIVE_CHILD_PID, ACTIVE_JOB_HANDLE, CTRL_C_INTERRUPTED};
+
+    type HANDLE = *mut c_void;
+    type BOOL = i32;
+    type DWORD = u32;
+
+    const STD_INPUT_HANDLE: DWORD = 0xFFFFFFF6;
+    const ENABLE_PROCESSED_INPUT: DWORD = 0x0001;
+    const ENABLE_LINE_INPUT: DWORD = 0x0002;
+    const ENABLE_ECHO_INPUT: DWORD = 0x0004;
+
+    const JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS: u32 = 9;
+    const JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE: u32 = 0x00002000;
+
+    #[repr(C)]
+    #[derive(Default)]
+    struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
+        PerProcessUserTimeLimit: i64,
+        PerJobUserTimeLimit: i64,
+        LimitFlags: DWORD,
+        MinimumWorkingSetSize: usize,
+        MaximumWorkingSetSize: usize,
+        ActiveProcessLimit: DWORD,
+        Affinity: usize,
+        PriorityClass: DWORD,
+        SchedulingClass: DWORD,
+    }
+
+    #[repr(C)]
+    #[derive(Default)]
+    struct IO_COUNTERS {
+        ReadOperationCount: u64,
+        WriteOperationCount: u64,
+        OtherOperationCount: u64,
+        ReadTransferCount: u64,
+        WriteTransferCount: u64,
+        OtherTransferCount: u64,
+    }
+
+    #[repr(C)]
+    #[derive(Default)]
+    struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+        BasicLimitInformation: JOBOBJECT_BASIC_LIMIT_INFORMATION,
+        IoInfo: IO_COUNTERS,
+        ProcessMemoryLimit: usize,
+        JobMemoryLimit: usize,
+        PeakProcessMemoryUsed: usize,
+        PeakJobMemoryUsed: usize,
+    }
+
+    unsafe extern "system" {
+        fn GetStdHandle(nStdHandle: DWORD) -> HANDLE;
+        fn GetConsoleMode(hConsoleHandle: HANDLE, lpMode: *mut DWORD) -> BOOL;
+        fn SetConsoleMode(hConsoleHandle: HANDLE, dwMode: DWORD) -> BOOL;
+        fn SetConsoleCtrlHandler(
+            HandlerRoutine: Option<unsafe extern "system" fn(DWORD) -> BOOL>,
+            Add: BOOL,
+        ) -> BOOL;
+        fn CreateJobObjectW(lpJobAttributes: *const c_void, lpName: *const u16) -> HANDLE;
+        fn SetInformationJobObject(
+            hJob: HANDLE,
+            JobObjectInfoClass: u32,
+            lpJobObjectInfo: *const c_void,
+            cbJobObjectInfoLength: DWORD,
+        ) -> BOOL;
+        fn AssignProcessToJobObject(hJob: HANDLE, hProcess: HANDLE) -> BOOL;
+        fn TerminateJobObject(hJob: HANDLE, uExitCode: u32) -> BOOL;
+        fn CloseHandle(hObject: HANDLE) -> BOOL;
+    }
+
+    pub fn ensure_console_ctrl_c_enabled() {
+        unsafe {
+            let handle = GetStdHandle(STD_INPUT_HANDLE);
+            if !handle.is_null() && handle as isize != -1 {
+                let mut mode: DWORD = 0;
+                if GetConsoleMode(handle, &mut mode) != 0 {
+                    SetConsoleMode(
+                        handle,
+                        mode | ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT,
+                    );
+                }
+            }
+        }
+    }
+
+    unsafe extern "system" fn console_ctrl_handler(ctrl_type: DWORD) -> BOOL {
+        // 0 = CTRL_C_EVENT, 1 = CTRL_BREAK_EVENT, 2 = CTRL_CLOSE_EVENT
+        if ctrl_type <= 2 {
+            CTRL_C_INTERRUPTED.store(true, Ordering::SeqCst);
+
+            let mut killed_by_job = false;
+            let job_raw = ACTIVE_JOB_HANDLE.swap(0, Ordering::SeqCst);
+            if job_raw != 0 {
+                unsafe {
+                    let job = job_raw as HANDLE;
+                    if TerminateJobObject(job, 130) != 0 {
+                        killed_by_job = true;
+                    }
+                    CloseHandle(job);
+                }
+            }
+
+            let pid = ACTIVE_CHILD_PID.swap(0, Ordering::SeqCst);
+            if !killed_by_job && pid != 0 {
+                kill_process_tree(pid);
+            }
+            return 1; // Handled: do not terminate spc.exe before child cleanup finishes
+        }
+        0
+    }
+
+    pub struct ChildTreeGuard {
+        handler_registered: bool,
+    }
+
+    impl ChildTreeGuard {
+        pub fn attach(child: &Child) -> Self {
+            unsafe {
+                let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+                if !job.is_null() {
+                    let mut info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+                    info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+                    let ok = SetInformationJobObject(
+                        job,
+                        JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,
+                        &info as *const _ as *const c_void,
+                        std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
+                    );
+                    if ok != 0 && AssignProcessToJobObject(job, child.as_raw_handle() as HANDLE) != 0 {
+                        ACTIVE_JOB_HANDLE.store(job as usize, Ordering::SeqCst);
+                    } else {
+                        CloseHandle(job);
+                    }
+                }
+
+                let registered = SetConsoleCtrlHandler(Some(console_ctrl_handler), 1) != 0;
+                Self {
+                    handler_registered: registered,
+                }
+            }
+        }
+    }
+
+    impl Drop for ChildTreeGuard {
+        fn drop(&mut self) {
+            unsafe {
+                if self.handler_registered {
+                    SetConsoleCtrlHandler(Some(console_ctrl_handler), 0);
+                }
+                let job_raw = ACTIVE_JOB_HANDLE.swap(0, Ordering::SeqCst);
+                if job_raw != 0 {
+                    let job = job_raw as HANDLE;
+                    TerminateJobObject(job, 130);
+                    CloseHandle(job);
+                }
+            }
+            ensure_console_ctrl_c_enabled();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_required_jdk_from_framework() {
+        assert_eq!(
+            detect_required_jdk_from_framework(Some("Spring Boot (JDK 17)")),
+            Some("17".to_string())
+        );
+        assert_eq!(
+            detect_required_jdk_from_framework(Some("Maven (JDK 21)")),
+            Some("21".to_string())
+        );
+        assert_eq!(detect_required_jdk_from_framework(Some("Vite")), None);
+        assert_eq!(detect_required_jdk_from_framework(None), None);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn test_windows_job_object_terminates_child_tree() {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let mut child = Command::new("cmd")
+            .args(["/C", "ping 127.0.0.1 -n 30 > nul"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .expect("spawn ping");
+
+        let guard = win_process_guard::ChildTreeGuard::attach(&child);
+        // Dropping the guard must immediately terminate the entire job tree
+        drop(guard);
+
+        let status = child.wait().expect("wait after job drop");
+        assert!(!status.success(), "Child process in job should have been terminated");
+    }
 }
