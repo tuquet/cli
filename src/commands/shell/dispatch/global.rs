@@ -129,6 +129,49 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             }
         }
         // Direct Global convenience commands
+        "dev" | "fe" | "pkg" => {
+            let list = args.contains(&"--list") || args.contains(&"-l");
+            let fmt = parse_format(args);
+            let mut pm: Option<String> = None;
+            let mut path: Option< std::path::PathBuf> = None;
+            let mut positional: Vec<String> = Vec::new();
+            let mut extra_args: Vec<String> = Vec::new();
+
+            let mut i = 0;
+            while i < args.len() {
+                match args[i] {
+                    "--" => {
+                        extra_args.extend(args[i + 1..].iter().map(|s| s.to_string()));
+                        break;
+                    }
+                    "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" | "-c" => {}
+                    "--pm" => {
+                        if let Some(val) = args.get(i + 1) {
+                            pm = Some((*val).to_string());
+                            i += 1;
+                        }
+                    }
+                    "--path" | "-P" => {
+                        if let Some(val) = args.get(i + 1) {
+                            path = Some(std::path::PathBuf::from(*val));
+                            i += 1;
+                        }
+                    }
+                    "--format" | "-f" => {
+                        i += 1;
+                    }
+                    arg if !arg.starts_with('-') => {
+                        positional.push(arg.to_string());
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+
+            let project = positional.first().cloned();
+            let script = positional.get(1).cloned();
+            crate::commands::dev::handle(project, script, list, path, pm, extra_args, fmt).await?;
+        }
         "run" | "list" | "inspect" | "import" | "export" | "delete" | "studio" => {
             dispatch_automa(cmd, args).await?;
         }

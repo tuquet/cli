@@ -65,6 +65,9 @@ impl ShellScope {
     pub fn subcommands(&self) -> &'static [(&'static str, &'static str)] {
         match self {
             ShellScope::Global => &[
+                ("dev", "Scan workspace package.json & run frontend project scripts"),
+                ("fe", "Alias for dev (frontend project runner)"),
+                ("pkg", "Alias for dev (package.json script runner)"),
                 ("status", "Inspect unified status across Cloud, Runner, Browser, and Bridge"),
                 ("doctor", "Inspect ecosystem dependencies, required tools & environment health"),
                 ("config", "Inspect or edit configuration across all microservice pillars"),
@@ -239,6 +242,9 @@ mod tests {
         assert!(faker.is_valid_first_word("faker"));
 
         let global = ShellScope::Global;
+        assert!(global.is_valid_first_word("dev"));
+        assert!(global.is_valid_first_word("fe"));
+        assert!(global.is_valid_first_word("pkg"));
         assert!(global.is_valid_first_word("bridge"));
         assert!(global.is_valid_first_word("automa"));
         assert!(global.is_valid_first_word("faker"));

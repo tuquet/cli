@@ -16,15 +16,16 @@ pub fn get_styles() -> Styles {
 pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[38;2;56;189;248m   _____  ____   ______  ______ ______  ______  ____  \x1b[0m
 \x1b[38;2;96;165;250m  / ___/ / __ \\ / ____/ / ____//_  __/ / ____/ / __ \\ \x1b[0m
-\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.0.0\x1b[0m
+\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.1.0\x1b[0m
 \x1b[38;2;168;85;247m ___/ /  / ____// /___  / /___  / /    / /___  / _, _/\x1b[0m
 \x1b[38;2;192;132;252m/____/   /_/    /_____/ \\____/  /_/    /_____/ /_/ |_|\x1b[0m
 
   Autonomous Browser Automation & Distributed Mesh Runtime
 
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspecter\x1b[0m [COMMAND] [OPTIONS]
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspc\x1b[0m (or \x1b[1mspecter\x1b[0m) [COMMAND] [OPTIONS]
 
 \x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
+  \x1b[1;32mdev\x1b[0m             Scan workspace package.json & run frontend project scripts
   \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, and Browser
   \x1b[1;32mdoctor\x1b[0m          Check all ecosystem dependencies, system tools & health
   \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
@@ -55,6 +56,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mExamples:\x1b[0m
   specter                          Launch interactive SPECTER SHELL (REPL)
+  specter dev                      Scan package.json & interactively run frontend scripts
   specter doctor                   Check dependencies and system health
   specter status                   Check full ecosystem dashboard
   specter bridge status            Inspect multi-VPS tunnels & proxy health
@@ -83,6 +85,37 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Scan workspace for package.json projects and run frontend scripts interactively
+    #[command(name = "dev", aliases = ["fe", "pkg"])]
+    Dev {
+        /// Target project name, folder path, or <project>:<script> shorthand
+        #[arg(value_name = "PROJECT")]
+        project: Option<String>,
+
+        /// Optional script name to execute from package.json (e.g. dev, build, start, lint)
+        #[arg(value_name = "SCRIPT")]
+        script: Option<String>,
+
+        /// List all discovered package.json projects and scripts in workspace
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        /// Custom workspace root directory to scan (defaults to current directory)
+        #[arg(short = 'P', long)]
+        path: Option<PathBuf>,
+
+        /// Override detected package manager (npm, pnpm, yarn, bun)
+        #[arg(long)]
+        pm: Option<String>,
+
+        /// Extra arguments passed to the package script after `--`
+        #[arg(last = true, value_name = "EXTRA_ARGS")]
+        extra_args: Vec<String>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
     /// Show unified status overview of Specter ecosystem
     #[command(name = "status")]
     Status {

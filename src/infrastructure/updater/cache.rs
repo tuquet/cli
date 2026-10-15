@@ -22,18 +22,27 @@ pub fn get_cached_update() -> Option<UpdateInfo> {
 
 /// Clean up leftover temporary or .old backup binaries from previous in-place updates.
 pub fn cleanup_stale_update_files() {
-    if let Ok(current_exe) = std::env::current_exe() {
-        let old_exe = current_exe.with_extension("exe.old");
-        if old_exe.exists() {
-            let _ = std::fs::remove_file(old_exe);
-        }
-        let old_posix = current_exe.with_extension("old");
-        if old_posix.exists() {
-            let _ = std::fs::remove_file(old_posix);
-        }
-        let tmp_new = current_exe.with_extension("tmp_new");
-        if tmp_new.exists() {
-            let _ = std::fs::remove_file(tmp_new);
+    let mut dirs_to_clean = Vec::new();
+    if let Ok(current_exe) = std::env::current_exe()
+        && let Some(parent) = current_exe.parent()
+    {
+        dirs_to_clean.push(parent.to_path_buf());
+    }
+    dirs_to_clean.push(crate::config::canonical_specter_dir().join("bin"));
+
+    for dir in dirs_to_clean {
+        for stale in &[
+            "specter.exe.old",
+            "spc.exe.old",
+            "specter.old",
+            "spc.old",
+            "specter.tmp_new",
+            "spc.tmp_new",
+        ] {
+            let p = dir.join(stale);
+            if p.exists() {
+                let _ = std::fs::remove_file(p);
+            }
         }
     }
 }

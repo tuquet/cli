@@ -4,7 +4,7 @@ use super::cache::get_cache_file_path;
 use super::types::{is_newer_version, UpdateInfo, GITHUB_REPO};
 
 /// Constructs a proxy-aware HTTP client with standard timeouts and User-Agent.
-pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, Box<dyn std::error::Error>> {
+pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest::Error> {
     let mut builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(timeout_secs))
         .user_agent(format!(
@@ -35,20 +35,61 @@ pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, Box<dyn 
         }
     }
 
-    Ok(builder.build()?)
+    builder.build()
+}
+
+/// Fetch URL bytes using `reqwest` first, falling back to OS-native `curl` (Windows Schannel / system CA store)
+/// when `rustls` webpki-roots cannot verify an enterprise SSL inspection certificate or system proxy.
+pub async fn fetch_bytes_with_fallback(
+    url: &str,
+    timeout_secs: u64,
+) -> Result<Vec<u8>, String> {
+    if let Ok(client) = create_http_client(timeout_secs)
+        && let Ok(resp) = client.get(url).send().await
+        && resp.status().is_success()
+        && let Ok(bytes) = resp.bytes().await
+    {
+        return Ok(bytes.to_vec());
+    }
+
+    // Fallback to OS-native curl (uses Windows Schannel / macOS SecureTransport / system CA store)
+    let curl_bin = if cfg!(windows) { "curl.exe" } else { "curl" };
+    let ua = format!(
+        "User-Agent: specter/{} ({}; {})",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    );
+    let max_time = timeout_secs.to_string();
+    let output = tokio::process::Command::new(curl_bin)
+        .args([
+            "-fsSL",
+            "--noproxy",
+            "*",
+            "--max-time",
+            &max_time,
+            "-H",
+            &ua,
+            url,
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("Failed to spawn {}: {}", curl_bin, e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Failed to fetch {}: {}", url, stderr.trim()));
+    }
+
+    Ok(output.stdout)
 }
 
 /// Query GitHub API directly for the latest release and update local cache.
 pub async fn check_and_save_latest_version() -> Result<UpdateInfo, Box<dyn std::error::Error>> {
-    let client = create_http_client(6)?;
     let url = format!("https://api.github.com/repos/{}/releases/latest", GITHUB_REPO);
-    let resp = client.get(&url).send().await?;
+    let body_bytes = fetch_bytes_with_fallback(&url, 10).await?;
 
-    if !resp.status().is_success() {
-        return Err(format!("GitHub API returned status: {}", resp.status()).into());
-    }
-
-    let json: serde_json::Value = resp.json().await?;
+    let json: serde_json::Value = serde_json::from_slice(&body_bytes)?;
     let raw_tag = json.get("tag_name").and_then(|v| v.as_str()).unwrap_or("");
     let latest_clean = raw_tag.trim().trim_start_matches('v').to_string();
     let release_url = json

@@ -11,4 +11,5 @@ pub mod doctor;
 pub mod schema;
 pub mod inbox;
 pub mod tenant;
+pub mod dev;
 

@@ -3,7 +3,7 @@ use std::io::{Cursor, Read};
 use std::path::Path;
 
 use super::cache::get_cached_update;
-use super::client::{check_and_save_latest_version, create_http_client};
+use super::client::{check_and_save_latest_version, fetch_bytes_with_fallback};
 use super::types::{UpdateInfo, GITHUB_REPO};
 
 /// Perform upgrade: checks if managed by Scoop, otherwise performs in-place self-update.
@@ -46,9 +46,11 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let current_exe = std::env::current_exe()?;
-    let is_scoop_install = current_exe.to_string_lossy().to_lowercase().contains("scoop");
+    let exe_lower = current_exe.to_string_lossy().to_lowercase();
+    let is_scoop_install = exe_lower.contains("scoop\\apps\\specter")
+        || exe_lower.contains("scoop/apps/specter");
 
-    // 1. If installed inside Scoop directory, delegate to scoop update
+    // 1. If installed as a dedicated Scoop app, delegate to scoop update
     if is_scoop_install {
         let has_scoop = tokio::process::Command::new("powershell")
             .args([
@@ -66,18 +68,21 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             crate::ui::Notify::info("Detected Scoop installation. Executing package upgrade...");
             println!("\x1b[38;2;148;163;184m> scoop update specter\x1b[0m\n");
 
-            let mut child = tokio::process::Command::new("powershell")
+            if let Ok(output) = tokio::process::Command::new("powershell")
                 .args(["-NoProfile", "-Command", "scoop update specter"])
-                .spawn()?;
-
-            let status = child.wait().await?;
-            if status.success() {
-                println!();
-                crate::ui::Notify::success(format!(
-                    "Successfully upgraded Specter to v{} via Scoop!",
-                    info.latest_version
-                ));
-                return Ok(());
+                .output()
+                .await
+            {
+                let stdout_str = String::from_utf8_lossy(&output.stdout);
+                if output.status.success() && !stdout_str.contains("isn't installed") {
+                    println!("{}", stdout_str.trim());
+                    println!();
+                    crate::ui::Notify::success(format!(
+                        "Successfully upgraded Specter to v{} via Scoop!",
+                        info.latest_version
+                    ));
+                    return Ok(());
+                }
             }
         }
     }
@@ -102,19 +107,10 @@ async fn perform_in_place_self_update(
     println!("╰───────────────────────────────────────────────────────────────────────────╯");
     println!();
 
-    let client = create_http_client(60)?;
     let url = format!("https://api.github.com/repos/{}/releases/latest", GITHUB_REPO);
-    let release_resp = client.get(&url).send().await?;
+    let release_bytes = fetch_bytes_with_fallback(&url, 30).await?;
 
-    if !release_resp.status().is_success() {
-        return Err(format!(
-            "Failed to retrieve release metadata: HTTP {}",
-            release_resp.status()
-        )
-        .into());
-    }
-
-    let release_json: serde_json::Value = release_resp.json().await?;
+    let release_json: serde_json::Value = serde_json::from_slice(&release_bytes)?;
     let assets = release_json
         .get("assets")
         .and_then(|v| v.as_array())
@@ -188,7 +184,7 @@ async fn perform_in_place_self_update(
         size_mb
     );
 
-    let downloaded_bytes = client.get(&download_url).send().await?.bytes().await?;
+    let downloaded_bytes = fetch_bytes_with_fallback(&download_url, 120).await?;
     println!(
         "{} Successfully received {} bytes from GitHub Releases",
         crate::ui::badge_step("RECEIVED"),
@@ -196,29 +192,27 @@ async fn perform_in_place_self_update(
     );
 
     // Optional SHA-256 verification when checksum asset exists
-    if let Some((_, csum_url)) = checksum_asset {
-        if let Ok(csum_resp) = client.get(&csum_url).send().await {
-            if csum_resp.status().is_success() {
-                if let Ok(csum_text) = csum_resp.text().await {
-                    let actual_hash = hex::encode(sha2::Sha256::digest(&downloaded_bytes));
-                    for line in csum_text.lines() {
-                        let parts: Vec<&str> = line.split_whitespace().collect();
-                        if parts.len() >= 2 && parts[1].contains(&asset_name) {
-                            let expected_hash = parts[0].trim();
-                            if !expected_hash.eq_ignore_ascii_case(&actual_hash) {
-                                return Err(format!(
-                                    "Security Alert: SHA256 checksum mismatch for {}! Expected {}, got {}",
-                                    asset_name, expected_hash, actual_hash
-                                ).into());
-                            }
-                            println!(
-                                "{} Verified SHA256 checksum: \x1b[38;2;34;197;94mMATCH\x1b[0m",
-                                crate::ui::badge_step("VERIFY")
-                            );
-                            break;
-                        }
-                    }
+    if let Some((_, csum_url)) = checksum_asset
+        && let Ok(csum_bytes) = fetch_bytes_with_fallback(&csum_url, 30).await
+        && let Ok(csum_text) = String::from_utf8(csum_bytes)
+    {
+        let actual_hash = hex::encode(sha2::Sha256::digest(&downloaded_bytes));
+        for line in csum_text.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 && parts[1].contains(&asset_name) {
+                let expected_hash = parts[0].trim();
+                if !expected_hash.eq_ignore_ascii_case(&actual_hash) {
+                    return Err(format!(
+                        "Security Alert: SHA256 checksum mismatch for {}! Expected {}, got {}",
+                        asset_name, expected_hash, actual_hash
+                    )
+                    .into());
                 }
+                println!(
+                    "{} Verified SHA256 checksum: \x1b[38;2;34;197;94mMATCH\x1b[0m",
+                    crate::ui::badge_step("VERIFY")
+                );
+                break;
             }
         }
     }
@@ -272,57 +266,35 @@ async fn perform_in_place_self_update(
         downloaded_bytes.to_vec()
     };
 
-    // Swap executable in-place
+    // Swap executable in-place and sync `spc` / `specter` sibling aliases
     println!(
-        "{} Performing atomic in-place binary swap...",
+        "{} Performing atomic in-place binary swap (specter + spc)...",
         crate::ui::badge_step("SWAP")
     );
 
-    #[cfg(windows)]
-    {
-        let old_exe = current_exe.with_extension("exe.old");
-        if old_exe.exists() {
-            let _ = std::fs::remove_file(&old_exe);
-        }
+    atomic_swap_binary(current_exe, &binary_bytes)?;
 
-        // On Windows NTFS, an open executable handle can be renamed, but not overwritten directly.
-        // Step 1: Rename current binary to .exe.old
-        std::fs::rename(current_exe, &old_exe).map_err(|e| {
-            format!(
-                "Failed to rename running executable '{}' to backup: {}",
-                current_exe.display(),
-                e
-            )
-        })?;
-
-        // Step 2: Write new binary to the original canonical path
-        if let Err(e) = std::fs::write(current_exe, &binary_bytes) {
-            // Rollback if writing the new binary fails
-            let _ = std::fs::rename(&old_exe, current_exe);
-            return Err(format!(
-                "Failed to write new binary to '{}': {}. Reverted to previous version.",
-                current_exe.display(),
-                e
-            )
-            .into());
+    // Also sync sibling alias (`spc` <-> `specter`) in the same directory and in `~/.specter/bin/`
+    let mut synced_paths: Vec<std::path::PathBuf> = vec![current_exe.to_path_buf()];
+    if let Some(parent) = current_exe.parent() {
+        for bin_name in platform_binary_names() {
+            let candidate = parent.join(bin_name);
+            if candidate != current_exe {
+                let _ = atomic_swap_binary(&candidate, &binary_bytes);
+                synced_paths.push(candidate);
+            }
         }
     }
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let tmp_new = current_exe.with_extension("tmp_new");
-        std::fs::write(&tmp_new, &binary_bytes)?;
-        let _ = std::fs::set_permissions(&tmp_new, std::fs::Permissions::from_mode(0o755));
-
-        // Atomic rename replaces the existing file inode cleanly
-        std::fs::rename(&tmp_new, current_exe).map_err(|e| {
-            format!(
-                "Failed to atomically swap binary at '{}': {}",
-                current_exe.display(),
-                e
-            )
-        })?;
+    let ssot_bin = crate::config::canonical_specter_dir().join("bin");
+    if ssot_bin.exists() {
+        for bin_name in platform_binary_names() {
+            let candidate = ssot_bin.join(bin_name);
+            if !synced_paths.contains(&candidate) {
+                let _ = atomic_swap_binary(&candidate, &binary_bytes);
+                synced_paths.push(candidate);
+            }
+        }
     }
 
     println!();
@@ -330,8 +302,72 @@ async fn perform_in_place_self_update(
     println!("│  Previous Version   v{:<52} │", info.current_version);
     println!("│  Active Version     v{:<52} │", info.latest_version);
     println!("│  Binary Executable  {:<53} │", current_exe.display());
-    println!("╰─ In-place upgrade applied successfully! Run 'specter doctor' to inspect. ──╯");
+    println!("│  CLI Aliases Synced spc, specter                                          │");
+    println!("╰─ In-place upgrade applied successfully! Run 'spc doctor' to inspect. ────╯");
     println!();
+
+    Ok(())
+}
+
+fn platform_binary_names() -> &'static [&'static str] {
+    #[cfg(windows)]
+    {
+        &["specter.exe", "spc.exe"]
+    }
+    #[cfg(not(windows))]
+    {
+        &["specter", "spc"]
+    }
+}
+
+fn atomic_swap_binary(target_exe: &Path, binary_bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(windows)]
+    {
+        let old_exe = target_exe.with_extension("exe.old");
+        if old_exe.exists() {
+            let _ = std::fs::remove_file(&old_exe);
+        }
+
+        if target_exe.exists() {
+            // On Windows NTFS, an open executable handle can be renamed, but not overwritten directly.
+            std::fs::rename(target_exe, &old_exe).map_err(|e| {
+                format!(
+                    "Failed to rename running executable '{}' to backup: {}",
+                    target_exe.display(),
+                    e
+                )
+            })?;
+        }
+
+        if let Err(e) = std::fs::write(target_exe, binary_bytes) {
+            if old_exe.exists() {
+                let _ = std::fs::rename(&old_exe, target_exe);
+            }
+            return Err(format!(
+                "Failed to write new binary to '{}': {}. Reverted to previous version.",
+                target_exe.display(),
+                e
+            )
+            .into());
+        }
+        let _ = std::fs::remove_file(&old_exe);
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp_new = target_exe.with_extension("tmp_new");
+        std::fs::write(&tmp_new, binary_bytes)?;
+        let _ = std::fs::set_permissions(&tmp_new, std::fs::Permissions::from_mode(0o755));
+
+        std::fs::rename(&tmp_new, target_exe).map_err(|e| {
+            format!(
+                "Failed to atomically swap binary at '{}': {}",
+                target_exe.display(),
+                e
+            )
+        })?;
+    }
 
     Ok(())
 }

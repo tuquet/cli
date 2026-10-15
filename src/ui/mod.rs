@@ -14,7 +14,10 @@ pub use card::Card;
 pub use colors::visible_width;
 pub use format::{FormatArgs, OutputFormat};
 pub use notify::Notify;
-pub use prompt::{prompt_input, prompt_password, prompt_select};
+pub use prompt::{
+    clack_cancel, clack_intro, clack_outro, clack_select, prompt_input, prompt_password,
+    prompt_select, ClackOption,
+};
 pub use response::{
     respond, respond_action, respond_error, respond_with, ActionEnvelope, CliRender,
 };

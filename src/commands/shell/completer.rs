@@ -32,6 +32,187 @@ fn suggest_workflows(current_word: &str, span: Span, suggestions: &mut Vec<Sugge
     }
 }
 
+pub fn complete_dev_for_packages(
+    packages: &[crate::commands::dev::scanner::DiscoveredPackage],
+    args: &[&str],
+    last_word: &str,
+    current_word: &str,
+    span: Span,
+    suggestions: &mut Vec<Suggestion>,
+) {
+    let matches_filter = |item: &str, query: &str| -> bool {
+        item.to_lowercase().starts_with(&query.to_lowercase())
+    };
+
+    if last_word == "--pm" {
+        for pm in &["pnpm", "bun", "yarn", "npm"] {
+            if matches_filter(pm, current_word) {
+                suggestions.push(make_suggestion(*pm, "Package manager override", span));
+            }
+        }
+        return;
+    }
+
+    if matches!(last_word, "-f" | "--format") {
+        for fmt in &["card", "table", "json"] {
+            if matches_filter(fmt, current_word) {
+                suggestions.push(make_suggestion(*fmt, "Output format option", span));
+            }
+        }
+        return;
+    }
+
+    // Extract positional arguments typed before `current_word`
+    let mut positional: Vec<&str> = Vec::new();
+    let mut i = 0;
+    while i < args.len() {
+        match args[i] {
+            "--pm" | "--path" | "-P" | "--format" | "-f" => {
+                i += 1; // skip flag value
+            }
+            arg if !arg.starts_with('-') => {
+                positional.push(arg);
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    if positional.is_empty() {
+        // 1. If user is typing `<project>:<script>` shorthand
+        if let Some(colon_idx) = current_word.find(':')
+            && colon_idx > 0
+        {
+            let proj_part = &current_word[..colon_idx];
+            let matched = crate::commands::dev::scanner::filter_packages(packages, proj_part);
+            for pkg in matched {
+                for (script_name, script_cmd) in &pkg.scripts {
+                    let candidate = format!("{}:{}", proj_part, script_name);
+                    if matches_filter(&candidate, current_word) {
+                        let desc = format!(
+                            "[{}] {} run {} → {}",
+                            pkg.id, pkg.package_manager, script_name, script_cmd
+                        );
+                        suggestions.push(make_suggestion(candidate, desc, span));
+                    }
+                }
+            }
+            return;
+        }
+
+        // 2. Suggest discovered frontend projects + `<project>:dev` shorthand
+        let mut seen = std::collections::HashSet::new();
+        for pkg in packages {
+            let fw = pkg.framework.as_deref().unwrap_or("Node");
+            let scripts_preview: Vec<&str> =
+                pkg.scripts.iter().take(4).map(|(k, _)| k.as_str()).collect();
+            let desc = format!(
+                "[{} • {}] {} (scripts: {})",
+                pkg.package_manager,
+                fw,
+                pkg.name.as_deref().unwrap_or(&pkg.id),
+                scripts_preview.join(", ")
+            );
+
+            if matches_filter(&pkg.id, current_word) && seen.insert(pkg.id.clone()) {
+                suggestions.push(make_suggestion(&pkg.id, &desc, span));
+            }
+
+            let short = pkg.short_name();
+            if short != pkg.id
+                && matches_filter(short, current_word)
+                && seen.insert(short.to_string())
+            {
+                suggestions.push(make_suggestion(short, &desc, span));
+            }
+        }
+
+        // 3. Suggest flags
+        for (flag, desc) in &[
+            ("--list", "List all discovered package.json projects in workspace"),
+            ("-l", "List all discovered package.json projects in workspace"),
+            ("--pm", "Override package manager (pnpm, bun, yarn, npm)"),
+            ("--path", "Custom workspace root directory to scan"),
+        ] {
+            if matches_filter(flag, current_word) {
+                suggestions.push(make_suggestion(*flag, *desc, span));
+            }
+        }
+    } else if positional.len() == 1 {
+        // Completing 2nd positional arg: `dev <project> <script>`
+        let proj_query = positional[0];
+        let matched = crate::commands::dev::scanner::filter_packages(packages, proj_query);
+        let mut seen = std::collections::HashSet::new();
+        for pkg in matched {
+            for (script_name, script_cmd) in &pkg.scripts {
+                if matches_filter(script_name, current_word) && seen.insert(script_name.clone()) {
+                    let desc = format!(
+                        "{} run {} → {}",
+                        pkg.package_manager, script_name, script_cmd
+                    );
+                    suggestions.push(make_suggestion(script_name, desc, span));
+                }
+            }
+        }
+    }
+}
+
+fn suggest_dev_completions(
+    args: &[&str],
+    last_word: &str,
+    current_word: &str,
+    span: Span,
+    suggestions: &mut Vec<Suggestion>,
+) {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let mut custom_root: Option<std::path::PathBuf> = None;
+    let mut i = 0;
+    while i < args.len() {
+        if matches!(args[i], "--path" | "-P")
+            && let Some(val) = args.get(i + 1)
+        {
+            custom_root = Some(std::path::PathBuf::from(*val));
+            break;
+        }
+        i += 1;
+    }
+
+    let packages = match custom_root {
+        Some(ref root) => crate::commands::dev::scanner::scan_workspace_packages(root),
+        None => cached_machine_packages(&cwd),
+    };
+    complete_dev_for_packages(&packages, args, last_word, current_word, span, suggestions);
+}
+
+fn cached_machine_packages(
+    cwd: &std::path::Path,
+) -> Vec<crate::commands::dev::scanner::DiscoveredPackage> {
+    use std::sync::{Mutex, OnceLock};
+    use std::time::{Duration, Instant};
+
+    type CacheEntry = (
+        Instant,
+        std::path::PathBuf,
+        Vec<crate::commands::dev::scanner::DiscoveredPackage>,
+    );
+    static CACHE: OnceLock<Mutex<Option<CacheEntry>>> = OnceLock::new();
+
+    let lock = CACHE.get_or_init(|| Mutex::new(None));
+    if let Ok(guard) = lock.lock()
+        && let Some((ts, ref cached_cwd, ref pkgs)) = *guard
+        && ts.elapsed() < Duration::from_secs(15)
+        && cached_cwd == cwd
+    {
+        return pkgs.clone();
+    }
+
+    let pkgs = crate::commands::dev::scanner::scan_machine_packages(cwd);
+    if let Ok(mut guard) = lock.lock() {
+        *guard = Some((Instant::now(), cwd.to_path_buf(), pkgs.clone()));
+    }
+    pkgs
+}
+
 pub struct SpecterCompleter {
     pub scope: ShellScope,
 }
@@ -520,8 +701,11 @@ impl Completer for SpecterCompleter {
                 }
             }
             ShellScope::Global => {
-                // If in Global and user typed a direct shortcut like `run`, `card`, `install`, `start`, etc.
+                // If in Global and user typed a direct shortcut like `dev`, `run`, `card`, `install`, `start`, etc.
                 match cmd.as_str() {
+                    "dev" | "fe" | "pkg" => {
+                        suggest_dev_completions(args, last_word, current_word, span, &mut suggestions);
+                    }
                     "run" | "inspect" | "export" | "delete" => {
                         suggest_workflows(current_word, span, &mut suggestions);
                         for flag in &["-h", "--headless", "-t", "--timeout", "-v", "--variables", "--browser"] {
@@ -623,6 +807,8 @@ impl Completer for SpecterCompleter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::dev::scanner::DiscoveredPackage;
+    use std::path::PathBuf;
 
     fn extract_values(res: CompletionResult) -> Vec<String> {
         match res {
@@ -631,6 +817,70 @@ mod tests {
             }
             _ => vec![],
         }
+    }
+
+    #[test]
+    fn test_completer_dev_projects_and_scripts() {
+        let packages = vec![
+            DiscoveredPackage {
+                id: "apps/studio".to_string(),
+                name: Some("@tuquet/studio".to_string()),
+                dir: PathBuf::from("apps/studio"),
+                package_manager: "pnpm".to_string(),
+                framework: Some("Vite".to_string()),
+                scripts: vec![
+                    ("dev".to_string(), "vite".to_string()),
+                    ("build".to_string(), "vite build".to_string()),
+                    ("preview".to_string(), "vite preview".to_string()),
+                ],
+            },
+            DiscoveredPackage {
+                id: "web-portal".to_string(),
+                name: Some("web-portal".to_string()),
+                dir: PathBuf::from("web-portal"),
+                package_manager: "bun".to_string(),
+                framework: Some("Next.js".to_string()),
+                scripts: vec![
+                    ("dev".to_string(), "next dev".to_string()),
+                    ("lint".to_string(), "next lint".to_string()),
+                ],
+            },
+        ];
+
+        // 1. `dev ` -> suggests project IDs, short names, and flags
+        let mut suggestions = Vec::new();
+        complete_dev_for_packages(&packages, &[], "dev", "", Span::new(4, 4), &mut suggestions);
+        let vals: Vec<String> = suggestions.iter().map(|s| s.value.clone()).collect();
+        assert!(vals.contains(&"apps/studio".to_string()));
+        assert!(vals.contains(&"studio".to_string()));
+        assert!(vals.contains(&"web-portal".to_string()));
+        assert!(vals.contains(&"--list".to_string()));
+
+        // 2. `dev studio ` -> suggests scripts from studio's package.json
+        let mut script_suggestions = Vec::new();
+        complete_dev_for_packages(
+            &packages,
+            &["studio"],
+            "studio",
+            "",
+            Span::new(11, 11),
+            &mut script_suggestions,
+        );
+        let script_vals: Vec<String> = script_suggestions.iter().map(|s| s.value.clone()).collect();
+        assert_eq!(script_vals, vec!["dev", "build", "preview"]);
+
+        // 3. `dev studio:b` -> suggests `studio:build`
+        let mut colon_suggestions = Vec::new();
+        complete_dev_for_packages(
+            &packages,
+            &[],
+            "dev",
+            "studio:b",
+            Span::new(4, 12),
+            &mut colon_suggestions,
+        );
+        let colon_vals: Vec<String> = colon_suggestions.iter().map(|s| s.value.clone()).collect();
+        assert_eq!(colon_vals, vec!["studio:build"]);
     }
 
     #[test]

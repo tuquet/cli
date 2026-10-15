@@ -1,7 +1,8 @@
 [package]
 name = "specter"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
+default-run = "specter"
 description = "Specter - Autonomous Browser Automation & Distributed Mesh Runtime"
 repository = "https://github.com/tuquet/cli"
 license = "MIT"
@@ -13,6 +14,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "specter"
 path = "src/main.rs"
+
+[[bin]]
+name = "spc"
+path = "src/bin/spc.rs"
 
 [dependencies]
 specter-faker = { package = "faker", path = "../faker" }
@@ -46,6 +51,7 @@ tokio-util = "0.7.19"
 tower-http = { version = "0.7.0", features = ["cors", "fs"] }
 sysinfo = "0.39.6"
 reedline = "0.52.0"
+crossterm = "0.29.0"
 nu-ansi-term = "0.50.3"
 socket2 = "0.6"
 flate2 = "1.0"

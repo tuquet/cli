@@ -302,6 +302,7 @@ pub fn print_scope_help(scope: ShellScope) {
             card.add_kv("  clear", "Clear terminal screen buffer");
             card.add_kv("  exit", "Quit interactive shell");
             card.add_line(format!("{BOLD}Direct Shortcuts:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
+            card.add_kv("  dev [proj] [script]", "Scan package.json & interactively run frontend scripts");
             card.add_kv("  status", "Unified ecosystem health & subsystem status");
             card.add_kv("  doctor", "Diagnose environment dependencies (Scoop, Cloudflared, SSH, Browser)");
             card.add_kv("  upgrade", "Check and update Specter to latest release");

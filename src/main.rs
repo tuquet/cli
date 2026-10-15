@@ -12,6 +12,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     automa_core::infrastructure::updater::spawn_background_update_check();
 
     let result = match cli.command {
+        Some(Commands::Dev {
+            project,
+            script,
+            list,
+            path,
+            pm,
+            extra_args,
+            format,
+        }) => {
+            commands::dev::handle(project, script, list, path, pm, extra_args, format.resolve()).await
+        }
         Some(Commands::Upgrade) => automa_core::infrastructure::updater::run_upgrade().await,
         Some(Commands::Status { format }) => commands::status::show_dashboard(format.resolve()).await,
         Some(Commands::Doctor { fix, format }) => commands::doctor::run(fix, format.resolve()).await,
