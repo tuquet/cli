@@ -20,7 +20,7 @@ pub fn get_log_file_path(data_dir: &str) -> PathBuf {
 pub fn is_valid_runner_name(raw_name: &str) -> bool {
     let name = raw_name.to_lowercase();
     let base_name = name.trim_end_matches(".exe");
-    base_name == "specter" || base_name == "runner"
+    base_name == "spc" || base_name == "specter" || base_name == "runner"
 }
 
 use crate::ui::{respond_with, OutputFormat};

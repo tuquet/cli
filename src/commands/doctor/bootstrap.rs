@@ -100,12 +100,12 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
             config_val["mcpServers"] = json!({});
         }
 
-        let specter_cmd = if find_executable("specter").is_some() {
-            "specter".to_string()
+        let specter_cmd = if find_executable("spc").is_some() {
+            "spc".to_string()
         } else {
             std::env::current_exe()
                 .map(|p| p.display().to_string())
-                .unwrap_or_else(|_| "specter".to_string())
+                .unwrap_or_else(|_| "spc".to_string())
         };
 
         let mcp_def = json!({

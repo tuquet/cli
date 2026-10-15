@@ -55,6 +55,9 @@ mod tests {
 
     #[test]
     fn test_is_valid_runner_name() {
+        assert!(is_valid_runner_name("spc"));
+        assert!(is_valid_runner_name("spc.exe"));
+        assert!(is_valid_runner_name("SPC.EXE"));
         assert!(is_valid_runner_name("specter"));
         assert!(is_valid_runner_name("specter.exe"));
         assert!(is_valid_runner_name("SPECTER.EXE"));

@@ -22,7 +22,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
   Autonomous Browser Automation & Distributed Mesh Runtime
 
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspc\x1b[0m (or \x1b[1mspecter\x1b[0m) [COMMAND] [OPTIONS]
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspc\x1b[0m [COMMAND] [OPTIONS]
 
 \x1b[1;38;2;56;189;248mDeveloper Suite:\x1b[0m
   \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)

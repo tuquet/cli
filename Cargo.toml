@@ -2,7 +2,7 @@
 name = "specter"
 version = "1.2.0"
 edition = "2024"
-default-run = "specter"
+default-run = "spc"
 description = "Specter - Autonomous Browser Automation & Distributed Mesh Runtime"
 repository = "https://github.com/tuquet/cli"
 license = "MIT"
@@ -12,12 +12,8 @@ name = "automa_core"
 path = "src/lib.rs"
 
 [[bin]]
-name = "specter"
-path = "src/main.rs"
-
-[[bin]]
 name = "spc"
-path = "src/bin/spc.rs"
+path = "src/main.rs"
 
 [dependencies]
 specter-faker = { package = "faker", path = "../faker" }

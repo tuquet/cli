@@ -163,7 +163,9 @@ async fn perform_in_place_self_update(
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
             // Fallback raw binary
-            if selected_asset.is_none() && (name == "specter.exe" || name == "specter") {
+            if selected_asset.is_none()
+                && (name == "spc.exe" || name == "spc" || name == "specter.exe" || name == "specter")
+            {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
         }
@@ -230,7 +232,11 @@ async fn perform_in_place_self_update(
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let file_name = file.name().to_string();
-            if file_name.ends_with("specter.exe") || file_name.ends_with("specter") {
+            if file_name.ends_with("spc.exe")
+                || file_name.ends_with("spc")
+                || file_name.ends_with("specter.exe")
+                || file_name.ends_with("specter")
+            {
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
                 extracted = Some(buf);
@@ -238,7 +244,7 @@ async fn perform_in_place_self_update(
             }
         }
         extracted
-            .ok_or("Failed to locate 'specter' executable inside the downloaded ZIP archive")?
+            .ok_or("Failed to locate 'spc' executable inside the downloaded ZIP archive")?
     } else if asset_name.ends_with(".tar.gz") {
         println!(
             "{} Extracting binary from Tarball archive in-memory...",
@@ -252,7 +258,11 @@ async fn perform_in_place_self_update(
         for entry in tar_archive.entries()? {
             let mut entry = entry?;
             let path = entry.path()?.to_string_lossy().to_string();
-            if path.ends_with("specter") || path.ends_with("specter.exe") {
+            if path.ends_with("spc")
+                || path.ends_with("spc.exe")
+                || path.ends_with("specter")
+                || path.ends_with("specter.exe")
+            {
                 let mut buf = Vec::new();
                 entry.read_to_end(&mut buf)?;
                 extracted = Some(buf);
@@ -260,40 +270,49 @@ async fn perform_in_place_self_update(
             }
         }
         extracted
-            .ok_or("Failed to locate 'specter' executable inside the downloaded tarball archive")?
+            .ok_or("Failed to locate 'spc' executable inside the downloaded tarball archive")?
     } else {
         // Direct raw binary
         downloaded_bytes.to_vec()
     };
 
-    // Swap executable in-place and sync `spc` / `specter` sibling aliases
+    // Swap executable in-place for `spc` only, and purge any legacy `specter.exe`
     println!(
-        "{} Performing atomic in-place binary swap (specter + spc)...",
+        "{} Performing atomic in-place binary swap (spc)...",
         crate::ui::badge_step("SWAP")
     );
 
-    atomic_swap_binary(current_exe, &binary_bytes)?;
+    let bin_name = platform_binary_name();
+    let target_spc = current_exe
+        .parent()
+        .map(|p| p.join(bin_name))
+        .unwrap_or_else(|| current_exe.to_path_buf());
 
-    // Also sync sibling alias (`spc` <-> `specter`) in the same directory and in `~/.specter/bin/`
-    let mut synced_paths: Vec<std::path::PathBuf> = vec![current_exe.to_path_buf()];
-    if let Some(parent) = current_exe.parent() {
-        for bin_name in platform_binary_names() {
-            let candidate = parent.join(bin_name);
-            if candidate != current_exe {
-                let _ = atomic_swap_binary(&candidate, &binary_bytes);
-                synced_paths.push(candidate);
-            }
+    atomic_swap_binary(&target_spc, &binary_bytes)?;
+
+    // If the user ran `specter.exe update` from an older install, remove the legacy `specter.exe`
+    if current_exe != target_spc {
+        let old_legacy = current_exe.with_extension("exe.old");
+        let _ = std::fs::rename(current_exe, &old_legacy);
+        let _ = std::fs::remove_file(&old_legacy);
+    }
+
+    if let Some(parent) = target_spc.parent() {
+        let legacy = parent.join(legacy_binary_name());
+        if legacy.exists() {
+            let _ = std::fs::remove_file(&legacy);
         }
     }
 
     let ssot_bin = crate::config::canonical_specter_dir().join("bin");
     if ssot_bin.exists() {
-        for bin_name in platform_binary_names() {
-            let candidate = ssot_bin.join(bin_name);
-            if !synced_paths.contains(&candidate) {
-                let _ = atomic_swap_binary(&candidate, &binary_bytes);
-                synced_paths.push(candidate);
-            }
+        let candidate = ssot_bin.join(bin_name);
+        if candidate != target_spc && candidate.exists() {
+            let _ = atomic_swap_binary(&candidate, &binary_bytes);
+        }
+        let legacy_ssot = ssot_bin.join(legacy_binary_name());
+        if legacy_ssot.exists() {
+            let _ = std::fs::remove_file(&legacy_ssot);
         }
     }
 
@@ -301,22 +320,32 @@ async fn perform_in_place_self_update(
     println!("╭─ UPGRADE COMPLETED ────────────────────────────────────────── ● SUCCESS ─╮");
     println!("│  Previous Version   v{:<52} │", info.current_version);
     println!("│  Active Version     v{:<52} │", info.latest_version);
-    println!("│  Binary Executable  {:<53} │", current_exe.display());
-    println!("│  CLI Aliases Synced spc, specter                                          │");
+    println!("│  Binary Executable  {:<53} │", target_spc.display());
     println!("╰─ In-place upgrade applied successfully! Run 'spc doctor' to inspect. ────╯");
     println!();
 
     Ok(())
 }
 
-fn platform_binary_names() -> &'static [&'static str] {
+fn platform_binary_name() -> &'static str {
     #[cfg(windows)]
     {
-        &["specter.exe", "spc.exe"]
+        "spc.exe"
     }
     #[cfg(not(windows))]
     {
-        &["specter", "spc"]
+        "spc"
+    }
+}
+
+fn legacy_binary_name() -> &'static str {
+    #[cfg(windows)]
+    {
+        "specter.exe"
+    }
+    #[cfg(not(windows))]
+    {
+        "specter"
     }
 }
 
