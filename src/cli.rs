@@ -16,7 +16,7 @@ pub fn get_styles() -> Styles {
 pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[38;2;56;189;248m   _____  ____   ______  ______ ______  ______  ____  \x1b[0m
 \x1b[38;2;96;165;250m  / ___/ / __ \\ / ____/ / ____//_  __/ / ____/ / __ \\ \x1b[0m
-\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.1.0\x1b[0m
+\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.2.0\x1b[0m
 \x1b[38;2;168;85;247m ___/ /  / ____// /___  / /___  / /    / /___  / _, _/\x1b[0m
 \x1b[38;2;192;132;252m/____/   /_/    /_____/ \\____/  /_/    /_____/ /_/ |_|\x1b[0m
 
@@ -24,8 +24,14 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspc\x1b[0m (or \x1b[1mspecter\x1b[0m) [COMMAND] [OPTIONS]
 
+\x1b[1;38;2;56;189;248mDeveloper Suite:\x1b[0m
+  \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)
+  \x1b[1;32mport\x1b[0m            Scan active local listening TCP ports & terminate processes
+  \x1b[1;32mcode\x1b[0m            Find any project across machine & open in VS Code / Antigravity / Explorer
+  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Specter Bridge-aware push/pull
+  \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
+
 \x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
-  \x1b[1;32mdev\x1b[0m             Scan workspace package.json & run frontend project scripts
   \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, and Browser
   \x1b[1;32mdoctor\x1b[0m          Check all ecosystem dependencies, system tools & health
   \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
@@ -55,17 +61,14 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
 \x1b[1;38;2;56;189;248mExamples:\x1b[0m
-  specter                          Launch interactive SPECTER SHELL (REPL)
-  specter dev                      Scan package.json & interactively run frontend scripts
-  specter doctor                   Check dependencies and system health
-  specter status                   Check full ecosystem dashboard
-  specter bridge status            Inspect multi-VPS tunnels & proxy health
-  specter whoami                   Display cloud device identity
-  specter faker generate -n 5      Generate 5 compliant personas in a table
-  specter automa run ./wf.json     Execute workflow directly
-  specter runner start --port 8765 Start local daemon worker
-  specter browser status           Inspect dedicated browser engine
-  specter mcp                      Start native MCP stdio server";
+  spc                              Launch interactive SPECTER SHELL (REPL)
+  spc dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
+  spc port                         Scan listening ports & terminate zombie processes
+  spc code                         Find project across machine & open in IDE
+  spc git                          Inspect multi-repo Git radar & push via Specter Bridge
+  spc env                          Validate .env vs .env.example & sync missing keys
+  spc doctor                       Check dependencies and system health
+  spc status                       Check full ecosystem dashboard";
 
 /// Specter - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
@@ -85,32 +88,132 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Scan workspace for package.json projects and run frontend scripts interactively
-    #[command(name = "dev", aliases = ["fe", "pkg"])]
+    /// Scan machine for projects (package.json, Cargo.toml, pom.xml, compose.yml) and run scripts interactively
+    #[command(name = "dev")]
     Dev {
         /// Target project name, folder path, or <project>:<script> shorthand
         #[arg(value_name = "PROJECT")]
         project: Option<String>,
 
-        /// Optional script name to execute from package.json (e.g. dev, build, start, lint)
+        /// Optional script name to execute (e.g. dev, build, start, lint, run)
         #[arg(value_name = "SCRIPT")]
         script: Option<String>,
 
-        /// List all discovered package.json projects and scripts in workspace
+        /// List all discovered projects and scripts
         #[arg(short = 'l', long)]
         list: bool,
 
-        /// Custom workspace root directory to scan (defaults to current directory)
+        /// Custom workspace root directory to scan (defaults to full machine)
         #[arg(short = 'P', long)]
         path: Option<PathBuf>,
 
-        /// Override detected package manager (npm, pnpm, yarn, bun)
+        /// Override detected package manager / toolchain (npm, pnpm, yarn, bun, cargo, mvn, gradle, docker)
         #[arg(long)]
         pm: Option<String>,
 
-        /// Extra arguments passed to the package script after `--`
+        /// Extra arguments passed to the script after `--`
         #[arg(last = true, value_name = "EXTRA_ARGS")]
         extra_args: Vec<String>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Scan active local listening TCP ports and terminate processes interactively
+    #[command(name = "port")]
+    Port {
+        /// Optional port number or process name filter (e.g. 5173, 8080, node, java)
+        #[arg(value_name = "QUERY")]
+        query: Option<String>,
+
+        /// Terminate matching port process immediately without interactive prompt
+        #[arg(short = 'k', long)]
+        kill: bool,
+
+        /// Include all OS and ephemeral ports (defaults to developer ports)
+        #[arg(short = 'a', long)]
+        all: bool,
+
+        /// List listening ports without prompting to terminate
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Find any project across the machine and open in VS Code, Antigravity, Cursor, or Explorer
+    #[command(name = "code")]
+    Code {
+        /// Target project name or path query
+        #[arg(value_name = "PROJECT")]
+        project: Option<String>,
+
+        /// Target editor or file manager (code, agy, cursor, explorer)
+        #[arg(short = 'e', long)]
+        editor: Option<String>,
+
+        /// List discovered projects and detected editors
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        /// Custom workspace root directory to scan
+        #[arg(short = 'P', long)]
+        path: Option<PathBuf>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Scan all Git repositories across the machine and synchronize via Specter Bridge
+    #[command(name = "git")]
+    Git {
+        /// Target repository name or path query
+        #[arg(value_name = "REPO")]
+        repo: Option<String>,
+
+        /// Git action to execute (push-bridge, status, pull, push, stash)
+        #[arg(value_name = "ACTION")]
+        action: Option<String>,
+
+        /// Include clean repositories (defaults to dirty or unpushed repositories)
+        #[arg(short = 'a', long)]
+        all: bool,
+
+        /// List repositories and their branch/dirty/sync status
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        /// Custom workspace root directory to scan
+        #[arg(short = 'P', long)]
+        path: Option<PathBuf>,
+
+        #[command(flatten)]
+        format: crate::ui::FormatArgs,
+    },
+
+    /// Validate .env against .env.example, sync missing keys, and switch environment profiles
+    #[command(name = "env")]
+    Env {
+        /// Optional target project name or path query (defaults to current directory if .env* exists)
+        #[arg(value_name = "PROJECT")]
+        project: Option<String>,
+
+        /// Check and display .env diff report non-interactively
+        #[arg(short = 'c', long)]
+        check: bool,
+
+        /// Switch active .env to the specified profile (e.g. development, staging, production, local)
+        #[arg(short = 's', long = "switch")]
+        switch_profile: Option<String>,
+
+        /// List .env variables and diff report
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        /// Custom workspace root directory to scan
+        #[arg(short = 'P', long)]
+        path: Option<PathBuf>,
 
         #[command(flatten)]
         format: crate::ui::FormatArgs,

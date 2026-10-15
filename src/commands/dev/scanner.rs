@@ -182,7 +182,11 @@ pub fn scan_machine_packages(current_dir: &Path) -> Vec<DiscoveredPackage> {
     all_packages
 }
 
-fn format_clean_package_id(dir: &Path, current_dir: &Path, home_dir: Option<&Path>) -> String {
+pub(crate) fn format_clean_package_id(
+    dir: &Path,
+    current_dir: &Path,
+    home_dir: Option<&Path>,
+) -> String {
     // 1. If inside current_dir (and current_dir is not Home or Drive root), show relative to current_dir
     if current_dir.parent().is_some()
         && Some(current_dir) != home_dir
@@ -251,7 +255,7 @@ fn sort_packages(packages: &mut [DiscoveredPackage], current_dir: Option<&Path>)
 
 /// Collect top-level directories across all fixed drives and the current user's home directory
 /// so we can scan the entire machine in parallel while bypassing OS/system trees.
-fn collect_machine_scan_roots() -> Vec<(PathBuf, PathBuf)> {
+pub(crate) fn collect_machine_scan_roots() -> Vec<(PathBuf, PathBuf)> {
     let mut roots: Vec<(PathBuf, PathBuf)> = Vec::new();
     let home_dir = get_user_home_dir();
 
@@ -319,14 +323,14 @@ fn list_fixed_drives() -> Vec<PathBuf> {
     Vec::new()
 }
 
-fn get_user_home_dir() -> Option<PathBuf> {
+pub(crate) fn get_user_home_dir() -> Option<PathBuf> {
     std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .ok()
         .map(PathBuf::from)
 }
 
-fn should_skip_dir_entry(entry: &std::fs::DirEntry) -> bool {
+pub(crate) fn should_skip_dir_entry(entry: &std::fs::DirEntry) -> bool {
     let Ok(ft) = entry.file_type() else {
         return true;
     };
@@ -385,10 +389,7 @@ fn is_windows_special_or_cloud_dir(entry: &std::fs::DirEntry) -> bool {
 
 fn scan_from_root_parallel(root: &Path, display_base: &Path) -> Vec<DiscoveredPackage> {
     let mut packages = Vec::new();
-    let pkg_json_path = root.join("package.json");
-    if pkg_json_path.is_file()
-        && let Some(pkg) = parse_package_json(display_base, root, &pkg_json_path)
-    {
+    if let Some(pkg) = parse_directory_project(display_base, root) {
         packages.push(pkg);
     }
 
@@ -442,10 +443,7 @@ fn walk_dir_recursive(
         return;
     }
 
-    let pkg_json_path = current.join("package.json");
-    if pkg_json_path.is_file()
-        && let Some(pkg) = parse_package_json(root, current, &pkg_json_path)
-    {
+    if let Some(pkg) = parse_directory_project(root, current) {
         packages.push(pkg);
     }
 
@@ -466,6 +464,249 @@ fn walk_dir_recursive(
     for subdir in subdirs {
         walk_dir_recursive(root, &subdir, depth + 1, packages);
     }
+}
+
+fn parse_directory_project(root: &Path, dir: &Path) -> Option<DiscoveredPackage> {
+    let pkg_json_path = dir.join("package.json");
+    if pkg_json_path.is_file()
+        && let Some(pkg) = parse_package_json(root, dir, &pkg_json_path)
+    {
+        return Some(pkg);
+    }
+
+    let cargo_toml_path = dir.join("Cargo.toml");
+    if cargo_toml_path.is_file()
+        && let Some(pkg) = parse_cargo_toml(root, dir, &cargo_toml_path)
+    {
+        return Some(pkg);
+    }
+
+    let pom_xml_path = dir.join("pom.xml");
+    if pom_xml_path.is_file()
+        && let Some(pkg) = parse_pom_xml(root, dir, &pom_xml_path)
+    {
+        return Some(pkg);
+    }
+
+    for gradle_file in &["build.gradle", "build.gradle.kts"] {
+        let gradle_path = dir.join(gradle_file);
+        if gradle_path.is_file()
+            && let Some(pkg) = parse_gradle_build(root, dir, &gradle_path)
+        {
+            return Some(pkg);
+        }
+    }
+
+    for compose_file in &[
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "compose.yml",
+        "compose.yaml",
+    ] {
+        let compose_path = dir.join(compose_file);
+        if compose_path.is_file()
+            && let Some(pkg) = parse_docker_compose(root, dir, compose_file)
+        {
+            return Some(pkg);
+        }
+    }
+
+    None
+}
+
+fn compute_rel_id(root: &Path, dir: &Path) -> String {
+    dir.strip_prefix(root)
+        .ok()
+        .and_then(|rel| {
+            let s = rel
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/");
+            if s.is_empty() { None } else { Some(s) }
+        })
+        .unwrap_or_else(|| {
+            dir.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(".")
+                .to_string()
+        })
+}
+
+fn parse_cargo_toml(root: &Path, dir: &Path, cargo_path: &Path) -> Option<DiscoveredPackage> {
+    let content = std::fs::read_to_string(cargo_path).ok()?;
+    if !content.contains("[package]") {
+        return None;
+    }
+    let has_bin = dir.join("src").join("main.rs").is_file() || content.contains("[[bin]]");
+    if !has_bin {
+        return None;
+    }
+
+    let name = content.lines().find_map(|line| {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("name") {
+            let rest = rest.trim_start();
+            if let Some(val) = rest.strip_prefix('=') {
+                return Some(val.trim().trim_matches('"').trim_matches('\'').to_string());
+            }
+        }
+        None
+    });
+
+    let scripts = vec![
+        ("dev".to_string(), "cargo run".to_string()),
+        ("check".to_string(), "cargo check".to_string()),
+        ("test".to_string(), "cargo test".to_string()),
+        ("build".to_string(), "cargo build --release".to_string()),
+        ("clippy".to_string(), "cargo clippy".to_string()),
+    ];
+
+    Some(DiscoveredPackage {
+        id: compute_rel_id(root, dir),
+        name,
+        dir: dir.to_path_buf(),
+        package_manager: "cargo".to_string(),
+        framework: Some("Rust".to_string()),
+        scripts,
+    })
+}
+
+pub fn extract_xml_tag_value(xml: &str, tag: &str) -> Option<String> {
+    let open = format!("<{}>", tag);
+    let close = format!("</{}>", tag);
+    let start = xml.find(&open)? + open.len();
+    let end = xml[start..].find(&close)? + start;
+    let val = xml[start..end].trim();
+    if val.is_empty() || val.starts_with("${") {
+        None
+    } else {
+        Some(val.to_string())
+    }
+}
+
+pub fn normalize_java_version(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed == "1.8" || trimmed == "8" {
+        Some("8".to_string())
+    } else if trimmed == "11" || trimmed == "17" || trimmed == "21" || trimmed == "22" {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
+fn parse_pom_xml(root: &Path, dir: &Path, pom_path: &Path) -> Option<DiscoveredPackage> {
+    let content = std::fs::read_to_string(pom_path).ok()?;
+    let is_spring_boot = content.contains("spring-boot");
+    let is_pom_packaging = content.contains("<packaging>pom</packaging>");
+    if is_pom_packaging && !is_spring_boot {
+        return None;
+    }
+
+    let name = extract_xml_tag_value(&content, "artifactId");
+    let raw_java = extract_xml_tag_value(&content, "java.version")
+        .or_else(|| extract_xml_tag_value(&content, "maven.compiler.release"))
+        .or_else(|| extract_xml_tag_value(&content, "maven.compiler.source"));
+    let java_ver = raw_java.as_deref().and_then(normalize_java_version);
+
+    let fw = match (is_spring_boot, java_ver) {
+        (true, Some(v)) => format!("Spring Boot (JDK {})", v),
+        (true, None) => "Spring Boot".to_string(),
+        (false, Some(v)) => format!("Maven (JDK {})", v),
+        (false, None) => "Maven".to_string(),
+    };
+
+    let pm = if dir.join("mvnw.cmd").is_file() || dir.join("mvnw").is_file() {
+        "mvnw".to_string()
+    } else {
+        "mvn".to_string()
+    };
+
+    let mut scripts = Vec::new();
+    if is_spring_boot {
+        scripts.push(("dev".to_string(), "spring-boot:run".to_string()));
+    }
+    scripts.push(("build".to_string(), "clean package -DskipTests".to_string()));
+    scripts.push(("compile".to_string(), "test-compile".to_string()));
+    scripts.push(("test".to_string(), "test".to_string()));
+
+    Some(DiscoveredPackage {
+        id: compute_rel_id(root, dir),
+        name,
+        dir: dir.to_path_buf(),
+        package_manager: pm,
+        framework: Some(fw),
+        scripts,
+    })
+}
+
+fn parse_gradle_build(root: &Path, dir: &Path, gradle_path: &Path) -> Option<DiscoveredPackage> {
+    let content = std::fs::read_to_string(gradle_path).ok()?;
+    let is_spring_boot = content.contains("org.springframework.boot") || content.contains("bootRun");
+    let is_app = is_spring_boot || content.contains("application");
+    if !is_app {
+        return None;
+    }
+
+    let pm = if dir.join("gradlew.bat").is_file() || dir.join("gradlew").is_file() {
+        "gradlew".to_string()
+    } else {
+        "gradle".to_string()
+    };
+
+    let fw = if is_spring_boot {
+        "Spring Boot".to_string()
+    } else {
+        "Gradle".to_string()
+    };
+
+    let mut scripts = Vec::new();
+    if is_spring_boot {
+        scripts.push(("dev".to_string(), "bootRun".to_string()));
+    } else {
+        scripts.push(("dev".to_string(), "run".to_string()));
+    }
+    scripts.push(("build".to_string(), "assemble".to_string()));
+    scripts.push(("test".to_string(), "test".to_string()));
+
+    let name = dir
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(|s| s.to_string());
+
+    Some(DiscoveredPackage {
+        id: compute_rel_id(root, dir),
+        name,
+        dir: dir.to_path_buf(),
+        package_manager: pm,
+        framework: Some(fw),
+        scripts,
+    })
+}
+
+fn parse_docker_compose(root: &Path, dir: &Path, compose_file: &str) -> Option<DiscoveredPackage> {
+    let name = dir
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(|s| s.to_string());
+
+    let scripts = vec![
+        ("up".to_string(), format!("docker compose -f {} up", compose_file)),
+        ("up-d".to_string(), format!("docker compose -f {} up -d", compose_file)),
+        ("down".to_string(), format!("docker compose -f {} down", compose_file)),
+        ("logs".to_string(), format!("docker compose -f {} logs -f", compose_file)),
+        ("ps".to_string(), format!("docker compose -f {} ps", compose_file)),
+    ];
+
+    Some(DiscoveredPackage {
+        id: compute_rel_id(root, dir),
+        name,
+        dir: dir.to_path_buf(),
+        package_manager: "docker".to_string(),
+        framework: Some("Docker Compose".to_string()),
+        scripts,
+    })
 }
 
 fn parse_package_json(root: &Path, dir: &Path, pkg_json_path: &Path) -> Option<DiscoveredPackage> {

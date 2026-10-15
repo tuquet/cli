@@ -701,10 +701,96 @@ impl Completer for SpecterCompleter {
                 }
             }
             ShellScope::Global => {
-                // If in Global and user typed a direct shortcut like `dev`, `run`, `card`, `install`, `start`, etc.
+                // If in Global and user typed a direct shortcut like `dev`, `port`, `code`, `git`, `env`, `run`, `card`, etc.
                 match cmd.as_str() {
-                    "dev" | "fe" | "pkg" => {
+                    "dev" => {
                         suggest_dev_completions(args, last_word, current_word, span, &mut suggestions);
+                    }
+                    "port" => {
+                        for (flag, desc) in &[
+                            ("--list", "List all listening TCP ports without interactive prompt"),
+                            ("-l", "List all listening TCP ports without interactive prompt"),
+                            ("--kill", "Terminate the process listening on the specified port"),
+                            ("-k", "Terminate the process listening on the specified port"),
+                            ("--format", "Output format: card, table, json"),
+                            ("-f", "Output format: card, table, json"),
+                        ] {
+                            if matches_filter(flag, current_word) {
+                                suggestions.push(make_suggestion(*flag, *desc, span));
+                            }
+                        }
+                    }
+                    "code" => {
+                        if matches!(last_word, "-e" | "--editor") {
+                            for (ed, desc) in &[
+                                ("code", "Visual Studio Code"),
+                                ("agy", "Antigravity IDE"),
+                                ("cursor", "Cursor AI Editor"),
+                                ("explorer", "System File Manager"),
+                            ] {
+                                if matches_filter(ed, current_word) {
+                                    suggestions.push(make_suggestion(*ed, *desc, span));
+                                }
+                            }
+                        } else {
+                            let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+                            let packages = cached_machine_packages(&cwd);
+                            let mut seen = std::collections::HashSet::new();
+                            for pkg in &packages {
+                                let short = pkg.short_name();
+                                if matches_filter(short, current_word) && seen.insert(short.to_string()) {
+                                    let desc = format!("[{}] {}", pkg.package_manager, pkg.dir.display());
+                                    suggestions.push(make_suggestion(short, desc, span));
+                                }
+                            }
+                            for (flag, desc) in &[
+                                ("--editor", "Preferred editor (code, agy, cursor, explorer)"),
+                                ("-e", "Preferred editor (code, agy, cursor, explorer)"),
+                                ("--list", "List discovered projects without launching editor"),
+                                ("-l", "List discovered projects without launching editor"),
+                                ("--path", "Custom workspace root directory to scan"),
+                                ("-P", "Custom workspace root directory to scan"),
+                            ] {
+                                if matches_filter(flag, current_word) {
+                                    suggestions.push(make_suggestion(*flag, *desc, span));
+                                }
+                            }
+                        }
+                    }
+                    "git" => {
+                        for (act, desc) in &[
+                            ("push-bridge", "Push via Specter Bridge SOCKS5 proxy (127.0.0.1:1080)"),
+                            ("push", "Run git push directly on target repository"),
+                            ("pull", "Run git pull --rebase on target repository"),
+                            ("status", "Show detailed git status -sb"),
+                            ("stash", "Stash uncommitted changes in target repository"),
+                            ("--all", "Include clean repositories (defaults to dirty or unpushed)"),
+                            ("-a", "Include clean repositories"),
+                            ("--list", "List repositories and their branch/dirty/sync status"),
+                            ("-l", "List repositories and their branch/dirty/sync status"),
+                            ("--path", "Custom workspace root directory to scan"),
+                            ("-P", "Custom workspace root directory to scan"),
+                        ] {
+                            if matches_filter(act, current_word) {
+                                suggestions.push(make_suggestion(*act, *desc, span));
+                            }
+                        }
+                    }
+                    "env" => {
+                        for (act, desc) in &[
+                            ("--check", "Check and display .env diff report non-interactively"),
+                            ("-c", "Check and display .env diff report non-interactively"),
+                            ("--switch", "Switch active .env from a profile (.env.local, .env.staging, etc.)"),
+                            ("-s", "Switch active .env from a profile"),
+                            ("--list", "List .env variables and diff report"),
+                            ("-l", "List .env variables and diff report"),
+                            ("--path", "Target project directory (defaults to current working directory)"),
+                            ("-P", "Target project directory"),
+                        ] {
+                            if matches_filter(act, current_word) {
+                                suggestions.push(make_suggestion(*act, *desc, span));
+                            }
+                        }
                     }
                     "run" | "inspect" | "export" | "delete" => {
                         suggest_workflows(current_word, span, &mut suggestions);

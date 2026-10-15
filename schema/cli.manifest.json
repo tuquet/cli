@@ -1,13 +1,13 @@
 {
   "$schema": "https://tuquet.com/schema/cli.manifest.schema.json",
   "name": "specter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Specter - Autonomous Browser Automation & Distributed Mesh Runtime",
   "homepage": "https://tuquet.com",
   "repository": "https://github.com/tuquet/cli",
   "brand": {
     "productName": "Specter",
-    "cliAlias": "specter",
+    "cliAlias": "spc",
     "canonicalRoot": "specter",
     "category": "Hạ tầng Tự động hóa & Trình duyệt Ẩn danh All-in-One",
     "tagline": "Vũ khí All-in-One miễn phí chuẩn kỹ thuật cao dành cho dân MMO, Dropshipping và Web Scraper.",
@@ -32,8 +32,8 @@
         "dev"
       ],
       "pillar": "system",
-      "title": "Workspace Frontend Project & Script Runner",
-      "description": "Scan workspace for package.json files (excluding node_modules) and interactively select & execute frontend project scripts.",
+      "title": "Universal Polyglot Project & Script Runner",
+      "description": "Scan machine for Node, Rust, Java/Spring Boot, and Docker Compose projects and interactively select & execute scripts.",
       "arguments": [
         {
           "name": "project",
@@ -45,7 +45,7 @@
           "name": "script",
           "type": "string",
           "required": false,
-          "description": "Optional package.json script name to execute (e.g. dev, build, start, lint)."
+          "description": "Optional script or target name to execute (e.g. dev, build, run, up)."
         }
       ],
       "options": [
@@ -54,18 +54,18 @@
           "short": "l",
           "type": "boolean",
           "default": false,
-          "description": "List all discovered package.json projects, frameworks, package managers, and scripts."
+          "description": "List all discovered projects across Node, Rust, Java/Spring Boot, and Docker Compose."
         },
         {
           "name": "path",
           "short": "P",
           "type": "string",
-          "description": "Custom workspace root directory to scan (defaults to current working directory)."
+          "description": "Custom workspace root directory to scan (defaults to full machine scan)."
         },
         {
           "name": "pm",
           "type": "string",
-          "description": "Override detected package manager (npm, pnpm, yarn, bun)."
+          "description": "Override detected package manager or runner (npm, pnpm, yarn, bun, cargo, mvn, gradle, docker)."
         },
         {
           "name": "format",
@@ -73,6 +73,162 @@
           "type": "string",
           "default": "card",
           "description": "Output format when listing: json, table, or card (default: card)."
+        }
+      ]
+    },
+    {
+      "id": "specter.port",
+      "route": [
+        "port"
+      ],
+      "pillar": "system",
+      "title": "Local TCP Port Inspector & Process Killer",
+      "description": "Inspect listening local TCP ports and interactively or directly terminate blocking processes.",
+      "arguments": [
+        {
+          "name": "target",
+          "type": "string",
+          "required": false,
+          "description": "Optional port number (e.g. 3000) or process name filter (e.g. node)."
+        }
+      ],
+      "options": [
+        {
+          "name": "kill",
+          "short": "k",
+          "type": "boolean",
+          "default": false,
+          "description": "Immediately kill the process listening on the specified port without prompting."
+        },
+        {
+          "name": "list",
+          "short": "l",
+          "type": "boolean",
+          "default": false,
+          "description": "List all listening TCP ports without entering interactive prompt."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "card",
+          "description": "Output format when listing: json, table, or card (default: card)."
+        }
+      ]
+    },
+    {
+      "id": "specter.code",
+      "route": [
+        "code"
+      ],
+      "pillar": "system",
+      "title": "Full-Machine Project Finder & Instant IDE Launcher",
+      "description": "Scan machine for developer projects and open immediately in VS Code, Antigravity IDE, Cursor, or system file manager.",
+      "arguments": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": false,
+          "description": "Optional project name or path query to match and open."
+        }
+      ],
+      "options": [
+        {
+          "name": "editor",
+          "short": "e",
+          "type": "string",
+          "description": "Preferred editor command (code, agy, cursor, explorer)."
+        },
+        {
+          "name": "list",
+          "short": "l",
+          "type": "boolean",
+          "default": false,
+          "description": "List discovered projects without launching editor."
+        },
+        {
+          "name": "path",
+          "short": "P",
+          "type": "string",
+          "description": "Custom workspace root directory to scan."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "card",
+          "description": "Output format when listing: json, table, or card (default: card)."
+        }
+      ]
+    },
+    {
+      "id": "specter.git",
+      "route": [
+        "git"
+      ],
+      "pillar": "system",
+      "title": "Multi-Repository Git Radar & Specter Bridge Synchronizer",
+      "description": "Scan all local Git repositories in parallel for dirty working trees, unpushed commits, and push seamlessly through Specter Bridge SOCKS5 proxy.",
+      "arguments": [
+        {
+          "name": "action",
+          "type": "string",
+          "required": false,
+          "description": "Optional action: status, pull, push, push-bridge, stash."
+        }
+      ],
+      "options": [
+        {
+          "name": "dirty",
+          "short": "d",
+          "type": "boolean",
+          "default": false,
+          "description": "Show only dirty repositories or repositories with unpushed/unpulled commits."
+        },
+        {
+          "name": "path",
+          "short": "P",
+          "type": "string",
+          "description": "Custom workspace root directory to scan."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "card",
+          "description": "Output format when listing: json, table, or card (default: card)."
+        }
+      ]
+    },
+    {
+      "id": "specter.env",
+      "route": [
+        "env"
+      ],
+      "pillar": "system",
+      "title": "Environment Variable Doctor & Profile Switcher",
+      "description": "Compare .env against .env.example, detect missing or empty variables, sync missing keys safely, and switch .env.* profiles.",
+      "arguments": [
+        {
+          "name": "action",
+          "type": "string",
+          "required": false,
+          "description": "Optional sub-action: check, sync, switch."
+        }
+      ],
+      "options": [
+        {
+          "name": "path",
+          "short": "P",
+          "type": "string",
+          "description": "Target project directory (defaults to current working directory)."
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "type": "string",
+          "default": "card",
+          "description": "Output format: json, table, or card (default: card)."
         }
       ]
     },

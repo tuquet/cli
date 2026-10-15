@@ -65,9 +65,11 @@ impl ShellScope {
     pub fn subcommands(&self) -> &'static [(&'static str, &'static str)] {
         match self {
             ShellScope::Global => &[
-                ("dev", "Scan workspace package.json & run frontend project scripts"),
-                ("fe", "Alias for dev (frontend project runner)"),
-                ("pkg", "Alias for dev (package.json script runner)"),
+                ("dev", "Scan machine projects & run scripts across Node, Rust, Java & Docker"),
+                ("port", "Inspect listening local TCP ports and terminate blocking processes"),
+                ("code", "Full-machine project finder & instant IDE launcher (VS Code, Antigravity, Cursor)"),
+                ("git", "Multi-repository Git status radar & Specter Bridge-aware synchronizer"),
+                ("env", "Inspect, validate, sync, and switch .env configuration files"),
                 ("status", "Inspect unified status across Cloud, Runner, Browser, and Bridge"),
                 ("doctor", "Inspect ecosystem dependencies, required tools & environment health"),
                 ("config", "Inspect or edit configuration across all microservice pillars"),
@@ -243,8 +245,12 @@ mod tests {
 
         let global = ShellScope::Global;
         assert!(global.is_valid_first_word("dev"));
-        assert!(global.is_valid_first_word("fe"));
-        assert!(global.is_valid_first_word("pkg"));
+        assert!(global.is_valid_first_word("port"));
+        assert!(global.is_valid_first_word("code"));
+        assert!(global.is_valid_first_word("git"));
+        assert!(global.is_valid_first_word("env"));
+        assert!(!global.is_valid_first_word("fe"));
+        assert!(!global.is_valid_first_word("pkg"));
         assert!(global.is_valid_first_word("bridge"));
         assert!(global.is_valid_first_word("automa"));
         assert!(global.is_valid_first_word("faker"));

@@ -1,3 +1,4 @@
+pub mod history;
 pub mod runner;
 pub mod scanner;
 
@@ -6,6 +7,7 @@ use crate::ui::{
     badge_online, clack_cancel, clack_intro, clack_select, create_tabular_card, ClackOption,
     Column, Notify, OutputFormat, Table, TabularRow,
 };
+use history::{format_relative_time, load_history};
 use scanner::{
     filter_packages, scan_machine_packages, scan_workspace_packages, DiscoveredPackage,
 };
@@ -55,7 +57,9 @@ pub async fn handle(
 
     if interactive_flow {
         use std::io::Write;
-        eprint!("  \x1b[36m◆\x1b[0m  \x1b[90mScanning machine for package.json projects...\x1b[0m\r");
+        eprint!(
+            "  \x1b[36m◆\x1b[0m  \x1b[90mScanning machine for runnable projects...\x1b[0m\r"
+        );
         let _ = std::io::stderr().flush();
     }
 
@@ -80,7 +84,7 @@ pub async fn handle(
 
     if packages.is_empty() {
         Notify::warn(format!(
-            "No runnable package.json projects (with 'scripts') found ({}).",
+            "No runnable projects found ({}).",
             scan_label
         ));
         return Ok(());
@@ -90,23 +94,58 @@ pub async fn handle(
         clack_intro(
             "spc dev",
             &format!(
-                "Workspace Frontend Runner • {} projects discovered ({})",
+                "Universal Project Runner • {} projects discovered ({})",
                 packages.len(),
                 scan_label
             ),
         );
     }
 
-    // 1. Resolve Target Package
+    // 1. Resolve Target Package (and optional fast-track `★ Recent` script)
     let target_pkg: &DiscoveredPackage = match proj_query {
         None => {
             if packages.len() == 1 {
                 &packages[0]
             } else {
-                let clack_opts: Vec<ClackOption> =
-                    packages.iter().map(build_package_clack_option).collect();
-                match clack_select("Select a frontend project", &clack_opts, 0, 10)? {
-                    Some(idx) => &packages[idx],
+                // Build `★ Recent` quick-launch options from ~/.specter/system/dev_history.json
+                let recent_entries = load_history();
+                let mut recent_shortcuts: Vec<(&DiscoveredPackage, String)> = Vec::new();
+                let mut clack_opts: Vec<ClackOption> = Vec::new();
+
+                for entry in recent_entries.iter().take(5) {
+                    if let Some(pkg) = packages.iter().find(|p| p.dir == entry.project_dir)
+                        && pkg.scripts.iter().any(|(s, _)| s == &entry.script)
+                    {
+                        let fw_part = pkg.framework.as_deref().unwrap_or("Node");
+                        let rel_time = format_relative_time(entry.last_run_at);
+                        let label = format!("★ {} : {}", pkg.id, entry.script);
+                        let hint = format!(
+                            "Recent ({}) • {} ({}) — {} run {}",
+                            rel_time, fw_part, pkg.package_manager, pkg.package_manager, entry.script
+                        );
+                        let summary = format!(
+                            "★ {} → {} ({} • {})",
+                            pkg.id, entry.script, fw_part, pkg.package_manager
+                        );
+                        clack_opts.push(ClackOption::new(label, hint, summary));
+                        recent_shortcuts.push((pkg, entry.script.clone()));
+                    }
+                }
+
+                for pkg in &packages {
+                    clack_opts.push(build_package_clack_option(pkg));
+                }
+
+                match clack_select("Select a project (or ★ Recent to run immediately)", &clack_opts, 0, 10)? {
+                    Some(idx) => {
+                        if idx < recent_shortcuts.len() {
+                            let (pkg, recent_script) = &recent_shortcuts[idx];
+                            script_query = Some(recent_script.clone());
+                            pkg
+                        } else {
+                            &packages[idx - recent_shortcuts.len()]
+                        }
+                    }
                     None => {
                         clack_cancel("Operation cancelled.");
                         return Ok(());
@@ -117,18 +156,20 @@ pub async fn handle(
         Some(ref q) => {
             let matched = filter_packages(&packages, q);
             if matched.is_empty() {
-                // Smart fallback: if there is only 1 package in workspace and `q` matches one of its scripts,
-                // treat `q` as the script name!
                 if script_query.is_none()
                     && packages.len() == 1
-                    && packages[0].scripts.iter().any(|(k, _)| k.eq_ignore_ascii_case(q))
+                    && packages[0]
+                        .scripts
+                        .iter()
+                        .any(|(k, _)| k.eq_ignore_ascii_case(q))
                 {
                     script_query = Some(q.clone());
                     &packages[0]
                 } else {
-                    let available: Vec<&str> = packages.iter().take(10).map(|p| p.id.as_str()).collect();
+                    let available: Vec<&str> =
+                        packages.iter().take(10).map(|p| p.id.as_str()).collect();
                     return Err(format!(
-                        "No frontend project matching '{}'. Examples: {}",
+                        "No project matching '{}'. Examples: {}",
                         q,
                         available.join(", ")
                     )
@@ -161,7 +202,7 @@ pub async fn handle(
         }
     };
 
-    // 2. Resolve Target Script (Always prompt with selectable suggestions when not explicitly specified)
+    // 2. Resolve Target Script
     let pm = pm_override.as_deref().unwrap_or(&target_pkg.package_manager);
     let selected_script: String = match script_query {
         Some(ref s) => {
@@ -209,7 +250,7 @@ pub async fn handle(
     )
 }
 
-fn build_package_clack_option(pkg: &DiscoveredPackage) -> ClackOption {
+pub fn build_package_clack_option(pkg: &DiscoveredPackage) -> ClackOption {
     let fw_part = pkg.framework.as_deref().unwrap_or("Node");
     let script_preview: Vec<&str> = pkg
         .scripts
@@ -244,8 +285,8 @@ fn prompt_for_script_clack(
         .scripts
         .iter()
         .map(|(name, cmd)| {
-            let hint = format!("{pm} run {name}  →  {cmd}");
-            let summary = format!("{name} ({pm} run {name} → {cmd})");
+            let hint = format!("{pm} → {cmd}");
+            let summary = format!("{name} ({pm} → {cmd})");
             ClackOption::new(name, hint, summary)
         })
         .collect();
@@ -290,7 +331,7 @@ fn render_package_list(
                 },
             ])
             .with_footer(format!(
-                "Scanned {} project(s) ({}) • Run 'specter dev <project> [script]'",
+                "Scanned {} project(s) ({}) • Run 'spc dev <project> [script]'",
                 packages.len(),
                 scan_label
             ));
@@ -333,11 +374,11 @@ fn render_package_list(
                 .collect();
 
             let footer = format!(
-                "Found {} package.json project(s) • Run 'specter dev <project>' to select & start",
+                "Found {} project(s) • Run 'spc dev <project>' to select & start",
                 packages.len()
             );
             let card = create_tabular_card(
-                "WORKSPACE FRONTEND PROJECTS",
+                "WORKSPACE PROJECTS",
                 Some(badge_online(&format!("{} FOUND", packages.len()))),
                 ["PROJECT PATH", "PACKAGE NAME", "AVAILABLE SCRIPTS", "STACK / PM"],
                 &rows,
@@ -369,7 +410,6 @@ mod tests {
             split_project_and_script(Some("studio".to_string()), Some("lint".to_string())),
             (Some("studio".to_string()), Some("lint".to_string()))
         );
-        // Should not split Windows drive letter paths
         assert_eq!(
             split_project_and_script(Some("C:\\repo\\app".to_string()), None),
             (Some("C:\\repo\\app".to_string()), None)

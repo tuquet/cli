@@ -302,7 +302,11 @@ pub fn print_scope_help(scope: ShellScope) {
             card.add_kv("  clear", "Clear terminal screen buffer");
             card.add_kv("  exit", "Quit interactive shell");
             card.add_line(format!("{BOLD}Direct Shortcuts:{RESET}", BOLD = colors::BOLD, RESET = colors::RESET));
-            card.add_kv("  dev [proj] [script]", "Scan package.json & interactively run frontend scripts");
+            card.add_kv("  dev [proj] [script]", "Scan projects & run scripts (Node, Rust, Java, Docker)");
+            card.add_kv("  port [target]", "Inspect listening local TCP ports & kill blocking processes");
+            card.add_kv("  code [query]", "Find any project on disk & open in VS Code / Antigravity / Cursor");
+            card.add_kv("  git [action]", "Multi-repo Git status radar & Specter Bridge synchronizer");
+            card.add_kv("  env [action]", "Inspect, validate, sync, and switch .env configuration files");
             card.add_kv("  status", "Unified ecosystem health & subsystem status");
             card.add_kv("  doctor", "Diagnose environment dependencies (Scoop, Cloudflared, SSH, Browser)");
             card.add_kv("  upgrade", "Check and update Specter to latest release");

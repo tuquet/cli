@@ -23,6 +23,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }) => {
             commands::dev::handle(project, script, list, path, pm, extra_args, format.resolve()).await
         }
+        Some(Commands::Port {
+            query,
+            kill,
+            all,
+            list,
+            format,
+        }) => {
+            commands::port::handle(query, kill, all, list, format.resolve()).await
+        }
+        Some(Commands::Code {
+            project,
+            editor,
+            list,
+            path,
+            format,
+        }) => {
+            commands::code::handle(project, editor, list, path, format.resolve()).await
+        }
+        Some(Commands::Git {
+            repo,
+            action,
+            all,
+            list,
+            path,
+            format,
+        }) => {
+            commands::git::handle(repo, action, all, list, path, format.resolve()).await
+        }
+        Some(Commands::Env {
+            project,
+            check,
+            switch_profile,
+            list,
+            path,
+            format,
+        }) => {
+            commands::env_cmd::handle(project, check, switch_profile, list, path, format.resolve()).await
+        }
         Some(Commands::Upgrade) => automa_core::infrastructure::updater::run_upgrade().await,
         Some(Commands::Status { format }) => commands::status::show_dashboard(format.resolve()).await,
         Some(Commands::Doctor { fix, format }) => commands::doctor::run(fix, format.resolve()).await,

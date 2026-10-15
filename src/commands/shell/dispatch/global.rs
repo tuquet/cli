@@ -129,11 +129,11 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             }
         }
         // Direct Global convenience commands
-        "dev" | "fe" | "pkg" => {
+        "dev" => {
             let list = args.contains(&"--list") || args.contains(&"-l");
             let fmt = parse_format(args);
             let mut pm: Option<String> = None;
-            let mut path: Option< std::path::PathBuf> = None;
+            let mut path: Option<std::path::PathBuf> = None;
             let mut positional: Vec<String> = Vec::new();
             let mut extra_args: Vec<String> = Vec::new();
 
@@ -171,6 +171,119 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             let project = positional.first().cloned();
             let script = positional.get(1).cloned();
             crate::commands::dev::handle(project, script, list, path, pm, extra_args, fmt).await?;
+        }
+        "port" => {
+            let list = args.contains(&"--list") || args.contains(&"-l");
+            let kill = args.contains(&"--kill") || args.contains(&"-k");
+            let all = args.contains(&"--all") || args.contains(&"-a");
+            let fmt = parse_format(args);
+            let query = args
+                .iter()
+                .find(|a| !a.starts_with('-'))
+                .map(|s| (*s).to_string());
+            crate::commands::port::handle(query, kill, all, list, fmt).await?;
+        }
+        "code" => {
+            let list = args.contains(&"--list") || args.contains(&"-l");
+            let fmt = parse_format(args);
+            let mut editor: Option<String> = None;
+            let mut path: Option<std::path::PathBuf> = None;
+            let mut project: Option<String> = None;
+
+            let mut i = 0;
+            while i < args.len() {
+                match args[i] {
+                    "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" | "-c" => {}
+                    "--editor" | "-e" => {
+                        if let Some(val) = args.get(i + 1) {
+                            editor = Some((*val).to_string());
+                            i += 1;
+                        }
+                    }
+                    "--path" | "-P" => {
+                        if let Some(val) = args.get(i + 1) {
+                            path = Some(std::path::PathBuf::from(*val));
+                            i += 1;
+                        }
+                    }
+                    "--format" | "-f" => {
+                        i += 1;
+                    }
+                    arg if !arg.starts_with('-') && project.is_none() => {
+                        project = Some(arg.to_string());
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            crate::commands::code::handle(project, editor, list, path, fmt).await?;
+        }
+        "git" => {
+            let all = args.contains(&"--all") || args.contains(&"-a");
+            let list = args.contains(&"--list") || args.contains(&"-l");
+            let fmt = parse_format(args);
+            let mut path: Option<std::path::PathBuf> = None;
+            let mut positional: Vec<String> = Vec::new();
+
+            let mut i = 0;
+            while i < args.len() {
+                match args[i] {
+                    "--all" | "-a" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" | "-c" => {}
+                    "--path" | "-P" => {
+                        if let Some(val) = args.get(i + 1) {
+                            path = Some(std::path::PathBuf::from(*val));
+                            i += 1;
+                        }
+                    }
+                    "--format" | "-f" => {
+                        i += 1;
+                    }
+                    arg if !arg.starts_with('-') => {
+                        positional.push(arg.to_string());
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            let repo = positional.first().cloned();
+            let action = positional.get(1).cloned();
+            crate::commands::git::handle(repo, action, all, list, path, fmt).await?;
+        }
+        "env" => {
+            let check = args.contains(&"--check") || args.contains(&"-c");
+            let list = args.contains(&"--list") || args.contains(&"-l");
+            let fmt = parse_format(args);
+            let mut switch_profile: Option<String> = None;
+            let mut path: Option<std::path::PathBuf> = None;
+            let mut project: Option<String> = None;
+
+            let mut i = 0;
+            while i < args.len() {
+                match args[i] {
+                    "--check" | "-c" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" => {}
+                    "--switch" | "-s" => {
+                        if let Some(val) = args.get(i + 1) {
+                            switch_profile = Some((*val).to_string());
+                            i += 1;
+                        }
+                    }
+                    "--path" | "-P" => {
+                        if let Some(val) = args.get(i + 1) {
+                            path = Some(std::path::PathBuf::from(*val));
+                            i += 1;
+                        }
+                    }
+                    "--format" | "-f" => {
+                        i += 1;
+                    }
+                    arg if !arg.starts_with('-') && project.is_none() => {
+                        project = Some(arg.to_string());
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            crate::commands::env_cmd::handle(project, check, switch_profile, list, path, fmt).await?;
         }
         "run" | "list" | "inspect" | "import" | "export" | "delete" | "studio" => {
             dispatch_automa(cmd, args).await?;
