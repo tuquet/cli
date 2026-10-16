@@ -60,22 +60,32 @@ if (-not (Test-Path $SpecterBinDir)) {
 
 # 2. Acquire specter.exe Binary
 # If running locally from a built repository, use local release binary
-$LocalBuildCandidates = @(
-    (Join-Path $PSScriptRoot "target\x86_64-pc-windows-gnu\release\specter.exe"),
-    (Join-Path $PSScriptRoot "target\release\specter.exe"),
-    (Join-Path $PSScriptRoot "cli\target\x86_64-pc-windows-gnu\release\specter.exe"),
-    (Join-Path $PSScriptRoot "cli\target\release\specter.exe"),
-    (Join-Path (Get-Location) "target\x86_64-pc-windows-gnu\release\specter.exe"),
-    (Join-Path (Get-Location) "target\release\specter.exe"),
-    (Join-Path (Get-Location) "cli\target\x86_64-pc-windows-gnu\release\specter.exe"),
-    (Join-Path (Get-Location) "cli\target\release\specter.exe")
-)
+$LocalBuildCandidates = @()
+if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+    $LocalBuildCandidates += @(
+        (Join-Path $PSScriptRoot "target\x86_64-pc-windows-gnu\release\specter.exe"),
+        (Join-Path $PSScriptRoot "target\release\specter.exe"),
+        (Join-Path $PSScriptRoot "cli\target\x86_64-pc-windows-gnu\release\specter.exe"),
+        (Join-Path $PSScriptRoot "cli\target\release\specter.exe")
+    )
+}
+$CurrentLoc = (Get-Location).Path
+if (-not [string]::IsNullOrWhiteSpace($CurrentLoc)) {
+    $LocalBuildCandidates += @(
+        (Join-Path $CurrentLoc "target\x86_64-pc-windows-gnu\release\specter.exe"),
+        (Join-Path $CurrentLoc "target\release\specter.exe"),
+        (Join-Path $CurrentLoc "cli\target\x86_64-pc-windows-gnu\release\specter.exe"),
+        (Join-Path $CurrentLoc "cli\target\release\specter.exe")
+    )
+}
 
 $FoundLocal = $false
 foreach ($Cand in $LocalBuildCandidates) {
     if ($Cand -and (Test-Path $Cand)) {
         Write-Step "Installing local compiled binary from: $Cand"
         Copy-Item -Path $Cand -Destination $TargetExe -Force
+        # Also ensure spc.exe alias exists
+        Copy-Item -Path $Cand -Destination (Join-Path $SpecterBinDir "spc.exe") -Force
         $FoundLocal = $true
         break
     }
@@ -86,6 +96,7 @@ if (-not $FoundLocal) {
     $ReleaseBase = "https://github.com/tuquet/cli/releases/latest/download"
     $ZipUrls = @(
         "$ReleaseBase/specter-windows-x64.zip",
+        "$ReleaseBase/specter-v1.2.0-windows-x64.zip",
         "$ReleaseBase/specter-v1.0.0-windows-x64.zip"
     )
     $ExeUrl = "$ReleaseBase/specter.exe"
@@ -102,11 +113,12 @@ if (-not $FoundLocal) {
             Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -ErrorAction Stop
             if (Test-Path $TempZip) {
                 Expand-Archive -Path $TempZip -DestinationPath $TempDir -Force
-                $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "specter.exe" -Recurse | Select-Object -First 1
+                $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" -Recurse | Where-Object { $_.Name -match '^(specter|spc)\.exe$' } | Select-Object -First 1
                 if ($ExtractedExe) {
                     Copy-Item -Path $ExtractedExe.FullName -Destination $TargetExe -Force
+                    Copy-Item -Path $ExtractedExe.FullName -Destination (Join-Path $SpecterBinDir "spc.exe") -Force
                     $Downloaded = $true
-                    Write-Success "Downloaded and extracted specter.exe from $ZipUrl"
+                    Write-Success "Downloaded and installed $($ExtractedExe.Name) (as specter.exe & spc.exe) from $ZipUrl"
                     break
                 }
             }
@@ -122,6 +134,7 @@ if (-not $FoundLocal) {
     if (-not $Downloaded) {
         try {
             Invoke-WebRequest -Uri $ExeUrl -OutFile $TargetExe -UseBasicParsing -ErrorAction Stop
+            Copy-Item -Path $TargetExe -Destination (Join-Path $SpecterBinDir "spc.exe") -Force
             $Downloaded = $true
             Write-Success "Downloaded specter.exe directly from $ExeUrl"
         } catch {
