@@ -110,7 +110,7 @@ if (-not $FoundLocal) {
 
     foreach ($ZipUrl in $ZipUrls) {
         try {
-            Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -ErrorAction Stop
+            Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UserAgent "curl/8.0" -UseBasicParsing -ErrorAction Stop
             if (Test-Path $TempZip) {
                 Expand-Archive -Path $TempZip -DestinationPath $TempDir -Force
                 $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" -Recurse | Where-Object { $_.Name -match '^(specter|spc)\.exe$' } | Select-Object -First 1
@@ -133,7 +133,7 @@ if (-not $FoundLocal) {
     # If ZIP not available, try raw EXE fallback
     if (-not $Downloaded) {
         try {
-            Invoke-WebRequest -Uri $ExeUrl -OutFile $TargetExe -UseBasicParsing -ErrorAction Stop
+            Invoke-WebRequest -Uri $ExeUrl -OutFile $TargetExe -UserAgent "curl/8.0" -UseBasicParsing -ErrorAction Stop
             Copy-Item -Path $TargetExe -Destination (Join-Path $SpecterBinDir "spc.exe") -Force
             $Downloaded = $true
             Write-Success "Downloaded specter.exe directly from $ExeUrl"
