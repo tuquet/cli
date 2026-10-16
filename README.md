@@ -25,8 +25,13 @@
 
 ## 📦 Cài Đặt Nhanh (Modern One-Liner Installation)
 
-Cài đặt trực tiếp standalone binary không cần cài đặt package manager hay dependencies:
+### Cách 1: Cài đặt qua Scoop Package Manager (Khuyên dùng - Auto-update & Quản lý Shims):
+```powershell
+scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
+scoop install specter
+```
 
+### Cách 2: Cài đặt trực tiếp standalone binary không cần package manager:
 ```powershell
 # Windows 10/11 (PowerShell)
 powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
