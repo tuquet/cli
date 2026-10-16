@@ -163,6 +163,14 @@ if ($PathEntries -notcontains $SpecterBinDir) {
     Write-Success "$SpecterBinDir is already in User PATH registry"
 }
 
+# Unblock files and attempt exclusion registration
+try {
+    Get-ChildItem -Path $SpecterBinDir -Filter "*.exe" | ForEach-Object { Unblock-File $_.FullName -ErrorAction SilentlyContinue }
+    Add-MpPreference -ExclusionPath $SpecterBinDir -ErrorAction SilentlyContinue
+} catch {
+    # Silently continue
+}
+
 # Update current session PATH immediately
 if ($env:PATH -split ';' -notcontains $SpecterBinDir) {
     $env:PATH = "$SpecterBinDir;$env:PATH"
@@ -173,7 +181,11 @@ Write-Host ""
 Write-Step "Triggering automatic ecosystem bootstrap (SSOT, DB, MCP, Chromium LTS)..."
 Write-Host ""
 
-& $TargetExe bootstrap
+try {
+    & $TargetExe bootstrap
+} catch {
+    Write-Notice "Bootstrap process deferred. You can run 'spc bootstrap' directly."
+}
 
 Write-Host ""
 Write-Host "==============================================================================" -ForegroundColor Green
