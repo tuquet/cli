@@ -1,6 +1,10 @@
 use std::fs;
+use std::path::PathBuf;
 use crate::cli::{FakerGenerateArgs, FakerSubcommands};
-use crate::ui::{badge_online, Card, Column, Table};
+use crate::ui::{
+    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_ok, clack_text,
+    is_interactive_tty, Card, ClackOption, Column, Table,
+};
 use specter_faker::{
     generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value,
 };
@@ -13,28 +17,265 @@ pub async fn handle(
         Some(FakerSubcommands::Generate(gen_args)) => {
             run_generate(gen_args).await?;
         }
-        Some(FakerSubcommands::Card { gender, nat, avatar, domain, format }) => {
-            run_card(gender.as_deref(), nat.as_deref(), avatar.as_deref(), domain.as_deref(), format.resolve()).await?;
+        Some(FakerSubcommands::Card {
+            gender,
+            nat,
+            avatar,
+            domain,
+            format,
+        }) => {
+            run_card(
+                gender.as_deref(),
+                nat.as_deref(),
+                avatar.as_deref(),
+                domain.as_deref(),
+                format.resolve(),
+            )
+            .await?;
         }
-        Some(FakerSubcommands::Nationalities { table }) => {
-            run_nationalities(table)?;
+        Some(FakerSubcommands::Nationalities { table, json }) => {
+            run_nationalities(table || (!json && is_interactive_tty()))?;
         }
         Some(FakerSubcommands::Id { nat, raw }) => {
             run_id(nat.as_deref(), raw)?;
         }
-        Some(FakerSubcommands::Config { edit, show, domain, args }) => {
+        Some(FakerSubcommands::Config {
+            edit,
+            show,
+            domain,
+            args,
+        }) => {
             manage_config(&args, edit, show, domain.as_deref())?;
         }
         None => {
-            // Root invocation: specter faker [-n <count>] [--card] [--table] [--csv]
-            run_generate(args).await?;
+            let is_zero_arg_default = args.count == 1
+                && args.gender.is_none()
+                && args.nat.is_none()
+                && args.domain.is_none()
+                && !args.card
+                && !args.table
+                && !args.csv
+                && !args.json
+                && args.format.eq_ignore_ascii_case("auto")
+                && args.output.is_none();
+
+            if is_zero_arg_default && is_interactive_tty() {
+                run_interactive_faker().await?;
+            } else {
+                run_generate(args).await?;
+            }
         }
     }
 
     Ok(())
 }
 
+async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
+    clack_intro(
+        "spc faker",
+        "Synthetic Persona & Identity Generator (CCCD • SSN • My Number)",
+    );
+
+    let actions = vec![
+        ClackOption::new(
+            "Generate 1 Synthetic Identity Card",
+            "Full persona with validated National ID, address, phone & credentials",
+            "Generate 1 Synthetic Identity Card",
+        ),
+        ClackOption::new(
+            "Generate Batch Identity Dataset",
+            "Generate multiple profiles in Clack Table, CSV, or JSON",
+            "Generate Batch Identity Dataset",
+        ),
+        ClackOption::new(
+            "Generate Validated National ID Only",
+            "12-digit VN CCCD, 9-digit US SSN, or 12-digit JP My Number",
+            "Generate Validated National ID Only",
+        ),
+        ClackOption::new(
+            "Browse Supported Nationalities & Schemas",
+            "Inspect VN, US, JP locale providers & address hierarchies",
+            "Browse Supported Nationalities & Schemas",
+        ),
+        ClackOption::new(
+            "Configure Default Faker Settings",
+            "Inspect or update default_nat / default_domain in ~/.specter/faker/faker.json",
+            "Configure Default Faker Settings",
+        ),
+    ];
+
+    let Some(action_idx) = clack_select("Select a Faker operation", &actions, 0, 8)? else {
+        clack_cancel("Operation cancelled.");
+        return Ok(());
+    };
+
+    match action_idx {
+        0 => {
+            let Some(nat) = prompt_nationality_choice(true)? else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+            let Some(gender) = prompt_gender_choice()? else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+            let data = generate_users(
+                1,
+                gender.as_deref(),
+                nat.as_deref(),
+                Some("real"),
+                None,
+            );
+            if let Some(u) = data["results"].as_array().and_then(|a| a.first()) {
+                render_single_card(u);
+            }
+            clack_outro("Synthetic identity card generated.");
+        }
+        1 => {
+            let Some(nat) = prompt_nationality_choice(true)? else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+            let Some(count_str) = clack_text("Number of profiles to generate", Some("5"), Some("5"))?
+            else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+            let count: u32 = count_str.trim().parse().unwrap_or(5).max(1);
+
+            let fmt_opts = vec![
+                ClackOption::new(
+                    "Terminal Table",
+                    "Render interactive Clack table in terminal",
+                    "Terminal Table",
+                ),
+                ClackOption::new(
+                    "Export CSV File",
+                    "Write RFC-compliant CSV dataset to disk",
+                    "Export CSV File",
+                ),
+                ClackOption::new(
+                    "Export JSON File",
+                    "Write RandomUser-compatible JSON dataset to disk",
+                    "Export JSON File",
+                ),
+            ];
+            let Some(fmt_idx) = clack_select("Select output destination", &fmt_opts, 0, 6)? else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+
+            let (format_str, output_path) = match fmt_idx {
+                1 => {
+                    let Some(p) = clack_text("CSV output file path", Some("users.csv"), Some("users.csv"))? else {
+                        clack_cancel("Operation cancelled.");
+                        return Ok(());
+                    };
+                    ("csv".to_string(), Some(PathBuf::from(p)))
+                }
+                2 => {
+                    let Some(p) = clack_text("JSON output file path", Some("users.json"), Some("users.json"))? else {
+                        clack_cancel("Operation cancelled.");
+                        return Ok(());
+                    };
+                    ("json".to_string(), Some(PathBuf::from(p)))
+                }
+                _ => ("table".to_string(), None),
+            };
+
+            run_generate_inner(
+                FakerGenerateArgs {
+                    count,
+                    gender: None,
+                    nat,
+                    avatar: Some("real".to_string()),
+                    domain: None,
+                    format: format_str,
+                    card: false,
+                    table: fmt_idx == 0,
+                    csv: fmt_idx == 1,
+                    json: fmt_idx == 2,
+                    output: output_path,
+                },
+                true,
+            )
+            .await?;
+        }
+        2 => {
+            let Some(nat) = prompt_nationality_choice(false)? else {
+                clack_cancel("Operation cancelled.");
+                return Ok(());
+            };
+            run_id_inner(nat.as_deref(), false, true)?;
+        }
+        3 => {
+            run_nationalities_inner(true, true)?;
+        }
+        4 => {
+            crate::config::ConfigController::interactive_service_config("faker")?;
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+fn prompt_nationality_choice(allow_all: bool) -> Result<Option<Option<String>>, Box<dyn std::error::Error>> {
+    let mut opts = vec![
+        ClackOption::new(
+            "VN — Vietnam",
+            "12-digit CCCD checksum, Vietnamese full name & 3-tier address",
+            "VN (Vietnam)",
+        ),
+        ClackOption::new(
+            "US — United States",
+            "9-digit SSN checksum, US street address & state",
+            "US (United States)",
+        ),
+        ClackOption::new(
+            "JP — Japan",
+            "12-digit My Number Modulo-11 checksum, Japanese prefecture & ward",
+            "JP (Japan)",
+        ),
+    ];
+    if allow_all {
+        opts.push(ClackOption::new(
+            "All — Mixed Nationalities",
+            "Randomly sample across VN, US, and JP providers",
+            "All (Mixed)",
+        ));
+    }
+    match clack_select("Select target nationality", &opts, 0, 6)? {
+        Some(0) => Ok(Some(Some("VN".to_string()))),
+        Some(1) => Ok(Some(Some("US".to_string()))),
+        Some(2) => Ok(Some(Some("JP".to_string()))),
+        Some(_) => Ok(Some(None)),
+        None => Ok(None),
+    }
+}
+
+fn prompt_gender_choice() -> Result<Option<Option<String>>, Box<dyn std::error::Error>> {
+    let opts = vec![
+        ClackOption::new("All (Random)", "Any gender", "All (Random)"),
+        ClackOption::new("Female", "Female persona", "Female"),
+        ClackOption::new("Male", "Male persona", "Male"),
+    ];
+    match clack_select("Select gender filter", &opts, 0, 6)? {
+        Some(1) => Ok(Some(Some("female".to_string()))),
+        Some(2) => Ok(Some(Some("male".to_string()))),
+        Some(_) => Ok(Some(None)),
+        None => Ok(None),
+    }
+}
+
 pub async fn run_generate(args: FakerGenerateArgs) -> Result<(), Box<dyn std::error::Error>> {
+    run_generate_inner(args, false).await
+}
+
+async fn run_generate_inner(
+    args: FakerGenerateArgs,
+    intro_already_shown: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let gender_opt = args.gender.as_deref().filter(|&g| g != "all");
     let nat_opt = args.nat.as_deref().filter(|&n| n != "all");
 
@@ -48,23 +289,49 @@ pub async fn run_generate(args: FakerGenerateArgs) -> Result<(), Box<dyn std::er
     let users = data["results"].as_array().expect("results should be an array");
 
     let format_lower = args.format.to_lowercase();
-    let effective_format = if args.card {
+    let effective_format = if args.json && args.output.is_none() {
+        "json"
+    } else if args.card {
         "card"
     } else if args.table {
         "table"
     } else if args.csv {
         "csv"
-    } else {
+    } else if matches!(format_lower.as_str(), "card" | "table" | "csv" | "json") {
         format_lower.as_str()
+    } else if is_interactive_tty() && args.output.is_none() {
+        if args.count == 1 {
+            "card"
+        } else {
+            "table"
+        }
+    } else {
+        "json"
     };
 
     match effective_format {
         "card" => {
+            if !intro_already_shown {
+                clack_intro(
+                    "spc faker",
+                    &format!("Synthetic Persona Generator • {} profile(s)", users.len()),
+                );
+            }
             for u in users {
                 render_single_card(u);
             }
+            clack_outro(&format!(
+                "Generated {} synthetic persona card(s).",
+                users.len()
+            ));
         }
         "table" => {
+            if !intro_already_shown {
+                clack_intro(
+                    "spc faker",
+                    &format!("Synthetic Persona Dataset • {} profile(s)", users.len()),
+                );
+            }
             let columns = vec![
                 Column { title: "STT".to_string(), min_width: 4, align_right: false },
                 Column { title: "Họ và tên".to_string(), min_width: 20, align_right: false },
@@ -102,36 +369,42 @@ pub async fn run_generate(args: FakerGenerateArgs) -> Result<(), Box<dyn std::er
             }
 
             let footer = format!(
-                "Generated {} profile(s) in 0ms • Tip: use '-f csv -o users.csv' to export dataset",
+                "Generated {} profile(s) • Tip: use '-f csv -o users.csv' to export dataset",
                 users.len()
             );
-            println!("{}", table.with_footer(footer).render());
+            table.with_footer(footer).print();
+            clack_outro(&format!("Rendered {} synthetic identity profile(s).", users.len()));
         }
         "csv" => {
             let csv_str = to_csv(users);
             if let Some(ref path) = args.output {
+                if !intro_already_shown {
+                    clack_intro("spc faker", "CSV Dataset Exporter");
+                }
                 fs::write(path, csv_str.as_bytes())?;
-                println!(
-                    "{} Exported {} identity profile(s) to {:?}",
-                    badge_online("SUCCESS"),
+                clack_step_ok(&format!(
+                    "Exported {} identity profile(s) to {}",
                     users.len(),
-                    path
-                );
+                    path.display()
+                ));
+                clack_outro("CSV export complete.");
             } else {
                 println!("{}", csv_str);
             }
         }
         _ => {
-            // Default: pure JSON matching RandomUser standard {"results": [...], "info": {...}}
             let json_str = to_json_value(&data, true)?;
             if let Some(ref path) = args.output {
+                if !intro_already_shown {
+                    clack_intro("spc faker", "JSON Dataset Exporter");
+                }
                 fs::write(path, json_str.as_bytes())?;
-                println!(
-                    "{} Exported {} identity profile(s) to {:?}",
-                    badge_online("SUCCESS"),
+                clack_step_ok(&format!(
+                    "Exported {} identity profile(s) to {}",
                     users.len(),
-                    path
-                );
+                    path.display()
+                ));
+                clack_outro("JSON export complete.");
             } else {
                 println!("{}", json_str);
             }
@@ -142,8 +415,18 @@ pub async fn run_generate(args: FakerGenerateArgs) -> Result<(), Box<dyn std::er
 }
 
 pub fn run_nationalities(table: bool) -> Result<(), Box<dyn std::error::Error>> {
+    run_nationalities_inner(table, false)
+}
+
+fn run_nationalities_inner(
+    table: bool,
+    intro_already_shown: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let list = list_nationality_metadata();
     if table {
+        if !intro_already_shown {
+            clack_intro("spc faker", "Supported Nationality Providers & ID Schemas");
+        }
         let columns = vec![
             Column { title: "Code".to_string(), min_width: 6, align_right: false },
             Column { title: "Country".to_string(), min_width: 18, align_right: false },
@@ -164,7 +447,8 @@ pub fn run_nationalities(table: bool) -> Result<(), Box<dyn std::error::Error>> 
             ]);
         }
         let footer = format!("{} supported nationality provider(s)", list.len());
-        println!("{}", t.with_footer(footer).render());
+        t.with_footer(footer).print();
+        clack_outro(&format!("{} nationality locale(s) ready.", list.len()));
     } else {
         let json_str = to_json_value(&list, true)?;
         println!("{}", json_str);
@@ -173,6 +457,14 @@ pub fn run_nationalities(table: bool) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 pub fn run_id(nat: Option<&str>, raw: bool) -> Result<(), Box<dyn std::error::Error>> {
+    run_id_inner(nat, raw, false)
+}
+
+fn run_id_inner(
+    nat: Option<&str>,
+    raw: bool,
+    intro_already_shown: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let nat_opt = nat.filter(|&n| n != "all");
     let id_val = generate_id_only(nat_opt);
 
@@ -182,6 +474,18 @@ pub fn run_id(nat: Option<&str>, raw: bool) -> Result<(), Box<dyn std::error::Er
         } else {
             println!("{}", id_val["value"]);
         }
+    } else if is_interactive_tty() {
+        if !intro_already_shown {
+            clack_intro("spc faker id", "Validated National ID Checksum Generator");
+        }
+        let mut card = Card::new("SYNTHETIC NATIONAL ID");
+        card.with_badge(badge_online("CHECKSUM VALID"));
+        card.with_min_width(58);
+        card.add_kv("Nationality", id_val["nat"].as_str().unwrap_or("VN"));
+        card.add_kv("ID Schema", id_val["name"].as_str().unwrap_or("CCCD"));
+        card.add_kv("Generated Value", id_val["value"].as_str().unwrap_or(""));
+        card.print();
+        clack_outro("Use '--raw' (-r) to output plain ID string for pipes.");
     } else {
         let json_str = to_json_value(&id_val, true)?;
         println!("{}", json_str);
@@ -202,8 +506,10 @@ pub async fn run_card(
     let data = generate_users(1, gender_opt, nat_opt, avatar, domain);
     let users = data["results"].as_array().expect("results is array");
     if let Some(user) = users.first() {
-        if format.is_card() {
+        if !format.is_json() {
+            clack_intro("spc faker card", "Synthetic Identity Card Inspector");
             render_single_card(user);
+            clack_outro("Synthetic persona verified.");
         } else {
             let json_str = to_json_value(user, true)?;
             println!("{}", json_str);
@@ -213,7 +519,12 @@ pub async fn run_card(
     Ok(())
 }
 
-pub fn manage_config(args: &[String], edit: bool, show: bool, set_domain: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn manage_config(
+    args: &[String],
+    edit: bool,
+    show: bool,
+    set_domain: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(domain) = set_domain {
         return crate::config::ConfigController::set_key("faker", "default_domain", domain);
     }

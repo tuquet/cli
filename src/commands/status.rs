@@ -251,21 +251,20 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     });
 
     respond_with(format, &payload, |_| {
+        crate::ui::prompt::clack_intro("spc status", "Specter Ecosystem Status");
         if let Some(info) = crate::infrastructure::updater::get_cached_update()
             && info.has_update
         {
-            println!();
-            println!("{}", crate::ui::render_update_banner(&info.current_version, &info.latest_version));
+            crate::ui::prompt::clack_step_warn(&format!(
+                "Update available: v{} -> v{} (run 'spc upgrade')",
+                info.current_version, info.latest_version
+            ));
         }
 
-        println!();
         system_card.print();
-        println!();
         automa_card.print();
-        println!();
         browser_card.print();
-        println!();
         bridge_card.print();
-        println!();
+        crate::ui::prompt::clack_outro("Run 'spc doctor' for deep diagnostics.");
     })
 }

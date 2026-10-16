@@ -3,14 +3,51 @@ use crate::config::AppConfig;
 use crate::infrastructure::cloud::{
     CloudApiClient, CredentialStore, TenancyManager,
 };
-use crate::ui::{badge_offline, badge_online, respond_with, Card, Column, OutputFormat, Table};
+use crate::ui::{
+    badge_offline, badge_online, clack_cancel, clack_intro, clack_outro, clack_select,
+    respond_with, Card, ClackOption, ClackSpinner, Column, OutputFormat, Table,
+};
 
 pub async fn handle(command: Option<TenantSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         Some(TenantSubcommands::List { format }) => list_tenants(format.resolve()).await,
-        Some(TenantSubcommands::Switch { target, format }) => switch_tenant(&target, format.resolve()).await,
+        Some(TenantSubcommands::Switch { target, format }) => {
+            switch_tenant(target.as_deref(), format.resolve()).await
+        }
         Some(TenantSubcommands::Current { format }) => show_current_tenant(format.resolve()).await,
-        None => show_current_tenant(OutputFormat::Json).await,
+        None => {
+            if !crate::ui::is_interactive_tty() {
+                return show_current_tenant(OutputFormat::Json).await;
+            }
+            clack_intro("spc tenant", "Multi-Tenant Workspace Controller");
+            let opts = vec![
+                ClackOption::new(
+                    "Current Active Workspace",
+                    "Inspect the currently bound tenant & RLS scope",
+                    "current",
+                ),
+                ClackOption::new(
+                    "Switch Active Workspace",
+                    "Select and bind to another accessible workspace",
+                    "switch",
+                ),
+                ClackOption::new(
+                    "List Accessible Workspaces",
+                    "Display table of all organizations your account belongs to",
+                    "list",
+                ),
+            ];
+            let Some(idx) = clack_select("Select workspace action:", &opts, 0, 6)? else {
+                clack_cancel("Tenant hub closed.");
+                return Ok(());
+            };
+            match idx {
+                0 => show_current_tenant(OutputFormat::Card).await,
+                1 => switch_tenant(None, OutputFormat::Card).await,
+                2 => list_tenants(OutputFormat::Table).await,
+                _ => Ok(()),
+            }
+        }
     }
 }
 
@@ -34,7 +71,6 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
     let access_token = match creds.access_token.as_ref() {
         Some(t) => t.clone(),
         None => {
-            // If enrolled anonymously, display local tenant info only
             if let Some(tid) = creds.tenant_id.as_deref() {
                 let out = serde_json::json!({
                     "enrolled": true,
@@ -43,20 +79,31 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
                     "message": "Workstation enrolled under standalone tenant. Log in with an operator account to manage multi-tenant workspaces."
                 });
                 return respond_with(format, &out, |_| {
-                    println!();
-                    println!("  Workstation enrolled under standalone tenant: {}", tid);
-                    println!("  To manage multi-tenant workspaces, log in with an operator account:");
-                    println!("    specter login --email <your-email>");
-                    println!();
+                    clack_intro("spc tenant", "Standalone Workstation Enrollment");
+                    crate::ui::clack_step_info(format!(
+                        "Workstation enrolled under standalone tenant: \x1b[1;97m{}\x1b[0m",
+                        tid
+                    ));
+                    clack_outro("Log in with an operator account via 'spc login' to manage multi-tenant workspaces.");
                 });
             }
             return Err("Workstation is not logged in. Run 'specter login' first.".into());
         }
     };
 
-    // Attempt to fetch fresh tenant list from cloud
-    let mut tenants = TenancyManager::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id).await
+    let sp = if !format.is_json() {
+        Some(ClackSpinner::start("Fetching accessible multi-tenant workspaces..."))
+    } else {
+        None
+    };
+
+    let mut tenants = TenancyManager::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id)
+        .await
         .unwrap_or_else(|_| creds.available_tenants.clone().unwrap_or_default());
+
+    if let Some(s) = sp {
+        s.clear();
+    }
 
     let active_id = creds.tenant_id.as_deref().unwrap_or("");
     let active_slug = creds.tenant_slug.as_deref().unwrap_or("");
@@ -86,7 +133,6 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
             return;
         }
 
-        // Default visual: Table
         let columns = vec![
             Column { title: "WORKSPACE".to_string(), min_width: 22, align_right: false },
             Column { title: "SLUG".to_string(), min_width: 18, align_right: false },
@@ -114,17 +160,65 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
             ]);
         }
 
-        println!();
-        println!("╭─ ACCESSIBLE MULTI-TENANT WORKSPACES ──────────────────────────╮");
+        clack_intro("spc tenant", "Accessible Multi-Tenant Workspaces");
         table.print();
-        println!("╰─ Switch active workspace: specter tenant switch <slug> ───────╯");
-        println!();
+        clack_outro("Switch active workspace: spc tenant switch [slug]");
     })
 }
 
-pub async fn switch_tenant(target: &str, format: OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn switch_tenant(
+    target_opt: Option<&str>,
+    format: OutputFormat,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
-    match TenancyManager::switch_tenant(&config.data_dir, target).await {
+
+    let resolved_target: String = match target_opt {
+        Some(t) if !t.trim().is_empty() => t.trim().to_string(),
+        _ => {
+            // Zero-Arg Interactive: load accessible tenants and let user select via Clack
+            let creds = CredentialStore::load(&config.data_dir)
+                .await
+                .ok_or("No active cloud session found. Run 'spc login' first.")?;
+            let tenants = creds.available_tenants.unwrap_or_default();
+            if tenants.is_empty() {
+                return Err("No multi-tenant workspaces cached. Run 'spc tenant list' or 'spc login' first.".into());
+            }
+
+            clack_intro("spc tenant switch", "Interactive Workspace Selector");
+            let active_slug = creds.tenant_slug.as_deref().unwrap_or("");
+            let mut default_idx = 0usize;
+            let opts: Vec<ClackOption> = tenants
+                .iter()
+                .enumerate()
+                .map(|(i, t)| {
+                    if t.slug.eq_ignore_ascii_case(active_slug) {
+                        default_idx = i;
+                    }
+                    let role = t.role.as_deref().unwrap_or("member");
+                    let active_tag = if t.slug.eq_ignore_ascii_case(active_slug) {
+                        " • active"
+                    } else {
+                        ""
+                    };
+                    ClackOption::new(
+                        &t.name,
+                        format!("{} (role: {}{})", t.slug, role, active_tag),
+                        format!("{} ({})", t.name, t.slug),
+                    )
+                })
+                .collect();
+
+            match clack_select("Select target workspace to activate", &opts, default_idx, 10)? {
+                Some(idx) => tenants[idx].slug.clone(),
+                None => {
+                    clack_cancel("Workspace switch cancelled.");
+                    return Ok(());
+                }
+            }
+        }
+    };
+
+    match TenancyManager::switch_tenant(&config.data_dir, &resolved_target).await {
         Ok(tenant) => {
             let out = serde_json::json!({
                 "switched": true,

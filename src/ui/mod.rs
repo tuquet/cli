@@ -15,8 +15,11 @@ pub use colors::visible_width;
 pub use format::{FormatArgs, OutputFormat};
 pub use notify::Notify;
 pub use prompt::{
-    clack_cancel, clack_intro, clack_outro, clack_select, prompt_input, prompt_password,
-    prompt_select, ClackOption,
+    clack_block, clack_cancel, clack_confirm, clack_intro, clack_multiselect, clack_note,
+    clack_outro, clack_password, clack_select, clack_step_err, clack_step_info, clack_step_ok,
+    clack_step_skip, clack_step_warn, clack_text, is_interactive_tty, prompt_input,
+    prompt_password, prompt_select, strip_ansi_codes, ClackOption, ClackSpinner, S_BAR,
+    S_BAR_END, S_BAR_START,
 };
 pub use response::{
     respond, respond_action, respond_error, respond_with, ActionEnvelope, CliRender,

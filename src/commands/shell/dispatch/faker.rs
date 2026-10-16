@@ -21,10 +21,11 @@ pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
     let nat = get_flag_value(args, "--nat", "--nat").map(|s| s.to_string());
     let avatar = get_flag_value(args, "--avatar", "--avatar").map(|s| s.to_string());
     let domain = get_flag_value(args, "-d", "--domain").map(|s| s.to_string());
-    let format = get_flag_value(args, "-f", "--format").unwrap_or("json").to_string();
+    let format = get_flag_value(args, "-f", "--format").unwrap_or("auto").to_string();
     let card = args.contains(&"-c") || args.contains(&"--card");
     let table = args.contains(&"-t") || args.contains(&"--table");
     let csv = args.contains(&"--csv");
+    let json = args.contains(&"-j") || args.contains(&"--json");
     let output = get_flag_value(args, "-o", "--output").map(std::path::PathBuf::from);
 
     match cmd {
@@ -40,7 +41,7 @@ pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
             .await?;
         }
         "nationalities" | "nats" | "locales" => {
-            let table = args.contains(&"-t") || args.contains(&"--table");
+            let table = args.contains(&"-t") || args.contains(&"--table") || !json;
             crate::commands::faker::run_nationalities(table)?;
         }
         "id" | "ssn" | "cccd" | "national-id" => {
@@ -58,6 +59,7 @@ pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
                 card,
                 table,
                 csv,
+                json,
                 output,
             })
             .await?;
@@ -91,6 +93,7 @@ pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
                 card,
                 table,
                 csv,
+                json,
                 output,
             })
             .await?;

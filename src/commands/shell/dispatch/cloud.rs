@@ -28,13 +28,9 @@ pub async fn dispatch_cloud(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
                         .map_err(|e| format!("{}", e))?;
                 }
                 "switch" | "use" | "select" => {
-                    if let Some(target) = args.get(1) {
-                        crate::commands::tenant::switch_tenant(target, fmt)
-                            .await
-                            .map_err(|e| format!("{}", e))?;
-                    } else {
-                        eprintln!("Usage: tenant switch <slug|uuid>");
-                    }
+                    crate::commands::tenant::switch_tenant(args.get(1).copied(), fmt)
+                        .await
+                        .map_err(|e| format!("{}", e))?;
                 }
                 _ => {
                     crate::commands::tenant::show_current_tenant(fmt)

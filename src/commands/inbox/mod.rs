@@ -57,6 +57,74 @@ pub async fn handle(subcmd: InboxSubcommands) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
+pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
+    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, clack_text, ClackOption};
+
+    if !crate::ui::is_interactive_tty() {
+        return handle_status(crate::ui::OutputFormat::Json).await;
+    }
+
+    clack_intro("spc inbox", "Specter Verification Inbox & OTP Engine");
+
+    let options = vec![
+        ClackOption::new(
+            "Extract Latest OTP Code",
+            "Fetch or await verification OTP for a recipient email",
+            "otp",
+        ),
+        ClackOption::new(
+            "List Recent Emails & OTPs",
+            "View captured verification messages in local SQLite cache",
+            "list",
+        ),
+        ClackOption::new(
+            "Inbox Engine Status",
+            "Check local webhook server, SQLite storage, and Cloud sync",
+            "status",
+        ),
+        ClackOption::new(
+            "Sync from Cloud Inbox",
+            "Pull latest verification emails from Cloudflare Worker / Supabase",
+            "sync",
+        ),
+        ClackOption::new(
+            "Inbox Configuration",
+            "Configure inbox endpoints and webhook secrets",
+            "config",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select Inbox operation:", &options, 0, 6)? else {
+        clack_cancel("Inbox hub closed.");
+        return Ok(());
+    };
+
+    match idx {
+        0 => {
+            let Some(recipient) = clack_text("Recipient email address:", Some("user@example.com"), None)? else {
+                clack_cancel("Cancelled.");
+                return Ok(());
+            };
+            handle_otp(
+                &recipient,
+                false,
+                30,
+                false,
+                false,
+                true,
+                crate::ui::OutputFormat::Card,
+            )
+            .await
+        }
+        1 => handle_list(None, 20, crate::ui::OutputFormat::Card).await,
+        2 => handle_status(crate::ui::OutputFormat::Card).await,
+        3 => handle_sync(50).await,
+        4 => manage_config(&[], false, false),
+        _ => Ok(()),
+    }
+}
+
+
 pub async fn handle_otp(
     recipient: &str,
     wait: bool,

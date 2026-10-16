@@ -36,7 +36,7 @@ pub struct FormatArgs {
     pub table: bool,
 
     /// Display rich visual card view (shortcut for -f card)
-    #[arg(short = 'c', long)]
+    #[arg(long)]
     pub card: bool,
 
     /// Output results in raw JSON format (shortcut for -f json)

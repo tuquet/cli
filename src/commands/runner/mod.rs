@@ -49,6 +49,94 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
     }
 }
 
+pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
+    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, ClackOption};
+
+    if !crate::ui::is_interactive_tty() {
+        return handle(RunnerSubcommands::Status {
+            url: None,
+            format: crate::ui::FormatArgs {
+                json: true,
+                ..Default::default()
+            },
+        })
+        .await;
+    }
+
+    clack_intro("spc runner", "Specter Runner Daemon Supervisor");
+
+    let options = vec![
+        ClackOption::new(
+            "Runner Status",
+            "Check HTTP health and active daemon status",
+            "status",
+        ),
+        ClackOption::new(
+            "Start Runner Daemon",
+            "Launch background runner service on port 3030",
+            "start",
+        ),
+        ClackOption::new(
+            "Stop Runner Daemon",
+            "Gracefully stop running daemon instance",
+            "stop",
+        ),
+        ClackOption::new(
+            "Restart Runner Daemon",
+            "Restart background runner daemon",
+            "restart",
+        ),
+        ClackOption::new(
+            "View Runner Logs",
+            "Show recent daemon log output",
+            "logs",
+        ),
+        ClackOption::new(
+            "Runner Configuration",
+            "Configure host, port, and log level",
+            "config",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select Runner action:", &options, 0, 6)? else {
+        clack_cancel("Runner hub closed.");
+        return Ok(());
+    };
+
+    match idx {
+        0 => {
+            handle(RunnerSubcommands::Status {
+                url: None,
+                format: crate::ui::FormatArgs::default(),
+            })
+            .await
+        }
+        1 => {
+            handle(RunnerSubcommands::Start {
+                host: Some(crate::constants::DEFAULT_HOST.to_string()),
+                port: Some(crate::constants::DEFAULT_RUNNER_PORT),
+                detach: true,
+                data_dir: None,
+                log_level: Some("info".to_string()),
+                cloud: false,
+            })
+            .await
+        }
+        2 => handle(RunnerSubcommands::Stop { force: false }).await,
+        3 => handle(RunnerSubcommands::Restart { detach: true }).await,
+        4 => {
+            handle(RunnerSubcommands::Logs {
+                follow: false,
+                lines: 50,
+            })
+            .await
+        }
+        5 => manage_config(&[], false, false),
+        _ => Ok(()),
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

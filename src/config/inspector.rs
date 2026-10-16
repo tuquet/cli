@@ -3,7 +3,11 @@ use std::io::IsTerminal;
 use serde_json::{json, Map, Value};
 use crate::commands::schema::get_config_schema;
 use crate::config::registry::ConfigRegistry;
-use crate::ui::{badge_online, colors, Card, Column, Table};
+use crate::ui::{
+    badge_online, clack_cancel, clack_intro, clack_outro, clack_password, clack_select,
+    clack_step_ok, clack_step_warn, clack_text, colors, is_interactive_tty, Card, ClackOption,
+    Column, Table,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConfigOptionDef {
@@ -17,7 +21,7 @@ pub struct ConfigOptionDef {
 pub struct ConfigController;
 
 impl ConfigController {
-    /// Render the interactive options table for a given service
+    /// Render the options table for a given service on the Clack timeline
     pub fn render_options_table(service: &str) -> Result<(), Box<dyn std::error::Error>> {
         let canonical = ConfigRegistry::canonical_service(service)
             .ok_or_else(|| format!("Unknown service '{}'", service))?;
@@ -40,8 +44,6 @@ impl ConfigController {
 
         let options = Self::extract_options(&schema_json, &current_json);
 
-        // Header Card
-        println!();
         let title = format!("{} CONFIGURATION & OPTIONS", canonical.to_uppercase());
         let mut card = Card::new(title);
         card.with_badge(badge_online("SSOT READY"));
@@ -53,11 +55,10 @@ impl ConfigController {
             format!("schema/config/{}.schema.json (Draft 2020-12)", canonical),
         );
         card.with_footer(format!(
-            "Tip: 'specter config {} <option> <value>' to modify, or '--edit' to open editor",
+            "Tip: 'spc config {} <option> <value>' to modify, or '--edit' to open editor",
             canonical
         ));
         card.print();
-        println!();
 
         // Table
         let cols = vec![
@@ -127,9 +128,7 @@ impl ConfigController {
             "{} options declared in schema • Pass '--edit' to launch editor with IntelliSense",
             options.len()
         );
-        let table = table.with_footer(footer);
-        println!("{}", table.render());
-        println!();
+        table.with_footer(footer).print();
 
         Ok(())
     }
@@ -185,12 +184,17 @@ impl ConfigController {
             };
 
             // Determine current value
-            let current_val = if let Some(val) = current_json.get(key) {
+            let raw_current_val = if let Some(val) = current_json.get(key) {
                 format_json_value(val)
             } else if let Some(def) = prop.get("default") {
                 format_json_value(def)
             } else {
                 "—".to_string()
+            };
+            let current_val = if is_sensitive_config_key(key) && raw_current_val != "—" && !raw_current_val.is_empty() {
+                mask_secret_value(&raw_current_val)
+            } else {
+                raw_current_val
             };
 
             result.push(ConfigOptionDef {
@@ -253,18 +257,26 @@ impl ConfigController {
         };
 
         if std::io::stdout().is_terminal() {
-            println!();
+            let display_val = if is_sensitive_config_key(actual_key) && val_str != "—" && !val_str.is_empty() {
+                mask_secret_value(&val_str)
+            } else {
+                val_str.clone()
+            };
+            clack_intro(
+                &format!("spc config {}", canonical),
+                &format!("Inspect Option: {}", actual_key),
+            );
             let mut card = Card::new(format!("{}: {}", canonical.to_uppercase(), actual_key));
             card.with_badge(badge_online("OPTION"));
             card.with_min_width(64);
             card.add_kv("Option", actual_key);
-            card.add_kv("Value", &val_str);
+            card.add_kv("Value", &display_val);
             if let Some(desc) = prop_def.get("description").and_then(|d| d.as_str()) {
                 card.add_kv("Description", desc);
             }
-            card.with_footer(format!("To update: specter config {} {} <new_value>", canonical, actual_key));
+            card.with_footer(format!("To update: spc config {} {} <new_value>", canonical, actual_key));
             card.print();
-            println!();
+            clack_outro("Option inspected.");
         } else {
             println!("{}", val_str);
         }
@@ -342,20 +354,257 @@ impl ConfigController {
         let serialized = serde_json::to_string_pretty(&Value::Object(ordered))?;
         fs::write(&path, serialized)?;
 
-        let val_display = format_json_value(&converted_val);
-        println!(
-            "  {} Updated {}.{} = {}",
-            badge_online("SAVED"),
+        let raw_display = format_json_value(&converted_val);
+        let val_display = if is_sensitive_config_key(&actual_key) && !raw_display.is_empty() {
+            mask_secret_value(&raw_display)
+        } else {
+            raw_display
+        };
+        clack_step_ok(&format!(
+            "Updated {}.{} = {} ({})",
             canonical,
             actual_key,
-            val_display
+            val_display,
+            path.display()
+        ));
+        clack_outro("Configuration saved.");
+
+        Ok(())
+    }
+
+    /// Interactive global configuration picker (`spc config` on TTY)
+    pub fn interactive_global_config() -> Result<(), Box<dyn std::error::Error>> {
+        if !is_interactive_tty() {
+            ConfigRegistry::render_overview_card();
+            return Ok(());
+        }
+
+        clack_intro(
+            "spc config",
+            "Unified Microservice Pillar Configuration Controller",
         );
-        println!(
-            "  {MUTED}Config file: {}{RESET}",
-            path.display(),
-            MUTED = colors::MUTED,
-            RESET = colors::RESET
-        );
+
+        let entries = ConfigRegistry::list_all();
+        let mut opts: Vec<ClackOption> = entries
+            .iter()
+            .map(|e| {
+                let state = if e.exists { "ready" } else { "auto-init" };
+                ClackOption::new(
+                    format!("{} — {}", e.pillar, e.title),
+                    format!("{} ({})", e.path.display(), state),
+                    format!("{} ({})", e.pillar, e.title),
+                )
+            })
+            .collect();
+        opts.push(ClackOption::new(
+            "View All Pillar Paths Overview (--show)",
+            "Display SSOT configuration registry card",
+            "All Pillar Paths Overview",
+        ));
+
+        match clack_select("Select a microservice pillar to inspect or configure", &opts, 0, 10)? {
+            Some(idx) if idx < entries.len() => {
+                Self::interactive_service_config_inner(entries[idx].pillar, true)?;
+            }
+            Some(_) => {
+                ConfigRegistry::render_overview_card();
+                clack_outro("All 7 microservice configuration paths listed.");
+            }
+            None => {
+                clack_cancel("Operation cancelled.");
+            }
+        }
+        Ok(())
+    }
+
+    /// Interactive service configuration editor (`spc config <service>` or `spc <service> config` on TTY)
+    pub fn interactive_service_config(service: &str) -> Result<(), Box<dyn std::error::Error>> {
+        Self::interactive_service_config_inner(service, false)
+    }
+
+    fn interactive_service_config_inner(
+        service: &str,
+        intro_already_shown: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let canonical = ConfigRegistry::canonical_service(service)
+            .ok_or_else(|| format!("Unknown service '{}'", service))?;
+        let path = ConfigRegistry::resolve_service_path(canonical)
+            .ok_or_else(|| format!("Cannot resolve config path for '{}'", canonical))?;
+
+        if !is_interactive_tty() {
+            return Self::render_options_table(canonical);
+        }
+
+        if !intro_already_shown {
+            clack_intro(
+                &format!("spc config {}", canonical),
+                &format!("{} Configuration • {}", canonical.to_uppercase(), path.display()),
+            );
+        }
+
+        let schema_raw = get_config_schema(canonical)
+            .ok_or_else(|| format!("No schema found for service '{}'", canonical))?;
+        let schema_json: Value = serde_json::from_str(schema_raw)?;
+        let current_json = if path.exists() {
+            fs::read_to_string(&path)
+                .ok()
+                .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+                .unwrap_or_else(|| json!({}))
+        } else {
+            json!({})
+        };
+
+        let options = Self::extract_options(&schema_json, &current_json);
+        let mut clack_opts: Vec<ClackOption> = options
+            .iter()
+            .map(|o| {
+                ClackOption::new(
+                    format!("{} = {}", o.key, o.current_value),
+                    format!("{} — {}", o.type_or_choices, o.description),
+                    format!("{} (current: {})", o.key, o.current_value),
+                )
+            })
+            .collect();
+
+        clack_opts.push(ClackOption::new(
+            "Show Full Options Table (--show)",
+            "Render complete schema options table in terminal",
+            "Show Full Options Table",
+        ));
+        clack_opts.push(ClackOption::new(
+            "Open JSON Config in Default Editor (--edit)",
+            format!("Launch editor for {}", path.display()),
+            "Open in Default Editor",
+        ));
+
+        let Some(choice_idx) = clack_select(
+            &format!("Select a '{}' option to modify (or Esc to exit)", canonical),
+            &clack_opts,
+            0,
+            10,
+        )?
+        else {
+            clack_cancel("No changes made.");
+            return Ok(());
+        };
+
+        if choice_idx == options.len() {
+            Self::render_options_table(canonical)?;
+            clack_outro(&format!("Inspected {} options for '{}'.", options.len(), canonical));
+            return Ok(());
+        }
+        if choice_idx == options.len() + 1 {
+            ConfigRegistry::open_in_editor_with_service(&path, canonical)?;
+            clack_outro(&format!("Opened {} in editor.", path.display()));
+            return Ok(());
+        }
+
+        let target_opt = &options[choice_idx];
+        let prop_def = schema_json
+            .get("properties")
+            .and_then(|p| p.get(&target_opt.key));
+
+        let new_val_opt: Option<String> = if let Some(enums) =
+            prop_def.and_then(|p| p.get("enum")).and_then(|e| e.as_array())
+        {
+            let choices: Vec<String> = enums
+                .iter()
+                .map(|v| match v {
+                    Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                })
+                .collect();
+            let default_idx = choices
+                .iter()
+                .position(|c| c.eq_ignore_ascii_case(&target_opt.current_value))
+                .unwrap_or(0);
+            let enum_opts: Vec<ClackOption> = choices
+                .iter()
+                .map(|c| {
+                    let hint = if c.eq_ignore_ascii_case(&target_opt.current_value) {
+                        "current value"
+                    } else if c.eq_ignore_ascii_case(&target_opt.default_value) {
+                        "default"
+                    } else {
+                        ""
+                    };
+                    ClackOption::new(c, hint, c)
+                })
+                .collect();
+            match clack_select(
+                &format!("Select new value for {}.{}", canonical, target_opt.key),
+                &enum_opts,
+                default_idx,
+                8,
+            )? {
+                Some(i) => Some(choices[i].clone()),
+                None => None,
+            }
+        } else if prop_def
+            .and_then(|p| p.get("type"))
+            .and_then(|t| t.as_str())
+            == Some("boolean")
+        {
+            let bool_opts = vec![
+                ClackOption::new("true", "Enable option", "true"),
+                ClackOption::new("false", "Disable option", "false"),
+            ];
+            let default_idx = if target_opt.current_value.eq_ignore_ascii_case("true") {
+                0
+            } else {
+                1
+            };
+            match clack_select(
+                &format!("Set boolean value for {}.{}", canonical, target_opt.key),
+                &bool_opts,
+                default_idx,
+                4,
+            )? {
+                Some(0) => Some("true".to_string()),
+                Some(1) => Some("false".to_string()),
+                _ => None,
+            }
+        } else if is_sensitive_config_key(&target_opt.key) {
+            clack_password(&format!(
+                "Enter secret value for {}.{} (masked):",
+                canonical, target_opt.key
+            ))?
+        } else {
+            let initial = if target_opt.current_value == "—" {
+                None
+            } else {
+                Some(target_opt.current_value.as_str())
+            };
+            loop {
+                let candidate = clack_text(
+                    &format!(
+                        "Enter new value for {}.{} ({})",
+                        canonical, target_opt.key, target_opt.type_or_choices
+                    ),
+                    Some(&target_opt.default_value),
+                    initial,
+                )?;
+                let Some(ref raw) = candidate else {
+                    break None;
+                };
+                if let Some(p_def) = prop_def {
+                    if let Err(e) = convert_and_validate(p_def, raw, &target_opt.key) {
+                        clack_step_warn(e.to_string());
+                        continue;
+                    }
+                }
+                break candidate;
+            }
+        };
+
+        match new_val_opt {
+            Some(new_val) => {
+                Self::set_key(canonical, &target_opt.key, &new_val)?;
+            }
+            None => {
+                clack_cancel("No changes saved.");
+            }
+        }
 
         Ok(())
     }
@@ -365,7 +614,7 @@ impl ConfigController {
         service: &str,
         args: &[String],
         edit: bool,
-        _show: bool,
+        show: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let canonical = ConfigRegistry::canonical_service(service)
             .ok_or_else(|| format!("Unknown service '{}'", service))?;
@@ -373,17 +622,36 @@ impl ConfigController {
             .ok_or_else(|| format!("Cannot resolve config path for '{}'", canonical))?;
 
         if edit {
+            clack_intro(
+                &format!("spc config {}", canonical),
+                "Launch Configuration Editor",
+            );
             ConfigRegistry::open_in_editor_with_service(&path, canonical)?;
+            clack_outro(&format!("Opened {} in default editor.", path.display()));
             return Ok(());
         }
 
         match args {
             [] => {
-                Self::render_options_table(canonical)?;
+                if !show && is_interactive_tty() {
+                    Self::interactive_service_config(canonical)?;
+                } else {
+                    clack_intro(
+                        &format!("spc config {}", canonical),
+                        &format!("{} Schema Options", canonical.to_uppercase()),
+                    );
+                    Self::render_options_table(canonical)?;
+                    clack_outro(&format!("Configuration file: {}", path.display()));
+                }
             }
             [single] => {
                 if single.eq_ignore_ascii_case("list") || single.eq_ignore_ascii_case("all") {
+                    clack_intro(
+                        &format!("spc config {}", canonical),
+                        &format!("{} Schema Options", canonical.to_uppercase()),
+                    );
                     Self::render_options_table(canonical)?;
+                    clack_outro(&format!("Configuration file: {}", path.display()));
                 } else {
                     Self::get_key(canonical, single)?;
                 }
@@ -392,20 +660,42 @@ impl ConfigController {
                 Self::get_key(canonical, key)?;
             }
             [key, val] if !key.eq_ignore_ascii_case("set") && !key.eq_ignore_ascii_case("get") => {
+                clack_intro(&format!("spc config {}", canonical), "Update Configuration Key");
                 Self::set_key(canonical, key, val)?;
             }
             [action, key, val] if action.eq_ignore_ascii_case("set") => {
+                clack_intro(&format!("spc config {}", canonical), "Update Configuration Key");
                 Self::set_key(canonical, key, val)?;
             }
             other => {
                 return Err(format!(
-                    "Invalid arguments for config: {:?}. Usage: 'specter config {} [key] [value]'",
+                    "Invalid arguments for config: {:?}. Usage: 'spc config {} [key] [value]'",
                     other, canonical
                 ).into());
             }
         }
 
         Ok(())
+    }
+}
+
+pub fn is_sensitive_config_key(key: &str) -> bool {
+    let lower = key.to_ascii_lowercase();
+    lower.contains("secret")
+        || lower.contains("token")
+        || lower.contains("password")
+        || lower.ends_with("_key")
+        || lower == "api_key"
+}
+
+pub fn mask_secret_value(val: &str) -> String {
+    let chars: Vec<char> = val.chars().collect();
+    if chars.len() <= 6 {
+        "••••••••".to_string()
+    } else {
+        let prefix: String = chars[..3].iter().collect();
+        let suffix: String = chars[chars.len() - 2..].iter().collect();
+        format!("{}••••{}", prefix, suffix)
     }
 }
 
@@ -451,20 +741,65 @@ pub fn convert_and_validate(
             }
         }
         "integer" => {
-            trimmed.parse::<i64>().map(|n| json!(n)).map_err(|_| {
+            let n = trimmed.parse::<i64>().map_err(|_| {
                 format!(
                     "Invalid integer value '{}' for '{}'. Expected whole number",
                     raw_val, key
-                ).into()
-            })
+                )
+            })?;
+            if let Some(min) = prop_def.get("minimum").and_then(|m| m.as_i64())
+                && n < min
+            {
+                return Err(format!(
+                    "Value {} for '{}' is below minimum allowed ({})",
+                    n, key, min
+                )
+                .into());
+            }
+            if let Some(max) = prop_def.get("maximum").and_then(|m| m.as_i64())
+                && n > max
+            {
+                return Err(format!(
+                    "Value {} for '{}' exceeds maximum allowed ({})",
+                    n, key, max
+                )
+                .into());
+            }
+            if key.ends_with("port") && !(1..=65535).contains(&n) {
+                return Err(format!(
+                    "Port number {} for '{}' must be between 1 and 65535",
+                    n, key
+                )
+                .into());
+            }
+            Ok(json!(n))
         }
         "number" => {
-            trimmed.parse::<f64>().map(|n| json!(n)).map_err(|_| {
+            let n = trimmed.parse::<f64>().map_err(|_| {
                 format!(
                     "Invalid numeric value '{}' for '{}'. Expected number",
                     raw_val, key
-                ).into()
-            })
+                )
+            })?;
+            if let Some(min) = prop_def.get("minimum").and_then(|m| m.as_f64())
+                && n < min
+            {
+                return Err(format!(
+                    "Value {} for '{}' is below minimum allowed ({})",
+                    n, key, min
+                )
+                .into());
+            }
+            if let Some(max) = prop_def.get("maximum").and_then(|m| m.as_f64())
+                && n > max
+            {
+                return Err(format!(
+                    "Value {} for '{}' exceeds maximum allowed ({})",
+                    n, key, max
+                )
+                .into());
+            }
+            Ok(json!(n))
         }
         "array" => {
             if trimmed.starts_with('[') && trimmed.ends_with(']') {
@@ -557,6 +892,18 @@ mod tests {
         let int_prop = json!({ "type": "integer" });
         assert_eq!(convert_and_validate(&int_prop, "1280", "viewport_width").unwrap(), json!(1280));
         assert!(convert_and_validate(&int_prop, "abc", "viewport_width").is_err());
+        assert!(convert_and_validate(&int_prop, "70000", "default_port").is_err());
+        assert_eq!(convert_and_validate(&int_prop, "8765", "default_port").unwrap(), json!(8765));
+    }
+
+    #[test]
+    fn test_secret_masking() {
+        assert!(is_sensitive_config_key("webhook_secret"));
+        assert!(is_sensitive_config_key("api_key"));
+        assert!(is_sensitive_config_key("auth_token"));
+        assert!(!is_sensitive_config_key("default_port"));
+        assert_eq!(mask_secret_value("short"), "••••••••");
+        assert_eq!(mask_secret_value("super_secret_token_99"), "sup••••99");
     }
 
     #[test]
@@ -566,3 +913,4 @@ mod tests {
         assert_eq!(val, json!(["automa", "stealth"]));
     }
 }
+

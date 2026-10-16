@@ -66,17 +66,9 @@ pub async fn ensure_browser_worker(
         }
     }
 
-    let profile_ext_paths = specter_browser::resolve_profile_extension_paths(&["automa".to_string()], true).await;
-    let mut ext_path_strings: Vec<String> = profile_ext_paths
-        .into_iter()
-        .map(|p| p.to_string_lossy().to_string())
-        .collect();
-
-    if ext_path_strings.is_empty() {
-        let fallback_ext = resolve_cli_runner_extension_path();
-        ext_path_strings.push(fallback_ext);
-    }
-    tracing::info!("[submit_job] Resolved extension paths: {:?}", ext_path_strings);
+    // Zero extension leaks: Pure native CDP controls the antidetect browser directly
+    let ext_path_strings: Vec<String> = Vec::new();
+    tracing::info!("[submit_job] Launching browser worker with zero extensions (pure native CDP)");
 
     let headless = headless_opt.unwrap_or(app_settings.browser.headless);
 
@@ -110,18 +102,16 @@ pub async fn ensure_browser_worker(
         user_data_dir: None,
     });
 
-    if let Err(e) = manager.launch().await {
-        eprintln!("Failed to launch browser worker (maybe already running): {}", e);
-    }
-
-    for _ in 0..60 {
-        let is_connected_now = {
-            let browsers = connected_browsers().read().await;
-            browsers.contains(&browser_id.to_string())
-        };
-        if is_connected_now {
-            break;
+    match manager.launch().await {
+        Ok(ws_url) => {
+            tracing::info!("[ensure_browser_worker] Browser launched successfully via CDP: {}", ws_url);
+            connected_browsers().write().await.insert(browser_id.to_string());
         }
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        Err(e) => {
+            eprintln!("Failed to launch browser worker (maybe already running): {}", e);
+            if browser_registry().read().await.contains_key(&browser_id.to_string()) {
+                connected_browsers().write().await.insert(browser_id.to_string());
+            }
+        }
     }
 }

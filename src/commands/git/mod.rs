@@ -9,7 +9,8 @@ use crate::commands::dev::scanner::{
 use crate::infrastructure::bridge::probe_port;
 use crate::ui::{
     badge_online, badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, Column, Notify, OutputFormat, Table, TabularRow,
+    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
+    TabularRow,
 };
 
 const MAX_GIT_SCAN_DEPTH: usize = 6;
@@ -72,12 +73,14 @@ pub async fn handle(
     let interactive_flow = !list && (repo_query.is_none() || action_query.is_none());
 
     if interactive_flow {
-        use std::io::Write;
-        eprint!(
-            "  \x1b[36m◆\x1b[0m  \x1b[90mScanning machine for Git repositories...\x1b[0m\r"
-        );
-        let _ = std::io::stderr().flush();
+        clack_intro("spc git", "Multi-Repo Git Radar");
     }
+
+    let sp = if interactive_flow {
+        Some(ClackSpinner::start("Scanning machine for Git repositories..."))
+    } else {
+        None
+    };
 
     let (scan_label, all_repos) = match path {
         Some(ref custom_root) => (
@@ -86,12 +89,6 @@ pub async fn handle(
         ),
         None => ("Full Machine".to_string(), scan_git_repositories(None, &cwd)),
     };
-
-    if interactive_flow {
-        use std::io::Write;
-        eprint!("\r\x1b[2K");
-        let _ = std::io::stderr().flush();
-    }
 
     let repos: Vec<DiscoveredGitRepo> = if all || repo_query.is_some() {
         all_repos
@@ -108,6 +105,16 @@ pub async fn handle(
         }
     };
 
+    if let Some(spinner) = sp {
+        let dirty_count = repos.iter().filter(|r| r.needs_attention()).count();
+        spinner.finish(&format!(
+            "Discovered {} repos ({} needing attention • {})",
+            repos.len(),
+            dirty_count,
+            scan_label
+        ));
+    }
+
     if list {
         render_git_list(&repos, &scan_label, format);
         return Ok(());
@@ -116,18 +123,6 @@ pub async fn handle(
     if repos.is_empty() {
         Notify::info(format!("No Git repositories found ({}).", scan_label));
         return Ok(());
-    }
-
-    if interactive_flow {
-        let dirty_count = repos.iter().filter(|r| r.needs_attention()).count();
-        clack_intro(
-            "spc git",
-            &format!(
-                "Multi-Repo Git Radar • {} repos ({} needing attention)",
-                repos.len(),
-                dirty_count
-            ),
-        );
     }
 
     let target_repo: &DiscoveredGitRepo = match repo_query {

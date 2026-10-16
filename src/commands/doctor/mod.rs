@@ -5,7 +5,9 @@ pub mod types;
 pub use bootstrap::bootstrap;
 pub use types::DiagnosticItem;
 
-use crate::ui::{colors, respond_with, OutputFormat};
+use crate::ui::{
+    clack_intro, clack_outro, clack_step_info, respond_with, OutputFormat,
+};
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct DoctorReport {
@@ -19,19 +21,12 @@ pub struct DoctorReport {
 pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
     if fix {
         if !format.is_json() {
-            println!();
-            println!(
-                "  {BOLD}{CYAN}SPECTER DOCTOR (--fix){RESET} {MUTED}— Automatic Remediation & Environment Bootstrap{RESET}",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                RESET = colors::RESET,
-                MUTED = colors::MUTED,
+            clack_intro(
+                "spc doctor --fix",
+                "Automatic Remediation & Environment Bootstrap",
             );
         }
         let _ = bootstrap(false).await;
-        if !format.is_json() {
-            println!();
-        }
     }
 
     let mut missing_actions: Vec<String> = Vec::new();
@@ -53,37 +48,35 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
     };
 
     respond_with(format, &report, |r| {
-        println!();
-        println!(
-            "  {BOLD}{CYAN}SPECTER DOCTOR{RESET} {MUTED}— Ecosystem Environment & Dependency Diagnostics{RESET}",
-            BOLD = colors::BOLD,
-            CYAN = colors::CYAN,
-            RESET = colors::RESET,
-            MUTED = colors::MUTED,
-        );
-        println!();
+        if !fix {
+            clack_intro(
+                "spc doctor",
+                "Ecosystem Environment & Dependency Diagnostics",
+            );
+        }
 
-        println!("╭─ ENVIRONMENT & SYSTEM TOOL DEPENDENCIES ──────────────────────────╮");
+        clack_step_info("ENVIRONMENT & SYSTEM TOOL DEPENDENCIES");
         tool_table.print();
-        println!();
 
         browser_card.print();
-        println!();
 
         // 3. Canonical Microservice Storage Pillars (~/.specter/)
         let pillar_table = checks::check_storage_pillars();
-        println!("╭─ CANONICAL MICROSERVICE STORAGE PILLARS (SSOT) ───────────────────╮");
+        clack_step_info("CANONICAL MICROSERVICE STORAGE PILLARS (SSOT)");
         pillar_table.print();
-        println!();
 
         // 4. Port Availability & Daemon Probes
         let port_card = checks::check_network_topology();
         port_card.print();
-        println!();
 
         // 5. Final Diagnostic Verdict Card
         let verdict_card = checks::check_verdict(ssh_found, browser_ok, &r.missing_actions);
         verdict_card.print();
-        println!();
+
+        clack_outro(if r.ready {
+            "Workstation is 100% healthy and ready."
+        } else {
+            "Diagnostics completed with action items above."
+        });
     })
 }

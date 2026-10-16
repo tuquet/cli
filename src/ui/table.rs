@@ -178,8 +178,43 @@ impl Table {
         out
     }
 
+    /// Render token-compact table for Non-TTY / AI Agents (zero Unicode border bloat)
+    pub fn render_compact(&self) -> String {
+        use super::prompt::strip_ansi_codes;
+        let mut out = String::new();
+        let headers: Vec<String> = self
+            .columns
+            .iter()
+            .map(|c| strip_ansi_codes(&c.title).trim().to_string())
+            .collect();
+        out.push_str(&format!("{}\n", headers.join("\t")));
+
+        if self.rows.is_empty() {
+            out.push_str("(empty)\n");
+        } else {
+            for row in &self.rows {
+                let cells: Vec<String> = row
+                    .iter()
+                    .map(|c| strip_ansi_codes(c).trim().to_string())
+                    .collect();
+                out.push_str(&format!("{}\n", cells.join("\t")));
+            }
+        }
+        if let Some(ref f) = self.footer {
+            out.push_str(&format!("note: {}\n", strip_ansi_codes(f).trim()));
+        }
+        out
+    }
+
     pub fn print(&self) {
-        print!("{}", self.render());
+        use std::io::IsTerminal;
+        if std::io::stdout().is_terminal() {
+            for line in self.render().lines() {
+                println!("  \x1b[90m│\x1b[0m  {}", line.trim_start());
+            }
+        } else {
+            print!("{}", self.render_compact());
+        }
     }
 }
 

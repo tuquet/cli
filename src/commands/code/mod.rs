@@ -9,7 +9,8 @@ use crate::commands::dev::scanner::{
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::ui::{
     badge_online, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, Column, Notify, OutputFormat, Table, TabularRow,
+    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
+    TabularRow,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,10 +75,14 @@ pub async fn handle(
     let interactive_flow = !list && (project.is_none() || editor.is_none());
 
     if interactive_flow {
-        use std::io::Write;
-        eprint!("  \x1b[36m◆\x1b[0m  \x1b[90mScanning machine for projects...\x1b[0m\r");
-        let _ = std::io::stderr().flush();
+        clack_intro("spc code", "Project Finder & IDE Launcher");
     }
+
+    let sp = if interactive_flow {
+        Some(ClackSpinner::start("Scanning machine for projects..."))
+    } else {
+        None
+    };
 
     let (scan_label, mut packages) = match path {
         Some(ref custom_root) => (
@@ -87,10 +92,12 @@ pub async fn handle(
         None => ("Full Machine".to_string(), scan_machine_packages(&cwd)),
     };
 
-    if interactive_flow {
-        use std::io::Write;
-        eprint!("\r\x1b[2K");
-        let _ = std::io::stderr().flush();
+    if let Some(spinner) = sp {
+        spinner.finish(&format!(
+            "Discovered {} projects ({})",
+            packages.len(),
+            scan_label
+        ));
     }
 
     // Prioritize projects from recent history at the top
@@ -116,17 +123,6 @@ pub async fn handle(
     if packages.is_empty() {
         Notify::warn(format!("No projects found ({}).", scan_label));
         return Ok(());
-    }
-
-    if interactive_flow {
-        clack_intro(
-            "spc code",
-            &format!(
-                "Project Finder & IDE Launcher • {} projects ({})",
-                packages.len(),
-                scan_label
-            ),
-        );
     }
 
     let target_pkg: &DiscoveredPackage = match project {

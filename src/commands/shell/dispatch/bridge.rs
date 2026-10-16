@@ -39,19 +39,11 @@ pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         }
         "enable" => {
             let server_opt = args.iter().find(|a| !a.starts_with('-')).copied();
-            if let Some(srv) = server_opt {
-                crate::commands::bridge::toggle_server(srv, true)?;
-            } else {
-                eprintln!("Usage: enable <server_id>");
-            }
+            crate::commands::bridge::toggle_server(server_opt, true)?;
         }
         "disable" => {
             let server_opt = args.iter().find(|a| !a.starts_with('-')).copied();
-            if let Some(srv) = server_opt {
-                crate::commands::bridge::toggle_server(srv, false)?;
-            } else {
-                eprintln!("Usage: disable <server_id>");
-            }
+            crate::commands::bridge::toggle_server(server_opt, false)?;
         }
         "check" => {
             crate::commands::bridge::check_config()?;

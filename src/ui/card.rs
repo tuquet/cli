@@ -204,7 +204,99 @@ impl Card {
         out
     }
 
+    /// Render the card using `@clack/prompts` vertical rail (`┌ │ ◇ └`)
+    pub fn render_clack(&self) -> String {
+        let mut out = String::new();
+        let badge_str = self.badge.as_deref().unwrap_or("");
+        out.push_str(&format!(
+            "  \x1b[90m┌\x1b[0m  \x1b[46;30;1m {} \x1b[0m {}\n",
+            self.title, badge_str
+        ));
+        out.push_str("  \x1b[90m│\x1b[0m\n");
+
+        if !self.rows.is_empty() {
+            let max_key_len = self
+                .rows
+                .iter()
+                .map(|(k, _)| visible_width(k))
+                .max()
+                .unwrap_or(12);
+            let key_col_width = (max_key_len + 2).max(16);
+
+            for (i, (k, v)) in self.rows.iter().enumerate() {
+                let kw = visible_width(k);
+                let pad_k = " ".repeat(key_col_width.saturating_sub(kw));
+                let marker = if i == 0 {
+                    "\x1b[36m◇\x1b[0m"
+                } else {
+                    "\x1b[90m│\x1b[0m"
+                };
+                out.push_str(&format!(
+                    "  {marker}  {}{}{pad_k}{}{}{}\n",
+                    colors::MUTED,
+                    k,
+                    colors::BOLD_WHITE,
+                    v,
+                    colors::RESET
+                ));
+            }
+        }
+
+        for line in &self.raw_lines {
+            out.push_str(&format!("  \x1b[90m│\x1b[0m  {}\n", line));
+        }
+
+        if let Some(ref f) = self.footer {
+            out.push_str("  \x1b[90m│\x1b[0m\n");
+            out.push_str(&format!(
+                "  \x1b[90m└\x1b[0m  {}{}{}\n",
+                colors::MUTED,
+                f,
+                colors::RESET
+            ));
+        } else {
+            out.push_str("  \x1b[90m└\x1b[0m\n");
+        }
+
+        out
+    }
+
+    /// Render ultra-compact output for Non-TTY / AI Agents (zero box-border token waste)
+    pub fn render_compact(&self) -> String {
+        use super::prompt::strip_ansi_codes;
+        let mut out = String::new();
+        let title_clean = strip_ansi_codes(&self.title);
+        if let Some(ref b) = self.badge {
+            out.push_str(&format!("[{}] {}\n", title_clean, strip_ansi_codes(b)));
+        } else {
+            out.push_str(&format!("[{}]\n", title_clean));
+        }
+        for (k, v) in &self.rows {
+            out.push_str(&format!(
+                "{}: {}\n",
+                strip_ansi_codes(k).trim(),
+                strip_ansi_codes(v).trim()
+            ));
+        }
+        for line in &self.raw_lines {
+            let clean = strip_ansi_codes(line);
+            let trimmed = clean.trim();
+            if !trimmed.is_empty() && !trimmed.chars().all(|c| c == '─' || c == '-') {
+                out.push_str(&format!("{}\n", trimmed));
+            }
+        }
+        if let Some(ref f) = self.footer {
+            out.push_str(&format!("note: {}\n", strip_ansi_codes(f).trim()));
+        }
+        out
+    }
+
     pub fn print(&self) {
-        print!("{}", self.render());
+        use std::io::IsTerminal;
+        if std::io::stdout().is_terminal() {
+            print!("{}", self.render_clack());
+        } else {
+            print!("{}", self.render_compact());
+        }
     }
 }

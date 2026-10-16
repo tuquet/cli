@@ -30,11 +30,6 @@ pub async fn run_workflow(
     let bound_port = listener.local_addr()?.port();
     config.server_port = bound_port;
 
-    // Set environment variable so browser extension connects to this ephemeral bridge port
-    unsafe {
-        std::env::set_var("AUTOMA_PORT", bound_port.to_string());
-    }
-
     let (tx, mut rx) = tokio::sync::broadcast::channel(1000);
     let (worker_tx, _) = tokio::sync::broadcast::channel(1000);
 
@@ -93,10 +88,7 @@ pub async fn run_workflow(
         close_browser_on_finish: Some(true),
     };
 
-    crate::ui::Notify::info(format!(
-        "Submitting workflow to browser worker (Bridge Port: {})...",
-        bound_port
-    ));
+    crate::ui::Notify::info("Submitting workflow to native browser worker via CDP (Zero Extension Stealth)...".to_string());
 
     use crate::core::engine::job_coordinator::JobCoordinator;
     let job_id = match JobCoordinator::submit(

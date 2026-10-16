@@ -7,8 +7,8 @@ use crate::infrastructure::cloud::{
 };
 use crate::infrastructure::cloud_reporter::CloudReporter;
 use crate::ui::{
-    badge_offline, badge_online, prompt_input, prompt_password, prompt_select, respond_with,
-    Card, OutputFormat,
+    badge_offline, badge_online, clack_cancel, clack_intro, clack_password, clack_select,
+    clack_step_warn, clack_text, respond_with, Card, ClackOption, ClackSpinner, OutputFormat,
 };
 
 pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error::Error>> {
@@ -32,6 +32,54 @@ pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error:
     }
 }
 
+pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
+    if !crate::ui::is_interactive_tty() {
+        return whoami(OutputFormat::Json).await;
+    }
+
+    clack_intro("spc cloud", "Specter Cloud & Fleet Identity Hub");
+
+    let options = vec![
+        ClackOption::new(
+            "Current Cloud Identity (Whoami)",
+            "Inspect active operator session, machine fingerprint, and tenant",
+            "whoami",
+        ),
+        ClackOption::new(
+            "Authenticate / Pair Node (Login)",
+            "Sign in with Email, OTP, JWT Token, or pair anonymous node",
+            "login",
+        ),
+        ClackOption::new(
+            "Sign Out (Logout)",
+            "Revoke local cloud credentials",
+            "logout",
+        ),
+        ClackOption::new(
+            "Cloud Configuration",
+            "Inspect or update Supabase / Cloud endpoints",
+            "config",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select Cloud operation:", &options, 0, 6)? else {
+        clack_cancel("Cloud hub closed.");
+        return Ok(());
+    };
+
+    match idx {
+        0 => whoami(OutputFormat::Card).await,
+        1 => login(None, None, None, false, None, None, None, None, None, OutputFormat::Card)
+            .await
+            .map_err(|e| e as Box<dyn std::error::Error>),
+        2 => logout().await,
+        3 => manage_config(&[], false, false),
+        _ => Ok(()),
+    }
+}
+
+
+#[allow(clippy::too_many_arguments)]
 pub async fn login(
     url: Option<String>,
     email: Option<String>,
@@ -57,43 +105,86 @@ pub async fn login(
     let client = CloudApiClient::build_http_client();
     let is_tty = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
 
+    if !format.is_json() && is_tty {
+        clack_intro(
+            "spc login",
+            &format!("Specter Cloud Authentication & Fleet Pairing • {cloud_url}"),
+        );
+    }
+
     // 1. Interactive login method resolution if no explicit auth params given
     let (mut auth_email, mut auth_password, mut is_otp, auth_code, mut auth_token) = (
         email, password, otp, code, token
     );
 
     if auth_email.is_none() && auth_token.is_none() && !is_otp && is_tty {
-        println!();
-        println!("  \x1b[1;36mSPECTER CLOUD\x1b[0m • Authentication & Fleet Pairing");
-        println!("  Endpoint: \x1b[90m{}\x1b[0m", cloud_url);
-
-        let choices = [
-            "Email & Password (Standard Operator Login)",
-            "One-Time Passcode / OTP (Email Verification Code)",
-            "Access Token / JWT (Personal Access Token)",
-            "Anonymous Device Enrollment (Runner Token)",
+        let auth_opts = vec![
+            ClackOption::new(
+                "Email & Password",
+                "Standard operator account login",
+                "Email & Password",
+            ),
+            ClackOption::new(
+                "One-Time Passcode (OTP)",
+                "6-digit verification code sent via email",
+                "One-Time Passcode (OTP)",
+            ),
+            ClackOption::new(
+                "Access Token / JWT",
+                "Personal access token or organization enrollment token",
+                "Access Token / JWT",
+            ),
+            ClackOption::new(
+                "Anonymous Device Enrollment",
+                "Pair workstation runner node without operator session",
+                "Anonymous Device Enrollment",
+            ),
         ];
-        let choice = prompt_select("Choose authentication method", &choices, 0)
-            .map_err(|e| format!("Failed to read user choice: {}", e))?;
+
+        let choice = match clack_select("Select authentication method", &auth_opts, 0, 6)
+            .map_err(|e| format!("Failed to read user choice: {}", e))?
+        {
+            Some(idx) => idx,
+            None => {
+                clack_cancel("Authentication cancelled.");
+                return Ok(());
+            }
+        };
 
         match choice {
             0 => {
-                let e = prompt_input("Operator Email", None)
-                    .map_err(|e| format!("Failed to read email: {}", e))?;
-                let p = prompt_password("Operator Password")
-                    .map_err(|e| format!("Failed to read password: {}", e))?;
+                let Some(e) = clack_text("Operator Email", Some("operator@tuquet.com"), None)
+                    .map_err(|e| format!("Failed to read email: {}", e))?
+                else {
+                    clack_cancel("Authentication cancelled.");
+                    return Ok(());
+                };
+                let Some(p) = clack_password("Operator Password")
+                    .map_err(|e| format!("Failed to read password: {}", e))?
+                else {
+                    clack_cancel("Authentication cancelled.");
+                    return Ok(());
+                };
                 auth_email = Some(e);
                 auth_password = Some(p);
             }
             1 => {
-                let e = prompt_input("Operator Email", None)
-                    .map_err(|e| format!("Failed to read email: {}", e))?;
+                let Some(e) = clack_text("Operator Email", Some("operator@tuquet.com"), None)
+                    .map_err(|e| format!("Failed to read email: {}", e))?
+                else {
+                    clack_cancel("Authentication cancelled.");
+                    return Ok(());
+                };
                 auth_email = Some(e);
                 is_otp = true;
             }
             2 => {
-                let t = prompt_input("Supabase Access Token (JWT)", None)
-                    .map_err(|e| format!("Failed to read token: {}", e))?;
+                let Some(t) = clack_text("Supabase Access Token (JWT)", Some("eyJhbGci..."), None)
+                    .map_err(|e| format!("Failed to read token: {}", e))?
+                else {
+                    clack_cancel("Authentication cancelled.");
+                    return Ok(());
+                };
                 auth_token = Some(t);
             }
             3 => {
@@ -110,18 +201,32 @@ pub async fn login(
 
     if let Some(tok) = auth_token.as_ref() {
         if tok.contains('.') {
-            // Validate JWT with Supabase Auth
+            let sp = if !format.is_json() {
+                Some(ClackSpinner::start("Validating Supabase JWT access token..."))
+            } else {
+                None
+            };
             match SupabaseAuthClient::validate_token(&client, &cloud_url, &active_anon_key, tok).await {
                 Ok(user) => {
+                    if let Some(s) = sp {
+                        s.finish(format!(
+                            "Authenticated operator: {}",
+                            user.email.as_deref().unwrap_or(&user.id)
+                        ));
+                    }
                     maybe_user_id = Some(user.id);
                     maybe_user_email = user.email;
                     maybe_session = Some((tok.clone(), None, None));
                 }
                 Err(e) => {
-                    // If validation fails and not a JWT, treat as enrollment token
                     if tok.len() < 40 {
-                        // Likely an enrollment token
+                        if let Some(s) = sp {
+                            s.clear();
+                        }
                     } else {
+                        if let Some(s) = sp {
+                            s.fail(format!("Token validation failed: {e}"));
+                        }
                         return Err(e);
                     }
                 }
@@ -132,8 +237,13 @@ pub async fn login(
             Some(e) if !e.trim().is_empty() => e.trim().to_string(),
             _ => {
                 if is_tty {
-                    prompt_input("Operator Email for OTP", None)
+                    let Some(e) = clack_text("Operator Email for OTP", Some("operator@tuquet.com"), None)
                         .map_err(|e| format!("Email is required for OTP login: {}", e))?
+                    else {
+                        clack_cancel("Authentication cancelled.");
+                        return Ok(());
+                    };
+                    e
                 } else {
                     return Err("Email is required for OTP login (use --email <email>)".into());
                 }
@@ -143,17 +253,38 @@ pub async fn login(
         let otp_code = match auth_code.as_deref() {
             Some(c) if !c.trim().is_empty() => c.trim().to_string(),
             _ => {
-                println!();
-                println!("  Requesting One-Time Passcode (OTP) from Supabase...");
+                let sp = if !format.is_json() {
+                    Some(ClackSpinner::start(format!(
+                        "Requesting One-Time Passcode (OTP) for {}...",
+                        email_str
+                    )))
+                } else {
+                    None
+                };
                 SupabaseAuthClient::request_otp(&client, &cloud_url, &active_anon_key, &email_str).await?;
-                println!("  \x1b[32m[OK]\x1b[0m Verification code sent to: \x1b[1m{}\x1b[0m", email_str);
-                
-                prompt_input("Enter 6-digit Verification Code", None)
+                if let Some(s) = sp {
+                    s.finish(format!("Verification code dispatched to \x1b[1m{email_str}\x1b[0m"));
+                }
+
+                let Some(code_val) = clack_text("Enter 6-digit Verification Code", Some("123456"), None)
                     .map_err(|e| format!("Failed to read OTP code: {}", e))?
+                else {
+                    clack_cancel("Authentication cancelled.");
+                    return Ok(());
+                };
+                code_val
             }
         };
 
+        let sp = if !format.is_json() {
+            Some(ClackSpinner::start("Verifying One-Time Passcode..."))
+        } else {
+            None
+        };
         let sess = SupabaseAuthClient::verify_otp(&client, &cloud_url, &active_anon_key, &email_str, &otp_code).await?;
+        if let Some(s) = sp {
+            s.finish(format!("Verified OTP for \x1b[1m{email_str}\x1b[0m"));
+        }
         maybe_user_id = Some(sess.user.id.clone());
         maybe_user_email = sess.user.email.clone().or(Some(email_str));
         maybe_session = Some((sess.access_token, sess.refresh_token, sess.expires_at));
@@ -162,15 +293,31 @@ pub async fn login(
             Some(p) => p.to_string(),
             None => {
                 if is_tty {
-                    prompt_password("Operator Password")
+                    let Some(p) = clack_password("Operator Password")
                         .map_err(|e| format!("Password required for login: {}", e))?
+                    else {
+                        clack_cancel("Authentication cancelled.");
+                        return Ok(());
+                    };
+                    p
                 } else {
                     return Err("Password required for login (use --password <password>)".into());
                 }
             }
         };
 
+        let sp = if !format.is_json() {
+            Some(ClackSpinner::start(format!(
+                "Authenticating operator {}...",
+                email_str
+            )))
+        } else {
+            None
+        };
         let sess = SupabaseAuthClient::login_with_password(&client, &cloud_url, &active_anon_key, email_str, &pass_str).await?;
+        if let Some(s) = sp {
+            s.finish(format!("Authenticated as \x1b[1;32m{email_str}\x1b[0m"));
+        }
         maybe_user_id = Some(sess.user.id.clone());
         maybe_user_email = sess.user.email.clone().or_else(|| Some(email_str.to_string()));
         maybe_session = Some((sess.access_token, sess.refresh_token, sess.expires_at));
@@ -184,25 +331,47 @@ pub async fn login(
     let mut available_tenants: Option<Vec<TenantInfo>> = None;
 
     if let (Some(u_id), Some((access_tok, _, _))) = (&maybe_user_id, &maybe_session) {
-        println!();
-        println!("  Discovering accessible workspaces for operator: \x1b[1;32m{}\x1b[0m", maybe_user_email.as_deref().unwrap_or(u_id));
+        let sp = if !format.is_json() {
+            Some(ClackSpinner::start(format!(
+                "Discovering accessible workspaces for {}...",
+                maybe_user_email.as_deref().unwrap_or(u_id)
+            )))
+        } else {
+            None
+        };
 
         match TenancyManager::fetch_user_tenants(&client, &cloud_url, &active_anon_key, access_tok, u_id).await {
             Ok(mut tenants) => {
+                if let Some(s) = sp {
+                    s.clear();
+                }
                 if !tenants.is_empty() {
                     let active_tenant = if let Some(target) = tenant.as_deref() {
                         TenancyManager::resolve_active_tenant(&mut tenants, Some(target), None)?
                     } else if tenants.len() == 1 {
                         &mut tenants[0]
-                    } else if is_tty {
-                        let names: Vec<String> = tenants.iter().map(|t| {
-                            let role_str = t.role.as_deref().unwrap_or("member");
-                            format!("{} ({}) [Role: {}]", t.name, t.slug, role_str)
-                        }).collect();
-                        let names_ref: Vec<&str> = names.iter().map(|s| s.as_str()).collect();
+                    } else if is_tty && !format.is_json() {
+                        let ws_opts: Vec<ClackOption> = tenants
+                            .iter()
+                            .map(|t| {
+                                let role_str = t.role.as_deref().unwrap_or("member");
+                                ClackOption::new(
+                                    &t.name,
+                                    format!("{} • role: {}", t.slug, role_str),
+                                    format!("{} ({})", t.name, t.slug),
+                                )
+                            })
+                            .collect();
 
-                        let selected_idx = prompt_select("Select active workspace for this workstation", &names_ref, 0)
-                            .unwrap_or(0);
+                        let selected_idx = clack_select(
+                            "Select active workspace for this workstation",
+                            &ws_opts,
+                            0,
+                            8,
+                        )
+                        .ok()
+                        .flatten()
+                        .unwrap_or(0);
                         &mut tenants[selected_idx]
                     } else {
                         &mut tenants[0]
@@ -217,7 +386,15 @@ pub async fn login(
                 }
             }
             Err(e) => {
-                println!("  \x1b[33m[!]\x1b[0m Could not introspect tenants: {}. Continuing with default workspace.", e);
+                if let Some(s) = sp {
+                    s.clear();
+                }
+                if !format.is_json() {
+                    clack_step_warn(format!(
+                        "Could not introspect tenants: {}. Continuing with default workspace.",
+                        e
+                    ));
+                }
             }
         }
     }
@@ -231,6 +408,12 @@ pub async fn login(
 
     let bearer_jwt = maybe_session.as_ref().map(|(tok, _, _)| tok.as_str());
 
+    let sp = if !format.is_json() {
+        Some(ClackSpinner::start("Pairing workstation with Specter Cloud Fleet..."))
+    } else {
+        None
+    };
+
     let mut device_creds = match CloudReporter::login(
         &cloud_url,
         enrollment_token,
@@ -238,8 +421,18 @@ pub async fn login(
         &config.data_dir,
         bearer_jwt,
     ).await {
-        Ok(creds) => creds,
-        Err(e) => return Err(format!("Device pairing failed: {}", e).into()),
+        Ok(creds) => {
+            if let Some(s) = sp {
+                s.finish(format!("Workstation '{}' enrolled ({})", creds.name, creds.device_id));
+            }
+            creds
+        }
+        Err(e) => {
+            if let Some(s) = sp {
+                s.fail(format!("Device pairing failed: {e}"));
+            }
+            return Err(format!("Device pairing failed: {}", e).into());
+        }
     };
 
     // 5. Update and persist unified session in ~/.specter/system/.identity.json

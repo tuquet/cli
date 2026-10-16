@@ -7,7 +7,8 @@ use crate::commands::dev::scanner::{
 };
 use crate::ui::{
     badge_online, badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, Column, Notify, OutputFormat, Table, TabularRow,
+    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
+    TabularRow,
 };
 
 const SECRET_KEYWORDS: &[&str] = &[
@@ -46,6 +47,7 @@ pub async fn handle(
     format: OutputFormat,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let mut intro_shown = false;
 
     // Resolve target project directory
     let (target_id, target_dir) = if project.is_none() && path.is_none() && has_any_env_file(&cwd) {
@@ -56,6 +58,17 @@ pub async fn handle(
             .to_string();
         (name, cwd)
     } else {
+        let interactive_scan = !list && !check && switch_profile.is_none();
+        if interactive_scan {
+            clack_intro("spc env", "Environment Inspector & Profile Switcher");
+            intro_shown = true;
+        }
+        let sp = if interactive_scan {
+            Some(ClackSpinner::start("Scanning workspace for .env configurations..."))
+        } else {
+            None
+        };
+
         let packages = match path {
             Some(ref custom_root) => scan_workspace_packages(custom_root),
             None => scan_machine_packages(&cwd),
@@ -71,8 +84,22 @@ pub async fn handle(
             env_packages
         };
 
+        if let Some(spinner) = sp {
+            spinner.finish(&format!("Discovered {} project(s) with .env* files", pool.len()));
+        }
+
         if pool.is_empty() {
             Notify::warn("No projects with .env files found.");
+            return Ok(());
+        }
+
+        // Non-interactive multi-project overview when `spc env -l` or `spc env --check` is run without a project arg
+        if project.is_none() && (list || check) {
+            let reports: Vec<EnvProjectReport> = pool
+                .iter()
+                .map(|p| inspect_project_env(&p.id, &p.dir))
+                .collect();
+            render_env_multi_list(&reports, format);
             return Ok(());
         }
 
@@ -104,13 +131,6 @@ pub async fn handle(
                 }
             }
             None => {
-                clack_intro(
-                    "spc env",
-                    &format!(
-                        "Environment Inspector & Profile Switcher • {} projects with .env*",
-                        pool.len()
-                    ),
-                );
                 let opts: Vec<ClackOption> = pool
                     .iter()
                     .map(|p| {
@@ -145,16 +165,18 @@ pub async fn handle(
         return Ok(());
     }
 
-    clack_intro(
-        "spc env",
-        &format!(
-            "{} • {} keys, {} missing vs template, {} empty",
-            report.project_id,
-            report.total_keys,
-            report.missing_keys.len(),
-            report.empty_keys.len()
-        ),
-    );
+    if !intro_shown {
+        clack_intro(
+            "spc env",
+            &format!(
+                "{} • {} keys, {} missing vs template, {} empty",
+                report.project_id,
+                report.total_keys,
+                report.missing_keys.len(),
+                report.empty_keys.len()
+            ),
+        );
+    }
 
     let mut actions: Vec<(String, ClackOption)> = Vec::new();
 
@@ -541,6 +563,63 @@ fn render_env_report(report: &EnvProjectReport, format: OutputFormat) {
             );
             println!();
             card.print();
+            println!();
+        }
+    }
+}
+
+fn render_env_multi_list(reports: &[EnvProjectReport], format: OutputFormat) {
+    match format {
+        OutputFormat::Json => {
+            if let Ok(json) = serde_json::to_string_pretty(reports) {
+                println!("{}", json);
+            }
+        }
+        OutputFormat::Table | OutputFormat::Card => {
+            let mut table = Table::new(vec![
+                Column {
+                    title: "PROJECT".to_string(),
+                    min_width: 22,
+                    align_right: false,
+                },
+                Column {
+                    title: "ACTIVE FILE".to_string(),
+                    min_width: 14,
+                    align_right: false,
+                },
+                Column {
+                    title: "KEYS".to_string(),
+                    min_width: 8,
+                    align_right: true,
+                },
+                Column {
+                    title: "MISSING".to_string(),
+                    min_width: 9,
+                    align_right: true,
+                },
+                Column {
+                    title: "PROFILES".to_string(),
+                    min_width: 18,
+                    align_right: false,
+                },
+            ])
+            .with_footer(format!("Total: {} project(s) with .env* files", reports.len()));
+
+            for r in reports {
+                table.add_row(vec![
+                    r.project_id.clone(),
+                    r.active_file.clone(),
+                    r.total_keys.to_string(),
+                    r.missing_keys.len().to_string(),
+                    if r.profiles.is_empty() {
+                        "-".to_string()
+                    } else {
+                        r.profiles.join(", ")
+                    },
+                ]);
+            }
+            println!();
+            table.print();
             println!();
         }
     }

@@ -232,7 +232,7 @@ pub async fn show_status(format: crate::ui::OutputFormat) -> Result<(), Box<dyn 
         table.add_row(row);
     }
 
-    println!("{}", table.render());
+    table.print();
 
     // 2. Active Workload Status
     println!();

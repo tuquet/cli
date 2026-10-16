@@ -133,6 +133,39 @@ impl JobCoordinator {
             );
         }
 
+        // Native Zero-Extension Execution via CDP
+        let session_opt = {
+            let sessions = specter_browser::browser_sessions().read().await;
+            sessions.get(browser_id.as_str()).cloned()
+        };
+
+        if let Some(session) = session_opt {
+            let state_clone = state.clone();
+            let job_id_clone = job_id.clone();
+            let browser_id_clone = browser_id.clone();
+            let cancel_token_clone = cancel_token.clone();
+            let workflow_data_val = resolved.data.clone();
+            let close_browser = options
+                .as_ref()
+                .and_then(|o| o.close_browser_on_finish)
+                .unwrap_or(true);
+            let vars_opt = options.as_ref().and_then(|o| o.variables.clone());
+
+            tokio::spawn(async move {
+                Self::run_native_job(
+                    state_clone,
+                    job_id_clone,
+                    browser_id_clone,
+                    session,
+                    workflow_data_val,
+                    vars_opt,
+                    cancel_token_clone,
+                    close_browser,
+                )
+                .await;
+            });
+        }
+
         Ok(job_id)
     }
 
@@ -245,5 +278,114 @@ impl JobCoordinator {
             Some(st) => st,
             None => if is_active { "running".to_string() } else { "completed".to_string() },
         }
+    }
+
+    /// Executes a workflow natively via Rust CDP DAG engine with zero extensions
+    pub async fn run_native_job(
+        state: AppState,
+        job_id: JobId,
+        browser_id: BrowserId,
+        session: specter_browser::BrowserSession,
+        workflow_data: serde_json::Value,
+        variables: Option<serde_json::Value>,
+        cancel_token: CancellationToken,
+        close_browser_on_finish: bool,
+    ) {
+        let start_time = std::time::Instant::now();
+        tracing::info!("[run_native_job] Starting native CDP execution for job {}", job_id);
+
+        let graph = match specter_runner::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
+            Ok(g) => g,
+            Err(e) => {
+                tracing::error!("Failed to parse workflow graph for job {}: {}", job_id, e);
+                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), 0).await;
+                return;
+            }
+        };
+
+        let cdp_session = match specter_runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("Failed to connect CDP session on port {}: {}", session.debugging_port, e);
+                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), 0).await;
+                return;
+            }
+        };
+
+        let mut initial_state = specter_runner::drivers::cdp::ExecutionState::new();
+        if let Some(serde_json::Value::Object(map)) = variables {
+            for (k, v) in map {
+                initial_state.set_variable(&k, v);
+            }
+        }
+
+        let executor = specter_runner::drivers::cdp::WorkflowDagExecutor::new(graph, std::sync::Arc::new(cdp_session));
+        match executor.execute(Some(initial_state), cancel_token).await {
+            Ok(final_state) => {
+                let duration_ms = start_time.elapsed().as_millis() as i64;
+                for step in &final_state.step_logs {
+                    let log_payload = crate::api::handlers::jobs::JobLogPayload {
+                        r#type: step.status.clone(),
+                        message: Some(format!("{}: {}", step.name, step.message.as_deref().unwrap_or("ok"))),
+                        logs: None,
+                    };
+                    let _ = Self::record_log(&state, &job_id, &log_payload).await;
+                }
+                let results = serde_json::json!({
+                    "variables": final_state.variables,
+                    "table": final_state.table,
+                    "stepLogs": final_state.step_logs,
+                });
+                let _ = Self::finish_with_status(&state, &job_id, "completed", results, duration_ms).await;
+            }
+            Err(e) => {
+                let duration_ms = start_time.elapsed().as_millis() as i64;
+                tracing::error!("Workflow execution failed for job {}: {}", job_id, e);
+                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), duration_ms).await;
+            }
+        }
+
+        if close_browser_on_finish {
+            let mut launchers = specter_browser::browser_launchers().write().await;
+            if let Some(mut launcher) = launchers.remove(browser_id.as_str()) {
+                let _ = launcher.close().await;
+            }
+            let mut sessions = specter_browser::browser_sessions().write().await;
+            sessions.remove(browser_id.as_str());
+            let mut reg = specter_browser::browser_registry().write().await;
+            reg.remove(browser_id.as_str());
+            let mut connected = specter_browser::connected_browsers().write().await;
+            connected.remove(browser_id.as_str());
+        }
+    }
+
+    pub async fn finish_with_status(
+        state: &AppState,
+        job_id: &JobId,
+        status: &str,
+        results: serde_json::Value,
+        duration: i64,
+    ) -> Result<(), JobCoordinatorError> {
+        let mut active = state.active_jobs.write().await;
+        active.remove(job_id.as_str());
+
+        {
+            let db = state.db.lock().await;
+            let _ = db.jobs().finish_job(job_id.as_str(), status, &results, duration);
+        }
+
+        let event = crate::api::handlers::jobs::JobEvent {
+            job_id: job_id.to_string(),
+            event_type: if status == "completed" {
+                "workflow_finished".to_string()
+            } else {
+                "job_failed".to_string()
+            },
+        };
+        if let Ok(msg) = serde_json::to_string(&event) {
+            let _ = state.tx.send(msg);
+        }
+
+        Ok(())
     }
 }

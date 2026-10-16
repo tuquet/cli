@@ -5,7 +5,7 @@ pub mod scanner;
 use std::path::PathBuf;
 use crate::ui::{
     badge_online, clack_cancel, clack_intro, clack_select, create_tabular_card, ClackOption,
-    Column, Notify, OutputFormat, Table, TabularRow,
+    ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow,
 };
 use history::{format_relative_time, load_history};
 use scanner::{
@@ -56,12 +56,14 @@ pub async fn handle(
     let interactive_flow = !list && (proj_query.is_none() || script_query.is_none());
 
     if interactive_flow {
-        use std::io::Write;
-        eprint!(
-            "  \x1b[36m◆\x1b[0m  \x1b[90mScanning machine for runnable projects...\x1b[0m\r"
-        );
-        let _ = std::io::stderr().flush();
+        clack_intro("spc dev", "Universal Project Runner");
     }
+
+    let sp = if interactive_flow {
+        Some(ClackSpinner::start("Scanning machine for runnable projects..."))
+    } else {
+        None
+    };
 
     let (scan_label, packages) = match path {
         Some(ref custom_root) => (
@@ -71,10 +73,12 @@ pub async fn handle(
         None => ("Full Machine".to_string(), scan_machine_packages(&cwd)),
     };
 
-    if interactive_flow {
-        use std::io::Write;
-        eprint!("\r\x1b[2K");
-        let _ = std::io::stderr().flush();
+    if let Some(spinner) = sp {
+        spinner.finish(&format!(
+            "Discovered {} runnable projects ({})",
+            packages.len(),
+            scan_label
+        ));
     }
 
     if list {
@@ -88,17 +92,6 @@ pub async fn handle(
             scan_label
         ));
         return Ok(());
-    }
-
-    if interactive_flow {
-        clack_intro(
-            "spc dev",
-            &format!(
-                "Universal Project Runner • {} projects discovered ({})",
-                packages.len(),
-                scan_label
-            ),
-        );
     }
 
     // 1. Resolve Target Package (and optional fast-track `★ Recent` script)

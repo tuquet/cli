@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessesToUpdate, System};
 
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, colors,
+    badge_online, clack_cancel, clack_intro, clack_multiselect, clack_outro, clack_step_ok, colors,
     create_tabular_card, ClackOption, Column, Notify, OutputFormat, Table, TabularRow,
 };
 
@@ -104,6 +104,7 @@ pub async fn handle(
         for item in &filtered {
             kill_port_process(item)?;
         }
+        clack_outro(&format!("Terminated {} port process(es).", filtered.len()));
         return Ok(());
     }
 
@@ -125,15 +126,18 @@ pub async fn handle(
         })
         .collect();
 
-    match clack_select(
-        "Select a listening port to terminate its process (type port or name to filter)",
+    match clack_multiselect(
+        "Select listening port(s) to terminate (Space to multi-select, Enter to kill)",
         &clack_opts,
-        0,
+        &[],
         10,
     )? {
-        Some(idx) => {
-            let target = &filtered[idx];
-            kill_port_process(target)?;
+        Some(indices) => {
+            for &idx in &indices {
+                let target = &filtered[idx];
+                kill_port_process(target)?;
+            }
+            clack_outro(&format!("Freed {} port(s) cleanly.", indices.len()));
         }
         None => {
             clack_cancel("Operation cancelled.");
@@ -180,7 +184,7 @@ fn kill_port_process(item: &ListeningPort) -> Result<(), Box<dyn std::error::Err
         }
     }
 
-    clack_outro(&format!(
+    clack_step_ok(&format!(
         "Freed port {BOLD}{CYAN}:{port}{RESET} — terminated {BOLD_WHITE}{proc}{RESET} {MUTED}(PID {pid}){RESET}",
         BOLD = colors::BOLD,
         CYAN = colors::CYAN,

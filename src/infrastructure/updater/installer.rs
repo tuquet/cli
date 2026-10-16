@@ -8,15 +8,29 @@ use super::types::{UpdateInfo, GITHUB_REPO};
 
 /// Perform upgrade: checks if managed by Scoop, otherwise performs in-place self-update.
 pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
-    crate::ui::Notify::header("⚡ Specter Upgrade Manager");
-    println!("Checking for latest release from GitHub ({})...", GITHUB_REPO);
+    use crate::ui::prompt::{
+        clack_intro, clack_outro, clack_step_info, clack_step_ok, clack_step_warn, ClackSpinner,
+    };
+
+    clack_intro("spc upgrade", "Specter CLI Self-Updater & Release Manager");
+    let sp = ClackSpinner::start(&format!(
+        "Checking for latest release from GitHub ({})...",
+        GITHUB_REPO
+    ));
 
     let current = env!("CARGO_PKG_VERSION");
     let info = match check_and_save_latest_version().await {
-        Ok(info) => info,
+        Ok(info) => {
+            sp.finish(format!(
+                "Checked GitHub release channel (latest: v{})",
+                info.latest_version
+            ));
+            info
+        }
         Err(e) => {
-            crate::ui::Notify::warn(format!(
-                "Failed to reach GitHub API: {}. Trying local cache...",
+            sp.clear();
+            clack_step_warn(&format!(
+                "Failed to reach GitHub API ({}). Checking local cache...",
                 e
             ));
             if let Some(cached) = get_cached_update() {
@@ -28,22 +42,18 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if !info.has_update {
-        println!();
-        println!(
-            "{} Specter is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
-            crate::ui::badge_online("UP TO DATE"),
+        clack_step_ok(&format!(
+            "Specter is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
             current
-        );
+        ));
+        clack_outro("No upgrade required.");
         return Ok(());
     }
 
-    println!();
-    println!(
-        "{} New version available: \x1b[38;2;251;191;36mv{}\x1b[0m → \x1b[1;32mv{}\x1b[0m",
-        crate::ui::badge_warn("UPDATE FOUND"),
-        current,
-        info.latest_version
-    );
+    clack_step_warn(&format!(
+        "New version available: \x1b[38;2;251;191;36mv{}\x1b[0m -> \x1b[1;32mv{}\x1b[0m",
+        current, info.latest_version
+    ));
 
     let current_exe = std::env::current_exe()?;
     let exe_lower = current_exe.to_string_lossy().to_lowercase();
@@ -64,9 +74,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or(false);
 
         if has_scoop {
-            println!();
-            crate::ui::Notify::info("Detected Scoop installation. Executing package upgrade...");
-            println!("\x1b[38;2;148;163;184m> scoop update specter\x1b[0m\n");
+            clack_step_info("Detected Scoop installation. Executing package upgrade...");
 
             if let Ok(output) = tokio::process::Command::new("powershell")
                 .args(["-NoProfile", "-Command", "scoop update specter"])
@@ -75,12 +83,11 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             {
                 let stdout_str = String::from_utf8_lossy(&output.stdout);
                 if output.status.success() && !stdout_str.contains("isn't installed") {
-                    println!("{}", stdout_str.trim());
-                    println!();
-                    crate::ui::Notify::success(format!(
+                    clack_step_ok(&format!(
                         "Successfully upgraded Specter to v{} via Scoop!",
                         info.latest_version
                     ));
+                    clack_outro("Upgrade complete.");
                     return Ok(());
                 }
             }
@@ -89,6 +96,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Perform native in-place self-update
     perform_in_place_self_update(&info, &current_exe).await?;
+    clack_outro("Upgrade complete.");
 
     Ok(())
 }

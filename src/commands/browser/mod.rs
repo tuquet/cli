@@ -87,3 +87,93 @@ pub async fn handle(command: BrowserCommands) -> Result<(), Box<dyn std::error::
         cmd => runtime::handle_runtime(cmd).await,
     }
 }
+
+pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
+    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, ClackOption};
+
+    if !crate::ui::is_interactive_tty() {
+        return handle(BrowserCommands::Status {
+            format: crate::ui::FormatArgs {
+                json: true,
+                ..Default::default()
+            },
+        })
+        .await;
+    }
+
+    clack_intro("spc browser", "Specter Antidetect Browser Hub");
+
+    let options = vec![
+        ClackOption::new(
+            "Browser Engine Status",
+            "Inspect active Chromium runtime & profile count",
+            "status",
+        ),
+        ClackOption::new(
+            "Manage Browser Profiles",
+            "List, create, or inspect antidetect profiles",
+            "profile",
+        ),
+        ClackOption::new(
+            "Launch Stealth Browser",
+            "Start Chromium with an antidetect profile",
+            "launch",
+        ),
+        ClackOption::new(
+            "Running Browser Processes",
+            "View active browser instances & CDP ports",
+            "ps",
+        ),
+        ClackOption::new(
+            "Installed Chromium Runtimes",
+            "List downloaded Chromium versions in ~/.specter/browser/runtimes/",
+            "list",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select browser operation:", &options, 0, 6)? else {
+        clack_cancel("Browser hub closed.");
+        return Ok(());
+    };
+
+    match idx {
+        0 => {
+            handle(BrowserCommands::Status {
+                format: crate::ui::FormatArgs::default(),
+            })
+            .await
+        }
+        1 => handle_profile(None).await,
+        2 => {
+            handle(BrowserCommands::Launch {
+                target: None,
+                url: None,
+                cdp: false,
+                port: 9222,
+                foreground: false,
+                headless: false,
+                detach: false,
+                proxy: None,
+                mode: "stealth".to_string(),
+                no_cdp: false,
+                force: false,
+                skip_proxy_check: false,
+            })
+            .await
+        }
+        3 => {
+            handle(BrowserCommands::Ps {
+                format: crate::ui::FormatArgs::default(),
+            })
+            .await
+        }
+        4 => {
+            handle(BrowserCommands::List {
+                format: crate::ui::FormatArgs::default(),
+            })
+            .await
+        }
+        _ => Ok(()),
+    }
+}
+

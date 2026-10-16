@@ -483,17 +483,17 @@ pub enum BridgeSubcommands {
     /// Enable a server in bridge configuration (~/.specter/bridge/bridge.json)
     #[command(name = "enable")]
     Enable {
-        /// Server identifier to enable (e.g. my-vps, may-b)
+        /// Server identifier to enable (e.g. my-vps, may-b; omit to select interactively)
         #[arg(value_name = "SERVER")]
-        server: String,
+        server: Option<String>,
     },
 
     /// Disable a server in bridge configuration (~/.specter/bridge/bridge.json)
     #[command(name = "disable")]
     Disable {
-        /// Server identifier to disable (e.g. my-vps, may-b)
+        /// Server identifier to disable (e.g. my-vps, may-b; omit to select interactively)
         #[arg(value_name = "SERVER")]
-        server: String,
+        server: Option<String>,
     },
 
     /// Validate ~/.specter/bridge/bridge.json configuration schema, ports, and workloads
@@ -690,8 +690,8 @@ pub struct FakerGenerateArgs {
     #[arg(short = 'd', long)]
     pub domain: Option<String>,
 
-    /// Output format: json, table, card, or csv (default: json)
-    #[arg(short = 'f', long, default_value = "json")]
+    /// Output format: auto, json, table, card, or csv (default: auto)
+    #[arg(short = 'f', long, default_value = "auto")]
     pub format: String,
 
     /// Display rich visual identity card (shortcut for -f card)
@@ -705,6 +705,10 @@ pub struct FakerGenerateArgs {
     /// Export to RFC-compliant CSV (shortcut for -f csv)
     #[arg(long)]
     pub csv: bool,
+
+    /// Output results in raw JSON format (shortcut for -f json)
+    #[arg(short = 'j', long)]
+    pub json: bool,
 
     /// Optional file path to export output to
     #[arg(short = 'o', long)]
@@ -746,6 +750,10 @@ pub enum FakerSubcommands {
         /// Display catalog in formatted ANSI table
         #[arg(short = 't', long)]
         table: bool,
+
+        /// Output catalog in raw JSON format
+        #[arg(short = 'j', long)]
+        json: bool,
     },
 
     /// Generate isolated national ID with mathematically valid checksum (SSN, CCCD, My Number)
@@ -1066,9 +1074,9 @@ pub enum TenantSubcommands {
     /// Switch active workspace context for this workstation
     #[command(name = "switch", aliases = ["use", "select"])]
     Switch {
-        /// Target workspace slug or UUID
+        /// Target workspace slug or UUID (omit to select interactively)
         #[arg(value_name = "TARGET")]
-        target: String,
+        target: Option<String>,
 
         #[command(flatten)]
         format: crate::ui::FormatArgs,
@@ -1656,5 +1664,16 @@ pub enum WorkflowCommands {
         #[arg(long, default_value_t = true)]
         vault: bool,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    #[test]
+    fn test_cli_debug_assert() {
+        Cli::command().debug_assert();
+    }
 }
 

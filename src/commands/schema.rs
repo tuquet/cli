@@ -1,6 +1,9 @@
 use crate::cli::SchemaSubcommands;
 use crate::infrastructure::manifest::{manifest, raw_json, CommandDef};
-use crate::ui::{badge_online, colors, Card, Column, Table};
+use crate::ui::{
+    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_info, colors,
+    is_interactive_tty, Card, ClackOption, Column, Table,
+};
 use serde_json::json;
 
 pub async fn handle(
@@ -9,11 +12,11 @@ pub async fn handle(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         None => {
-            if json_output {
+            if json_output || !is_interactive_tty() {
                 let pretty = serde_json::to_string_pretty(&raw_json())?;
                 println!("{}", pretty);
             } else {
-                show_overview();
+                run_interactive_schema()?;
             }
         }
         Some(SchemaSubcommands::Commands { pillar, format }) => {
@@ -28,37 +31,176 @@ pub async fn handle(
             };
 
             let fmt = format.resolve();
-            if fmt.is_table() {
+            if !json_output && !fmt.is_json() {
+                clack_intro("spc schema commands", "CLI Command Manifest Catalog");
                 show_commands_table(&filtered, pillar.as_deref());
+                clack_outro(&format!(
+                    "Listed {} command(s). Use '--json' for machine export.",
+                    filtered.len()
+                ));
             } else {
                 let pretty = serde_json::to_string_pretty(&filtered)?;
                 println!("{}", pretty);
             }
         }
-        Some(SchemaSubcommands::Config { service }) => {
-            match service {
-                Some(srv) => {
-                    if let Some(schema) = get_config_schema(&srv) {
-                        println!("{}", schema.trim());
-                    } else {
-                        eprintln!(
-                            "  {RED}Error:{RESET} Unknown service '{srv}'. Available services: bridge, browser, automa, runner, faker, system, inbox",
-                            RED = colors::RED,
-                            RESET = colors::RESET,
-                        );
-                        std::process::exit(1);
-                    }
+        Some(SchemaSubcommands::Config { service }) => match service {
+            Some(srv) => {
+                if let Some(schema) = get_config_schema(&srv) {
+                    println!("{}", schema.trim());
+                } else {
+                    return Err(format!(
+                        "Unknown service '{}'. Available services: bridge, browser, automa, runner, faker, system, inbox",
+                        srv
+                    )
+                    .into());
                 }
-                None => {
+            }
+            None => {
+                if is_interactive_tty() && !json_output {
+                    clack_intro("spc schema config", "Microservice JSON Schema Definitions");
+                    let services = [
+                        ("bridge", "Network Bridge & Multi-VPS Mesh (bridge.schema.json)"),
+                        ("faker", "Synthetic Persona Generator (faker.schema.json)"),
+                        ("browser", "Antidetect Chromium Runtime (browser.schema.json)"),
+                        ("automa", "Workflow Automation Engine (automa.schema.json)"),
+                        ("runner", "Distributed Worker Daemon (runner.schema.json)"),
+                        ("system", "Machine Identity & Cloud Fleet (system.schema.json)"),
+                        ("inbox", "Catch-All Email & OTP Interceptor (inbox.schema.json)"),
+                    ];
+                    let opts: Vec<ClackOption> = services
+                        .iter()
+                        .map(|(id, desc)| ClackOption::new(*id, *desc, *id))
+                        .collect();
+                    match clack_select("Select a microservice schema to inspect", &opts, 0, 8)? {
+                        Some(idx) => {
+                            let (srv, _) = services[idx];
+                            if let Some(schema) = get_config_schema(srv) {
+                                println!("{}", schema.trim());
+                            }
+                            clack_outro(&format!("Exported {}.schema.json.", srv));
+                        }
+                        None => {
+                            clack_cancel("Operation cancelled.");
+                        }
+                    }
+                } else {
                     show_config_overview();
                 }
             }
-        }
+        },
         Some(SchemaSubcommands::Mcp) => {
+            let mcp_tools = export_mcp_tools();
+            if json_output || !is_interactive_tty() {
+                let pretty = serde_json::to_string_pretty(&mcp_tools)?;
+                println!("{}", pretty);
+            } else {
+                clack_intro("spc schema mcp", "Model Context Protocol (MCP) Tool Definitions");
+                let m = manifest();
+                let mcp_cmds: Vec<&CommandDef> = m
+                    .commands
+                    .iter()
+                    .filter(|c| c.mcp.as_ref().is_some_and(|m| m.exported))
+                    .collect();
+                show_commands_table(&mcp_cmds, None);
+                clack_outro(&format!(
+                    "Listed {} MCP-exported tool(s). Pass 'spc schema --json mcp' for raw JSON Schema.",
+                    mcp_cmds.len()
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
+    clack_intro("spc schema", "CLI Manifest & Microservice JSON Schema Inspector");
+
+    let opts = vec![
+        ClackOption::new(
+            "Show CLI Manifest Overview Card",
+            "Summary of specification version, SSOT root & command counts by pillar",
+            "Show CLI Manifest Overview Card",
+        ),
+        ClackOption::new(
+            "Browse Commands Catalog (All Pillars)",
+            "Render full table of registered CLI commands & MCP export status",
+            "Browse Commands Catalog (All Pillars)",
+        ),
+        ClackOption::new(
+            "Filter Commands by Microservice Pillar",
+            "Filter commands by system, automa, browser, bridge, faker, runner, cloud",
+            "Filter Commands by Microservice Pillar",
+        ),
+        ClackOption::new(
+            "Inspect Microservice Config JSON Schema",
+            "View Draft 2020-12 JSON Schema for bridge, faker, browser, automa, runner, system, inbox",
+            "Inspect Microservice Config JSON Schema",
+        ),
+        ClackOption::new(
+            "Export AI Agent MCP Tool Schemas (JSON)",
+            "Dump Model Context Protocol tool definitions generated from manifest",
+            "Export AI Agent MCP Tool Schemas",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select a Schema action", &opts, 0, 6)? else {
+        clack_cancel("Operation cancelled.");
+        return Ok(());
+    };
+
+    let m = manifest();
+    match idx {
+        0 => {
+            show_overview();
+            clack_outro("Manifest overview displayed.");
+        }
+        1 => {
+            let all_cmds: Vec<&CommandDef> = m.commands.iter().collect();
+            show_commands_table(&all_cmds, None);
+            clack_outro(&format!("Listed {} commands.", all_cmds.len()));
+        }
+        2 => {
+            let pillar_opts: Vec<ClackOption> = m
+                .pillars
+                .iter()
+                .map(|p| {
+                    let count = m
+                        .commands
+                        .iter()
+                        .filter(|c| c.pillar.eq_ignore_ascii_case(p))
+                        .count();
+                    ClackOption::new(p, format!("{} commands", count), p)
+                })
+                .collect();
+            if let Some(p_idx) = clack_select("Select target pillar", &pillar_opts, 0, 8)? {
+                let target_pillar = &m.pillars[p_idx];
+                let filtered: Vec<&CommandDef> = m
+                    .commands
+                    .iter()
+                    .filter(|c| c.pillar.eq_ignore_ascii_case(target_pillar))
+                    .collect();
+                show_commands_table(&filtered, Some(target_pillar));
+                clack_outro(&format!(
+                    "Listed {} commands in pillar '{}'.",
+                    filtered.len(),
+                    target_pillar
+                ));
+            } else {
+                clack_cancel("Operation cancelled.");
+            }
+        }
+        3 => {
+            show_config_overview();
+            clack_outro("Pass 'spc schema config <service>' to export raw JSON Schema.");
+        }
+        4 => {
             let mcp_tools = export_mcp_tools();
             let pretty = serde_json::to_string_pretty(&mcp_tools)?;
             println!("{}", pretty);
+            clack_outro("Exported MCP tool definitions.");
         }
+        _ => {}
     }
 
     Ok(())
@@ -68,7 +210,6 @@ fn show_overview() {
     let m = manifest();
     let root = crate::config::canonical_specter_dir();
 
-    println!();
     let mut card = Card::new("SPECTER CLI SCHEMA MANIFEST");
     card.with_badge(badge_online(&format!("v{}", m.version)));
     card.with_min_width(70);
@@ -86,25 +227,17 @@ fn show_overview() {
         );
     }
 
-    card.with_footer("Inspect: 'specter schema commands' | Export: 'specter schema --json'");
+    card.with_footer("Inspect: 'spc schema commands' | Export: 'spc schema --json'");
     card.print();
-    println!();
 }
 
 fn show_commands_table(commands: &[&CommandDef], pillar_filter: Option<&str>) {
-    println!();
     let title = if let Some(p) = pillar_filter {
         format!("MANIFEST COMMANDS (PILLAR: {})", p.to_uppercase())
     } else {
         "MANIFEST COMMANDS CATALOG (VS CODE CONTRIBUTES)".to_string()
     };
-    println!(
-        "  {BOLD}{CYAN}{title}{RESET} {MUTED}— VS Code Contributes Standard{RESET}",
-        BOLD = colors::BOLD,
-        CYAN = colors::CYAN,
-        RESET = colors::RESET,
-        MUTED = colors::MUTED,
-    );
+    clack_step_info(&title);
 
     let cols = vec![
         Column {
@@ -133,7 +266,7 @@ fn show_commands_table(commands: &[&CommandDef], pillar_filter: Option<&str>) {
 
     for cmd in commands {
         let route_str = format!(
-            "{CYAN}specter {}{RESET}",
+            "{CYAN}spc {}{RESET}",
             cmd.route.join(" "),
             CYAN = colors::CYAN,
             RESET = colors::RESET,
@@ -174,13 +307,10 @@ fn show_commands_table(commands: &[&CommandDef], pillar_filter: Option<&str>) {
         "Total: {} commands matching filter. Use --json for machine export.",
         commands.len()
     );
-    let table = table.with_footer(footer_text);
-    println!("{}", table.render());
-    println!();
+    table.with_footer(footer_text).print();
 }
 
 fn show_config_overview() {
-    println!();
     let mut card = Card::new("MICROSERVICE CONFIGURATION SCHEMAS");
     card.with_badge(badge_online("JSON SCHEMA DRAFT 2020-12"));
     card.with_min_width(70);
@@ -194,24 +324,23 @@ fn show_config_overview() {
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}specter schema config bridge{RESET}   Output bridge.json schema",
+        "    {CYAN}spc schema config bridge{RESET}   Output bridge.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}specter schema config browser{RESET}  Output browser.json schema",
+        "    {CYAN}spc schema config browser{RESET}  Output browser.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}specter schema config automa{RESET}   Output automa.json schema",
+        "    {CYAN}spc schema config automa{RESET}   Output automa.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
 
     card.with_footer("Pass service name argument to export raw JSON Schema definition.");
     card.print();
-    println!();
 }
 
 const BRIDGE_SCHEMA: &str = include_str!("../../schema/config/bridge.schema.json");

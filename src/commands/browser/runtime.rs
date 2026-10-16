@@ -73,7 +73,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                     rel.notes.clone(),
                 ]);
             }
-            println!("{}", table.render());
+            table.print();
             Ok(())
         }
         BrowserCommands::List { format } => {
@@ -97,7 +97,6 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 return Ok(());
             }
 
-            println!();
             let mut card = Card::new("INSTALLED ANTIDETECT BROWSER VERSIONS");
             card.with_badge(badge_online("INSPECTED"));
             card.with_min_width(74);
@@ -107,12 +106,10 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 card.add_line("No Antidetect Chromium runtimes found in ~/.specter/browser/runtimes/.");
                 card.add_line("Run 'specter browser install' to provision the recommended Golden LTS v148.");
                 card.print();
-                println!();
                 return Ok(());
             }
 
             card.print();
-            println!();
 
             let columns = vec![
                 Column { title: "Version".to_string(), min_width: 16, align_right: false },
@@ -139,7 +136,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                     r.path,
                 ]);
             }
-            println!("{}", table.render());
+            table.print();
             Ok(())
         }
         BrowserCommands::Use { version } => {

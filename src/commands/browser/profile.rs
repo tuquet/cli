@@ -8,27 +8,16 @@ pub async fn handle_profile(
 
     match command {
         None => {
-            let profiles = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
-            let serialized = profiles
-                .iter()
-                .map(|p| {
-                    let bytes = p.calculate_disk_size(&base_dir);
-                    serde_json::json!({
-                        "id": p.id,
-                        "name": p.name,
-                        "seed": p.fingerprint_seed,
-                        "os": p.os_platform,
-                        "browser": p.browser_brand,
-                        "cores": p.hardware_concurrency,
-                        "ram_gb": p.device_memory_gb,
-                        "proxy": p.proxy,
-                        "disk_bytes": bytes,
-                        "sandbox_path": p.get_sandbox_dir(&base_dir).display().to_string(),
-                    })
-                })
-                .collect::<Vec<_>>();
-            println!("{}", serde_json::to_string_pretty(&serialized)?);
-            Ok(())
+            if !crate::ui::is_interactive_tty() {
+                return Box::pin(handle_profile(Some(ProfileCommands::List {
+                    format: crate::ui::FormatArgs {
+                        json: true,
+                        ..Default::default()
+                    },
+                })))
+                .await;
+            }
+            return Box::pin(run_interactive_profile(&base_dir)).await;
         }
         Some(ProfileCommands::List { format }) => {
             let profiles = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
@@ -55,14 +44,13 @@ pub async fn handle_profile(
                 return Ok(());
             }
 
-            println!();
+            crate::ui::prompt::clack_intro("spc browser profile", "Specter Antidetect Browser Profiles");
             let mut header_card = Card::new("ANTIDETECT BROWSER PROFILES");
             header_card.with_badge(badge_online(&format!("{} REGISTERED", profiles.len())));
             header_card.with_min_width(74);
             header_card.add_kv("Storage SSOT", base_dir.join("profiles").display().to_string());
             header_card.with_footer("Run 'specter browser launch <id>' to start or 'profile create <name>' to add");
             header_card.print();
-            println!();
 
             if profiles.is_empty() {
                 let mut empty_card = Card::new("NO PROFILES FOUND");
@@ -72,7 +60,7 @@ pub async fn handle_profile(
                 empty_card.add_line("Create your first profile with:");
                 empty_card.add_line("  specter browser profile create 'My-Profile-1'");
                 empty_card.print();
-                println!();
+                crate::ui::prompt::clack_outro("0 profiles registered.");
                 return Ok(());
             }
 
@@ -112,7 +100,8 @@ pub async fn handle_profile(
                     proxy_str.to_string(),
                 ]);
             }
-            println!("{}", table.render());
+            table.print();
+            crate::ui::prompt::clack_outro(&format!("{} profile(s) listed.", profiles.len()));
             Ok(())
         }
         Some(ProfileCommands::Create { name, seed, os, cores, ram, proxy, timezone, locale }) => {
@@ -411,3 +400,104 @@ pub async fn handle_profile(
         Some(ProfileCommands::Cloud { command }) => super::cloud::handle_profile_cloud(command).await,
     }
 }
+
+async fn run_interactive_profile(
+    base_dir: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use crate::ui::prompt::{
+        clack_cancel, clack_intro, clack_note, clack_outro, clack_select, clack_text, ClackOption,
+    };
+
+    clack_intro("spc browser profile", "Specter Antidetect Browser Profile Manager");
+    let profiles = crate::core::browser::BrowserProfile::list_all(base_dir)?;
+    clack_note(
+        "Profile Summary",
+        &[
+            format!("Registered Profiles : {}", profiles.len()),
+            format!("Storage Directory   : {}", base_dir.join("profiles").display()),
+        ],
+    );
+
+    let options = vec![
+        ClackOption::new(
+            "List Registered Profiles",
+            "Display table of all browser profiles & hardware fingerprints",
+            "list",
+        ),
+        ClackOption::new(
+            "Create New Profile",
+            "Generate a new deterministic antidetect profile",
+            "create",
+        ),
+        ClackOption::new(
+            "Inspect Profile Details",
+            "View full hardware & proxy fingerprint for a profile",
+            "inspect",
+        ),
+    ];
+
+    let Some(idx) = clack_select("Select profile action:", &options, 0, 6)? else {
+        clack_cancel("Operation cancelled.");
+        return Ok(());
+    };
+
+    match idx {
+        0 => {
+            Box::pin(handle_profile(Some(ProfileCommands::List {
+                format: crate::ui::FormatArgs::default(),
+            })))
+            .await
+        }
+        1 => {
+            let Some(name) = clack_text("Profile name:", Some("My-Stealth-Profile"), None)? else {
+                clack_cancel("Cancelled.");
+                return Ok(());
+            };
+            let os_opts = vec![
+                ClackOption::new("Windows", "Windows 11 / Chrome", "win"),
+                ClackOption::new("macOS", "macOS Sonoma / Chrome", "mac"),
+                ClackOption::new("Linux", "Ubuntu Linux / Chrome", "linux"),
+            ];
+            let Some(os_idx) = clack_select("Target OS platform:", &os_opts, 0, 6)? else {
+                clack_cancel("Cancelled.");
+                return Ok(());
+            };
+            Box::pin(handle_profile(Some(ProfileCommands::Create {
+                name,
+                seed: None,
+                os: os_opts[os_idx].summary.clone(),
+                cores: None,
+                ram: None,
+                proxy: None,
+                timezone: "Asia/Ho_Chi_Minh".to_string(),
+                locale: "vi-VN".to_string(),
+            })))
+            .await?;
+            clack_outro("Profile created.");
+            Ok(())
+        }
+        2 => {
+            if profiles.is_empty() {
+                clack_outro("No profiles available to inspect.");
+                return Ok(());
+            }
+            let prof_opts: Vec<ClackOption> = profiles
+                .iter()
+                .map(|p| ClackOption::new(&p.id, &p.name, &p.id))
+                .collect();
+            let Some(p_idx) = clack_select("Select profile to inspect:", &prof_opts, 0, 8)? else {
+                clack_cancel("Cancelled.");
+                return Ok(());
+            };
+            Box::pin(handle_profile(Some(ProfileCommands::Inspect {
+                id: prof_opts[p_idx].summary.clone(),
+                format: crate::ui::FormatArgs::default(),
+            })))
+            .await?;
+            clack_outro("Profile inspection complete.");
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
