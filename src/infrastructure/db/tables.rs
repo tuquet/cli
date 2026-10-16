@@ -1,6 +1,5 @@
-use rusqlite::{params, Connection, Result};
 use crate::core::models::storage::{StorageTable, TableRow};
-
+use rusqlite::{Connection, Result, params};
 
 pub struct SqliteTableRepository<'a> {
     pub conn: &'a Connection,
@@ -11,7 +10,12 @@ impl<'a> SqliteTableRepository<'a> {
         Self { conn }
     }
 
-    pub fn get_tables(&self, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<StorageTable>> {
+    pub fn get_tables(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<StorageTable>> {
         let l = limit.map(|v| v as i64).unwrap_or(-1);
         let o = offset.unwrap_or(0) as i64;
         let mut tables = Vec::new();
@@ -25,9 +29,13 @@ impl<'a> SqliteTableRepository<'a> {
                 Ok(StorageTable {
                     id: row.get(0)?,
                     name: row.get(1)?,
-                    columns: row.get::<_, Option<String>>(2)?.and_then(|s| serde_json::from_str(&s).ok()),
+                    columns: row
+                        .get::<_, Option<String>>(2)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
                     items: None,
-                    columns_index: row.get::<_, Option<String>>(3)?.and_then(|s| serde_json::from_str(&s).ok()),
+                    columns_index: row
+                        .get::<_, Option<String>>(3)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
                     created_at: row.get(4)?,
                     modified_at: row.get(5)?,
                 })
@@ -43,9 +51,13 @@ impl<'a> SqliteTableRepository<'a> {
                 Ok(StorageTable {
                     id: row.get(0)?,
                     name: row.get(1)?,
-                    columns: row.get::<_, Option<String>>(2)?.and_then(|s| serde_json::from_str(&s).ok()),
+                    columns: row
+                        .get::<_, Option<String>>(2)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
                     items: None,
-                    columns_index: row.get::<_, Option<String>>(3)?.and_then(|s| serde_json::from_str(&s).ok()),
+                    columns_index: row
+                        .get::<_, Option<String>>(3)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
                     created_at: row.get(4)?,
                     modified_at: row.get(5)?,
                 })
@@ -72,17 +84,31 @@ impl<'a> SqliteTableRepository<'a> {
                 columns = excluded.columns,
                 columns_index = excluded.columns_index,
                 modified_at = excluded.modified_at",
-            params![id, name, cols, cols_idx, table.created_at, table.modified_at],
+            params![
+                id,
+                name,
+                cols,
+                cols_idx,
+                table.created_at,
+                table.modified_at
+            ],
         )?;
         Ok(())
     }
 
     pub fn delete_table(&self, id: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM storage_tables WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM storage_tables WHERE id = ?1", params![id])?;
         Ok(())
     }
 
-    pub fn get_table_rows(&self, table_id: &str, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<TableRow>> {
+    pub fn get_table_rows(
+        &self,
+        table_id: &str,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<TableRow>> {
         let l = limit.map(|v| v as i64).unwrap_or(50);
         let o = offset.unwrap_or(0) as i64;
         let mut rows = Vec::new();
@@ -107,7 +133,7 @@ impl<'a> SqliteTableRepository<'a> {
             }
         } else {
             let mut stmt = self.conn.prepare(
-                "SELECT id, data FROM storage_table_rows WHERE table_id = ?1 LIMIT ?2 OFFSET ?3"
+                "SELECT id, data FROM storage_table_rows WHERE table_id = ?1 LIMIT ?2 OFFSET ?3",
             )?;
             let row_iter = stmt.query_map(params![table_id, l, o], |row| {
                 let id: String = row.get(0)?;
@@ -136,7 +162,6 @@ impl<'a> SqliteTableRepository<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,15 +188,21 @@ mod tests {
         assert_eq!(tables.len(), 1);
         assert_eq!(tables[0].name.as_deref().unwrap(), "Users Table");
 
-        repo.add_table_row("row_1", "tbl_users", r#"{"username":"alice"}"#).unwrap();
-        repo.add_table_row("row_2", "tbl_users", r#"{"username":"bob"}"#).unwrap();
+        repo.add_table_row("row_1", "tbl_users", r#"{"username":"alice"}"#)
+            .unwrap();
+        repo.add_table_row("row_2", "tbl_users", r#"{"username":"bob"}"#)
+            .unwrap();
 
-        let rows = repo.get_table_rows("tbl_users", Some(10), Some(0), None).unwrap();
+        let rows = repo
+            .get_table_rows("tbl_users", Some(10), Some(0), None)
+            .unwrap();
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].data["username"], "alice");
 
         // Test pagination limit
-        let paginated = repo.get_table_rows("tbl_users", Some(1), Some(1), None).unwrap();
+        let paginated = repo
+            .get_table_rows("tbl_users", Some(1), Some(1), None)
+            .unwrap();
         assert_eq!(paginated.len(), 1);
         assert_eq!(paginated[0].data["username"], "bob");
 

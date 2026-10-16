@@ -1,16 +1,16 @@
-use std::io::{self, IsTerminal, Write};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
-use std::time::{Duration, Instant};
+use super::colors::{self, visible_width};
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{self, Clear, ClearType},
 };
-use super::colors::{self, visible_width};
+use std::io::{self, IsTerminal, Write};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::time::{Duration, Instant};
 
 // @clack/prompts Unicode Box-Drawing & State Symbols
 pub const S_BAR_START: &str = "┌";
@@ -76,7 +76,13 @@ impl ClackOption {
         let l = label.into();
         let h = hint.into();
         let s = summary.into();
-        let filter_text = format!("{} {} {}", strip_ansi_codes(&l), strip_ansi_codes(&h), strip_ansi_codes(&s)).to_lowercase();
+        let filter_text = format!(
+            "{} {} {}",
+            strip_ansi_codes(&l),
+            strip_ansi_codes(&h),
+            strip_ansi_codes(&s)
+        )
+        .to_lowercase();
         Self {
             label: l,
             hint: h,
@@ -96,7 +102,11 @@ pub fn clack_intro(badge: &str, subtitle: &str) {
         );
         println!("  \x1b[90m{S_BAR}\x1b[0m");
     } else {
-        println!("[{}] {}", strip_ansi_codes(badge), strip_ansi_codes(subtitle));
+        println!(
+            "[{}] {}",
+            strip_ansi_codes(badge),
+            strip_ansi_codes(subtitle)
+        );
     }
 }
 
@@ -206,10 +216,7 @@ pub fn clack_note(title: &str, lines: &[impl AsRef<str>]) {
         let pad = " ".repeat(inner_w.saturating_sub(lw + 2));
         println!("  \x1b[90m{S_BAR}\x1b[0m  {s}{pad}\x1b[90m│\x1b[0m");
     }
-    println!(
-        "  \x1b[90m├{}╯\x1b[0m",
-        "─".repeat(inner_w + 1)
-    );
+    println!("  \x1b[90m├{}╯\x1b[0m", "─".repeat(inner_w + 1));
     println!("  \x1b[90m{S_BAR}\x1b[0m");
 }
 
@@ -262,9 +269,7 @@ impl ClackSpinner {
                 let _ = execute!(io::stderr(), cursor::Hide);
                 while active_clone.load(Ordering::Relaxed) {
                     let frame = frames[idx % frames.len()];
-                    eprint!(
-                        "\r\x1b[2K  \x1b[35m{frame}\x1b[0m  \x1b[90m{msg_clone}\x1b[0m"
-                    );
+                    eprint!("\r\x1b[2K  \x1b[35m{frame}\x1b[0m  \x1b[90m{msg_clone}\x1b[0m");
                     let _ = io::stderr().flush();
                     idx = idx.wrapping_add(1);
                     std::thread::sleep(Duration::from_millis(80));
@@ -305,7 +310,12 @@ impl ClackSpinner {
         let elapsed = self.start_time.elapsed();
         self.stop_thread();
         let time_badge = if elapsed.as_millis() >= 100 {
-            format!(" {MUTED}({:.1}s){RESET}", elapsed.as_secs_f64(), MUTED = colors::MUTED, RESET = colors::RESET)
+            format!(
+                " {MUTED}({:.1}s){RESET}",
+                elapsed.as_secs_f64(),
+                MUTED = colors::MUTED,
+                RESET = colors::RESET
+            )
         } else {
             String::new()
         };
@@ -468,7 +478,10 @@ pub fn clack_select(
         Ok(Some(idx)) => {
             let chosen = &options[idx];
             println!("  \x1b[32m{S_STEP_SUBMIT}\x1b[0m  \x1b[1m{message}\x1b[0m");
-            println!("  \x1b[90m{S_BAR}\x1b[0m  \x1b[36m{}\x1b[0m", chosen.summary);
+            println!(
+                "  \x1b[90m{S_BAR}\x1b[0m  \x1b[36m{}\x1b[0m",
+                chosen.summary
+            );
             println!("  \x1b[90m{S_BAR}\x1b[0m");
             Ok(Some(idx))
         }
@@ -692,7 +705,8 @@ pub fn clack_text(
     terminal::enable_raw_mode()?;
     let _ = execute!(stdout, cursor::Hide);
 
-    let mut rendered_lines = render_clack_text_frame(&mut stdout, message, &value, hint_placeholder, false)?;
+    let mut rendered_lines =
+        render_clack_text_frame(&mut stdout, message, &value, hint_placeholder, false)?;
 
     let result: io::Result<Option<String>> = loop {
         let ev = event::read()?;
@@ -730,7 +744,8 @@ pub fn clack_text(
             }
 
             clear_rendered_lines(&mut stdout, rendered_lines)?;
-            rendered_lines = render_clack_text_frame(&mut stdout, message, &value, hint_placeholder, false)?;
+            rendered_lines =
+                render_clack_text_frame(&mut stdout, message, &value, hint_placeholder, false)?;
         }
     };
 
@@ -741,7 +756,11 @@ pub fn clack_text(
 
     match result {
         Ok(Some(val)) => {
-            let display_val = if val.is_empty() { "(empty)" } else { val.as_str() };
+            let display_val = if val.is_empty() {
+                "(empty)"
+            } else {
+                val.as_str()
+            };
             println!("  \x1b[32m{S_STEP_SUBMIT}\x1b[0m  \x1b[1m{message}\x1b[0m");
             println!("  \x1b[90m{S_BAR}\x1b[0m  \x1b[36m{display_val}\x1b[0m");
             println!("  \x1b[90m{S_BAR}\x1b[0m");
@@ -818,7 +837,9 @@ pub fn clack_password(message: &str) -> io::Result<Option<String>> {
 
     match result {
         Ok(Some(val)) => {
-            let masked = S_PASSWORD_MASK.to_string().repeat(val.chars().count().clamp(6, 12));
+            let masked = S_PASSWORD_MASK
+                .to_string()
+                .repeat(val.chars().count().clamp(6, 12));
             println!("  \x1b[32m{S_STEP_SUBMIT}\x1b[0m  \x1b[1m{message}\x1b[0m");
             println!("  \x1b[90m{S_BAR}\x1b[0m  \x1b[90m{masked}\x1b[0m");
             println!("  \x1b[90m{S_BAR}\x1b[0m");

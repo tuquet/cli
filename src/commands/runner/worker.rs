@@ -8,7 +8,11 @@ pub async fn run_cloud_worker(
     once: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
-    let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&config.data_dir).await {
+    let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+        &config.data_dir,
+    )
+    .await
+    {
         Some(c) => c,
         None => {
             crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
@@ -18,10 +22,15 @@ pub async fn run_cloud_worker(
     };
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
-    let cloud_url = config.cloud_url.as_deref()
+    let cloud_url = config
+        .cloud_url
+        .as_deref()
         .or(creds.cloud_url.as_deref())
         .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-    let anon_key = creds.api_key.as_deref().unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let anon_key = creds
+        .api_key
+        .as_deref()
+        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
 
     let mut card = crate::ui::Card::new("AUTONOMOUS CLOUD FLEET WORKER");
     card.with_badge(crate::ui::badge_online("ONLINE"));
@@ -41,7 +50,10 @@ pub async fn run_cloud_worker(
     println!();
 
     if let Some(target) = cloud_profile {
-        println!(">> Executing autonomous pipeline on cloud profile '{}'...", target);
+        println!(
+            ">> Executing autonomous pipeline on cloud profile '{}'...",
+            target
+        );
         crate::infrastructure::cloud_fleet::CloudFleetOrchestrator::run_autonomous_cloud_session(
             &target,
             workflow,
@@ -49,13 +61,18 @@ pub async fn run_cloud_worker(
             headless,
             Vec::new(),
             None,
-        ).await?;
+        )
+        .await?;
         return Ok(());
     }
 
     loop {
-        let list_url = format!("{}/rest/v1/rpc/list_browsers", cloud_url.trim_end_matches('/'));
-        let res = client.post(&list_url)
+        let list_url = format!(
+            "{}/rest/v1/rpc/list_browsers",
+            cloud_url.trim_end_matches('/')
+        );
+        let res = client
+            .post(&list_url)
             .header("apikey", anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .header("Content-Type", "application/json")
@@ -70,13 +87,24 @@ pub async fn run_cloud_worker(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let time_str = format!("{:02}:{:02}:{:02}", (now_epoch / 3600) % 24, (now_epoch / 60) % 60, now_epoch % 60);
+        let time_str = format!(
+            "{:02}:{:02}:{:02}",
+            (now_epoch / 3600) % 24,
+            (now_epoch / 60) % 60,
+            now_epoch % 60
+        );
 
         match res {
             Ok(r) if r.status().is_success() => {
                 let browsers: Vec<serde_json::Value> = r.json().await.unwrap_or_default();
-                let idle_count = browsers.iter().filter(|b| b["status"].as_str() == Some("idle")).count();
-                let running_count = browsers.iter().filter(|b| b["status"].as_str() == Some("running")).count();
+                let idle_count = browsers
+                    .iter()
+                    .filter(|b| b["status"].as_str() == Some("idle"))
+                    .count();
+                let running_count = browsers
+                    .iter()
+                    .filter(|b| b["status"].as_str() == Some("running"))
+                    .count();
                 println!(
                     "[{}] Fleet mesh online: {} total profiles ({} IDLE, {} RUNNING) | Node: {}",
                     time_str,

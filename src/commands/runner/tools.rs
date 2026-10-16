@@ -32,6 +32,10 @@ pub fn export_openapi(output_path: &Path) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn manage_config(
+    args: &[String],
+    edit: bool,
+    show: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     crate::config::ConfigController::handle_dispatch("runner", args, edit, show)
 }

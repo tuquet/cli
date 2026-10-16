@@ -1,12 +1,12 @@
-use crate::infrastructure::bridge::{
-    check_dependencies, probe_port_async, BridgeConfig,
-};
+use crate::infrastructure::bridge::{BridgeConfig, check_dependencies, probe_port_async};
 use crate::ui::{
-    badge_online, badge_warn, create_network_topology_card, default_workstation_endpoints,
-    respond_with, Card, Column, Table,
+    Card, Column, Table, badge_online, badge_warn, create_network_topology_card,
+    default_workstation_endpoints, respond_with,
 };
 
-pub async fn show_status(format: crate::ui::OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn show_status(
+    format: crate::ui::OutputFormat,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = BridgeConfig::load().unwrap_or_else(|_| BridgeConfig::default_config());
     let workstation_name = config
         .workstation
@@ -79,20 +79,12 @@ pub async fn show_status(format: crate::ui::OutputFormat) -> Result<(), Box<dyn 
         let local_str = format!(
             "{}:{}",
             local_port,
-            if local_active {
-                " [UP]"
-            } else {
-                " [DOWN]"
-            }
+            if local_active { " [UP]" } else { " [DOWN]" }
         );
         let socks_str = format!(
             "{}:{}",
             socks_port,
-            if socks_active {
-                " [UP]"
-            } else {
-                " [DOWN]"
-            }
+            if socks_active { " [UP]" } else { " [DOWN]" }
         );
 
         let status_str = if !srv.is_enabled() {
@@ -170,106 +162,104 @@ pub async fn show_status(format: crate::ui::OutputFormat) -> Result<(), Box<dyn 
     });
 
     respond_with(format, &payload, |_| {
-
-    println!();
-    let mut header_card = Card::new("NETWORK BRIDGE & MULTI-VPS MESH");
-    header_card.with_badge(badge_online("CONTROLLER READY"));
-    header_card.with_min_width(74);
-    header_card.add_kv("Workstation", workstation_name);
-    header_card.add_kv(
-        "Config Source",
-        BridgeConfig::config_path().to_string_lossy().to_string(),
-    );
-    header_card.add_kv("Default Server", default_server);
-    header_card.with_footer(
-        "Pure Rust Engine • Zero Shell Scripts • Embedded HTTP-to-SOCKS5 Adapter",
-    );
-    header_card.print();
-    println!();
-
-    // 1. Servers & VPS Port Map Table
-    let columns = vec![
-        Column {
-            title: "Server ID".to_string(),
-            min_width: 12,
-            align_right: false,
-        },
-        Column {
-            title: "Display Name".to_string(),
-            min_width: 20,
-            align_right: false,
-        },
-        Column {
-            title: "Target Endpoint".to_string(),
-            min_width: 18,
-            align_right: false,
-        },
-        Column {
-            title: "Local SSH".to_string(),
-            min_width: 12,
-            align_right: false,
-        },
-        Column {
-            title: "SOCKS5 Proxy".to_string(),
-            min_width: 12,
-            align_right: false,
-        },
-        Column {
-            title: "Tags".to_string(),
-            min_width: 10,
-            align_right: false,
-        },
-        Column {
-            title: "Status".to_string(),
-            min_width: 12,
-            align_right: false,
-        },
-    ];
-
-    let mut table = Table::new(columns);
-
-    for row in server_table_rows {
-        table.add_row(row);
-    }
-
-    table.print();
-
-    // 2. Active Workload Status
-    println!();
-
-    let endpoints = default_workstation_endpoints(
-        git_port,
-        git_online,
-        http_port,
-        http_online,
-        ssh_port,
-        ssh_online,
-        None,
-    );
-    let mut workload_card = create_network_topology_card(
-        "WORKLOAD TOPOLOGY & LISTENERS",
-        &endpoints,
-        Some("Start workloads with 'specter bridge start' (add --http for Supabase)"),
-    );
-    workload_card.with_min_width(74);
-    workload_card.print();
-
-    // 3. System Tool Dependencies Check
-    let deps = check_dependencies();
-    let all_found = deps.iter().all(|d| d.found);
-    if !all_found {
         println!();
-        let mut missing_card = Card::new("MISSING PREREQUISITES");
-        missing_card.with_badge(badge_warn("ACTION REQUIRED"));
-        missing_card.with_min_width(74);
-        for d in &deps {
-            if !d.found {
-                missing_card.add_line(format!("• {}: NOT FOUND in system PATH", d.name));
-                missing_card.add_line(format!("  Purpose: {}", d.description));
-                missing_card.add_line(format!("  Install: {}", d.install_hint));
-            }
+        let mut header_card = Card::new("NETWORK BRIDGE & MULTI-VPS MESH");
+        header_card.with_badge(badge_online("CONTROLLER READY"));
+        header_card.with_min_width(74);
+        header_card.add_kv("Workstation", workstation_name);
+        header_card.add_kv(
+            "Config Source",
+            BridgeConfig::config_path().to_string_lossy().to_string(),
+        );
+        header_card.add_kv("Default Server", default_server);
+        header_card
+            .with_footer("Pure Rust Engine • Zero Shell Scripts • Embedded HTTP-to-SOCKS5 Adapter");
+        header_card.print();
+        println!();
+
+        // 1. Servers & VPS Port Map Table
+        let columns = vec![
+            Column {
+                title: "Server ID".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
+            Column {
+                title: "Display Name".to_string(),
+                min_width: 20,
+                align_right: false,
+            },
+            Column {
+                title: "Target Endpoint".to_string(),
+                min_width: 18,
+                align_right: false,
+            },
+            Column {
+                title: "Local SSH".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
+            Column {
+                title: "SOCKS5 Proxy".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
+            Column {
+                title: "Tags".to_string(),
+                min_width: 10,
+                align_right: false,
+            },
+            Column {
+                title: "Status".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
+        ];
+
+        let mut table = Table::new(columns);
+
+        for row in server_table_rows {
+            table.add_row(row);
         }
-        missing_card.print();
-    }
-})
+
+        table.print();
+
+        // 2. Active Workload Status
+        println!();
+
+        let endpoints = default_workstation_endpoints(
+            git_port,
+            git_online,
+            http_port,
+            http_online,
+            ssh_port,
+            ssh_online,
+            None,
+        );
+        let mut workload_card = create_network_topology_card(
+            "WORKLOAD TOPOLOGY & LISTENERS",
+            &endpoints,
+            Some("Start workloads with 'specter bridge start' (add --http for Supabase)"),
+        );
+        workload_card.with_min_width(74);
+        workload_card.print();
+
+        // 3. System Tool Dependencies Check
+        let deps = check_dependencies();
+        let all_found = deps.iter().all(|d| d.found);
+        if !all_found {
+            println!();
+            let mut missing_card = Card::new("MISSING PREREQUISITES");
+            missing_card.with_badge(badge_warn("ACTION REQUIRED"));
+            missing_card.with_min_width(74);
+            for d in &deps {
+                if !d.found {
+                    missing_card.add_line(format!("• {}: NOT FOUND in system PATH", d.name));
+                    missing_card.add_line(format!("  Purpose: {}", d.description));
+                    missing_card.add_line(format!("  Install: {}", d.install_hint));
+                }
+            }
+            missing_card.print();
+        }
+    })
 }

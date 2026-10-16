@@ -1,15 +1,15 @@
-use std::io::IsTerminal;
 use crate::cli::CloudSubcommands;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud::{
-    CloudApiClient, CredentialStore, SupabaseAuthClient,
-    TenancyManager, TenantInfo, DEFAULT_SUPABASE_ANON_KEY,
+    CloudApiClient, CredentialStore, DEFAULT_SUPABASE_ANON_KEY, SupabaseAuthClient, TenancyManager,
+    TenantInfo,
 };
 use crate::infrastructure::cloud_reporter::CloudReporter;
 use crate::ui::{
-    badge_offline, badge_online, clack_cancel, clack_intro, clack_password, clack_select,
-    clack_step_warn, clack_text, respond_with, Card, ClackOption, ClackSpinner, OutputFormat,
+    Card, ClackOption, ClackSpinner, OutputFormat, badge_offline, badge_online, clack_cancel,
+    clack_intro, clack_password, clack_select, clack_step_warn, clack_text, respond_with,
 };
+use std::io::IsTerminal;
 
 pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     match command {
@@ -24,7 +24,20 @@ pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error:
             name,
             api_key,
             format,
-        } => login(url, email, password, otp, code, token, tenant, name, api_key, format.resolve()).await.map_err(|e| e as Box<dyn std::error::Error>),
+        } => login(
+            url,
+            email,
+            password,
+            otp,
+            code,
+            token,
+            tenant,
+            name,
+            api_key,
+            format.resolve(),
+        )
+        .await
+        .map_err(|e| e as Box<dyn std::error::Error>),
         CloudSubcommands::Logout => logout().await,
         CloudSubcommands::Whoami { format } => whoami(format.resolve()).await,
         CloudSubcommands::Tenant { command } => crate::commands::tenant::handle(command).await,
@@ -69,15 +82,25 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
 
     match idx {
         0 => whoami(OutputFormat::Card).await,
-        1 => login(None, None, None, false, None, None, None, None, None, OutputFormat::Card)
-            .await
-            .map_err(|e| e as Box<dyn std::error::Error>),
+        1 => login(
+            None,
+            None,
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+            None,
+            OutputFormat::Card,
+        )
+        .await
+        .map_err(|e| e as Box<dyn std::error::Error>),
         2 => logout().await,
         3 => manage_config(&[], false, false),
         _ => Ok(()),
     }
 }
-
 
 #[allow(clippy::too_many_arguments)]
 pub async fn login(
@@ -96,7 +119,7 @@ pub async fn login(
     let cloud_url = url
         .or(config.cloud_url)
         .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-    
+
     let active_anon_key = api_key
         .or_else(|| std::env::var("SPECTER_API_KEY").ok())
         .or_else(|| std::env::var("SUPABASE_ANON_KEY").ok())
@@ -113,9 +136,8 @@ pub async fn login(
     }
 
     // 1. Interactive login method resolution if no explicit auth params given
-    let (mut auth_email, mut auth_password, mut is_otp, auth_code, mut auth_token) = (
-        email, password, otp, code, token
-    );
+    let (mut auth_email, mut auth_password, mut is_otp, auth_code, mut auth_token) =
+        (email, password, otp, code, token);
 
     if auth_email.is_none() && auth_token.is_none() && !is_otp && is_tty {
         let auth_opts = vec![
@@ -202,11 +224,15 @@ pub async fn login(
     if let Some(tok) = auth_token.as_ref() {
         if tok.contains('.') {
             let sp = if !format.is_json() {
-                Some(ClackSpinner::start("Validating Supabase JWT access token..."))
+                Some(ClackSpinner::start(
+                    "Validating Supabase JWT access token...",
+                ))
             } else {
                 None
             };
-            match SupabaseAuthClient::validate_token(&client, &cloud_url, &active_anon_key, tok).await {
+            match SupabaseAuthClient::validate_token(&client, &cloud_url, &active_anon_key, tok)
+                .await
+            {
                 Ok(user) => {
                     if let Some(s) = sp {
                         s.finish(format!(
@@ -237,8 +263,9 @@ pub async fn login(
             Some(e) if !e.trim().is_empty() => e.trim().to_string(),
             _ => {
                 if is_tty {
-                    let Some(e) = clack_text("Operator Email for OTP", Some("operator@tuquet.com"), None)
-                        .map_err(|e| format!("Email is required for OTP login: {}", e))?
+                    let Some(e) =
+                        clack_text("Operator Email for OTP", Some("operator@tuquet.com"), None)
+                            .map_err(|e| format!("Email is required for OTP login: {}", e))?
                     else {
                         clack_cancel("Authentication cancelled.");
                         return Ok(());
@@ -261,13 +288,17 @@ pub async fn login(
                 } else {
                     None
                 };
-                SupabaseAuthClient::request_otp(&client, &cloud_url, &active_anon_key, &email_str).await?;
+                SupabaseAuthClient::request_otp(&client, &cloud_url, &active_anon_key, &email_str)
+                    .await?;
                 if let Some(s) = sp {
-                    s.finish(format!("Verification code dispatched to \x1b[1m{email_str}\x1b[0m"));
+                    s.finish(format!(
+                        "Verification code dispatched to \x1b[1m{email_str}\x1b[0m"
+                    ));
                 }
 
-                let Some(code_val) = clack_text("Enter 6-digit Verification Code", Some("123456"), None)
-                    .map_err(|e| format!("Failed to read OTP code: {}", e))?
+                let Some(code_val) =
+                    clack_text("Enter 6-digit Verification Code", Some("123456"), None)
+                        .map_err(|e| format!("Failed to read OTP code: {}", e))?
                 else {
                     clack_cancel("Authentication cancelled.");
                     return Ok(());
@@ -281,7 +312,14 @@ pub async fn login(
         } else {
             None
         };
-        let sess = SupabaseAuthClient::verify_otp(&client, &cloud_url, &active_anon_key, &email_str, &otp_code).await?;
+        let sess = SupabaseAuthClient::verify_otp(
+            &client,
+            &cloud_url,
+            &active_anon_key,
+            &email_str,
+            &otp_code,
+        )
+        .await?;
         if let Some(s) = sp {
             s.finish(format!("Verified OTP for \x1b[1m{email_str}\x1b[0m"));
         }
@@ -314,12 +352,23 @@ pub async fn login(
         } else {
             None
         };
-        let sess = SupabaseAuthClient::login_with_password(&client, &cloud_url, &active_anon_key, email_str, &pass_str).await?;
+        let sess = SupabaseAuthClient::login_with_password(
+            &client,
+            &cloud_url,
+            &active_anon_key,
+            email_str,
+            &pass_str,
+        )
+        .await?;
         if let Some(s) = sp {
             s.finish(format!("Authenticated as \x1b[1;32m{email_str}\x1b[0m"));
         }
         maybe_user_id = Some(sess.user.id.clone());
-        maybe_user_email = sess.user.email.clone().or_else(|| Some(email_str.to_string()));
+        maybe_user_email = sess
+            .user
+            .email
+            .clone()
+            .or_else(|| Some(email_str.to_string()));
         maybe_session = Some((sess.access_token, sess.refresh_token, sess.expires_at));
     }
 
@@ -340,7 +389,15 @@ pub async fn login(
             None
         };
 
-        match TenancyManager::fetch_user_tenants(&client, &cloud_url, &active_anon_key, access_tok, u_id).await {
+        match TenancyManager::fetch_user_tenants(
+            &client,
+            &cloud_url,
+            &active_anon_key,
+            access_tok,
+            u_id,
+        )
+        .await
+        {
             Ok(mut tenants) => {
                 if let Some(s) = sp {
                     s.clear();
@@ -400,7 +457,8 @@ pub async fn login(
     }
 
     // 4. Enroll Workstation Device with Specter Cloud Fleet
-    let enrollment_token = resolved_tenant_slug.as_deref()
+    let enrollment_token = resolved_tenant_slug
+        .as_deref()
         .or(resolved_tenant_id.as_deref())
         .or(tenant.as_deref())
         .or(auth_token.as_deref())
@@ -409,7 +467,9 @@ pub async fn login(
     let bearer_jwt = maybe_session.as_ref().map(|(tok, _, _)| tok.as_str());
 
     let sp = if !format.is_json() {
-        Some(ClackSpinner::start("Pairing workstation with Specter Cloud Fleet..."))
+        Some(ClackSpinner::start(
+            "Pairing workstation with Specter Cloud Fleet...",
+        ))
     } else {
         None
     };
@@ -420,10 +480,15 @@ pub async fn login(
         name.as_deref(),
         &config.data_dir,
         bearer_jwt,
-    ).await {
+    )
+    .await
+    {
         Ok(creds) => {
             if let Some(s) = sp {
-                s.finish(format!("Workstation '{}' enrolled ({})", creds.name, creds.device_id));
+                s.finish(format!(
+                    "Workstation '{}' enrolled ({})",
+                    creds.name, creds.device_id
+                ));
             }
             creds
         }
@@ -455,10 +520,20 @@ pub async fn login(
     CredentialStore::save(&config.data_dir, &device_creds).await?;
 
     let is_authenticated = device_creds.has_user_session();
-    let badge_status = if is_authenticated { "AUTHENTICATED & PAIRED" } else { "ENROLLED" };
+    let badge_status = if is_authenticated {
+        "AUTHENTICATED & PAIRED"
+    } else {
+        "ENROLLED"
+    };
 
     // 6. Delegate presentation rendering (SRP)
-    present_login_success(&device_creds, &cloud_url, is_authenticated, badge_status, format)
+    present_login_success(
+        &device_creds,
+        &cloud_url,
+        is_authenticated,
+        badge_status,
+        format,
+    )
 }
 
 pub async fn logout() -> Result<(), Box<dyn std::error::Error>> {
@@ -516,7 +591,13 @@ fn present_login_success(
         if let Some(user_val) = device_creds.user_id.as_deref() {
             card.add_kv("Operator ID", user_val);
         }
-        card.add_kv("Active Workspace", device_creds.tenant_name.as_deref().unwrap_or("Personal Workspace"));
+        card.add_kv(
+            "Active Workspace",
+            device_creds
+                .tenant_name
+                .as_deref()
+                .unwrap_or("Personal Workspace"),
+        );
         if let Some(slug_val) = device_creds.tenant_slug.as_deref() {
             card.add_kv("Workspace Slug", slug_val);
         }
@@ -525,14 +606,19 @@ fn present_login_success(
         }
         card.add_kv("Device ID", &device_creds.device_id);
         card.add_kv("Device Name", &device_creds.name);
-        card.add_kv("Endpoint", device_creds.cloud_url.as_deref().unwrap_or(cloud_url));
+        card.add_kv(
+            "Endpoint",
+            device_creds.cloud_url.as_deref().unwrap_or(cloud_url),
+        );
         card.with_footer("Workstation successfully paired with Specter Cloud fleet");
 
         println!();
         card.print();
         println!();
     })
-    .map_err(|e| Box::new(std::io::Error::other(e.to_string())) as Box<dyn std::error::Error + Send + Sync>)
+    .map_err(|e| {
+        Box::new(std::io::Error::other(e.to_string())) as Box<dyn std::error::Error + Send + Sync>
+    })
 }
 
 fn present_logout(logged_out: bool) {
@@ -578,9 +664,17 @@ fn present_whoami(
         });
 
         respond_with(format, &payload, |_| {
-            let is_prod = creds.cloud_url.as_deref().map(|u| u.contains("dswhacsoaxgpfnkaxnhz") || u.contains("supabase")).unwrap_or(false);
+            let is_prod = creds
+                .cloud_url
+                .as_deref()
+                .map(|u| u.contains("dswhacsoaxgpfnkaxnhz") || u.contains("supabase"))
+                .unwrap_or(false);
             let badge_text = if creds.has_user_session() {
-                if is_prod { "AUTHENTICATED (PROD)" } else { "AUTHENTICATED" }
+                if is_prod {
+                    "AUTHENTICATED (PROD)"
+                } else {
+                    "AUTHENTICATED"
+                }
             } else if is_prod {
                 "ENROLLED (PROD)"
             } else {
@@ -608,8 +702,17 @@ fn present_whoami(
             }
             card.add_kv("Device ID", &creds.device_id);
             card.add_kv("Device Name", &creds.name);
-            card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("Personal Workspace"));
-            card.add_kv("Endpoint", creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"));
+            card.add_kv(
+                "Tenant ID",
+                creds.tenant_id.as_deref().unwrap_or("Personal Workspace"),
+            );
+            card.add_kv(
+                "Endpoint",
+                creds
+                    .cloud_url
+                    .as_deref()
+                    .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"),
+            );
 
             if let Some(exp) = creds.token_expires_at {
                 let now = std::time::SystemTime::now()
@@ -650,7 +753,11 @@ fn present_whoami(
     }
 }
 
-pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn manage_config(
+    args: &[String],
+    edit: bool,
+    show: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     crate::config::ConfigController::handle_dispatch("system", args, edit, show)
         .map_err(|e| format!("{}", e).into())
 }

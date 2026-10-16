@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tracing::{debug, info, warn};
@@ -104,7 +104,11 @@ async fn handle_http_client(
         Ok(s) => s,
         Err(e) => {
             let _ = client.write_all(b"HTTP/1.1 502 Bad Gateway\r\n\r\n").await;
-            return Err(format!("Cannot connect to local SOCKS5 proxy on port {}: {}", socks_port, e).into());
+            return Err(format!(
+                "Cannot connect to local SOCKS5 proxy on port {}: {}",
+                socks_port, e
+            )
+            .into());
         }
     };
 
@@ -167,7 +171,9 @@ async fn handle_http_client(
 
     // 4. Respond to client and start bi-directional streaming
     if method.eq_ignore_ascii_case("CONNECT") {
-        client.write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n").await?;
+        client
+            .write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            .await?;
     } else {
         // Forward initial request for plain HTTP
         socks.write_all(&buf[..n]).await?;

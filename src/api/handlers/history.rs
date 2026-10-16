@@ -1,12 +1,12 @@
+use crate::core::error::AutomaError;
+use crate::core::models::id::JobId;
+use crate::infrastructure::db::{JobDetails, JobHistoryItem};
 use axum::{
-    extract::{Path, Query, State},
     Json,
+    extract::{Path, Query, State},
 };
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use crate::infrastructure::db::{JobHistoryItem, JobDetails};
-use crate::core::error::AutomaError;
-use crate::core::models::id::JobId;
 
 #[derive(Deserialize, IntoParams)]
 pub struct HistoryQuery {
@@ -50,7 +50,14 @@ pub async fn get_history(
     Query(query): Query<HistoryQuery>,
 ) -> Result<Json<Vec<JobHistoryItem>>, AutomaError> {
     let db = state.db.lock().await;
-    let history_res = db.jobs().get_history(query.limit, query.offset, query.search.as_deref(), query.status.as_deref())
+    let history_res = db
+        .jobs()
+        .get_history(
+            query.limit,
+            query.offset,
+            query.search.as_deref(),
+            query.status.as_deref(),
+        )
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     Ok(Json(history_res))
@@ -77,7 +84,9 @@ pub async fn get_logs(
     Path(job_id): Path<JobId>,
 ) -> Result<Json<JobDetails>, AutomaError> {
     let db = state.db.lock().await;
-    let logs_res = db.jobs().get_job_details(job_id.as_str())
+    let logs_res = db
+        .jobs()
+        .get_job_details(job_id.as_str())
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     Ok(Json(logs_res))
@@ -104,9 +113,10 @@ pub async fn delete_history_item(
     Path(job_id): Path<JobId>,
 ) -> Result<Json<HistoryActionResponse>, AutomaError> {
     let db = state.db.lock().await;
-    db.jobs().delete_job(job_id.as_str())
+    db.jobs()
+        .delete_job(job_id.as_str())
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    
+
     Ok(Json(HistoryActionResponse {
         success: true,
         message: "Job history deleted".to_string(),
@@ -131,9 +141,11 @@ pub async fn clear_history(
     let db = state.db.lock().await;
     let success = db.jobs().clear_all_jobs();
     if !success {
-        return Err(AutomaError::DatabaseError("Failed to clear jobs from database".to_string()));
+        return Err(AutomaError::DatabaseError(
+            "Failed to clear jobs from database".to_string(),
+        ));
     }
-    
+
     Ok(Json(HistoryActionResponse {
         success: true,
         message: "History cleared".to_string(),

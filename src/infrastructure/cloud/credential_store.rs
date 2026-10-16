@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use utoipa::ToSchema;
 
 pub const DEFAULT_SUPABASE_ANON_KEY: &str = "sb_publishable_8Y-l9FtldJSSuFAWhzICqg_UobFOsua";
@@ -71,7 +71,6 @@ impl DeviceCredentials {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CloudSyncResult {
     pub success: bool,
@@ -98,20 +97,26 @@ pub struct CredentialStore;
 
 impl CredentialStore {
     pub fn get_path(_data_dir: &str) -> PathBuf {
-        crate::config::canonical_specter_dir().join("system").join(".identity.json")
+        crate::config::canonical_specter_dir()
+            .join("system")
+            .join(".identity.json")
     }
 
     pub async fn load(data_dir: &str) -> Option<DeviceCredentials> {
         let path = Self::get_path(data_dir);
         if path.exists()
             && let Ok(content) = tokio::fs::read_to_string(&path).await
-                && let Ok(creds) = serde_json::from_str::<DeviceCredentials>(&content) {
-                    return Some(creds);
-                }
+            && let Ok(creds) = serde_json::from_str::<DeviceCredentials>(&content)
+        {
+            return Some(creds);
+        }
         None
     }
 
-    pub async fn save(data_dir: &str, creds: &DeviceCredentials) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn save(
+        data_dir: &str,
+        creds: &DeviceCredentials,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let path = Self::get_path(data_dir);
         if let Some(parent) = path.parent() {
             let _ = tokio::fs::create_dir_all(parent).await;
@@ -155,7 +160,8 @@ mod tests {
             "enrolled_at": "1700000000"
         }"#;
 
-        let creds: DeviceCredentials = serde_json::from_str(legacy_json).expect("Must deserialize legacy json");
+        let creds: DeviceCredentials =
+            serde_json::from_str(legacy_json).expect("Must deserialize legacy json");
         assert_eq!(creds.device_id, "dev_123");
         assert_eq!(creds.device_token, "token_abc");
         assert_eq!(creds.tenant_id, Some("tenant_xyz".to_string()));
@@ -216,11 +222,12 @@ mod tests {
         assert_eq!(decoded.device_id, "dev_999");
         assert_eq!(decoded.email, Some("dev@example.com".to_string()));
         assert_eq!(decoded.tenant_slug, Some("acme-corp".to_string()));
-        let tenants = decoded.available_tenants.expect("Must have available_tenants");
+        let tenants = decoded
+            .available_tenants
+            .expect("Must have available_tenants");
         assert_eq!(tenants.len(), 2);
         assert_eq!(tenants[0].slug, "acme-corp");
         assert!(tenants[0].is_active);
         assert!(!tenants[1].is_active);
     }
 }
-

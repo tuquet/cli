@@ -7,12 +7,12 @@ pub mod core;
 pub mod infrastructure;
 pub mod ui;
 
+use config::AppConfig;
+use infrastructure::db::AutomaDb;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
-use infrastructure::db::AutomaDb;
-use config::AppConfig;
 
 #[derive(Clone)]
 pub struct AppState {

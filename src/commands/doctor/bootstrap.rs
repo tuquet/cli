@@ -1,9 +1,9 @@
-use std::path::Path;
 use serde_json::json;
+use std::path::Path;
 
 use crate::config::canonical_ssot_dir;
 use crate::infrastructure::bridge::tools::find_executable;
-use crate::ui::{badge_online, colors, Card};
+use crate::ui::{Card, badge_online, colors};
 
 pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Error>> {
     println!();
@@ -24,12 +24,17 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     let dirs = [
         root.join("bin"),
         root.join(crate::constants::PILLAR_SYSTEM),
-        root.join(crate::constants::PILLAR_AUTOMA).join(crate::constants::DIR_WORKFLOWS),
-        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_PROFILES),
-        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_RUNTIMES),
-        root.join(crate::constants::PILLAR_BROWSER).join(crate::constants::DIR_EXTENSIONS),
+        root.join(crate::constants::PILLAR_AUTOMA)
+            .join(crate::constants::DIR_WORKFLOWS),
+        root.join(crate::constants::PILLAR_BROWSER)
+            .join(crate::constants::DIR_PROFILES),
+        root.join(crate::constants::PILLAR_BROWSER)
+            .join(crate::constants::DIR_RUNTIMES),
+        root.join(crate::constants::PILLAR_BROWSER)
+            .join(crate::constants::DIR_EXTENSIONS),
         root.join(crate::constants::PILLAR_BRIDGE).join("bin"),
-        root.join(crate::constants::PILLAR_BRIDGE).join(crate::constants::DIR_PIDS),
+        root.join(crate::constants::PILLAR_BRIDGE)
+            .join(crate::constants::DIR_PIDS),
         root.join(crate::constants::PILLAR_FAKER),
     ];
 
@@ -115,7 +120,10 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
 
         // Register specter MCP server and remove legacy tuquet if present
         config_val["mcpServers"]["specter"] = mcp_def;
-        if let Some(servers) = config_val.get_mut("mcpServers").and_then(|v| v.as_object_mut()) {
+        if let Some(servers) = config_val
+            .get_mut("mcpServers")
+            .and_then(|v| v.as_object_mut())
+        {
             servers.remove("tuquet");
         }
 

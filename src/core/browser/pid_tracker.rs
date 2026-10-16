@@ -151,7 +151,9 @@ pub fn find_active_session(query: &str, base_dir: &Path) -> Option<BrowserSessio
             s.profile_id.eq_ignore_ascii_case(target)
                 || s.profile_name.eq_ignore_ascii_case(target)
                 || s.profile_id.starts_with(target)
-                || s.profile_name.to_lowercase().contains(&target.to_lowercase())
+                || s.profile_name
+                    .to_lowercase()
+                    .contains(&target.to_lowercase())
         })
         .cloned()
 }
@@ -273,6 +275,10 @@ mod tests {
         let current_pid = std::process::id();
         let sys_pid = sysinfo::Pid::from_u32(current_pid);
         let proc = sys.process(sys_pid);
-        assert!(proc.is_some(), "Process with PID {} should be found by sysinfo", current_pid);
+        assert!(
+            proc.is_some(),
+            "Process with PID {} should be found by sysinfo",
+            current_pid
+        );
     }
 }

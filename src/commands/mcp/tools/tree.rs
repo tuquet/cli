@@ -1,10 +1,17 @@
-use std::path::Path;
 use serde_json::Value;
+use std::path::Path;
 
 pub async fn execute_specter_tree(args: &Value) -> Result<String, String> {
     let target_path_str = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
-    let max_depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(3).min(10) as usize;
-    let show_hidden = args.get("show_hidden").and_then(|v| v.as_bool()).unwrap_or(false);
+    let max_depth = args
+        .get("depth")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(3)
+        .min(10) as usize;
+    let show_hidden = args
+        .get("show_hidden")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let root_path = Path::new(target_path_str);
     if !root_path.exists() {
@@ -12,7 +19,10 @@ pub async fn execute_specter_tree(args: &Value) -> Result<String, String> {
     }
 
     let canonical = root_path.canonicalize().map_err(|e| e.to_string())?;
-    let display_name = canonical.file_name().and_then(|s| s.to_str()).unwrap_or(target_path_str);
+    let display_name = canonical
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or(target_path_str);
 
     let mut output = String::new();
     output.push_str(&format!("{}/\n", display_name));
@@ -49,7 +59,14 @@ fn build_dir_tree(
             }
             if matches!(
                 name.as_str(),
-                "node_modules" | "target" | "dist" | ".git" | ".turbo" | "build" | ".output" | ".next"
+                "node_modules"
+                    | "target"
+                    | "dist"
+                    | ".git"
+                    | ".turbo"
+                    | "build"
+                    | ".output"
+                    | ".next"
             ) {
                 return false;
             }
@@ -68,7 +85,14 @@ fn build_dir_tree(
         if is_dir {
             output.push_str(&format!("{}{}{}/\n", prefix, connector, name));
             let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-            build_dir_tree(&path, &new_prefix, current_depth + 1, max_depth, show_hidden, output);
+            build_dir_tree(
+                &path,
+                &new_prefix,
+                current_depth + 1,
+                max_depth,
+                show_hidden,
+                output,
+            );
         } else {
             output.push_str(&format!("{}{}{}\n", prefix, connector, name));
         }

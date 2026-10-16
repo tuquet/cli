@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+use std::path::{Path, PathBuf};
 
 use crate::config::AppConfig;
 use crate::infrastructure::db::AutomaDb;
@@ -16,7 +16,10 @@ struct WfSummary {
 }
 
 pub async fn execute_specter_workflow_list(args: &Value) -> Result<String, String> {
-    let search = args.get("search").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let search = args
+        .get("search")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let config = AppConfig::load();
 
     let mut workflows: Vec<WfSummary> = Vec::new();
@@ -146,8 +149,14 @@ pub async fn execute_specter_workflow_inspect(args: &Value) -> Result<String, St
 
     let id = val.get("id").and_then(|v| v.as_str()).unwrap_or(target);
     let name = val.get("name").and_then(|v| v.as_str()).unwrap_or(id);
-    let description = val.get("description").and_then(|v| v.as_str()).unwrap_or("");
-    let version = val.get("version").and_then(|v| v.as_str()).unwrap_or("1.0.0");
+    let description = val
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let version = val
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0");
 
     let nodes = extract_nodes_array(&val);
     let mut block_types = Vec::new();
@@ -167,8 +176,14 @@ pub async fn execute_specter_workflow_inspect(args: &Value) -> Result<String, St
         }));
 
         if label == "trigger" {
-            let t_type = node.pointer("/data/type").and_then(|v| v.as_str()).unwrap_or("manual");
-            let params = node.pointer("/data/parameters").cloned().unwrap_or(json!([]));
+            let t_type = node
+                .pointer("/data/type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("manual");
+            let params = node
+                .pointer("/data/parameters")
+                .cloned()
+                .unwrap_or(json!([]));
             triggers.push(json!({
                 "id": node_id,
                 "type": t_type,
@@ -265,8 +280,14 @@ pub async fn execute_specter_workflow_run(args: &Value) -> Result<String, String
         .and_then(|v| v.as_str())
         .ok_or_else(|| "Missing required 'workflow' argument".to_string())?;
 
-    let headless = args.get("headless").and_then(|v| v.as_bool()).unwrap_or(true);
-    let browser = args.get("browser").and_then(|v| v.as_str()).unwrap_or("chrome");
+    let headless = args
+        .get("headless")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let browser = args
+        .get("browser")
+        .and_then(|v| v.as_str())
+        .unwrap_or("chrome");
     let timeout = args.get("timeout").and_then(|v| v.as_u64());
 
     let exe = std::env::current_exe().map_err(|e| format!("Cannot find current exe: {}", e))?;

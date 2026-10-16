@@ -7,7 +7,7 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
     if workflow.nodes.is_none() && workflow.drawflow.is_some() {
         let mut new_nodes = Vec::new();
         let mut new_edges = Vec::new();
-        
+
         if let Some(df) = workflow.drawflow.take() {
             let df_obj = if let Some(s) = df.as_str() {
                 serde_json::from_str::<serde_json::Value>(s).unwrap_or(serde_json::Value::Null)
@@ -16,7 +16,10 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
             };
             if let Some(nodes) = df_obj.get("nodes").and_then(|n| n.as_array()) {
                 for node_val in nodes {
-                    let Ok(mut node) = serde_json::from_value::<WorkflowNode>(node_val.clone()) else { continue };
+                    let Ok(mut node) = serde_json::from_value::<WorkflowNode>(node_val.clone())
+                    else {
+                        continue;
+                    };
                     if node.id.is_empty() {
                         node.id = Uuid::new_v4().to_string();
                     }
@@ -28,7 +31,10 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
             }
             if let Some(edges) = df_obj.get("edges").and_then(|e| e.as_array()) {
                 for edge_val in edges {
-                    let Ok(mut edge) = serde_json::from_value::<WorkflowEdge>(edge_val.clone()) else { continue };
+                    let Ok(mut edge) = serde_json::from_value::<WorkflowEdge>(edge_val.clone())
+                    else {
+                        continue;
+                    };
                     if edge.id.is_empty() {
                         edge.id = Uuid::new_v4().to_string();
                     }
@@ -42,7 +48,7 @@ pub fn sanitize_workflow(mut workflow: Workflow) -> Workflow {
                 }
             }
         }
-        
+
         workflow.nodes = Some(new_nodes);
         workflow.edges = Some(new_edges);
     } else {

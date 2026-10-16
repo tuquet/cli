@@ -1,19 +1,19 @@
 use rusqlite::{Connection, Result};
 use std::path::Path;
 
-pub mod schema;
-pub mod jobs;
 pub mod browsers;
-pub mod tables;
+pub mod jobs;
+pub mod schema;
 pub mod settings;
+pub mod tables;
 pub mod variables_credentials;
 pub mod workflows;
 
-pub use jobs::{JobDetails, JobHistoryItem, JobInfo, LogItem, SqliteJobRepository};
 pub use browsers::{Browser, SqliteBrowserRepository};
-pub use tables::{SqliteTableRepository};
-pub use settings::{SqliteSettingsRepository};
-pub use variables_credentials::{SqliteStorageRepository};
+pub use jobs::{JobDetails, JobHistoryItem, JobInfo, LogItem, SqliteJobRepository};
+pub use settings::SqliteSettingsRepository;
+pub use tables::SqliteTableRepository;
+pub use variables_credentials::SqliteStorageRepository;
 pub use workflows::{DbWorkflow, SqliteWorkflowRepository};
 
 pub struct AutomaDb {

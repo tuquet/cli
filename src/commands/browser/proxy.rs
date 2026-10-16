@@ -1,6 +1,6 @@
 use crate::ui::{
-    badge_error, badge_online, clack_cancel, clack_intro, clack_outro, clack_select, clack_text,
-    is_interactive_tty, Card, ClackOption, ClackSpinner,
+    Card, ClackOption, ClackSpinner, badge_error, badge_online, clack_cancel, clack_intro,
+    clack_outro, clack_select, clack_text, is_interactive_tty,
 };
 
 pub async fn handle_proxy(
@@ -12,7 +12,10 @@ pub async fn handle_proxy(
             if !is_interactive_tty() {
                 ("socks5://127.0.0.1:1080".to_string(), 5, true)
             } else {
-                clack_intro("spc proxy", "Network Proxy Pre-Flight Probe & WebRTC Verifier");
+                clack_intro(
+                    "spc proxy",
+                    "Network Proxy Pre-Flight Probe & WebRTC Verifier",
+                );
                 let opts = vec![
                     ClackOption::new(
                         "Probe Local SOCKS5 Bridge (127.0.0.1:1080)",
@@ -30,16 +33,14 @@ pub async fn handle_proxy(
                         "custom",
                     ),
                 ];
-                let Some(idx) = clack_select("Select proxy endpoint to probe:", &opts, 0, 6)? else {
+                let Some(idx) = clack_select("Select proxy endpoint to probe:", &opts, 0, 6)?
+                else {
                     clack_cancel("Proxy probe cancelled.");
                     return Ok(());
                 };
                 let target_url = if idx == 2 {
-                    let Some(u) = clack_text(
-                        "Enter proxy URL:",
-                        Some("socks5://127.0.0.1:1080"),
-                        None,
-                    )?
+                    let Some(u) =
+                        clack_text("Enter proxy URL:", Some("socks5://127.0.0.1:1080"), None)?
                     else {
                         clack_cancel("Cancelled.");
                         return Ok(());
@@ -93,7 +94,10 @@ pub async fn handle_proxy(
     card.add_kv("Protocol", res.protocol.to_uppercase());
     if res.alive {
         card.add_kv("Latency (RTT)", format!("{} ms", res.rtt_ms));
-        card.add_kv("Egress IP", res.egress_ip.as_deref().unwrap_or("Hidden / Direct"));
+        card.add_kv(
+            "Egress IP",
+            res.egress_ip.as_deref().unwrap_or("Hidden / Direct"),
+        );
         if let Some(ref loc) = res.country {
             card.add_kv("Country", loc);
         }
@@ -107,10 +111,11 @@ pub async fn handle_proxy(
         if let Some(ref err) = res.error {
             card.add_kv("Error Details", err);
         }
-        card.with_footer("Proxy failed pre-flight probe. Browser sessions with this proxy will fail.");
+        card.with_footer(
+            "Proxy failed pre-flight probe. Browser sessions with this proxy will fail.",
+        );
     }
     card.print();
     clack_outro("Proxy probe complete.");
     Ok(())
 }
-

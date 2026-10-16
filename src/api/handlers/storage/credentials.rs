@@ -1,7 +1,7 @@
-use axum::extract::{Path, Json, Query, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::storage::StorageCredential;
+use axum::extract::{Json, Path, Query, State};
 use serde::Deserialize;
 use utoipa::IntoParams;
 
@@ -35,7 +35,9 @@ pub async fn get_credentials(
     Query(query): Query<GetCredentialsQuery>,
 ) -> Result<Json<Vec<StorageCredential>>, AutomaError> {
     let db = state.db.lock().await;
-    let creds = db.storage().get_credentials(query.limit, query.offset, query.search.as_deref())?;
+    let creds = db
+        .storage()
+        .get_credentials(query.limit, query.offset, query.search.as_deref())?;
     Ok(Json(creds))
 }
 
@@ -60,13 +62,16 @@ pub async fn add_credential(
     let db = state.db.lock().await;
     let res = db.storage().save_credential(&payload)?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "credential",
-        "action": "upsert",
-        "id": res.id.as_deref().unwrap_or_default(),
-        "name": res.name.as_deref().unwrap_or_default()
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "credential",
+            "action": "upsert",
+            "id": res.id.as_deref().unwrap_or_default(),
+            "name": res.name.as_deref().unwrap_or_default()
+        })
+        .to_string(),
+    );
 
     Ok(Json(res))
 }
@@ -94,12 +99,15 @@ pub async fn delete_credential(
     let db = state.db.lock().await;
     db.storage().delete_credential(&id)?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "credential",
-        "action": "delete",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "credential",
+            "action": "delete",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(super::StorageActionResponse {
         success: true,

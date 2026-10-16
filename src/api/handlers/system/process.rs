@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 
 use super::types::SystemResponse;
 
@@ -18,24 +13,28 @@ use super::types::SystemResponse;
         (status = 200, description = "All managed browser processes terminated", body = SystemResponse)
     )
 )]
-pub async fn kill_browsers(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
+pub async fn kill_browsers(State(state): State<crate::AppState>) -> impl IntoResponse {
     crate::core::browser::manager::BrowserManager::destroy_all().await;
     {
-        let mut connected = crate::api::handlers::jobs::connected_browsers().write().await;
+        let mut connected = crate::api::handlers::jobs::connected_browsers()
+            .write()
+            .await;
         connected.clear();
     }
-    let _ = state.tx.send(serde_json::json!({
-        "type": "browser_offline",
-        "all": true
-    }).to_string());
-    
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "browser_offline",
+            "all": true
+        })
+        .to_string(),
+    );
+
     (
         StatusCode::OK,
         Json(SystemResponse {
             success: true,
             message: "All managed browser processes have been killed".to_string(),
-        })
-    ).into_response()
+        }),
+    )
+        .into_response()
 }

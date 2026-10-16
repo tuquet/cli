@@ -6,12 +6,17 @@ pub struct WorkerTemplateOptions<'a> {
 }
 
 pub fn generate_cloudflare_worker_script(opts: &WorkerTemplateOptions) -> String {
-    let default_sb_url = opts.supabase_url.unwrap_or("https://<YOUR_PROJECT_ID>.supabase.co");
-    let default_sb_key = opts.supabase_service_role_key.unwrap_or("<YOUR_SERVICE_ROLE_KEY>");
+    let default_sb_url = opts
+        .supabase_url
+        .unwrap_or("https://<YOUR_PROJECT_ID>.supabase.co");
+    let default_sb_key = opts
+        .supabase_service_role_key
+        .unwrap_or("<YOUR_SERVICE_ROLE_KEY>");
     let default_secret = opts.webhook_secret.unwrap_or("specter-inbox-shared-secret");
     let default_local_webhook = opts.local_webhook_url.unwrap_or("");
 
-    format!(r#"/**
+    format!(
+        r#"/**
  * Specter Catch-All Email & OTP Interceptor Worker
  * Compatible with Cloudflare Email Routing & Workers
  * 
@@ -143,7 +148,8 @@ function extractEmailBody(raw) {{
 
   return {{ bodyText: bodyText.trim(), bodyHtml: bodyHtml.trim() }};
 }}
-"#)
+"#
+    )
 }
 
 #[cfg(test)]

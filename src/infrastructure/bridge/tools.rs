@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::env;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct ToolCheckResult {
@@ -74,7 +74,11 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
     // Common fallback locations on Unix (Linux & macOS)
     if cfg!(unix) {
         if name == "ssh" {
-            for p in &["/usr/bin/ssh", "/usr/local/bin/ssh", "/opt/homebrew/bin/ssh"] {
+            for p in &[
+                "/usr/bin/ssh",
+                "/usr/local/bin/ssh",
+                "/opt/homebrew/bin/ssh",
+            ] {
                 let path = Path::new(p);
                 if path.is_file() {
                     return Some(path.to_path_buf());
@@ -82,11 +86,17 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
             }
         }
         if name == "cloudflared" {
-            let cf = crate::config::canonical_ssot_dir().join("bridge").join("bin").join("cloudflared");
+            let cf = crate::config::canonical_ssot_dir()
+                .join("bridge")
+                .join("bin")
+                .join("cloudflared");
             if cf.is_file() {
                 return Some(cf);
             }
-            for p in &["/usr/local/bin/cloudflared", "/opt/homebrew/bin/cloudflared"] {
+            for p in &[
+                "/usr/local/bin/cloudflared",
+                "/opt/homebrew/bin/cloudflared",
+            ] {
                 let path = Path::new(p);
                 if path.is_file() {
                     return Some(path.to_path_buf());
@@ -100,7 +110,11 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
             }
         }
         if name == "brew" {
-            for p in &["/opt/homebrew/bin/brew", "/usr/local/bin/brew", "/home/linuxbrew/.linuxbrew/bin/brew"] {
+            for p in &[
+                "/opt/homebrew/bin/brew",
+                "/usr/local/bin/brew",
+                "/home/linuxbrew/.linuxbrew/bin/brew",
+            ] {
                 let path = Path::new(p);
                 if path.is_file() {
                     return Some(path.to_path_buf());
@@ -121,7 +135,10 @@ pub fn unwrap_scoop_shim(path: &Path) -> PathBuf {
             if let Ok(content) = std::fs::read_to_string(&shim_file) {
                 for line in content.lines() {
                     let trimmed = line.trim();
-                    if let Some(target) = trimmed.strip_prefix("path = \"").and_then(|s| s.strip_suffix('\"')) {
+                    if let Some(target) = trimmed
+                        .strip_prefix("path = \"")
+                        .and_then(|s| s.strip_suffix('\"'))
+                    {
                         let target_path = PathBuf::from(target);
                         if target_path.is_file() {
                             return target_path;
@@ -209,4 +226,3 @@ mod tests {
         let _ = std::fs::remove_file(shim_file);
     }
 }
-

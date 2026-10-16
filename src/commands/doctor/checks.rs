@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use crate::config::{canonical_specter_dir, AppConfig};
+use super::types::DiagnosticItem;
+use crate::config::{AppConfig, canonical_specter_dir};
 use crate::infrastructure::bridge::probe_port;
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::ui::{
-    badge_error, badge_online, badge_warn, create_network_topology_card,
-    default_workstation_endpoints, Card, Column, Table,
+    Card, Column, Table, badge_error, badge_online, badge_warn, create_network_topology_card,
+    default_workstation_endpoints,
 };
-use super::types::DiagnosticItem;
 
 pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
     let mut tool_items = Vec::new();
@@ -220,14 +220,12 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
             "Profiles Sandbox",
             format!("{} profile(s) in {}", profile_count, profiles_dir.display()),
         );
-        browser_card.with_footer(
-            "Manage with 'specter browser list' or 'specter browser use <version>'",
-        );
+        browser_card
+            .with_footer("Manage with 'specter browser list' or 'specter browser use <version>'");
     } else {
         browser_card.with_badge(badge_error("MISSING ENGINE"));
         browser_card.add_line("No Antidetect Chromium runtime installed on this machine.");
-        browser_card
-            .with_footer("Run 'specter browser install 148' to install Golden LTS release");
+        browser_card.with_footer("Run 'specter browser install 148' to install Golden LTS release");
         missing_actions.push(
             "Browser: Run 'specter browser install 148' to install C++ Antidetect Chromium"
                 .to_string(),
@@ -319,9 +317,8 @@ pub fn check_network_topology() -> Card {
     let runner_port = app_cfg.server_port;
     let runner_active = probe_port(runner_port);
 
-    let bridge_cfg = crate::infrastructure::bridge::BridgeConfig::load().unwrap_or_else(|_| {
-        crate::infrastructure::bridge::BridgeConfig::default_config()
-    });
+    let bridge_cfg = crate::infrastructure::bridge::BridgeConfig::load()
+        .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
     let git_port = bridge_cfg
         .workloads
         .as_ref()
@@ -360,15 +357,18 @@ pub fn check_network_topology() -> Card {
     )
 }
 
-pub fn check_verdict(critical_tools_ok: bool, browser_ok: bool, missing_actions: &[String]) -> Card {
+pub fn check_verdict(
+    critical_tools_ok: bool,
+    browser_ok: bool,
+    missing_actions: &[String],
+) -> Card {
     let mut verdict_card = Card::new("DIAGNOSTIC VERDICT");
     verdict_card.with_min_width(68);
 
     if critical_tools_ok && browser_ok {
         verdict_card.with_badge(badge_online("ALL SYSTEMS OPERATIONAL"));
-        verdict_card.add_line(
-            "All required ecosystem dependencies and runtimes are properly provisioned.",
-        );
+        verdict_card
+            .add_line("All required ecosystem dependencies and runtimes are properly provisioned.");
         verdict_card.add_line("Your workstation is 100% ready for autonomous browser workflows, antidetect spoofing, and bridge meshes.");
         verdict_card.with_footer(
             "Tip: Run 'specter' to launch interactive shell, or 'specter status' for dashboard.",

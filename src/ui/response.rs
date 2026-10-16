@@ -1,8 +1,8 @@
 //! Unified Response Dispatcher & Helpers for Specter CLI
 //! Standardizes JSON serialization, TTY presentation, and action envelopes.
 
-use serde::Serialize;
 use crate::ui::OutputFormat;
+use serde::Serialize;
 
 /// Trait for data models that can render themselves to the terminal
 pub trait CliRender: Serialize {
@@ -70,16 +70,16 @@ pub fn respond_action<T: Serialize>(
 }
 
 /// Unified error output helper respecting JSON format mode
-pub fn respond_error(
-    format: OutputFormat,
-    err: impl std::fmt::Display,
-) {
+pub fn respond_error(format: OutputFormat, err: impl std::fmt::Display) {
     if format.is_json() {
         let envelope = serde_json::json!({
             "success": false,
             "error": err.to_string(),
         });
-        println!("{}", serde_json::to_string_pretty(&envelope).unwrap_or_default());
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&envelope).unwrap_or_default()
+        );
     } else {
         crate::ui::Notify::error(err);
     }

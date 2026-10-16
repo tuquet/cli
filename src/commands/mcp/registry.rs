@@ -1,5 +1,5 @@
-use serde_json::{json, Value};
 use super::protocol::JsonRpcResponse;
+use serde_json::{Value, json};
 
 pub fn handle_initialize(id: Option<Value>) -> JsonRpcResponse {
     JsonRpcResponse::ok(

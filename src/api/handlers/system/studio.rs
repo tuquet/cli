@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::process::Command;
 
 use super::types::SystemResponse;
@@ -19,9 +14,7 @@ use super::types::SystemResponse;
         (status = 200, description = "Web Studio opened successfully in system browser", body = SystemResponse)
     )
 )]
-pub async fn open_studio(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
+pub async fn open_studio(State(state): State<crate::AppState>) -> impl IntoResponse {
     let port = state.config.server_port;
     let url = std::env::var("AUTOMA_STUDIO_URL")
         .map(|u| {
@@ -32,26 +25,26 @@ pub async fn open_studio(
                 u
             }
         })
-        .unwrap_or_else(|_| {
-            format!("https://automa-studio.vercel.app?port={}", port)
-        });
-    
+        .unwrap_or_else(|_| format!("https://automa-studio.vercel.app?port={}", port));
+
     let _ = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]
         let _ = Command::new("cmd").args(["/C", "start", "", &url]).spawn();
-        
+
         #[cfg(target_os = "macos")]
         let _ = Command::new("open").arg(&url).spawn();
-        
+
         #[cfg(target_os = "linux")]
         let _ = Command::new("xdg-open").arg(&url).spawn();
-    }).await;
-    
+    })
+    .await;
+
     (
         StatusCode::OK,
         Json(SystemResponse {
             success: true,
             message: "Studio opened".to_string(),
-        })
-    ).into_response()
+        }),
+    )
+        .into_response()
 }

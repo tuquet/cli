@@ -83,7 +83,13 @@ impl JobCoordinator {
         let headless_opt = options.as_ref().and_then(|o| o.headless);
         let default_browser_opt = options.as_ref().and_then(|o| o.default_browser.clone());
 
-        ensure_browser_worker(browser_id.as_str(), &app_settings, headless_opt, default_browser_opt).await;
+        ensure_browser_worker(
+            browser_id.as_str(),
+            &app_settings,
+            headless_opt,
+            default_browser_opt,
+        )
+        .await;
 
         let options_value = match &options {
             Some(opts) => serde_json::to_value(opts).unwrap_or(serde_json::Value::Null),
@@ -113,7 +119,10 @@ impl JobCoordinator {
         }
 
         if let Err(e) = state.worker_tx.send(payload_str) {
-            tracing::warn!("Broadcasted job to worker channel with no active listeners: {}", e);
+            tracing::warn!(
+                "Broadcasted job to worker channel with no active listeners: {}",
+                e
+            );
         }
 
         // Persist initial job record to SQLite database
@@ -203,9 +212,9 @@ impl JobCoordinator {
             // Mark job as completed in SQLite DB
             {
                 let db = state.db.lock().await;
-                let _ = db
-                    .jobs()
-                    .finish_job(job_id.as_str(), "completed", &serde_json::Value::Null, 0);
+                let _ =
+                    db.jobs()
+                        .finish_job(job_id.as_str(), "completed", &serde_json::Value::Null, 0);
             }
 
             let event = crate::api::handlers::jobs::JobEvent {
@@ -251,7 +260,9 @@ impl JobCoordinator {
                 }
             } else {
                 let log_msg = payload.message.as_deref().unwrap_or(&payload.r#type);
-                let _ = db.jobs().insert_log(job_id.as_str(), &payload.r#type, log_msg);
+                let _ = db
+                    .jobs()
+                    .insert_log(job_id.as_str(), &payload.r#type, log_msg);
             }
         }
 
@@ -276,7 +287,13 @@ impl JobCoordinator {
         };
         match db_status {
             Some(st) => st,
-            None => if is_active { "running".to_string() } else { "completed".to_string() },
+            None => {
+                if is_active {
+                    "running".to_string()
+                } else {
+                    "completed".to_string()
+                }
+            }
         }
     }
 
@@ -292,25 +309,47 @@ impl JobCoordinator {
         close_browser_on_finish: bool,
     ) {
         let start_time = std::time::Instant::now();
-        tracing::info!("[run_native_job] Starting native CDP execution for job {}", job_id);
+        tracing::info!(
+            "[run_native_job] Starting native CDP execution for job {}",
+            job_id
+        );
 
         let graph = match specter_runner::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
             Ok(g) => g,
             Err(e) => {
                 tracing::error!("Failed to parse workflow graph for job {}: {}", job_id, e);
-                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), 0).await;
+                let _ = Self::finish_with_status(
+                    &state,
+                    &job_id,
+                    "failed",
+                    serde_json::json!({ "error": e }),
+                    0,
+                )
+                .await;
                 return;
             }
         };
 
-        let cdp_session = match specter_runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
-            Ok(c) => c,
-            Err(e) => {
-                tracing::error!("Failed to connect CDP session on port {}: {}", session.debugging_port, e);
-                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), 0).await;
-                return;
-            }
-        };
+        let cdp_session =
+            match specter_runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to connect CDP session on port {}: {}",
+                        session.debugging_port,
+                        e
+                    );
+                    let _ = Self::finish_with_status(
+                        &state,
+                        &job_id,
+                        "failed",
+                        serde_json::json!({ "error": e }),
+                        0,
+                    )
+                    .await;
+                    return;
+                }
+            };
 
         let mut initial_state = specter_runner::drivers::cdp::ExecutionState::new();
         if let Some(serde_json::Value::Object(map)) = variables {
@@ -319,14 +358,21 @@ impl JobCoordinator {
             }
         }
 
-        let executor = specter_runner::drivers::cdp::WorkflowDagExecutor::new(graph, std::sync::Arc::new(cdp_session));
+        let executor = specter_runner::drivers::cdp::WorkflowDagExecutor::new(
+            graph,
+            std::sync::Arc::new(cdp_session),
+        );
         match executor.execute(Some(initial_state), cancel_token).await {
             Ok(final_state) => {
                 let duration_ms = start_time.elapsed().as_millis() as i64;
                 for step in &final_state.step_logs {
                     let log_payload = crate::api::handlers::jobs::JobLogPayload {
                         r#type: step.status.clone(),
-                        message: Some(format!("{}: {}", step.name, step.message.as_deref().unwrap_or("ok"))),
+                        message: Some(format!(
+                            "{}: {}",
+                            step.name,
+                            step.message.as_deref().unwrap_or("ok")
+                        )),
                         logs: None,
                     };
                     let _ = Self::record_log(&state, &job_id, &log_payload).await;
@@ -336,12 +382,21 @@ impl JobCoordinator {
                     "table": final_state.table,
                     "stepLogs": final_state.step_logs,
                 });
-                let _ = Self::finish_with_status(&state, &job_id, "completed", results, duration_ms).await;
+                let _ =
+                    Self::finish_with_status(&state, &job_id, "completed", results, duration_ms)
+                        .await;
             }
             Err(e) => {
                 let duration_ms = start_time.elapsed().as_millis() as i64;
                 tracing::error!("Workflow execution failed for job {}: {}", job_id, e);
-                let _ = Self::finish_with_status(&state, &job_id, "failed", serde_json::json!({ "error": e }), duration_ms).await;
+                let _ = Self::finish_with_status(
+                    &state,
+                    &job_id,
+                    "failed",
+                    serde_json::json!({ "error": e }),
+                    duration_ms,
+                )
+                .await;
             }
         }
 
@@ -371,7 +426,9 @@ impl JobCoordinator {
 
         {
             let db = state.db.lock().await;
-            let _ = db.jobs().finish_job(job_id.as_str(), status, &results, duration);
+            let _ = db
+                .jobs()
+                .finish_job(job_id.as_str(), status, &results, duration);
         }
 
         let event = crate::api::handlers::jobs::JobEvent {

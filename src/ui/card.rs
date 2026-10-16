@@ -77,7 +77,11 @@ impl Card {
             }
         }
 
-        let footer_w = self.footer.as_ref().map(|f| visible_width(f) + 7).unwrap_or(0);
+        let footer_w = self
+            .footer
+            .as_ref()
+            .map(|f| visible_width(f) + 7)
+            .unwrap_or(0);
         let inner_width = self.min_width.max(header_w).max(max_row_w).max(footer_w);
 
         let mut out = String::new();
@@ -99,11 +103,7 @@ impl Card {
         out.push(' ');
 
         let title_part_w = title_w + 4;
-        let badge_part_w = if self.badge.is_some() {
-            badge_w + 3
-        } else {
-            0
-        };
+        let badge_part_w = if self.badge.is_some() { badge_w + 3 } else { 0 };
 
         let dashes = if inner_width > (title_part_w + badge_part_w) {
             inner_width - title_part_w - badge_part_w

@@ -49,7 +49,10 @@ impl ShellScope {
 
     /// Universal commands available across ALL scopes
     pub const UNIVERSAL_COMMANDS: &'static [(&'static str, &'static str)] = &[
-        ("doctor", "Inspect ecosystem dependencies, required tools & environment health"),
+        (
+            "doctor",
+            "Inspect ecosystem dependencies, required tools & environment health",
+        ),
         ("use", "Switch active service context"),
         ("back", "Return to global scope"),
         ("help", "Print scope help manual"),
@@ -65,15 +68,42 @@ impl ShellScope {
     pub fn subcommands(&self) -> &'static [(&'static str, &'static str)] {
         match self {
             ShellScope::Global => &[
-                ("dev", "Scan machine projects & run scripts across Node, Rust, Java & Docker"),
-                ("port", "Inspect listening local TCP ports and terminate blocking processes"),
-                ("code", "Full-machine project finder & instant IDE launcher (VS Code, Antigravity, Cursor)"),
-                ("git", "Multi-repository Git status radar & Specter Bridge-aware synchronizer"),
-                ("env", "Inspect, validate, sync, and switch .env configuration files"),
-                ("status", "Inspect unified status across Cloud, Runner, Browser, and Bridge"),
-                ("doctor", "Inspect ecosystem dependencies, required tools & environment health"),
-                ("config", "Inspect or edit configuration across all microservice pillars"),
-                ("whoami", "Check active cloud enrollment identity & device ID"),
+                (
+                    "dev",
+                    "Scan machine projects & run scripts across Node, Rust, Java & Docker",
+                ),
+                (
+                    "port",
+                    "Inspect listening local TCP ports and terminate blocking processes",
+                ),
+                (
+                    "code",
+                    "Full-machine project finder & instant IDE launcher (VS Code, Antigravity, Cursor)",
+                ),
+                (
+                    "git",
+                    "Multi-repository Git status radar & Specter Bridge-aware synchronizer",
+                ),
+                (
+                    "env",
+                    "Inspect, validate, sync, and switch .env configuration files",
+                ),
+                (
+                    "status",
+                    "Inspect unified status across Cloud, Runner, Browser, and Bridge",
+                ),
+                (
+                    "doctor",
+                    "Inspect ecosystem dependencies, required tools & environment health",
+                ),
+                (
+                    "config",
+                    "Inspect or edit configuration across all microservice pillars",
+                ),
+                (
+                    "whoami",
+                    "Check active cloud enrollment identity & device ID",
+                ),
                 ("login", "Authenticate workstation with Specter Cloud"),
                 ("logout", "Disconnect and remove local cloud credentials"),
                 ("upgrade", "Check and update Specter to latest release"),
@@ -82,7 +112,10 @@ impl ShellScope {
                 ("runner", "Enter distributed runner daemon scope directly"),
                 ("cloud", "Enter cloud authentication scope directly"),
                 ("browser", "Enter browser runtime management scope directly"),
-                ("bridge", "Enter network bridge & tunnel mesh scope directly"),
+                (
+                    "bridge",
+                    "Enter network bridge & tunnel mesh scope directly",
+                ),
                 ("faker", "Synthetic persona & CCCD test data generator"),
                 ("user", "Alias for faker synthetic identity generator"),
                 ("run", "Execute a workflow (.json or stored ID)"),
@@ -92,10 +125,16 @@ impl ShellScope {
                 ("export", "Export a workflow to a JSON file"),
                 ("delete", "Delete a workflow from local storage"),
                 ("studio", "Launch Automa Web Studio"),
-                ("install", "Download and install Antidetect Chromium (defaults to 148)"),
+                (
+                    "install",
+                    "Download and install Antidetect Chromium (defaults to 148)",
+                ),
                 ("clean", "Purge installed browser runtime"),
                 ("path", "Print absolute path to browser executable"),
-                ("card", "Display synthetic identity card (CCCD, credentials)"),
+                (
+                    "card",
+                    "Display synthetic identity card (CCCD, credentials)",
+                ),
             ],
             ShellScope::Automa => &[
                 ("run", "Execute a workflow (.json file or stored ID)"),
@@ -105,7 +144,10 @@ impl ShellScope {
                 ("export", "Export a workflow to a JSON file"),
                 ("delete", "Delete a workflow from local storage"),
                 ("studio", "Launch Automa Web Studio"),
-                ("config", "Display path, inspect (--show), or edit (--edit) automa.json"),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) automa.json",
+                ),
             ],
             ShellScope::Runner => &[
                 ("start", "Start the local runner daemon server"),
@@ -114,45 +156,87 @@ impl ShellScope {
                 ("status", "Inspect local runner daemon health check"),
                 ("logs", "View background runner daemon logs"),
                 ("probe", "Probe runner driver manifest capabilities"),
-                ("config", "Display path, inspect (--show), or edit (--edit) runner.json"),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) runner.json",
+                ),
             ],
             ShellScope::Cloud => &[
                 ("login", "Authenticate and pair device with Specter Cloud"),
                 ("logout", "Log out and remove local cloud credentials"),
                 ("whoami", "Check active cloud pairing and enrollment"),
-                ("config", "Display path, inspect (--show), or edit (--edit) system.json"),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) system.json",
+                ),
             ],
             ShellScope::Browser => &[
-                ("status", "Show Antidetect browser status, active version, and disk usage"),
+                (
+                    "status",
+                    "Show Antidetect browser status, active version, and disk usage",
+                ),
                 ("list", "List installed Antidetect Chromium versions"),
                 ("search", "Search upstream releases in curated manifest"),
-                ("use", "Switch active Antidetect Chromium version (e.g. use 148, use lts)"),
-                ("install", "Download and install Antidetect Chromium (defaults to Golden LTS)"),
+                (
+                    "use",
+                    "Switch active Antidetect Chromium version (e.g. use 148, use lts)",
+                ),
+                (
+                    "install",
+                    "Download and install Antidetect Chromium (defaults to Golden LTS)",
+                ),
                 ("clean", "Delete browser runtime directory to reclaim disk"),
                 ("path", "Print absolute path to browser executable"),
                 ("ext", "Inspect and configure Automa MV3 extension"),
-                ("profile", "Manage isolated browser profiles (create, list, inspect, pack, unpack, cloud)"),
-                ("launch", "Launch an antidetect browser profile with direct CDP DevTools bridge"),
-                ("verify", "Live visual stealth verification (Cloudflare Turnstile demo)"),
-                ("config", "Display path, inspect (--show), or edit (--edit) browser.json"),
+                (
+                    "profile",
+                    "Manage isolated browser profiles (create, list, inspect, pack, unpack, cloud)",
+                ),
+                (
+                    "launch",
+                    "Launch an antidetect browser profile with direct CDP DevTools bridge",
+                ),
+                (
+                    "verify",
+                    "Live visual stealth verification (Cloudflare Turnstile demo)",
+                ),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) browser.json",
+                ),
             ],
             ShellScope::Faker => &[
-                ("generate", "Generate synthetic persona profiles (CCCD, address, email)"),
+                (
+                    "generate",
+                    "Generate synthetic persona profiles (CCCD, address, email)",
+                ),
                 ("gen", "Short alias for generate"),
                 ("g", "Short alias for generate"),
                 ("card", "Display rich synthetic identity card"),
                 ("show", "Alias for card"),
                 ("inspect", "Alias for card"),
-                ("config", "Display path, inspect (--show), or edit (--edit) faker.json"),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) faker.json",
+                ),
             ],
             ShellScope::Bridge => &[
-                ("status", "Show health check of all configured VPSs and ports"),
+                (
+                    "status",
+                    "Show health check of all configured VPSs and ports",
+                ),
                 ("start", "Start bridge connection (default: all enabled)"),
                 ("stop", "Stop running bridge tunnels and proxy daemons"),
                 ("enable", "Enable a server in bridge configuration"),
                 ("disable", "Disable a server in bridge configuration"),
-                ("check", "Validate ~/.specter/bridge/bridge.json configuration"),
-                ("config", "Display path, inspect (--show), or edit (--edit) bridge.json"),
+                (
+                    "check",
+                    "Validate ~/.specter/bridge/bridge.json configuration",
+                ),
+                (
+                    "config",
+                    "Display path, inspect (--show), or edit (--edit) bridge.json",
+                ),
             ],
         }
     }
@@ -168,21 +252,32 @@ impl ShellScope {
 
     /// Check if word is valid as the first command in this scope
     pub fn is_valid_first_word(&self, word: &str) -> bool {
-        if Self::UNIVERSAL_COMMANDS.iter().any(|(cmd, _)| cmd.eq_ignore_ascii_case(word)) {
+        if Self::UNIVERSAL_COMMANDS
+            .iter()
+            .any(|(cmd, _)| cmd.eq_ignore_ascii_case(word))
+        {
             return true;
         }
         if self.is_scope_prefix(word) {
             return true;
         }
-        if *self == ShellScope::Global && Self::ALL_SCOPES.iter().any(|(s, _)| s.eq_ignore_ascii_case(word) || (*s == "faker" && word.eq_ignore_ascii_case("user"))) {
+        if *self == ShellScope::Global
+            && Self::ALL_SCOPES.iter().any(|(s, _)| {
+                s.eq_ignore_ascii_case(word) || (*s == "faker" && word.eq_ignore_ascii_case("user"))
+            })
+        {
             return true;
         }
-        self.subcommands().iter().any(|(cmd, _)| cmd.eq_ignore_ascii_case(word))
+        self.subcommands()
+            .iter()
+            .any(|(cmd, _)| cmd.eq_ignore_ascii_case(word))
     }
 
     /// Check if word is a valid subcommand of this scope
     pub fn is_valid_subcommand(&self, word: &str) -> bool {
-        self.subcommands().iter().any(|(cmd, _)| cmd.eq_ignore_ascii_case(word))
+        self.subcommands()
+            .iter()
+            .any(|(cmd, _)| cmd.eq_ignore_ascii_case(word))
     }
 
     /// Resolve a scope by name or alias

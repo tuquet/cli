@@ -1,5 +1,5 @@
-use crate::config::AppConfig;
 use super::supervisor::get_log_file_path;
+use crate::config::AppConfig;
 
 pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();

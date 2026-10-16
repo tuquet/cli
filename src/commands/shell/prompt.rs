@@ -1,8 +1,8 @@
-use std::borrow::Cow;
 use reedline::{Prompt, PromptEditMode, PromptHistorySearch};
+use std::borrow::Cow;
 
-use crate::ui::colors;
 use super::scope::ShellScope;
+use crate::ui::colors;
 
 pub struct SpecterPrompt {
     pub scope: ShellScope,
@@ -45,7 +45,10 @@ impl Prompt for SpecterPrompt {
         Cow::Borrowed("\x1b[38;2;71;85;105m::: \x1b[0m")
     }
 
-    fn render_prompt_history_search_indicator(&self, _history_search: PromptHistorySearch) -> Cow<'_, str> {
+    fn render_prompt_history_search_indicator(
+        &self,
+        _history_search: PromptHistorySearch,
+    ) -> Cow<'_, str> {
         Cow::Borrowed("\x1b[38;2;251;191;36m(search)\x1b[0m❯ ")
     }
 }

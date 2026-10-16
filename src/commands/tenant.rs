@@ -1,11 +1,9 @@
 use crate::cli::TenantSubcommands;
 use crate::config::AppConfig;
-use crate::infrastructure::cloud::{
-    CloudApiClient, CredentialStore, TenancyManager,
-};
+use crate::infrastructure::cloud::{CloudApiClient, CredentialStore, TenancyManager};
 use crate::ui::{
-    badge_offline, badge_online, clack_cancel, clack_intro, clack_outro, clack_select,
-    respond_with, Card, ClackOption, ClackSpinner, Column, OutputFormat, Table,
+    Card, ClackOption, ClackSpinner, Column, OutputFormat, Table, badge_offline, badge_online,
+    clack_cancel, clack_intro, clack_outro, clack_select, respond_with,
 };
 
 pub async fn handle(command: Option<TenantSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
@@ -56,13 +54,19 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
     let creds = match CredentialStore::load(&config.data_dir).await {
         Some(c) => c,
         None => {
-            return Err("No active cloud session found on this machine. Run 'specter login' first.".into());
+            return Err(
+                "No active cloud session found on this machine. Run 'specter login' first.".into(),
+            );
         }
     };
 
-    let cloud_url = creds.cloud_url.clone()
+    let cloud_url = creds
+        .cloud_url
+        .clone()
         .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-    let api_key = creds.api_key.clone()
+    let api_key = creds
+        .api_key
+        .clone()
         .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
 
     let client = CloudApiClient::build_http_client();
@@ -84,7 +88,9 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
                         "Workstation enrolled under standalone tenant: \x1b[1;97m{}\x1b[0m",
                         tid
                     ));
-                    clack_outro("Log in with an operator account via 'spc login' to manage multi-tenant workspaces.");
+                    clack_outro(
+                        "Log in with an operator account via 'spc login' to manage multi-tenant workspaces.",
+                    );
                 });
             }
             return Err("Workstation is not logged in. Run 'specter login' first.".into());
@@ -92,14 +98,17 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
     };
 
     let sp = if !format.is_json() {
-        Some(ClackSpinner::start("Fetching accessible multi-tenant workspaces..."))
+        Some(ClackSpinner::start(
+            "Fetching accessible multi-tenant workspaces...",
+        ))
     } else {
         None
     };
 
-    let mut tenants = TenancyManager::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id)
-        .await
-        .unwrap_or_else(|_| creds.available_tenants.clone().unwrap_or_default());
+    let mut tenants =
+        TenancyManager::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id)
+            .await
+            .unwrap_or_else(|_| creds.available_tenants.clone().unwrap_or_default());
 
     if let Some(s) = sp {
         s.clear();
@@ -134,11 +143,31 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
         }
 
         let columns = vec![
-            Column { title: "WORKSPACE".to_string(), min_width: 22, align_right: false },
-            Column { title: "SLUG".to_string(), min_width: 18, align_right: false },
-            Column { title: "ROLE".to_string(), min_width: 10, align_right: false },
-            Column { title: "STATUS".to_string(), min_width: 10, align_right: false },
-            Column { title: "ACTIVE".to_string(), min_width: 12, align_right: false },
+            Column {
+                title: "WORKSPACE".to_string(),
+                min_width: 22,
+                align_right: false,
+            },
+            Column {
+                title: "SLUG".to_string(),
+                min_width: 18,
+                align_right: false,
+            },
+            Column {
+                title: "ROLE".to_string(),
+                min_width: 10,
+                align_right: false,
+            },
+            Column {
+                title: "STATUS".to_string(),
+                min_width: 10,
+                align_right: false,
+            },
+            Column {
+                title: "ACTIVE".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
         ];
         let mut table = Table::new(columns);
 
@@ -208,7 +237,12 @@ pub async fn switch_tenant(
                 })
                 .collect();
 
-            match clack_select("Select target workspace to activate", &opts, default_idx, 10)? {
+            match clack_select(
+                "Select target workspace to activate",
+                &opts,
+                default_idx,
+                10,
+            )? {
                 Some(idx) => tenants[idx].slug.clone(),
                 None => {
                     clack_cancel("Workspace switch cancelled.");
@@ -288,9 +322,18 @@ pub async fn show_current_tenant(format: OutputFormat) -> Result<(), Box<dyn std
         let mut card = Card::new("WORKSPACE");
         card.with_badge(badge_online("ACTIVE"));
         card.with_min_width(64);
-        card.add_kv("Workspace Name", creds.tenant_name.as_deref().unwrap_or("Personal Workspace"));
-        card.add_kv("Workspace Slug", creds.tenant_slug.as_deref().unwrap_or("default"));
-        card.add_kv("Tenant ID", creds.tenant_id.as_deref().unwrap_or("standalone"));
+        card.add_kv(
+            "Workspace Name",
+            creds.tenant_name.as_deref().unwrap_or("Personal Workspace"),
+        );
+        card.add_kv(
+            "Workspace Slug",
+            creds.tenant_slug.as_deref().unwrap_or("default"),
+        );
+        card.add_kv(
+            "Tenant ID",
+            creds.tenant_id.as_deref().unwrap_or("standalone"),
+        );
         if let Some(role) = creds.tenant_role.as_deref() {
             card.add_kv("Assigned Role", role);
         }

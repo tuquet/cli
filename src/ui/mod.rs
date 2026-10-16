@@ -15,18 +15,17 @@ pub use colors::visible_width;
 pub use format::{FormatArgs, OutputFormat};
 pub use notify::Notify;
 pub use prompt::{
-    clack_block, clack_cancel, clack_confirm, clack_intro, clack_multiselect, clack_note,
-    clack_outro, clack_password, clack_select, clack_step_err, clack_step_info, clack_step_ok,
-    clack_step_skip, clack_step_warn, clack_text, is_interactive_tty, prompt_input,
-    prompt_password, prompt_select, strip_ansi_codes, ClackOption, ClackSpinner, S_BAR,
-    S_BAR_END, S_BAR_START,
+    ClackOption, ClackSpinner, S_BAR, S_BAR_END, S_BAR_START, clack_block, clack_cancel,
+    clack_confirm, clack_intro, clack_multiselect, clack_note, clack_outro, clack_password,
+    clack_select, clack_step_err, clack_step_info, clack_step_ok, clack_step_skip, clack_step_warn,
+    clack_text, is_interactive_tty, prompt_input, prompt_password, prompt_select, strip_ansi_codes,
 };
 pub use response::{
-    respond, respond_action, respond_error, respond_with, ActionEnvelope, CliRender,
+    ActionEnvelope, CliRender, respond, respond_action, respond_error, respond_with,
 };
 pub use table::{
-    create_network_topology_card, create_tabular_card, default_workstation_endpoints, Column,
-    NetworkEndpoint, Table, TabularRow,
+    Column, NetworkEndpoint, Table, TabularRow, create_network_topology_card, create_tabular_card,
+    default_workstation_endpoints,
 };
 
 #[cfg(test)]
@@ -98,8 +97,18 @@ mod tests {
     #[test]
     fn test_create_tabular_card_generic() {
         let rows = vec![
-            TabularRow::new("Workstation", "HNDW-NDTU6", "Local Node Host", badge_online("READY")),
-            TabularRow::new("Cloud Target", "supabase.co", "Cloud Mesh API", badge_online("ENROLLED")),
+            TabularRow::new(
+                "Workstation",
+                "HNDW-NDTU6",
+                "Local Node Host",
+                badge_online("READY"),
+            ),
+            TabularRow::new(
+                "Cloud Target",
+                "supabase.co",
+                "Cloud Mesh API",
+                badge_online("ENROLLED"),
+            ),
         ];
         let card = create_tabular_card(
             "SYSTEM & CLOUD TOPOLOGY",

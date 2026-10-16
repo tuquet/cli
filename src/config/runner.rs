@@ -1,7 +1,7 @@
+use crate::config::expander::{EnvExpander, canonical_specter_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunnerConfig {
@@ -19,12 +19,24 @@ pub struct RunnerConfig {
     pub auto_restart: bool,
 }
 
-fn default_host() -> String { crate::constants::DEFAULT_HOST.to_string() }
-fn default_port() -> u16 { crate::constants::DEFAULT_RUNNER_PORT }
-fn default_log_level() -> String { "info".to_string() }
-fn default_heartbeat() -> u64 { crate::constants::DEFAULT_HEARTBEAT_INTERVAL_SECS }
-fn default_concurrency() -> usize { crate::constants::DEFAULT_MAX_CONCURRENT_JOBS }
-fn default_true() -> bool { true }
+fn default_host() -> String {
+    crate::constants::DEFAULT_HOST.to_string()
+}
+fn default_port() -> u16 {
+    crate::constants::DEFAULT_RUNNER_PORT
+}
+fn default_log_level() -> String {
+    "info".to_string()
+}
+fn default_heartbeat() -> u64 {
+    crate::constants::DEFAULT_HEARTBEAT_INTERVAL_SECS
+}
+fn default_concurrency() -> usize {
+    crate::constants::DEFAULT_MAX_CONCURRENT_JOBS
+}
+fn default_true() -> bool {
+    true
+}
 
 impl Default for RunnerConfig {
     fn default() -> Self {
@@ -49,12 +61,13 @@ impl RunnerConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         if path.exists()
-            && let Ok(content) = fs::read_to_string(&path) {
-                let expanded = EnvExpander::expand(&content);
-                if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
-                    return cfg;
-                }
+            && let Ok(content) = fs::read_to_string(&path)
+        {
+            let expanded = EnvExpander::expand(&content);
+            if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
+                return cfg;
             }
+        }
         let default = Self::default();
         let _ = default.save();
         default

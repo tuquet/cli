@@ -1,10 +1,10 @@
-pub mod history;
-pub mod sse;
-pub mod health;
-pub mod jobs;
-pub mod system;
-pub mod lint;
-pub mod storage;
 pub mod browsers;
+pub mod health;
+pub mod history;
+pub mod jobs;
+pub mod lint;
 pub mod settings;
+pub mod sse;
+pub mod storage;
+pub mod system;
 pub mod ws;

@@ -1,10 +1,14 @@
-use std::path::PathBuf;
 use super::parse_format;
+use std::path::PathBuf;
 
 pub async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "status" => {
-            let target_url = args.iter().find(|&&a| !a.starts_with('-')).copied().unwrap_or("http://127.0.0.1:8765");
+            let target_url = args
+                .iter()
+                .find(|&&a| !a.starts_with('-'))
+                .copied()
+                .unwrap_or("http://127.0.0.1:8765");
             let format = parse_format(args);
             crate::commands::runner::check_status(target_url, format).await?;
         }
@@ -33,7 +37,10 @@ pub async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             crate::commands::runner::print_probe_manifest()?;
         }
         "export-openapi" => {
-            let output = args.first().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("openapi.json"));
+            let output = args
+                .first()
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("openapi.json"));
             crate::commands::runner::export_openapi(&output)?;
         }
         "setup-ext" => {
@@ -51,7 +58,10 @@ pub async fn dispatch_runner(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             crate::commands::runner::manage_config(&positional, edit, show)?;
         }
         other => {
-            println!("Unknown runner command '{}'. Type 'help' to see valid commands.", other);
+            println!(
+                "Unknown runner command '{}'. Type 'help' to see valid commands.",
+                other
+            );
         }
     }
     Ok(())

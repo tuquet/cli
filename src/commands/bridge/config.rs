@@ -6,7 +6,10 @@ use crate::ui::prompt::{
 pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = BridgeConfig::config_path();
     clack_intro("spc bridge", "Configuration Validator");
-    clack_step_info(&format!("Checking configuration at {}...", config_path.display()));
+    clack_step_info(format!(
+        "Checking configuration at {}...",
+        config_path.display()
+    ));
 
     let config = BridgeConfig::load()?;
     let diagnostics = config.validate();
@@ -23,7 +26,7 @@ pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
                 .join(", ")
         ));
     } else {
-        clack_step_warn(&format!("Found {} issue(s):", diagnostics.len()));
+        clack_step_warn(format!("Found {} issue(s):", diagnostics.len()));
         for d in diagnostics {
             match d.level {
                 DiagnosticLevel::Error => clack_step_err(&d.message),
@@ -36,6 +39,10 @@ pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn manage_config(
+    args: &[String],
+    edit: bool,
+    show: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     crate::config::ConfigController::handle_dispatch("bridge", args, edit, show)
 }

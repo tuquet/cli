@@ -88,7 +88,8 @@ pub struct ServerSelector;
 impl ServerSelector {
     /// Lọc danh sách server được kích hoạt (enabled != false)
     pub fn get_enabled(config: &BridgeConfig) -> Vec<(&String, &ServerConfig)> {
-        config.servers
+        config
+            .servers
             .iter()
             .filter(|(_, srv)| srv.is_enabled())
             .collect()
@@ -96,32 +97,42 @@ impl ServerSelector {
 
     /// Lọc danh sách server bị vô hiệu hóa (enabled == false)
     pub fn get_disabled(config: &BridgeConfig) -> Vec<(&String, &ServerConfig)> {
-        config.servers
+        config
+            .servers
             .iter()
             .filter(|(_, srv)| !srv.is_enabled())
             .collect()
     }
 
     /// Lọc danh sách server theo tag
-    pub fn filter_by_tag<'a>(config: &'a BridgeConfig, tag: &str) -> Vec<(&'a String, &'a ServerConfig)> {
-        config.servers
+    pub fn filter_by_tag<'a>(
+        config: &'a BridgeConfig,
+        tag: &str,
+    ) -> Vec<(&'a String, &'a ServerConfig)> {
+        config
+            .servers
             .iter()
             .filter(|(_, srv)| srv.is_enabled() && srv.has_tag(tag))
             .collect()
     }
 
     /// Lọc danh sách server theo pattern hoặc tên cụ thể
-    pub fn filter_by_pattern<'a>(config: &'a BridgeConfig, pattern: &str) -> Vec<(&'a String, &'a ServerConfig)> {
+    pub fn filter_by_pattern<'a>(
+        config: &'a BridgeConfig,
+        pattern: &str,
+    ) -> Vec<(&'a String, &'a ServerConfig)> {
         if pattern.eq_ignore_ascii_case("all") || pattern == "*" {
             return Self::get_enabled(config);
         }
         if let Some(prefix) = pattern.strip_suffix('*') {
-            return config.servers
+            return config
+                .servers
                 .iter()
                 .filter(|(id, srv)| srv.is_enabled() && id.starts_with(prefix))
                 .collect();
         }
-        config.servers
+        config
+            .servers
             .iter()
             .filter(|(id, _)| id.eq_ignore_ascii_case(pattern))
             .collect()
@@ -136,7 +147,9 @@ impl BridgeConfig {
 
     /// Single Canonical config path: ~/.specter/bridge/bridge.json (SSOT)
     pub fn config_path() -> PathBuf {
-        crate::config::canonical_ssot_dir().join(crate::constants::PILLAR_BRIDGE).join(crate::constants::FILE_BRIDGE_JSON)
+        crate::config::canonical_ssot_dir()
+            .join(crate::constants::PILLAR_BRIDGE)
+            .join(crate::constants::FILE_BRIDGE_JSON)
     }
 
     /// Load the configuration with dynamic environment variable expansion
@@ -165,7 +178,11 @@ impl BridgeConfig {
     }
 
     /// Enable or disable a server in the config and persist changes
-    pub fn set_server_enabled(&mut self, server_id: &str, enabled: bool) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn set_server_enabled(
+        &mut self,
+        server_id: &str,
+        enabled: bool,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         if let Some(srv) = self.servers.get_mut(server_id) {
             srv.enabled = Some(enabled);
             self.save()?;
@@ -244,7 +261,10 @@ impl BridgeConfig {
                     Some(srv) if !srv.is_enabled() => {
                         diags.push(ConfigDiagnostic {
                             level: DiagnosticLevel::Warning,
-                            message: format!("Workload 'git': target server '{}' is disabled in configuration", git.server),
+                            message: format!(
+                                "Workload 'git': target server '{}' is disabled in configuration",
+                                git.server
+                            ),
                         });
                     }
                     _ => {}
@@ -285,7 +305,10 @@ impl BridgeConfig {
             {
                 diags.push(ConfigDiagnostic {
                     level: DiagnosticLevel::Error,
-                    message: format!("Port conflict: local_ssh_port {} used by both '{}' and '{}'", port, prev, id),
+                    message: format!(
+                        "Port conflict: local_ssh_port {} used by both '{}' and '{}'",
+                        port, prev, id
+                    ),
                 });
             }
 
@@ -295,7 +318,10 @@ impl BridgeConfig {
             {
                 diags.push(ConfigDiagnostic {
                     level: DiagnosticLevel::Error,
-                    message: format!("Port conflict: socks_port {} used by both '{}' and '{}'", port, prev, id),
+                    message: format!(
+                        "Port conflict: socks_port {} used by both '{}' and '{}'",
+                        port, prev, id
+                    ),
                 });
             }
 
@@ -305,7 +331,10 @@ impl BridgeConfig {
                 if !expanded.exists() {
                     diags.push(ConfigDiagnostic {
                         level: DiagnosticLevel::Warning,
-                        message: format!("Server '{}': IdentityFile not found at {:?}", id, expanded),
+                        message: format!(
+                            "Server '{}': IdentityFile not found at {:?}",
+                            id, expanded
+                        ),
                     });
                 }
             }
@@ -347,7 +376,10 @@ mod tests {
 
         let input = "Server at ${SPECTER_TEST_HOST} with port ${SPECTER_UNSET_PORT:-1080} and fallback ${SPECTER_FALLBACK:-cdn.local}";
         let output = EnvExpander::expand(input);
-        assert_eq!(output, "Server at vps.example.com with port 1080 and fallback cdn.local");
+        assert_eq!(
+            output,
+            "Server at vps.example.com with port 1080 and fallback cdn.local"
+        );
 
         let input_unset = "Missing ${SPECTER_COMPLETELY_UNSET} variable";
         let output_unset = EnvExpander::expand(input_unset);
@@ -391,7 +423,11 @@ mod tests {
         assert_eq!(primary_tag[0].0, "my-vps");
 
         let backup_tag = ServerSelector::filter_by_tag(&config, "backup");
-        assert_eq!(backup_tag.len(), 0, "Disabled server with backup tag must not be included");
+        assert_eq!(
+            backup_tag.len(),
+            0,
+            "Disabled server with backup tag must not be included"
+        );
     }
 
     #[test]

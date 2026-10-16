@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::Deref;
-use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 macro_rules! define_id {
@@ -58,7 +58,9 @@ macro_rules! define_id {
         }
 
         impl rusqlite::types::FromSql for $name {
-            fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+            fn column_result(
+                value: rusqlite::types::ValueRef<'_>,
+            ) -> rusqlite::types::FromSqlResult<Self> {
                 String::column_result(value).map(Self)
             }
         }
@@ -71,7 +73,11 @@ define_id!(BrowserId, "Strongly-typed Browser Identifier");
 impl BrowserId {
     /// Checks whether the browser profile identifier is valid (non-empty alphanumeric, hyphens, underscores)
     pub fn is_valid(&self) -> bool {
-        !self.0.is_empty() && self.0.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        !self.0.is_empty()
+            && self
+                .0
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
     }
 
     /// Validates the browser identifier or returns an AutomaError::BadRequest
@@ -79,7 +85,9 @@ impl BrowserId {
         if self.is_valid() {
             Ok(())
         } else {
-            Err(crate::core::error::AutomaError::BadRequest("Invalid browser ID".to_string()))
+            Err(crate::core::error::AutomaError::BadRequest(
+                "Invalid browser ID".to_string(),
+            ))
         }
     }
 }
@@ -110,16 +118,23 @@ mod tests {
     #[test]
     fn test_typed_id_rusqlite_roundtrip() {
         let conn = Connection::open_in_memory().unwrap();
-        conn.execute("CREATE TABLE test_ids (id TEXT PRIMARY KEY)", []).unwrap();
+        conn.execute("CREATE TABLE test_ids (id TEXT PRIMARY KEY)", [])
+            .unwrap();
 
         let jid = JobId::new("job_abc");
-        conn.execute("INSERT INTO test_ids (id) VALUES (?1)", rusqlite::params![&jid]).unwrap();
-
-        let fetched: JobId = conn.query_row(
-            "SELECT id FROM test_ids WHERE id = ?1",
+        conn.execute(
+            "INSERT INTO test_ids (id) VALUES (?1)",
             rusqlite::params![&jid],
-            |row| row.get(0)
-        ).unwrap();
+        )
+        .unwrap();
+
+        let fetched: JobId = conn
+            .query_row(
+                "SELECT id FROM test_ids WHERE id = ?1",
+                rusqlite::params![&jid],
+                |row| row.get(0),
+            )
+            .unwrap();
 
         assert_eq!(fetched, jid);
     }

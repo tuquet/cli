@@ -1,4 +1,4 @@
-use crate::ui::{badge_offline, badge_online, Card};
+use crate::ui::{Card, badge_offline, badge_online};
 
 pub async fn handle_stop(
     profile_query: Option<String>,
@@ -22,7 +22,10 @@ pub async fn handle_stop(
 
         let mut terminated = Vec::new();
         for s in &sessions {
-            if crate::core::browser::pid_tracker::terminate_session(s, &base_dir, force).await.is_ok() {
+            if crate::core::browser::pid_tracker::terminate_session(s, &base_dir, force)
+                .await
+                .is_ok()
+            {
                 terminated.push(format!("{} (PID: {})", s.profile_name, s.pid));
             }
         }
@@ -51,13 +54,24 @@ pub async fn handle_stop(
                 crate::ui::Notify::info("No browser profiles are currently running.");
                 return Ok(());
             }
-            eprintln!("Specify a profile to stop: specter browser stop <profile_name|profile_id>, or stop all with '--all'.");
-            eprintln!("Active profiles: {}", sessions.iter().map(|s| s.profile_name.as_str()).collect::<Vec<_>>().join(", "));
+            eprintln!(
+                "Specify a profile to stop: specter browser stop <profile_name|profile_id>, or stop all with '--all'."
+            );
+            eprintln!(
+                "Active profiles: {}",
+                sessions
+                    .iter()
+                    .map(|s| s.profile_name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
             return Ok(());
         }
     };
 
-    if let Some(session) = crate::core::browser::pid_tracker::find_active_session(&target, &base_dir) {
+    if let Some(session) =
+        crate::core::browser::pid_tracker::find_active_session(&target, &base_dir)
+    {
         let pid = session.pid;
         let p_name = session.profile_name.clone();
         let p_id = session.profile_id.clone();
@@ -76,7 +90,10 @@ pub async fn handle_stop(
         card.print();
         println!();
     } else {
-        crate::ui::Notify::error(format!("No running browser profile found matching '{}'.", target));
+        crate::ui::Notify::error(format!(
+            "No running browser profile found matching '{}'.",
+            target
+        ));
         eprintln!("Run 'specter browser ps' to view active profiles.\n");
         return Err(format!("Running profile '{}' not found", target).into());
     }

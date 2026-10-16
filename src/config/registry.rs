@@ -1,12 +1,12 @@
-use std::path::PathBuf;
 use crate::config::automa::AutomaConfig;
 use crate::config::browser::BrowserConfig;
 use crate::config::inbox::InboxConfig;
 use crate::config::runner::RunnerConfig;
 use crate::config::system::SystemConfig;
 use crate::infrastructure::bridge::BridgeConfig;
+use crate::ui::{Card, badge_online};
 use specter_faker::config::FakerConfig;
-use crate::ui::{badge_online, Card};
+use std::path::PathBuf;
 
 pub struct PillarConfigEntry {
     pub pillar: &'static str,
@@ -113,7 +113,9 @@ impl ConfigRegistry {
             card.add_kv(&label, format!("{}{}", entry.path.display(), status));
         }
 
-        card.with_footer("Tip: 'specter <service> config' for raw path or '--edit' to open in editor");
+        card.with_footer(
+            "Tip: 'specter <service> config' for raw path or '--edit' to open in editor",
+        );
         card.print();
         println!();
     }
@@ -129,10 +131,12 @@ impl ConfigRegistry {
     pub fn get_default_json(service: &str) -> serde_json::Value {
         match Self::canonical_service(service) {
             Some(crate::constants::PILLAR_BRIDGE) => {
-                serde_json::to_value(crate::infrastructure::bridge::BridgeConfig::default()).unwrap_or_default()
+                serde_json::to_value(crate::infrastructure::bridge::BridgeConfig::default())
+                    .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_FAKER) => {
-                serde_json::to_value(specter_faker::config::FakerConfig::default()).unwrap_or_default()
+                serde_json::to_value(specter_faker::config::FakerConfig::default())
+                    .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_BROWSER) => {
                 serde_json::to_value(crate::config::BrowserConfig::default()).unwrap_or_default()
@@ -153,7 +157,10 @@ impl ConfigRegistry {
         }
     }
 
-    pub fn ensure_schema_field(path: &std::path::Path, service: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn ensure_schema_field(
+        path: &std::path::Path,
+        service: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let canonical = match Self::canonical_service(service) {
             Some(c) => c,
             None => return Ok(()),
@@ -167,7 +174,9 @@ impl ConfigRegistry {
 
         if path.exists() {
             if let Ok(content) = std::fs::read_to_string(path) {
-                if let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Ok(serde_json::Value::Object(map)) =
+                    serde_json::from_str::<serde_json::Value>(&content)
+                {
                     let need_update = match map.get("$schema") {
                         Some(serde_json::Value::String(s)) => s != &url,
                         _ => true,
@@ -181,7 +190,8 @@ impl ConfigRegistry {
                                 ordered.insert(k, v);
                             }
                         }
-                        let pretty = serde_json::to_string_pretty(&serde_json::Value::Object(ordered))?;
+                        let pretty =
+                            serde_json::to_string_pretty(&serde_json::Value::Object(ordered))?;
                         std::fs::write(path, pretty)?;
                     }
                 }
@@ -215,7 +225,9 @@ impl ConfigRegistry {
 
         println!("Opening {} in default editor...", path.display());
         if cfg!(windows) {
-            std::process::Command::new("notepad.exe").arg(path).spawn()?;
+            std::process::Command::new("notepad.exe")
+                .arg(path)
+                .spawn()?;
         } else if let Ok(editor) = std::env::var("EDITOR") {
             std::process::Command::new(editor).arg(path).status()?;
         } else {
@@ -224,7 +236,10 @@ impl ConfigRegistry {
         Ok(())
     }
 
-    pub fn open_in_editor_with_service(path: &std::path::Path, service: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn open_in_editor_with_service(
+        path: &std::path::Path,
+        service: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let _ = Self::ensure_schema_field(path, service);
         Self::open_in_editor(path)
     }
@@ -283,9 +298,15 @@ mod tests {
 
     #[test]
     fn test_get_default_json_all_services() {
-        for service in ["bridge", "faker", "browser", "automa", "runner", "system", "inbox"] {
+        for service in [
+            "bridge", "faker", "browser", "automa", "runner", "system", "inbox",
+        ] {
             let def = ConfigRegistry::get_default_json(service);
-            assert!(def.is_object(), "Default for {} must be a JSON object", service);
+            assert!(
+                def.is_object(),
+                "Default for {} must be a JSON object",
+                service
+            );
         }
     }
 
@@ -308,7 +329,8 @@ mod tests {
 
         // 2. Existing file without $schema gets $schema injected
         std::fs::write(&test_file, "{\"default_nat\": \"US\"}").expect("Write raw file");
-        ConfigRegistry::ensure_schema_field(&test_file, "faker").expect("Ensure schema on existing");
+        ConfigRegistry::ensure_schema_field(&test_file, "faker")
+            .expect("Ensure schema on existing");
         let content2 = std::fs::read_to_string(&test_file).expect("Read test file");
         let val2: serde_json::Value = serde_json::from_str(&content2).expect("Valid JSON");
         assert!(val2.get("$schema").is_some());
@@ -317,5 +339,3 @@ mod tests {
         let _ = std::fs::remove_dir_all(temp_dir);
     }
 }
-
-

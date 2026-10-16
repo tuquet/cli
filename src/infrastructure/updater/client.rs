@@ -1,7 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use super::cache::get_cache_file_path;
-use super::types::{is_newer_version, UpdateInfo, GITHUB_REPO};
+use super::types::{GITHUB_REPO, UpdateInfo, is_newer_version};
 
 /// Constructs a proxy-aware HTTP client with standard timeouts and User-Agent.
 pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest::Error> {
@@ -40,10 +40,7 @@ pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest:
 
 /// Fetch URL bytes using `reqwest` first, falling back to OS-native `curl` (Windows Schannel / system CA store)
 /// when `rustls` webpki-roots cannot verify an enterprise SSL inspection certificate or system proxy.
-pub async fn fetch_bytes_with_fallback(
-    url: &str,
-    timeout_secs: u64,
-) -> Result<Vec<u8>, String> {
+pub async fn fetch_bytes_with_fallback(url: &str, timeout_secs: u64) -> Result<Vec<u8>, String> {
     if let Ok(client) = create_http_client(timeout_secs)
         && let Ok(resp) = client.get(url).send().await
         && resp.status().is_success()
@@ -86,7 +83,10 @@ pub async fn fetch_bytes_with_fallback(
 
 /// Query GitHub API directly for the latest release and update local cache.
 pub async fn check_and_save_latest_version() -> Result<UpdateInfo, Box<dyn std::error::Error>> {
-    let url = format!("https://api.github.com/repos/{}/releases/latest", GITHUB_REPO);
+    let url = format!(
+        "https://api.github.com/repos/{}/releases/latest",
+        GITHUB_REPO
+    );
     let body_bytes = fetch_bytes_with_fallback(&url, 10).await?;
 
     let json: serde_json::Value = serde_json::from_slice(&body_bytes)?;

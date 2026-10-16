@@ -19,9 +19,27 @@ pub fn parse_csv_profiles(csv_string: &str) -> Vec<CsvBrowserProfile> {
         }
         let id = parts[0].to_string();
         let name = parts.get(1).unwrap_or(&"").to_string();
-        let user_agent = parts.get(2).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let timezone = parts.get(3).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
-        let proxy = parts.get(4).and_then(|s| if s.is_empty() { None } else { Some(s.to_string()) });
+        let user_agent = parts.get(2).and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.to_string())
+            }
+        });
+        let timezone = parts.get(3).and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.to_string())
+            }
+        });
+        let proxy = parts.get(4).and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.to_string())
+            }
+        });
         profiles.push(CsvBrowserProfile {
             id,
             name,

@@ -5,9 +5,7 @@ pub mod types;
 pub use bootstrap::bootstrap;
 pub use types::DiagnosticItem;
 
-use crate::ui::{
-    clack_intro, clack_outro, clack_step_info, respond_with, OutputFormat,
-};
+use crate::ui::{OutputFormat, clack_intro, clack_outro, clack_step_info, respond_with};
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct DoctorReport {

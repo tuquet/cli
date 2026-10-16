@@ -1507,7 +1507,6 @@ pub enum ProxyCommands {
     },
 }
 
-
 #[derive(Subcommand, Debug, Clone)]
 pub enum ExtCommands {
     /// List all registered browser extensions
@@ -1676,4 +1675,3 @@ mod tests {
         Cli::command().debug_assert();
     }
 }
-

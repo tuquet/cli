@@ -1,8 +1,8 @@
+use chrono::Utc;
+use rusqlite::{Connection, OptionalExtension, params};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use chrono::Utc;
-use rusqlite::{params, Connection, OptionalExtension};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -222,7 +222,12 @@ impl InboxStorage {
         Ok(email)
     }
 
-    pub fn list_emails(&self, limit: usize, offset: usize, recipient: Option<&str>) -> Result<Vec<EmailSummary>, StorageError> {
+    pub fn list_emails(
+        &self,
+        limit: usize,
+        offset: usize,
+        recipient: Option<&str>,
+    ) -> Result<Vec<EmailSummary>, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
         let mut summaries = Vec::new();
 
@@ -294,7 +299,11 @@ impl InboxStorage {
         Ok(())
     }
 
-    pub fn get_latest_otp(&self, recipient: &str, unconsumed_only: bool) -> Result<Option<OtpRecord>, StorageError> {
+    pub fn get_latest_otp(
+        &self,
+        recipient: &str,
+        unconsumed_only: bool,
+    ) -> Result<Option<OtpRecord>, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
         let query = if unconsumed_only {
             "SELECT id, email_id, recipient, otp_code, service_name, expires_at, consumed_at, consumed_by, created_at
@@ -334,7 +343,11 @@ impl InboxStorage {
         Ok(rows > 0)
     }
 
-    pub fn list_otps(&self, recipient: Option<&str>, limit: usize) -> Result<Vec<OtpRecord>, StorageError> {
+    pub fn list_otps(
+        &self,
+        recipient: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<OtpRecord>, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
         let mut otps = Vec::new();
 
@@ -403,7 +416,11 @@ impl InboxStorage {
         Ok(())
     }
 
-    pub fn get_latest_link(&self, recipient: &str, link_type: Option<&str>) -> Result<Option<LinkRecord>, StorageError> {
+    pub fn get_latest_link(
+        &self,
+        recipient: &str,
+        link_type: Option<&str>,
+    ) -> Result<Option<LinkRecord>, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
         let link = if let Some(lt) = link_type {
             let mut stmt = conn.prepare(
@@ -442,7 +459,11 @@ impl InboxStorage {
         Ok(link)
     }
 
-    pub fn list_links(&self, recipient: Option<&str>, limit: usize) -> Result<Vec<LinkRecord>, StorageError> {
+    pub fn list_links(
+        &self,
+        recipient: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<LinkRecord>, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
         let mut links = Vec::new();
 
@@ -502,14 +523,16 @@ impl InboxStorage {
     pub fn stats(&self) -> Result<InboxStats, StorageError> {
         let conn = self.conn.lock().map_err(|_| StorageError::Poisoned)?;
 
-        let total_emails: i64 = conn.query_row("SELECT COUNT(*) FROM emails", [], |row| row.get(0))?;
+        let total_emails: i64 =
+            conn.query_row("SELECT COUNT(*) FROM emails", [], |row| row.get(0))?;
         let total_otps: i64 = conn.query_row("SELECT COUNT(*) FROM otps", [], |row| row.get(0))?;
         let unconsumed_otps: i64 = conn.query_row(
             "SELECT COUNT(*) FROM otps WHERE consumed_at IS NULL",
             [],
             |row| row.get(0),
         )?;
-        let total_links: i64 = conn.query_row("SELECT COUNT(*) FROM links", [], |row| row.get(0))?;
+        let total_links: i64 =
+            conn.query_row("SELECT COUNT(*) FROM links", [], |row| row.get(0))?;
 
         Ok(InboxStats {
             total_emails: total_emails as usize,

@@ -95,12 +95,12 @@ pub struct SubmitJobPayload {
     /// Absolute or relative filesystem path to the `.workflow.json` file (deprecated, prefer workflowId)
     #[serde(default, alias = "targetPath", alias = "workflow_path")]
     pub workflow_path: Option<String>,
-    
+
     /// Raw inline workflow JSON payload (alternative to workflowPath or workflowId)
     #[serde(default, alias = "workflowData", alias = "workflow")]
     #[schema(value_type = Option<Object>)]
     pub workflow_data: Option<serde_json::Value>,
-    
+
     /// Optional execution options and browser configuration
     pub options: Option<SubmitJobOptions>,
 }

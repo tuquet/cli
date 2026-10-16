@@ -50,7 +50,7 @@ pub async fn handle(command: RunnerSubcommands) -> Result<(), Box<dyn std::error
 }
 
 pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
-    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, ClackOption};
+    use crate::ui::prompt::{ClackOption, clack_cancel, clack_intro, clack_select};
 
     if !crate::ui::is_interactive_tty() {
         return handle(RunnerSubcommands::Status {
@@ -86,11 +86,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
             "Restart background runner daemon",
             "restart",
         ),
-        ClackOption::new(
-            "View Runner Logs",
-            "Show recent daemon log output",
-            "logs",
-        ),
+        ClackOption::new("View Runner Logs", "Show recent daemon log output", "logs"),
         ClackOption::new(
             "Runner Configuration",
             "Configure host, port, and log level",
@@ -135,7 +131,6 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         _ => Ok(()),
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,8 @@
+use crate::AppState;
 use axum::{
     extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
         State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
     },
     response::IntoResponse,
 };
@@ -10,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio_stream::wrappers::BroadcastStream;
-use crate::AppState;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type")]
@@ -47,10 +47,7 @@ pub enum WsCommand {
         (status = 101, description = "WebSocket Upgrade for 2-way real-time communication")
     )
 )]
-pub async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
@@ -71,7 +68,10 @@ async fn handle_socket(socket: WebSocket, state: AppState) {
         "timestamp": now
     });
 
-    if let Err(e) = sender.send(Message::Text(greeting.to_string().into())).await {
+    if let Err(e) = sender
+        .send(Message::Text(greeting.to_string().into()))
+        .await
+    {
         tracing::warn!("[WebSocket] Failed to send greeting: {:?}", e);
         return;
     }

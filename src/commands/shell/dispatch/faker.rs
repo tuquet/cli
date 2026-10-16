@@ -1,6 +1,6 @@
 use super::get_flag_value;
 use crate::cli::FakerGenerateArgs;
-use crate::commands::shell::{print_scope_help, ShellScope};
+use crate::commands::shell::{ShellScope, print_scope_help};
 
 pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     let count = get_flag_value(args, "-n", "--count")
@@ -21,7 +21,9 @@ pub async fn dispatch_faker(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std:
     let nat = get_flag_value(args, "--nat", "--nat").map(|s| s.to_string());
     let avatar = get_flag_value(args, "--avatar", "--avatar").map(|s| s.to_string());
     let domain = get_flag_value(args, "-d", "--domain").map(|s| s.to_string());
-    let format = get_flag_value(args, "-f", "--format").unwrap_or("auto").to_string();
+    let format = get_flag_value(args, "-f", "--format")
+        .unwrap_or("auto")
+        .to_string();
     let card = args.contains(&"-c") || args.contains(&"--card");
     let table = args.contains(&"-t") || args.contains(&"--table");
     let csv = args.contains(&"--csv");

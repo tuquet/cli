@@ -3,12 +3,11 @@ pub mod sse;
 pub mod types;
 
 pub use crud::{
-    get_active_jobs, get_job_status, job_finish, job_log, kill_job, pause_job, resume_job,
-    submit_job,
     __path_get_active_jobs, __path_get_job_status, __path_job_finish, __path_job_log,
-    __path_kill_job, __path_pause_job, __path_resume_job, __path_submit_job,
+    __path_kill_job, __path_pause_job, __path_resume_job, __path_submit_job, get_active_jobs,
+    get_job_status, job_finish, job_log, kill_job, pause_job, resume_job, submit_job,
 };
-pub use sse::{worker_sse, __path_worker_sse};
+pub use sse::{__path_worker_sse, worker_sse};
 pub use types::{
     ActiveJobResponse, GetActiveJobsQuery, JobControlResponse, JobEvent, JobLogPayload,
     JobStatusResponse, SubmitJobOptions, SubmitJobPayload, SubmitJobResponse, WorkerSseQuery,
@@ -22,15 +21,15 @@ pub use crate::core::browser::worker_coordinator::{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::AppState;
     use crate::config::AppConfig;
     use crate::infrastructure::db::AutomaDb;
-    use crate::AppState;
     use axum::{
+        Router,
         body::Body,
         extract::{Json, Path, State},
         http::{Request, StatusCode},
         routing::{patch, post},
-        Router,
     };
     use std::collections::HashMap;
     use std::sync::Arc;

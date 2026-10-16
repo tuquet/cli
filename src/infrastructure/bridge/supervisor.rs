@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, System};
 use tracing::info;
 
-use super::config::{expand_home, ServerConfig};
+use super::config::{ServerConfig, expand_home};
 use super::probe::{probe_port, wait_for_port};
 use super::tools::find_executable;
 
@@ -30,7 +30,9 @@ pub struct BridgeSupervisor;
 
 impl BridgeSupervisor {
     pub fn pids_dir() -> PathBuf {
-        let dir = super::config::BridgeConfig::canonical_dir().join("bridge").join("pids");
+        let dir = super::config::BridgeConfig::canonical_dir()
+            .join("bridge")
+            .join("pids");
         let _ = fs::create_dir_all(&dir);
         dir
     }
@@ -56,7 +58,10 @@ impl BridgeSupervisor {
         // 1. Start Cloudflare Tunnel if server_type == "cloudflare"
         if srv.server_type == "cloudflare" {
             let hostname = srv.cf_hostname.as_deref().ok_or_else(|| {
-                format!("Server '{}': 'cf_hostname' is required for cloudflare tunnel", server_id)
+                format!(
+                    "Server '{}': 'cf_hostname' is required for cloudflare tunnel",
+                    server_id
+                )
             })?;
 
             if !probe_port(cf_port) {
@@ -64,12 +69,22 @@ impl BridgeSupervisor {
                     "Binary 'cloudflared' not found in PATH. Install via 'scoop install cloudflared' or package manager."
                 )?;
 
-                info!("Launching Cloudflare tunnel: {} -> 127.0.0.1:{}", hostname, cf_port);
+                info!(
+                    "Launching Cloudflare tunnel: {} -> 127.0.0.1:{}",
+                    hostname, cf_port
+                );
                 let mut cmd = Command::new(cf_bin);
-                cmd.args(["access", "tcp", "--hostname", hostname, "--url", &format!("127.0.0.1:{}", cf_port)])
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null());
+                cmd.args([
+                    "access",
+                    "tcp",
+                    "--hostname",
+                    hostname,
+                    "--url",
+                    &format!("127.0.0.1:{}", cf_port),
+                ])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
 
                 #[cfg(windows)]
                 {
@@ -84,7 +99,11 @@ impl BridgeSupervisor {
 
                 // Wait for port to become active (up to 10s)
                 if !wait_for_port(cf_port, Duration::from_secs(10)).await {
-                    return Err(format!("Cloudflare tunnel on port {} failed to initialize within 10s", cf_port).into());
+                    return Err(format!(
+                        "Cloudflare tunnel on port {} failed to initialize within 10s",
+                        cf_port
+                    )
+                    .into());
                 }
             } else {
                 info!("Cloudflare tunnel on port {} is already active", cf_port);
@@ -93,9 +112,8 @@ impl BridgeSupervisor {
 
         // 2. Start SSH SOCKS5 Tunnel
         if !probe_port(socks_port) {
-            let ssh_bin = find_executable("ssh").ok_or(
-                "Binary 'ssh' not found in PATH. Please install OpenSSH client."
-            )?;
+            let ssh_bin = find_executable("ssh")
+                .ok_or("Binary 'ssh' not found in PATH. Please install OpenSSH client.")?;
 
             let remote_user = srv.remote_user.as_deref().unwrap_or("root");
             let target_host = if srv.server_type == "cloudflare" {
@@ -109,7 +127,10 @@ impl BridgeSupervisor {
                 srv.local_ssh_port.unwrap_or(22)
             };
 
-            info!("Launching SSH SOCKS5 proxy on port 127.0.0.1:{} -> {}@{}:{}", socks_port, remote_user, target_host, connect_port);
+            info!(
+                "Launching SSH SOCKS5 proxy on port 127.0.0.1:{} -> {}@{}:{}",
+                socks_port, remote_user, target_host, connect_port
+            );
 
             let mut cmd = Command::new(ssh_bin);
             cmd.arg("-p")
@@ -119,7 +140,10 @@ impl BridgeSupervisor {
                 .arg(socks_port.to_string());
 
             if enable_ssh && srv.server_type != "cloudflare" {
-                cmd.arg("-L").arg(format!("{}:127.0.0.1:22", srv.local_ssh_port.unwrap_or(2222)));
+                cmd.arg("-L").arg(format!(
+                    "{}:127.0.0.1:22",
+                    srv.local_ssh_port.unwrap_or(2222)
+                ));
             }
 
             cmd.arg("-o")
@@ -127,9 +151,15 @@ impl BridgeSupervisor {
                 .arg("-o")
                 .arg("StrictHostKeyChecking=no")
                 .arg("-o")
-                .arg(format!("ServerAliveInterval={}", srv.server_alive_interval.unwrap_or(15)))
+                .arg(format!(
+                    "ServerAliveInterval={}",
+                    srv.server_alive_interval.unwrap_or(15)
+                ))
                 .arg("-o")
-                .arg(format!("ServerAliveCountMax={}", srv.server_alive_count_max.unwrap_or(3)))
+                .arg(format!(
+                    "ServerAliveCountMax={}",
+                    srv.server_alive_count_max.unwrap_or(3)
+                ))
                 .arg("-o")
                 .arg("ExitOnForwardFailure=yes");
 
@@ -164,7 +194,11 @@ impl BridgeSupervisor {
 
             // Wait for SOCKS5 port to become active (up to 10s)
             if !wait_for_port(socks_port, Duration::from_secs(10)).await {
-                return Err(format!("SSH SOCKS5 proxy on port {} failed to initialize within 10s", socks_port).into());
+                return Err(format!(
+                    "SSH SOCKS5 proxy on port {} failed to initialize within 10s",
+                    socks_port
+                )
+                .into());
             }
         } else {
             info!("SOCKS5 proxy on port {} is already active", socks_port);
@@ -190,7 +224,10 @@ impl BridgeSupervisor {
     }
 
     /// Stops a specific server's background daemons
-    pub fn stop_server(server_id: &str, srv: &ServerConfig) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn stop_server(
+        server_id: &str,
+        srv: &ServerConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut sys = System::new_all();
         sys.refresh_all();
 
@@ -215,7 +252,12 @@ impl BridgeSupervisor {
 
         for (pid, process) in sys.processes() {
             let name = process.name().to_string_lossy().to_lowercase();
-            let cmdline = process.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            let cmdline = process
+                .cmd()
+                .iter()
+                .map(|s| s.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" ");
 
             if name.contains("cloudflared") && cmdline.contains(&cf_port_str) {
                 let _ = process.kill();
@@ -258,30 +300,42 @@ impl BridgeSupervisor {
         }
 
         // 2. Discover dynamically configured ports from BridgeConfig
-        let (configured_cf_ports, configured_socks_ports) = if let Ok(config) = super::config::BridgeConfig::load() {
-            let mut cf_ports = Vec::new();
-            let mut socks_ports = Vec::new();
-            for srv in config.servers.values() {
-                cf_ports.push(srv.local_ssh_port.unwrap_or(2222).to_string());
-                socks_ports.push(srv.socks_port.unwrap_or(1080).to_string());
-            }
-            (cf_ports, socks_ports)
-        } else {
-            (vec!["2222".to_string()], vec!["1080".to_string()])
-        };
+        let (configured_cf_ports, configured_socks_ports) =
+            if let Ok(config) = super::config::BridgeConfig::load() {
+                let mut cf_ports = Vec::new();
+                let mut socks_ports = Vec::new();
+                for srv in config.servers.values() {
+                    cf_ports.push(srv.local_ssh_port.unwrap_or(2222).to_string());
+                    socks_ports.push(srv.socks_port.unwrap_or(1080).to_string());
+                }
+                (cf_ports, socks_ports)
+            } else {
+                (vec!["2222".to_string()], vec!["1080".to_string()])
+            };
 
         // 3. Proactively stop any residual bridge processes matching configured ports
         for (pid, process) in sys.processes() {
             let name = process.name().to_string_lossy().to_lowercase();
-            let cmdline = process.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            let cmdline = process
+                .cmd()
+                .iter()
+                .map(|s| s.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" ");
 
-            if name.contains("cloudflared") && cmdline.contains("access tcp")
-                && (configured_cf_ports.iter().any(|p| cmdline.contains(p)) || configured_cf_ports.is_empty()) {
+            if name.contains("cloudflared")
+                && cmdline.contains("access tcp")
+                && (configured_cf_ports.iter().any(|p| cmdline.contains(p))
+                    || configured_cf_ports.is_empty())
+            {
                 let _ = process.kill();
                 info!("Stopped cloudflared tunnel PID {}", pid);
             }
-            if name.contains("ssh") && cmdline.contains("-D")
-                && (configured_socks_ports.iter().any(|p| cmdline.contains(p)) || configured_socks_ports.is_empty()) {
+            if name.contains("ssh")
+                && cmdline.contains("-D")
+                && (configured_socks_ports.iter().any(|p| cmdline.contains(p))
+                    || configured_socks_ports.is_empty())
+            {
                 let _ = process.kill();
                 info!("Stopped ssh SOCKS5 tunnel PID {}", pid);
             }
@@ -334,4 +388,3 @@ mod tests {
         assert!(!is_valid_bridge_process_name("svchost.exe"));
     }
 }
-

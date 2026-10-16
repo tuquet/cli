@@ -1,6 +1,6 @@
-use axum::extract::{Path, Json, Query, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
+use axum::extract::{Json, Path, Query, State};
 
 use super::types::{
     CreateWorkflowStorageRequest, DeleteWorkflowResponse, GetWorkflowsQuery,
@@ -25,23 +25,28 @@ pub async fn get_workflows(
     Query(query): Query<GetWorkflowsQuery>,
 ) -> Result<Json<Vec<WorkflowStorageItem>>, AutomaError> {
     let db = state.db.lock().await;
-    let list = db.workflows().get_workflows(query.limit, query.offset, query.search.as_deref())
+    let list = db
+        .workflows()
+        .get_workflows(query.limit, query.offset, query.search.as_deref())
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let items = list.into_iter().map(|w| {
-        let parsed_data = serde_json::from_str::<serde_json::Value>(&w.data)
-            .unwrap_or(serde_json::json!({}));
-        WorkflowStorageItem {
-            id: w.id,
-            name: w.name,
-            description: w.description,
-            data: parsed_data,
-            version: w.version,
-            icon: w.icon,
-            created_at: w.created_at,
-            updated_at: w.updated_at,
-        }
-    }).collect();
+    let items = list
+        .into_iter()
+        .map(|w| {
+            let parsed_data =
+                serde_json::from_str::<serde_json::Value>(&w.data).unwrap_or(serde_json::json!({}));
+            WorkflowStorageItem {
+                id: w.id,
+                name: w.name,
+                description: w.description,
+                data: parsed_data,
+                version: w.version,
+                icon: w.icon,
+                created_at: w.created_at,
+                updated_at: w.updated_at,
+            }
+        })
+        .collect();
 
     Ok(Json(items))
 }
@@ -67,12 +72,14 @@ pub async fn get_workflow_by_id(
     Path(id): Path<String>,
 ) -> Result<Json<WorkflowStorageItem>, AutomaError> {
     let db = state.db.lock().await;
-    let item = db.workflows().get_workflow(&id)
+    let item = db
+        .workflows()
+        .get_workflow(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
         .ok_or_else(|| AutomaError::NotFound(format!("Workflow '{}' not found in database", id)))?;
 
-    let parsed_data = serde_json::from_str::<serde_json::Value>(&item.data)
-        .unwrap_or(serde_json::json!({}));
+    let parsed_data =
+        serde_json::from_str::<serde_json::Value>(&item.data).unwrap_or(serde_json::json!({}));
 
     Ok(Json(WorkflowStorageItem {
         id: item.id,
@@ -104,22 +111,27 @@ pub async fn create_storage_workflow(
     State(state): State<AppState>,
     Json(payload): Json<CreateWorkflowStorageRequest>,
 ) -> Result<Json<WorkflowStorageItem>, AutomaError> {
-    let id = payload.id.unwrap_or_else(|| format!("wf_{}", uuid::Uuid::new_v4().simple()));
+    let id = payload
+        .id
+        .unwrap_or_else(|| format!("wf_{}", uuid::Uuid::new_v4().simple()));
     let data_str = serde_json::to_string(&payload.data)
         .map_err(|e| AutomaError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
 
     let db = state.db.lock().await;
-    let created = db.workflows().create_workflow(
-        &id,
-        &payload.name,
-        payload.description.as_deref(),
-        &data_str,
-        payload.version.as_deref(),
-        payload.icon.as_deref(),
-    ).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+    let created = db
+        .workflows()
+        .create_workflow(
+            &id,
+            &payload.name,
+            payload.description.as_deref(),
+            &data_str,
+            payload.version.as_deref(),
+            payload.icon.as_deref(),
+        )
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let parsed_data = serde_json::from_str::<serde_json::Value>(&created.data)
-        .unwrap_or(serde_json::json!({}));
+    let parsed_data =
+        serde_json::from_str::<serde_json::Value>(&created.data).unwrap_or(serde_json::json!({}));
 
     Ok(Json(WorkflowStorageItem {
         id: created.id,
@@ -156,29 +168,39 @@ pub async fn update_storage_workflow(
     Path(id): Path<String>,
     Json(payload): Json<UpdateWorkflowStorageRequest>,
 ) -> Result<Json<WorkflowStorageItem>, AutomaError> {
-    let data_str = payload.data.as_ref().map(serde_json::to_string).transpose()
+    let data_str = payload
+        .data
+        .as_ref()
+        .map(serde_json::to_string)
+        .transpose()
         .map_err(|e| AutomaError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
 
     let db = state.db.lock().await;
-    let updated = db.workflows().upsert_workflow(
-        &id,
-        payload.name.as_deref(),
-        payload.description.as_deref(),
-        data_str.as_deref(),
-        payload.version.as_deref(),
-        payload.icon.as_deref(),
-    ).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+    let updated = db
+        .workflows()
+        .upsert_workflow(
+            &id,
+            payload.name.as_deref(),
+            payload.description.as_deref(),
+            data_str.as_deref(),
+            payload.version.as_deref(),
+            payload.icon.as_deref(),
+        )
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "workflow",
-        "action": "upsert",
-        "id": updated.id,
-        "name": updated.name
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "workflow",
+            "action": "upsert",
+            "id": updated.id,
+            "name": updated.name
+        })
+        .to_string(),
+    );
 
-    let parsed_data = serde_json::from_str::<serde_json::Value>(&updated.data)
-        .unwrap_or(serde_json::json!({}));
+    let parsed_data =
+        serde_json::from_str::<serde_json::Value>(&updated.data).unwrap_or(serde_json::json!({}));
 
     Ok(Json(WorkflowStorageItem {
         id: updated.id,
@@ -213,19 +235,27 @@ pub async fn delete_storage_workflow(
     Path(id): Path<String>,
 ) -> Result<Json<DeleteWorkflowResponse>, AutomaError> {
     let db = state.db.lock().await;
-    let deleted = db.workflows().delete_workflow(&id)
+    let deleted = db
+        .workflows()
+        .delete_workflow(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     if !deleted {
-        return Err(AutomaError::NotFound(format!("Workflow '{}' not found in database", id)));
+        return Err(AutomaError::NotFound(format!(
+            "Workflow '{}' not found in database",
+            id
+        )));
     }
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "workflow",
-        "action": "delete",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "workflow",
+            "action": "delete",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(DeleteWorkflowResponse {
         success: true,

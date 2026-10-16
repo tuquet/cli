@@ -1,19 +1,19 @@
-use axum::extract::{Path, State, Json, Query};
+use crate::AppState;
+use crate::api::handlers::jobs::connected_browsers;
+use crate::core::browser::archive::{
+    get_browsers_base_path, unzip_browser_folder, zip_browser_folder,
+};
+use crate::core::error::AutomaError;
+use crate::core::models::id::BrowserId;
 use axum::body::Bytes;
+use axum::extract::{Json, Path, Query, State};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use utoipa::{IntoParams, ToSchema};
-use crate::AppState;
-use crate::core::error::AutomaError;
-use crate::core::models::id::BrowserId;
-use crate::api::handlers::jobs::connected_browsers;
-use crate::core::browser::archive::{get_browsers_base_path, unzip_browser_folder, zip_browser_folder};
-
 
 fn is_valid_id(id: &str) -> bool {
     BrowserId::new(id).is_valid()
 }
-
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -190,10 +190,16 @@ pub async fn get_browsers(
     Query(query): Query<GetBrowsersQuery>,
 ) -> Result<Json<Vec<BrowserResponse>>, AutomaError> {
     let db = state.db.lock().await;
-    let browsers = db.browsers().get_browsers(query.limit, query.offset, query.search.as_deref())
+    let browsers = db
+        .browsers()
+        .get_browsers(query.limit, query.offset, query.search.as_deref())
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    
-    let default_profile_id = db.settings().get_settings().ok().and_then(|s| s.browser.default_profile_id);
+
+    let default_profile_id = db
+        .settings()
+        .get_settings()
+        .ok()
+        .and_then(|s| s.browser.default_profile_id);
 
     let online_browsers = {
         let guard = connected_browsers().read().await;
@@ -204,23 +210,27 @@ pub async fn get_browsers(
         guard.clone()
     };
 
-    let response = browsers.into_iter().map(|p| {
-        let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
-        let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
-        let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
-        BrowserResponse {
-            id: p.id,
-            name: p.name,
-            user_agent: p.user_agent,
-            timezone: p.timezone,
-            proxy: p.proxy,
-            extensions,
-            is_default,
-            created_at: p.created_at,
-            updated_at: p.updated_at,
-            is_online,
-        }
-    }).collect();
+    let response = browsers
+        .into_iter()
+        .map(|p| {
+            let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
+            let is_default = default_profile_id.as_deref() == Some(&p.id)
+                || (default_profile_id.is_none() && p.id == "default");
+            let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
+            BrowserResponse {
+                id: p.id,
+                name: p.name,
+                user_agent: p.user_agent,
+                timezone: p.timezone,
+                proxy: p.proxy,
+                extensions,
+                is_default,
+                created_at: p.created_at,
+                updated_at: p.updated_at,
+                is_online,
+            }
+        })
+        .collect();
 
     Ok(Json(response))
 }
@@ -249,15 +259,26 @@ pub async fn create_browser(
     }
     let db = state.db.lock().await;
     let exts = req.extensions.as_deref();
-    db.browsers().create_browser(&final_id, &req.name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
+    db.browsers()
+        .create_browser(
+            &final_id,
+            &req.name,
+            req.user_agent.as_deref(),
+            req.timezone.as_deref(),
+            req.proxy.as_deref(),
+            exts,
+        )
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     // Broadcast SSE creation event for reactive UI cache invalidation
-    let _ = state.tx.send(json!({
-        "type": "browser_changed",
-        "action": "create",
-        "id": final_id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "browser_changed",
+            "action": "create",
+            "id": final_id
+        })
+        .to_string(),
+    );
 
     Ok(Json(CreateBrowserResponse {
         success: true,
@@ -295,15 +316,26 @@ pub async fn update_browser(
     let db = state.db.lock().await;
     let name = req.name.unwrap_or_default();
     let exts = req.extensions.as_deref();
-    db.browsers().update_browser(&id, &name, req.user_agent.as_deref(), req.timezone.as_deref(), req.proxy.as_deref(), exts)
+    db.browsers()
+        .update_browser(
+            &id,
+            &name,
+            req.user_agent.as_deref(),
+            req.timezone.as_deref(),
+            req.proxy.as_deref(),
+            exts,
+        )
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     // Broadcast SSE update event for reactive UI cache invalidation
-    let _ = state.tx.send(json!({
-        "type": "browser_changed",
-        "action": "update",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "browser_changed",
+            "action": "update",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(UpdateBrowserResponse {
         success: true,
@@ -335,17 +367,21 @@ pub async fn delete_browser(
     if !is_valid_id(&id) {
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
-    
+
     let db = state.db.lock().await;
-    db.browsers().delete_browser(&id)
+    db.browsers()
+        .delete_browser(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     // Broadcast SSE deletion event for reactive UI cache invalidation
-    let _ = state.tx.send(json!({
-        "type": "browser_changed",
-        "action": "delete",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "browser_changed",
+            "action": "delete",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(DeleteBrowserResponse {
         success: true,
@@ -378,8 +414,11 @@ pub async fn get_browser_detail(
         return Err(AutomaError::BadRequest("Invalid browser ID".to_string()));
     }
     let db = state.db.lock().await;
-    let browser_opt = db.browsers().get_browser(&id).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
-    
+    let browser_opt = db
+        .browsers()
+        .get_browser(&id)
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+
     if let Some(p) = browser_opt {
         let is_online = {
             let guard = connected_browsers().read().await;
@@ -387,9 +426,14 @@ pub async fn get_browser_detail(
             guard.contains(&p.id) || registry.contains_key(&p.id)
         };
 
-        let default_profile_id = db.settings().get_settings().ok().and_then(|s| s.browser.default_profile_id);
-        let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
-        
+        let default_profile_id = db
+            .settings()
+            .get_settings()
+            .ok()
+            .and_then(|s| s.browser.default_profile_id);
+        let is_default = default_profile_id.as_deref() == Some(&p.id)
+            || (default_profile_id.is_none() && p.id == "default");
+
         let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
         let response = BrowserResponse {
             id: p.id,
@@ -403,7 +447,7 @@ pub async fn get_browser_detail(
             updated_at: p.updated_at,
             is_online,
         };
-        
+
         Ok(Json(response))
     } else {
         Err(AutomaError::NotFound(format!("Browser '{id}' not found")))
@@ -443,23 +487,32 @@ pub async fn set_default_browser(
     }
 
     let db = state.db.lock().await;
-    let exists = db.browsers().get_browser(&id)
+    let exists = db
+        .browsers()
+        .get_browser(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
         .is_some();
 
     if !exists && id != "default" {
-        return Err(AutomaError::NotFound(format!("Browser profile '{}' not found", id)));
+        return Err(AutomaError::NotFound(format!(
+            "Browser profile '{}' not found",
+            id
+        )));
     }
 
     let mut settings = db.settings().get_settings().unwrap_or_default();
     settings.browser.default_profile_id = Some(id.clone());
-    db.settings().save_settings(&settings)
+    db.settings()
+        .save_settings(&settings)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let _ = state.tx.send(json!({
-        "type": "settings_updated",
-        "default_profile_id": id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "settings_updated",
+            "default_profile_id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(SetDefaultBrowserResponse {
         success: true,
@@ -517,7 +570,7 @@ pub struct StartBrowserSessionResponse {
     pub user_data_dir: Option<String>,
 }
 
-use crate::core::browser::manager::{browser_registry, BrowserManager, BrowserManagerOptions};
+use crate::core::browser::manager::{BrowserManager, BrowserManagerOptions, browser_registry};
 
 #[utoipa::path(
     tag = "Browsers",
@@ -553,7 +606,8 @@ pub async fn start_browser(
     };
 
     // Edge Case 4: Mutex lock per browser_id to prevent concurrent double-launches
-    let _lock = crate::core::browser::worker_coordinator::get_browser_launcher_lock(&browser_id).await;
+    let _lock =
+        crate::core::browser::worker_coordinator::get_browser_launcher_lock(&browser_id).await;
 
     // Check if session is already running & verified alive on OS
     let existing_session = {
@@ -563,7 +617,9 @@ pub async fn start_browser(
             let mut sys = sysinfo::System::new_all();
             sys.refresh_all();
             if sys.process(sysinfo::Pid::from_u32(pid)).is_some() {
-                let sessions = crate::core::browser::manager::browser_sessions().read().await;
+                let sessions = crate::core::browser::manager::browser_sessions()
+                    .read()
+                    .await;
                 sessions.get(&browser_id).cloned()
             } else {
                 None
@@ -589,7 +645,9 @@ pub async fn start_browser(
     {
         let mut registry = browser_registry().write().await;
         registry.remove(&browser_id);
-        let mut sessions = crate::core::browser::manager::browser_sessions().write().await;
+        let mut sessions = crate::core::browser::manager::browser_sessions()
+            .write()
+            .await;
         sessions.remove(&browser_id);
     }
 
@@ -598,19 +656,29 @@ pub async fn start_browser(
 
     // Edge Case 3: Pre-launch sanitization: remove stale SingletonLock, volatile caches and crash dumps
     let browsers_base_path = get_browsers_base_path(&state.config.data_dir).await;
-    let target_dir = std::path::Path::new(&state.config.data_dir).join(&browsers_base_path).join(&browser_id);
+    let target_dir = std::path::Path::new(&state.config.data_dir)
+        .join(&browsers_base_path)
+        .join(&browser_id);
     crate::core::browser::manager::sanitize_browser_profile(&target_dir, false).await;
 
     if let Err(e) = unzip_browser_folder(&browser_id, &state.config.data_dir).await {
         tracing::error!("Failed to unzip browser folder: {}", e);
-        return Err(AutomaError::Internal(format!("Failed to unzip browser: {}", e)));
+        return Err(AutomaError::Internal(format!(
+            "Failed to unzip browser: {}",
+            e
+        )));
     }
 
     // Edge Case 2: Load Profile settings from SQLite database
     let (db_user_agent, db_timezone, db_proxy, db_extensions) = {
         let db = state.db.lock().await;
         if let Ok(Some(profile)) = db.browsers().get_browser(&browser_id) {
-            (profile.user_agent, profile.timezone, profile.proxy, profile.extensions)
+            (
+                profile.user_agent,
+                profile.timezone,
+                profile.proxy,
+                profile.extensions,
+            )
         } else {
             (None, None, None, None)
         }
@@ -624,7 +692,9 @@ pub async fn start_browser(
     let mut custom_args = Vec::new();
     if app_settings.grid.enabled {
         let active_browsers_count = connected_browsers().read().await.len() as u32;
-        let (pos_x, pos_y, slot_w, slot_h) = app_settings.grid.calculate_slot_bounds(active_browsers_count);
+        let (pos_x, pos_y, slot_w, slot_h) = app_settings
+            .grid
+            .calculate_slot_bounds(active_browsers_count);
         custom_args.push(format!("--window-position={},{}", pos_x, pos_y));
         custom_args.push(format!("--window-size={},{}", slot_w, slot_h));
     }
@@ -632,22 +702,25 @@ pub async fn start_browser(
     // User-Agent: Profile DB takes precedence, then app_settings
     let effective_ua = db_user_agent.or(app_settings.browser.default_user_agent);
     if let Some(ref ua) = effective_ua
-        && !ua.is_empty() {
-            custom_args.push(format!("--user-agent={}", ua));
-        }
+        && !ua.is_empty()
+    {
+        custom_args.push(format!("--user-agent={}", ua));
+    }
 
     // Timezone: Profile DB
     if let Some(ref tz) = db_timezone
-        && !tz.is_empty() {
-            custom_args.push(format!("--timezone={}", tz));
-        }
+        && !tz.is_empty()
+    {
+        custom_args.push(format!("--timezone={}", tz));
+    }
 
     // Proxy: from request payload takes precedence, then profile DB
     let effective_proxy = req.proxy.or(db_proxy);
     if let Some(ref proxy) = effective_proxy
-        && !proxy.is_empty() {
-            custom_args.push(format!("--proxy-server={}", proxy));
-        }
+        && !proxy.is_empty()
+    {
+        custom_args.push(format!("--proxy-server={}", proxy));
+    }
 
     // Custom extra CLI flags from request payload
     if let Some(ref extra_args) = req.args {
@@ -656,9 +729,10 @@ pub async fn start_browser(
 
     // Start URL: from request payload
     if let Some(ref start_url) = req.start_url
-        && !start_url.is_empty() {
-            custom_args.push(start_url.clone());
-        }
+        && !start_url.is_empty()
+    {
+        custom_args.push(start_url.clone());
+    }
 
     // Edge Case 1: Headless override from request payload takes precedence
     let headless = req.headless.unwrap_or(app_settings.browser.headless);
@@ -671,7 +745,8 @@ pub async fn start_browser(
 
     // Edge Cases 1.1, 1.2, 2.1, 2.2: Resolve profile extension paths with JIT provisioning and safe ordering
     let profile_ext_ids = db_extensions.unwrap_or_else(|| vec!["automa".to_string()]);
-    let resolved_ext_paths = specter_browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
+    let resolved_ext_paths =
+        specter_browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
     let mut ext_path_strings: Vec<String> = resolved_ext_paths
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())
@@ -692,12 +767,19 @@ pub async fn start_browser(
 
     let ws_url = match manager.launch().await {
         Ok(url) => url,
-        Err(e) => return Err(AutomaError::Internal(format!("Failed to launch browser: {}", e))),
+        Err(e) => {
+            return Err(AutomaError::Internal(format!(
+                "Failed to launch browser: {}",
+                e
+            )));
+        }
     };
 
     let pid = manager.get_pid();
     let (debugging_port, actual_user_data_dir) = {
-        let sessions = crate::core::browser::manager::browser_sessions().read().await;
+        let sessions = crate::core::browser::manager::browser_sessions()
+            .read()
+            .await;
         if let Some(sess) = sessions.get(&browser_id) {
             (Some(sess.debugging_port), Some(sess.user_data_dir.clone()))
         } else {
@@ -706,10 +788,13 @@ pub async fn start_browser(
     };
 
     // Broadcast real-time browser online event to global SSE stream
-    let _ = state.tx.send(json!({
-        "type": "browser_online",
-        "id": browser_id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "browser_online",
+            "id": browser_id
+        })
+        .to_string(),
+    );
 
     // Edge Case 6: Return complete session connection details (PID, port, ws_url, user_data_dir)
     Ok(Json(StartBrowserSessionResponse {
@@ -761,7 +846,9 @@ pub async fn stop_browser(
     };
 
     let browsers_base_path = get_browsers_base_path(&state.config.data_dir).await;
-    let target_dir = std::path::Path::new(&state.config.data_dir).join(&browsers_base_path).join(&browser_id);
+    let target_dir = std::path::Path::new(&state.config.data_dir)
+        .join(&browsers_base_path)
+        .join(&browser_id);
 
     if is_force {
         crate::core::browser::manager::kill_browser_processes(&browser_id, pid).await;
@@ -776,25 +863,31 @@ pub async fn stop_browser(
     {
         let mut registry = browser_registry().write().await;
         registry.remove(&browser_id);
-        let mut sessions = crate::core::browser::manager::browser_sessions().write().await;
+        let mut sessions = crate::core::browser::manager::browser_sessions()
+            .write()
+            .await;
         sessions.remove(&browser_id);
     }
 
     {
-        let mut connected = crate::api::handlers::jobs::connected_browsers().write().await;
+        let mut connected = crate::api::handlers::jobs::connected_browsers()
+            .write()
+            .await;
         connected.remove(&browser_id);
     }
 
     // Broadcast real-time browser offline event to global SSE stream
-    let _ = state.tx.send(json!({
-        "type": "browser_offline",
-        "id": browser_id
-    }).to_string());
+    let _ = state.tx.send(
+        json!({
+            "type": "browser_offline",
+            "id": browser_id
+        })
+        .to_string(),
+    );
 
-    if !is_force
-        && let Err(e) = zip_browser_folder(&browser_id, &state.config.data_dir).await {
-            tracing::warn!("Browser folder zip skipped or error: {}", e);
-        }
+    if !is_force && let Err(e) = zip_browser_folder(&browser_id, &state.config.data_dir).await {
+        tracing::warn!("Browser folder zip skipped or error: {}", e);
+    }
 
     let msg = if is_force {
         "Browser session forcefully terminated"
@@ -807,8 +900,6 @@ pub async fn stop_browser(
         message: msg.to_string(),
     }))
 }
-
-
 
 #[derive(serde::Deserialize, utoipa::ToSchema)]
 #[schema(example = json!({"csv_string": "id,name,userAgent,timezone\nprofile1,Main Profile,,UTC"}))]
@@ -925,7 +1016,11 @@ pub async fn sideload_extension(
     let ext_name = std::fs::read_to_string(&manifest_path)
         .ok()
         .and_then(|c| serde_json::from_str::<serde_json::Value>(&c).ok())
-        .and_then(|v| v.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+        .and_then(|v| {
+            v.get("name")
+                .and_then(|n| n.as_str())
+                .map(|s| s.to_string())
+        })
         .unwrap_or_else(|| {
             ext_path
                 .file_name()
@@ -945,7 +1040,9 @@ pub async fn sideload_extension(
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
         .ok_or_else(|| AutomaError::NotFound(format!("Browser profile '{}' not found", id)))?;
 
-    let mut extensions = browser.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
+    let mut extensions = browser
+        .extensions
+        .unwrap_or_else(|| vec!["automa".to_string()]);
     if !extensions.contains(&canonical_path) {
         extensions.push(canonical_path);
     }
@@ -996,22 +1093,37 @@ pub async fn auto_detect_browsers(
 ) -> Result<Json<Vec<BrowserResponse>>, AutomaError> {
     let detected = crate::core::browser::resolver::detect_host_browsers();
     let db = state.db.lock().await;
-    
-    let existing = db.browsers().get_browsers(None, None, None).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+
+    let existing = db
+        .browsers()
+        .get_browsers(None, None, None)
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     for host_browser in detected {
-        let already_exists = existing.iter().any(|b| b.name.eq_ignore_ascii_case(&host_browser.name));
+        let already_exists = existing
+            .iter()
+            .any(|b| b.name.eq_ignore_ascii_case(&host_browser.name));
         if !already_exists {
             let id = "default_chromium".to_string();
-            if db.browsers().get_browser(&id).map_err(|e| AutomaError::DatabaseError(e.to_string()))?.is_none() {
-                let _ = db.browsers().create_browser(&id, &host_browser.name, None, None, None, None);
+            if db
+                .browsers()
+                .get_browser(&id)
+                .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
+                .is_none()
+            {
+                let _ =
+                    db.browsers()
+                        .create_browser(&id, &host_browser.name, None, None, None, None);
             }
         }
     }
 
     let default_profile_id = if let Ok(mut settings) = db.settings().get_settings() {
         if settings.browser.default_profile_id.is_none() {
-            let all = db.browsers().get_browsers(None, None, None).unwrap_or_default();
+            let all = db
+                .browsers()
+                .get_browsers(None, None, None)
+                .unwrap_or_default();
             if let Some(first) = all.first() {
                 settings.browser.default_profile_id = Some(first.id.clone());
                 let _ = db.settings().save_settings(&settings);
@@ -1022,7 +1134,10 @@ pub async fn auto_detect_browsers(
         None
     };
 
-    let updated_browsers = db.browsers().get_browsers(None, None, None).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+    let updated_browsers = db
+        .browsers()
+        .get_browsers(None, None, None)
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
     let online_browsers = {
         let guard = connected_browsers().read().await;
         guard.clone()
@@ -1032,23 +1147,27 @@ pub async fn auto_detect_browsers(
         guard.clone()
     };
 
-    let response = updated_browsers.into_iter().map(|p| {
-        let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
-        let is_default = default_profile_id.as_deref() == Some(&p.id) || (default_profile_id.is_none() && p.id == "default");
-        let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
-        BrowserResponse {
-            id: p.id,
-            name: p.name,
-            user_agent: p.user_agent,
-            timezone: p.timezone,
-            proxy: p.proxy,
-            extensions,
-            is_default,
-            created_at: p.created_at,
-            updated_at: p.updated_at,
-            is_online,
-        }
-    }).collect();
+    let response = updated_browsers
+        .into_iter()
+        .map(|p| {
+            let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
+            let is_default = default_profile_id.as_deref() == Some(&p.id)
+                || (default_profile_id.is_none() && p.id == "default");
+            let extensions = p.extensions.unwrap_or_else(|| vec!["automa".to_string()]);
+            BrowserResponse {
+                id: p.id,
+                name: p.name,
+                user_agent: p.user_agent,
+                timezone: p.timezone,
+                proxy: p.proxy,
+                extensions,
+                is_default,
+                created_at: p.created_at,
+                updated_at: p.updated_at,
+                is_online,
+            }
+        })
+        .collect();
 
     Ok(Json(response))
 }
@@ -1056,10 +1175,10 @@ pub async fn auto_detect_browsers(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
     use crate::config::AppConfig;
-    use std::sync::Arc;
+    use crate::infrastructure::db::AutomaDb;
     use std::collections::HashMap;
+    use std::sync::Arc;
 
     fn create_test_state() -> AppState {
         let db = Arc::new(tokio::sync::Mutex::new(AutomaDb::new_in_memory().unwrap()));
@@ -1088,21 +1207,43 @@ mod tests {
             extensions: Some(vec!["automa".to_string(), "ublock".to_string()]),
         };
 
-        let create_res = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
+        let create_res = create_browser(State(state.clone()), Json(create_req))
+            .await
+            .unwrap();
         assert_eq!(create_res.0.id, "test_browser_profile_1");
         assert!(create_res.0.success);
 
-        let query = GetBrowsersQuery { limit: None, offset: None, search: None };
-        let list_res = get_browsers(State(state.clone()), Query(query)).await.unwrap();
+        let query = GetBrowsersQuery {
+            limit: None,
+            offset: None,
+            search: None,
+        };
+        let list_res = get_browsers(State(state.clone()), Query(query))
+            .await
+            .unwrap();
         assert_eq!(list_res.len(), 1);
         assert_eq!(list_res[0].id, "test_browser_profile_1");
-        assert_eq!(list_res[0].proxy.as_deref(), Some("socks5://127.0.0.1:1080"));
-        assert_eq!(list_res[0].extensions, vec!["automa".to_string(), "ublock".to_string()]);
+        assert_eq!(
+            list_res[0].proxy.as_deref(),
+            Some("socks5://127.0.0.1:1080")
+        );
+        assert_eq!(
+            list_res[0].extensions,
+            vec!["automa".to_string(), "ublock".to_string()]
+        );
 
-        let detail_res = get_browser_detail(State(state.clone()), Path("test_browser_profile_1".to_string())).await.unwrap();
+        let detail_res = get_browser_detail(
+            State(state.clone()),
+            Path("test_browser_profile_1".to_string()),
+        )
+        .await
+        .unwrap();
         assert_eq!(detail_res.name, "Test Browser 1");
         assert_eq!(detail_res.proxy.as_deref(), Some("socks5://127.0.0.1:1080"));
-        assert_eq!(detail_res.extensions, vec!["automa".to_string(), "ublock".to_string()]);
+        assert_eq!(
+            detail_res.extensions,
+            vec!["automa".to_string(), "ublock".to_string()]
+        );
     }
 
     #[tokio::test]
@@ -1116,7 +1257,9 @@ mod tests {
             proxy: None,
             extensions: None,
         };
-        let _ = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
+        let _ = create_browser(State(state.clone()), Json(create_req))
+            .await
+            .unwrap();
 
         let update_req = UpdateBrowserRequest {
             name: Some("Updated Name".to_string()),
@@ -1125,15 +1268,38 @@ mod tests {
             proxy: Some("http://proxy.local:8080".to_string()),
             extensions: Some(vec!["automa".to_string(), "cookie-injector".to_string()]),
         };
-        let update_res = update_browser(State(state.clone()), Path("test_browser_profile_2".to_string()), Json(update_req)).await.unwrap();
+        let update_res = update_browser(
+            State(state.clone()),
+            Path("test_browser_profile_2".to_string()),
+            Json(update_req),
+        )
+        .await
+        .unwrap();
         assert!(update_res.0.success);
 
-        let detail_res = get_browser_detail(State(state.clone()), Path("test_browser_profile_2".to_string())).await.unwrap();
+        let detail_res = get_browser_detail(
+            State(state.clone()),
+            Path("test_browser_profile_2".to_string()),
+        )
+        .await
+        .unwrap();
         assert_eq!(detail_res.proxy.as_deref(), Some("http://proxy.local:8080"));
-        assert_eq!(detail_res.extensions, vec!["automa".to_string(), "cookie-injector".to_string()]);
+        assert_eq!(
+            detail_res.extensions,
+            vec!["automa".to_string(), "cookie-injector".to_string()]
+        );
 
-        let _ = delete_browser(State(state.clone()), Path("test_browser_profile_2".to_string())).await.unwrap();
-        let query = GetBrowsersQuery { limit: None, offset: None, search: None };
+        let _ = delete_browser(
+            State(state.clone()),
+            Path("test_browser_profile_2".to_string()),
+        )
+        .await
+        .unwrap();
+        let query = GetBrowsersQuery {
+            limit: None,
+            offset: None,
+            search: None,
+        };
         let list_after = get_browsers(State(state), Query(query)).await.unwrap();
         assert!(list_after.is_empty());
     }
@@ -1149,7 +1315,9 @@ mod tests {
             proxy: None,
             extensions: None,
         };
-        let err = create_browser(State(state), Json(create_req)).await.unwrap_err();
+        let err = create_browser(State(state), Json(create_req))
+            .await
+            .unwrap_err();
         match err {
             AutomaError::BadRequest(msg) => assert!(msg.contains("Invalid")),
             _ => panic!("Expected BadRequest for invalid ID"),
@@ -1182,16 +1350,32 @@ mod tests {
             proxy: None,
             extensions: None,
         };
-        let _ = create_browser(State(state.clone()), Json(create_req)).await.unwrap();
+        let _ = create_browser(State(state.clone()), Json(create_req))
+            .await
+            .unwrap();
 
-        let set_res = set_default_browser(State(state.clone()), Path("test_profile_custom".to_string())).await.unwrap();
+        let set_res = set_default_browser(
+            State(state.clone()),
+            Path("test_profile_custom".to_string()),
+        )
+        .await
+        .unwrap();
         assert!(set_res.0.success);
         assert_eq!(set_res.0.default_profile_id, "test_profile_custom");
 
-        let detail = get_browser_detail(State(state.clone()), Path("test_profile_custom".to_string())).await.unwrap();
+        let detail = get_browser_detail(
+            State(state.clone()),
+            Path("test_profile_custom".to_string()),
+        )
+        .await
+        .unwrap();
         assert!(detail.is_default);
 
-        let query = GetBrowsersQuery { limit: None, offset: None, search: None };
+        let query = GetBrowsersQuery {
+            limit: None,
+            offset: None,
+            search: None,
+        };
         let all = get_browsers(State(state), Query(query)).await.unwrap();
         let custom_found = all.iter().find(|b| b.id == "test_profile_custom").unwrap();
         assert!(custom_found.is_default);

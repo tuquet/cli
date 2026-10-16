@@ -5,13 +5,13 @@ pub mod status;
 
 pub use config::{check_config, manage_config};
 pub use manage::{stop_bridge, toggle_server};
-pub use start::{start_bridge, BridgeStartOptions};
+pub use start::{BridgeStartOptions, start_bridge};
 pub use status::show_status;
 
 use crate::cli::BridgeSubcommands;
 use crate::ui::{
-    clack_cancel, clack_intro, clack_outro, clack_select, is_interactive_tty, ClackOption,
-    FormatArgs, OutputFormat,
+    ClackOption, FormatArgs, OutputFormat, clack_cancel, clack_intro, clack_outro, clack_select,
+    is_interactive_tty,
 };
 
 pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std::error::Error>> {

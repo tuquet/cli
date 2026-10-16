@@ -3,7 +3,7 @@ use rusqlite::{Connection, Result};
 pub fn init_db(conn: &Connection) -> Result<()> {
     conn.pragma_update(None, "journal_mode", "WAL")?;
     conn.pragma_update(None, "foreign_keys", "ON")?;
-    
+
     conn.execute_batch(
         r#"
         CREATE TABLE IF NOT EXISTS jobs (
@@ -92,18 +92,22 @@ pub fn init_db(conn: &Connection) -> Result<()> {
             created_at INTEGER,
             updated_at INTEGER
         );
-        "#
+        "#,
     )?;
 
     // Safe & Idempotent Schema Migration (Edge Case 6.1):
     // Ensure 'extensions' column exists on 'browsers' table for pre-existing databases
     let mut stmt = conn.prepare("PRAGMA table_info(browsers)")?;
-    let columns = stmt.query_map([], |row| row.get::<_, String>(1))?
+    let columns = stmt
+        .query_map([], |row| row.get::<_, String>(1))?
         .filter_map(Result::ok)
         .collect::<Vec<String>>();
 
     if !columns.iter().any(|c| c == "extensions") {
-        conn.execute("ALTER TABLE browsers ADD COLUMN extensions TEXT DEFAULT '[\"automa\"]'", [])?;
+        conn.execute(
+            "ALTER TABLE browsers ADD COLUMN extensions TEXT DEFAULT '[\"automa\"]'",
+            [],
+        )?;
     }
 
     Ok(())

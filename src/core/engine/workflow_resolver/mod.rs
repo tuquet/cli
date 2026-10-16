@@ -1,19 +1,19 @@
+pub mod resolver;
+pub mod sources;
 pub mod types;
 pub mod validator;
-pub mod sources;
-pub mod resolver;
 
+pub use self::resolver::*;
+pub use self::sources::*;
 pub use self::types::*;
 pub use self::validator::*;
-pub use self::sources::*;
-pub use self::resolver::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::infrastructure::db::AutomaDb;
     use std::sync::Arc;
     use tokio::sync::Mutex;
-    use crate::infrastructure::db::AutomaDb;
 
     #[test]
     fn test_validate_workflow_structure_valid() {
@@ -54,11 +54,9 @@ mod tests {
             "nodes": []
         });
 
-        let res = WorkflowResolver::resolve_inline_data(
-            "job_123",
-            &temp_dir.to_string_lossy(),
-            &data,
-        ).await;
+        let res =
+            WorkflowResolver::resolve_inline_data("job_123", &temp_dir.to_string_lossy(), &data)
+                .await;
 
         assert!(res.is_ok());
         let resolved = res.unwrap();
@@ -71,14 +69,7 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_missing_all_params_fails() {
         let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
-        let res = WorkflowResolver::resolve(
-            "job_empty",
-            "/tmp",
-            None,
-            None,
-            None,
-            &db,
-        ).await;
+        let res = WorkflowResolver::resolve("job_empty", "/tmp", None, None, None, &db).await;
 
         assert!(res.is_err());
         match res.unwrap_err() {
@@ -94,14 +85,17 @@ mod tests {
         let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
         {
             let guard = db.lock().await;
-            guard.workflows().create_workflow(
-                "flow_db_test",
-                "My Database Flow",
-                Some("Test description"),
-                r#"{"nodes":[{"id":"node_1","type":"trigger"}]}"#,
-                Some("1.0.0"),
-                None,
-            ).unwrap();
+            guard
+                .workflows()
+                .create_workflow(
+                    "flow_db_test",
+                    "My Database Flow",
+                    Some("Test description"),
+                    r#"{"nodes":[{"id":"node_1","type":"trigger"}]}"#,
+                    Some("1.0.0"),
+                    None,
+                )
+                .unwrap();
         }
 
         let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
@@ -115,7 +109,8 @@ mod tests {
             Some("flow_db_test"),
             None,
             &db,
-        ).await;
+        )
+        .await;
         assert!(res_id.is_ok());
         let resolved = res_id.unwrap();
         assert_eq!(resolved.data["name"], "My Database Flow");
@@ -129,7 +124,8 @@ mod tests {
             Some("my database flow"),
             None,
             &db,
-        ).await;
+        )
+        .await;
         assert!(res_name.is_ok());
         assert_eq!(res_name.unwrap().data["name"], "My Database Flow");
 
@@ -150,7 +146,8 @@ mod tests {
             Some(inline_json),
             None,
             &db,
-        ).await;
+        )
+        .await;
 
         assert!(res.is_ok());
         let resolved = res.unwrap();
@@ -180,7 +177,8 @@ mod tests {
             Some("daily_checkin"),
             None,
             &db,
-        ).await;
+        )
+        .await;
 
         assert!(res.is_ok());
         let resolved = res.unwrap();
@@ -199,7 +197,8 @@ mod tests {
             Some("../../etc/passwd"),
             None,
             &db,
-        ).await;
+        )
+        .await;
 
         assert!(res.is_err());
         match res.unwrap_err() {

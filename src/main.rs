@@ -1,7 +1,7 @@
-use std::io::IsTerminal;
 use automa_core::cli::{Cli, Commands};
 use automa_core::commands;
 use clap::{CommandFactory, Parser};
+use std::io::IsTerminal;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,7 +21,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             extra_args,
             format,
         }) => {
-            commands::dev::handle(project, script, list, path, pm, extra_args, format.resolve()).await
+            commands::dev::handle(
+                project,
+                script,
+                list,
+                path,
+                pm,
+                extra_args,
+                format.resolve(),
+            )
+            .await
         }
         Some(Commands::Port {
             query,
@@ -29,18 +38,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             all,
             list,
             format,
-        }) => {
-            commands::port::handle(query, kill, all, list, format.resolve()).await
-        }
+        }) => commands::port::handle(query, kill, all, list, format.resolve()).await,
         Some(Commands::Code {
             project,
             editor,
             list,
             path,
             format,
-        }) => {
-            commands::code::handle(project, editor, list, path, format.resolve()).await
-        }
+        }) => commands::code::handle(project, editor, list, path, format.resolve()).await,
         Some(Commands::Git {
             repo,
             action,
@@ -48,9 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             list,
             path,
             format,
-        }) => {
-            commands::git::handle(repo, action, all, list, path, format.resolve()).await
-        }
+        }) => commands::git::handle(repo, action, all, list, path, format.resolve()).await,
         Some(Commands::Env {
             project,
             check,
@@ -59,16 +62,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             path,
             format,
         }) => {
-            commands::env_cmd::handle(project, check, switch_profile, list, path, format.resolve()).await
+            commands::env_cmd::handle(project, check, switch_profile, list, path, format.resolve())
+                .await
         }
         Some(Commands::Upgrade) => automa_core::infrastructure::updater::run_upgrade().await,
-        Some(Commands::Status { format }) => commands::status::show_dashboard(format.resolve()).await,
-        Some(Commands::Doctor { fix, format }) => commands::doctor::run(fix, format.resolve()).await,
-        Some(Commands::Bootstrap { force }) => commands::doctor::bootstrap(force).await,
-        Some(Commands::Config { service, args, edit, show }) => {
-            handle_global_config(service.as_deref(), &args, edit, show).await
+        Some(Commands::Status { format }) => {
+            commands::status::show_dashboard(format.resolve()).await
         }
-        Some(Commands::Whoami { format }) => commands::cloud::whoami(format.resolve()).await.map_err(|e| e as Box<dyn std::error::Error>),
+        Some(Commands::Doctor { fix, format }) => {
+            commands::doctor::run(fix, format.resolve()).await
+        }
+        Some(Commands::Bootstrap { force }) => commands::doctor::bootstrap(force).await,
+        Some(Commands::Config {
+            service,
+            args,
+            edit,
+            show,
+        }) => handle_global_config(service.as_deref(), &args, edit, show).await,
+        Some(Commands::Whoami { format }) => commands::cloud::whoami(format.resolve())
+            .await
+            .map_err(|e| e as Box<dyn std::error::Error>),
         Some(Commands::Login {
             url,
             email,
@@ -80,13 +93,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             name,
             api_key,
             format,
-        }) => {
-            commands::cloud::login(url, email, password, otp, code, token, tenant, name, api_key, format.resolve())
-                .await
-                .map_err(|e| e as Box<dyn std::error::Error>)
-        }
-        Some(Commands::Logout) => commands::cloud::logout().await.map_err(|e| e as Box<dyn std::error::Error>),
-        Some(Commands::Tenant { command }) => commands::tenant::handle(command).await.map_err(|e| e as Box<dyn std::error::Error>),
+        }) => commands::cloud::login(
+            url,
+            email,
+            password,
+            otp,
+            code,
+            token,
+            tenant,
+            name,
+            api_key,
+            format.resolve(),
+        )
+        .await
+        .map_err(|e| e as Box<dyn std::error::Error>),
+        Some(Commands::Logout) => commands::cloud::logout()
+            .await
+            .map_err(|e| e as Box<dyn std::error::Error>),
+        Some(Commands::Tenant { command }) => commands::tenant::handle(command)
+            .await
+            .map_err(|e| e as Box<dyn std::error::Error>),
         Some(Commands::Automa { command }) => match command {
             Some(cmd) => commands::automa::handle(cmd).await,
             None => commands::automa::handle_interactive().await,
@@ -96,7 +122,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => commands::runner::handle_interactive().await,
         },
         Some(Commands::Cloud { command }) => match command {
-            Some(cmd) => commands::cloud::handle(cmd).await.map_err(|e| e as Box<dyn std::error::Error>),
+            Some(cmd) => commands::cloud::handle(cmd)
+                .await
+                .map_err(|e| e as Box<dyn std::error::Error>),
             None => commands::cloud::handle_interactive().await,
         },
         Some(Commands::Browser { command }) => match command {
@@ -110,13 +138,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(cmd) => commands::inbox::handle(cmd).await,
             None => commands::inbox::handle_interactive().await,
         },
-        Some(Commands::Shell { service }) => {
-            commands::shell::run(service.as_deref()).await
-        }
+        Some(Commands::Shell { service }) => commands::shell::run(service.as_deref()).await,
         Some(Commands::Mcp) => commands::mcp::run().await,
-        Some(Commands::Schema { command, json }) => {
-            commands::schema::handle(command, json).await
-        }
+        Some(Commands::Schema { command, json }) => commands::schema::handle(command, json).await,
         None => {
             if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
                 commands::shell::run(None).await
@@ -151,7 +175,9 @@ async fn handle_global_config(
         None => {
             if edit {
                 eprintln!("Please specify a service to edit: specter config <service> --edit");
-                eprintln!("Available services: bridge, faker, browser, automa, runner, cloud, system, inbox");
+                eprintln!(
+                    "Available services: bridge, faker, browser, automa, runner, cloud, system, inbox"
+                );
             } else if !show && automa_core::ui::is_interactive_tty() {
                 return automa_core::config::ConfigController::interactive_global_config();
             } else {
@@ -164,5 +190,3 @@ async fn handle_global_config(
 
     automa_core::config::ConfigController::handle_dispatch(service_name, args, edit, show)
 }
-
-

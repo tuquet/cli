@@ -1,6 +1,6 @@
-use axum::{extract::State, Json};
 use crate::AppState;
 use crate::core::models::settings::{AppSettings, UpdateAppSettingsRequest};
+use axum::{Json, extract::State};
 
 #[utoipa::path(
     tag = "Settings",
@@ -73,8 +73,8 @@ pub async fn patch_settings(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
     use crate::core::models::settings::*;
+    use crate::infrastructure::db::AutomaDb;
     use std::sync::Arc;
     use tokio::sync::Mutex;
     use tokio::sync::broadcast;
@@ -127,7 +127,9 @@ mod tests {
             runner: None,
         };
 
-        let Json(updated) = patch_settings(State(state.clone()), Json(patch)).await.unwrap();
+        let Json(updated) = patch_settings(State(state.clone()), Json(patch))
+            .await
+            .unwrap();
         assert_eq!(updated.grid.matrix.columns, 4);
         assert_eq!(updated.grid.matrix.rows, 3);
         assert_eq!(updated.grid.display.screen_width, 2560);
@@ -148,7 +150,9 @@ mod tests {
         custom.browser.default_type = "chromium".to_string();
         custom.runner.max_concurrent_jobs = 10;
 
-        let Json(saved) = update_settings(State(state.clone()), Json(custom)).await.unwrap();
+        let Json(saved) = update_settings(State(state.clone()), Json(custom))
+            .await
+            .unwrap();
         assert_eq!(saved.browser.default_type, "chromium");
         assert_eq!(saved.runner.max_concurrent_jobs, 10);
 
@@ -172,10 +176,18 @@ mod tests {
             runner: None,
         };
 
-        let Json(updated) = patch_settings(State(state.clone()), Json(patch)).await.unwrap();
-        assert_eq!(updated.browser.default_profile_id.as_deref(), Some("profile_custom_99"));
+        let Json(updated) = patch_settings(State(state.clone()), Json(patch))
+            .await
+            .unwrap();
+        assert_eq!(
+            updated.browser.default_profile_id.as_deref(),
+            Some("profile_custom_99")
+        );
 
         let Json(fetched) = get_settings(State(state)).await.unwrap();
-        assert_eq!(fetched.browser.default_profile_id.as_deref(), Some("profile_custom_99"));
+        assert_eq!(
+            fetched.browser.default_profile_id.as_deref(),
+            Some("profile_custom_99")
+        );
     }
 }

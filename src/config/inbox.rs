@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::PathBuf;
-use crate::config::expander::{canonical_specter_dir, EnvExpander};
+use crate::config::expander::{EnvExpander, canonical_specter_dir};
+use crate::constants::endpoints::DEFAULT_HOST;
 use crate::constants::paths::{FILE_INBOX_JSON, FILE_INBOX_SQLITE};
 use crate::constants::pillars::PILLAR_INBOX;
 use crate::constants::ports::DEFAULT_INBOX_PORT;
-use crate::constants::endpoints::DEFAULT_HOST;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InboxConfig {
@@ -81,12 +81,13 @@ impl InboxConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         if path.exists()
-            && let Ok(content) = fs::read_to_string(&path) {
-                let expanded = EnvExpander::expand(&content);
-                if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
-                    return cfg;
-                }
+            && let Ok(content) = fs::read_to_string(&path)
+        {
+            let expanded = EnvExpander::expand(&content);
+            if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
+                return cfg;
             }
+        }
         let default = Self::default();
         let _ = default.save();
         default

@@ -6,7 +6,7 @@ pub mod types;
 pub use cache::{cleanup_stale_update_files, get_cached_update, spawn_background_update_check};
 pub use client::check_and_save_latest_version;
 pub use installer::run_upgrade;
-pub use types::{is_newer_version, UpdateInfo};
+pub use types::{UpdateInfo, is_newer_version};
 
 #[cfg(test)]
 mod tests {

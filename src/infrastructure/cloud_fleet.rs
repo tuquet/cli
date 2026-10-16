@@ -1,9 +1,11 @@
-use std::path::Path;
 use serde_json::Value;
 use specter_browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
+use std::path::Path;
 
-use crate::infrastructure::cloud_reporter::{CloudReporter, DeviceCredentials, DEFAULT_SUPABASE_ANON_KEY};
-use crate::ui::{badge_error, badge_online, badge_step, Card};
+use crate::infrastructure::cloud_reporter::{
+    CloudReporter, DEFAULT_SUPABASE_ANON_KEY, DeviceCredentials,
+};
+use crate::ui::{Card, badge_error, badge_online, badge_step};
 
 pub struct CloudFleetOrchestrator;
 
@@ -28,7 +30,10 @@ impl CloudFleetOrchestrator {
             return Ok(id_or_name.to_string());
         }
 
-        let list_url = format!("{}/rest/v1/rpc/list_browsers", cloud_url.trim_end_matches('/'));
+        let list_url = format!(
+            "{}/rest/v1/rpc/list_browsers",
+            cloud_url.trim_end_matches('/')
+        );
         let res = client
             .post(&list_url)
             .header("apikey", anon_key)
@@ -73,7 +78,10 @@ impl CloudFleetOrchestrator {
         cloud_id: &str,
         base_dir: &Path,
     ) -> Result<AcquiredLease, Box<dyn std::error::Error + Send + Sync>> {
-        let rpc_url = format!("{}/rest/v1/rpc/acquire_browser", cloud_url.trim_end_matches('/'));
+        let rpc_url = format!(
+            "{}/rest/v1/rpc/acquire_browser",
+            cloud_url.trim_end_matches('/')
+        );
         let res = client
             .post(&rpc_url)
             .header("apikey", anon_key)
@@ -88,7 +96,10 @@ impl CloudFleetOrchestrator {
             .await?;
 
         let body: Value = res.json().await?;
-        let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+        let success = body
+            .get("success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         if !success {
             let err_msg = body
@@ -116,13 +127,15 @@ impl CloudFleetOrchestrator {
         let os = browser["os_platform"].as_str().map(|s| s.to_string());
         let cores = browser["cpu_cores"].as_u64().map(|s| s as u32);
         let ram = browser["ram_gb"].as_u64().map(|s| s as u32);
-        let proxy = browser["proxy"].as_str().filter(|p| !p.is_empty()).map(|s| s.to_string());
+        let proxy = browser["proxy"]
+            .as_str()
+            .filter(|p| !p.is_empty())
+            .map(|s| s.to_string());
         let tz = browser["timezone"].as_str().map(|s| s.to_string());
         let loc = browser["locale"].as_str().map(|s| s.to_string());
 
-        let mut profile = BrowserProfile::generate(
-            name, seed, os, cores, ram, proxy.clone(), tz, loc,
-        );
+        let mut profile =
+            BrowserProfile::generate(name, seed, os, cores, ram, proxy.clone(), tz, loc);
         profile.cloud_id = Some(cloud_id.to_string());
         profile.storage_path = browser["storage_path"].as_str().map(|s| s.to_string());
         profile.storage_hash = browser["storage_hash"].as_str().map(|s| s.to_string());
@@ -168,7 +181,9 @@ impl CloudFleetOrchestrator {
         if let Some(pxy) = proxy {
             let probe = ProxyProbe::probe(pxy, 4).await;
             if !probe.alive {
-                let err_msg = probe.error.unwrap_or_else(|| "Connection timed out".to_string());
+                let err_msg = probe
+                    .error
+                    .unwrap_or_else(|| "Connection timed out".to_string());
                 return Err(format!("Configured proxy '{}' unreachable: {}", pxy, err_msg).into());
             }
             return Ok(Some(probe));
@@ -189,7 +204,10 @@ impl CloudFleetOrchestrator {
         let cloud_target_id = profile.cloud_id.as_deref().unwrap_or(&profile.id);
         let canonical_storage = format!("profiles/{}.tar.zst", profile.id);
 
-        let rpc_url = format!("{}/rest/v1/rpc/release_browser", cloud_url.trim_end_matches('/'));
+        let rpc_url = format!(
+            "{}/rest/v1/rpc/release_browser",
+            cloud_url.trim_end_matches('/')
+        );
         let res = client
             .post(&rpc_url)
             .header("apikey", anon_key)
@@ -212,7 +230,10 @@ impl CloudFleetOrchestrator {
             .await?;
 
         let body: Value = res.json().await?;
-        let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+        let success = body
+            .get("success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         if !success {
             let err_msg = body
@@ -233,7 +254,10 @@ impl CloudFleetOrchestrator {
         creds: &DeviceCredentials,
         cloud_id: &str,
     ) {
-        let rpc_url = format!("{}/rest/v1/rpc/release_browser", cloud_url.trim_end_matches('/'));
+        let rpc_url = format!(
+            "{}/rest/v1/rpc/release_browser",
+            cloud_url.trim_end_matches('/')
+        );
         let _ = client
             .post(&rpc_url)
             .header("apikey", anon_key)
@@ -261,35 +285,55 @@ impl CloudFleetOrchestrator {
         let app_config = crate::config::AppConfig::load();
 
         println!();
-        println!("{} Resolving cloud profile lease credentials...", badge_step("1/6"));
+        println!(
+            "{} Resolving cloud profile lease credentials...",
+            badge_step("1/6")
+        );
 
         let creds = match CloudReporter::load_credentials(&app_config.data_dir).await {
             Some(c) => c,
             None => {
-                eprintln!("\n{} Workstation not enrolled with Specter Cloud.", badge_error("AUTH ERROR"));
-                eprintln!("Run 'specter runner enroll' or login to configure device credentials.\n");
+                eprintln!(
+                    "\n{} Workstation not enrolled with Specter Cloud.",
+                    badge_error("AUTH ERROR")
+                );
+                eprintln!(
+                    "Run 'specter runner enroll' or login to configure device credentials.\n"
+                );
                 return Err("Missing cloud device credentials".into());
             }
         };
 
-        let cloud_url = app_config.cloud_url.as_deref()
+        let cloud_url = app_config
+            .cloud_url
+            .as_deref()
             .or(creds.cloud_url.as_deref())
             .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-        let anon_key = creds.api_key.as_deref().unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
+        let anon_key = creds
+            .api_key
+            .as_deref()
+            .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
         let client = CloudReporter::build_http_client();
 
         let cloud_id = Self::resolve_profile_id(&client, cloud_url, anon_key, &creds, id_or_name)
             .await
             .map_err(|e| format!("{}", e))?;
 
-        println!("{} Acquiring exclusive lease on profile '{}'...", badge_step("2/6"), cloud_id);
-        let lease = match Self::acquire_lease(&client, cloud_url, anon_key, &creds, &cloud_id, &base_dir).await {
-            Ok(l) => l,
-            Err(e) => {
-                eprintln!("\n{} {}", badge_error("ACQUIRE FAILED"), e);
-                return Err(format!("{}", e).into());
-            }
-        };
+        println!(
+            "{} Acquiring exclusive lease on profile '{}'...",
+            badge_step("2/6"),
+            cloud_id
+        );
+        let lease =
+            match Self::acquire_lease(&client, cloud_url, anon_key, &creds, &cloud_id, &base_dir)
+                .await
+            {
+                Ok(l) => l,
+                Err(e) => {
+                    eprintln!("\n{} {}", badge_error("ACQUIRE FAILED"), e);
+                    return Err(format!("{}", e).into());
+                }
+            };
 
         println!(
             "  • Profile ID: {} [{}]",
@@ -299,7 +343,10 @@ impl CloudFleetOrchestrator {
             println!("  • Restored session snapshot (.tar.zst delta intact)");
         }
 
-        println!("{} Verifying network & proxy pre-flight guardrails...", badge_step("3/6"));
+        println!(
+            "{} Verifying network & proxy pre-flight guardrails...",
+            badge_step("3/6")
+        );
         if let Err(probe_err) = Self::preflight_proxy(lease.proxy.as_deref()).await {
             eprintln!("\n{} {}", badge_error("PRE-FLIGHT FAILED"), probe_err);
             println!("  • Aborting to prevent IP leak. Rolling back lease to IDLE...");
@@ -307,7 +354,10 @@ impl CloudFleetOrchestrator {
             return Err(format!("{}", probe_err).into());
         }
 
-        println!("{} Booting stealth browser session & executing workflow...", badge_step("4/6"));
+        println!(
+            "{} Booting stealth browser session & executing workflow...",
+            badge_step("4/6")
+        );
         let execution_result = if workflow_path_opt.is_some() || workflow_json_opt.is_some() {
             crate::commands::automa::run_workflow(
                 workflow_path_opt,
@@ -317,16 +367,31 @@ impl CloudFleetOrchestrator {
                 Some(lease.profile.id.clone()),
                 variables,
                 timeout_opt,
-            ).await
+            )
+            .await
         } else {
             // Smoke test / verification run
-            println!("  • No workflow specified. Running cloud profile health verification probe...");
+            println!(
+                "  • No workflow specified. Running cloud profile health verification probe..."
+            );
             tokio::time::sleep(tokio::time::Duration::from_millis(800)).await;
             Ok(())
         };
 
-        println!("{} Packaging LevelDB/cookies delta into .tar.zst snapshot...", badge_step("5/6"));
-        let report = match Self::release_lease(&client, cloud_url, anon_key, &creds, &lease.profile, &base_dir).await {
+        println!(
+            "{} Packaging LevelDB/cookies delta into .tar.zst snapshot...",
+            badge_step("5/6")
+        );
+        let report = match Self::release_lease(
+            &client,
+            cloud_url,
+            anon_key,
+            &creds,
+            &lease.profile,
+            &base_dir,
+        )
+        .await
+        {
             Ok(r) => r,
             Err(e) => {
                 eprintln!("\n{} {}", badge_error("RELEASE FAILED"), e);
@@ -334,19 +399,34 @@ impl CloudFleetOrchestrator {
             }
         };
 
-        println!("{} Lease successfully returned to cloud fleet!", badge_step("6/6"));
+        println!(
+            "{} Lease successfully returned to cloud fleet!",
+            badge_step("6/6")
+        );
 
         println!();
         let mut card = Card::new("AUTONOMOUS CLOUD WORKFLOW PIPELINE");
         card.with_badge(badge_online("COMPLETED"));
         card.with_min_width(74);
         card.add_kv("Cloud Browser ID", &cloud_id);
-        card.add_kv("Profile", format!("{} [{}]", lease.profile.name, lease.profile.id));
+        card.add_kv(
+            "Profile",
+            format!("{} [{}]", lease.profile.name, lease.profile.id),
+        );
         if let Some(s) = lease.profile.fingerprint_seed {
             card.add_kv("Hardware PRNG", format!("{} (Deterministic)", s));
         }
-        card.add_kv("Delta Storage", format!("~/.specter/browser/profiles/{}.tar.zst", lease.profile.id));
-        card.add_kv("Compressed Size", format!("{} bytes ({:.1}% ratio)", report.compressed_bytes, report.compression_ratio));
+        card.add_kv(
+            "Delta Storage",
+            format!("~/.specter/browser/profiles/{}.tar.zst", lease.profile.id),
+        );
+        card.add_kv(
+            "Compressed Size",
+            format!(
+                "{} bytes ({:.1}% ratio)",
+                report.compressed_bytes, report.compression_ratio
+            ),
+        );
         card.add_kv("SHA-256 Digest", &report.sha256_hash);
         card.add_kv("Lease State", "IDLE (Unlocked for fleet mesh)");
         card.with_footer("Cloud Profile Fleet Mesh orchestration pipeline finished successfully.");

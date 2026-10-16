@@ -1,9 +1,7 @@
-use axum::{
-    extract::{Json, Query, State},
-};
 use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::storage::{StorageTable, StorageVariable};
+use axum::extract::{Json, Query, State};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -82,48 +80,60 @@ pub async fn restore_storage_backup(
 
     let db = state.db.lock().await;
 
-    let insert_workflow = |db: &crate::infrastructure::db::AutomaDb, wf: &serde_json::Value| -> Result<bool, AutomaError> {
+    let insert_workflow = |db: &crate::infrastructure::db::AutomaDb,
+                           wf: &serde_json::Value|
+     -> Result<bool, AutomaError> {
         if !wf.is_object() {
             return Ok(false);
         }
-        let id = wf.get("id")
+        let id = wf
+            .get("id")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
             .unwrap_or_else(|| format!("wf_{}", uuid::Uuid::new_v4().simple()));
 
-        let name = wf.get("name")
+        let name = wf
+            .get("name")
             .and_then(|v| v.as_str())
             .unwrap_or(&id)
             .to_string();
 
-        let description = wf.get("description")
+        let description = wf
+            .get("description")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let version = wf.get("version")
+        let version = wf
+            .get("version")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let icon = wf.get("icon")
+        let icon = wf
+            .get("icon")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
         let data_str = serde_json::to_string(wf)
             .map_err(|e| AutomaError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
 
-        db.workflows().create_workflow(
-            &id,
-            &name,
-            description.as_deref(),
-            &data_str,
-            version.as_deref(),
-            icon.as_deref(),
-        ).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        db.workflows()
+            .create_workflow(
+                &id,
+                &name,
+                description.as_deref(),
+                &data_str,
+                version.as_deref(),
+                icon.as_deref(),
+            )
+            .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
         if let Some(included) = wf.get("includedWorkflows").and_then(|v| v.as_object()) {
             for (sub_id, sub_wf) in included {
                 if sub_wf.is_object() {
-                    let sub_name = sub_wf.get("name").and_then(|v| v.as_str()).unwrap_or(sub_id);
+                    let sub_name = sub_wf
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(sub_id);
                     let sub_desc = sub_wf.get("description").and_then(|v| v.as_str());
                     let sub_ver = sub_wf.get("version").and_then(|v| v.as_str());
                     let sub_icon = sub_wf.get("icon").and_then(|v| v.as_str());
@@ -150,24 +160,35 @@ pub async fn restore_storage_backup(
             }
         }
     } else if let Some(map) = backup_val.as_object() {
-        if map.contains_key("workflows") || map.contains_key("storageVariables") || map.contains_key("storageTables") {
+        if map.contains_key("workflows")
+            || map.contains_key("storageVariables")
+            || map.contains_key("storageTables")
+        {
             if let Some(wf_field) = map.get("workflows") {
-                let is_protected = map.get("isProtected")
+                let is_protected = map
+                    .get("isProtected")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
 
                 let parsed_wf_list: Vec<serde_json::Value> = if is_protected {
                     let pass = payload.password.as_deref().unwrap_or("");
                     if pass.is_empty() {
-                        return Err(AutomaError::BadRequest("Password is required to decrypt protected backup".into()));
+                        return Err(AutomaError::BadRequest(
+                            "Password is required to decrypt protected backup".into(),
+                        ));
                     }
                     let enc_str = wf_field.as_str().ok_or_else(|| {
-                        AutomaError::BadRequest("Protected workflows must be an encrypted string".into())
+                        AutomaError::BadRequest(
+                            "Protected workflows must be an encrypted string".into(),
+                        )
                     })?;
                     let decrypted_str = crate::core::crypto::decrypt_secret(enc_str, pass)
-                        .map_err(|e| AutomaError::BadRequest(format!("Failed to decrypt workflows: {}", e)))?;
-                    serde_json::from_str(&decrypted_str)
-                        .map_err(|e| AutomaError::BadRequest(format!("Invalid decrypted workflow JSON: {}", e)))?
+                        .map_err(|e| {
+                            AutomaError::BadRequest(format!("Failed to decrypt workflows: {}", e))
+                        })?;
+                    serde_json::from_str(&decrypted_str).map_err(|e| {
+                        AutomaError::BadRequest(format!("Invalid decrypted workflow JSON: {}", e))
+                    })?
                 } else if let Some(s) = wf_field.as_str() {
                     serde_json::from_str(s).unwrap_or_default()
                 } else if let Some(arr) = wf_field.as_array() {
@@ -194,12 +215,16 @@ pub async fn restore_storage_backup(
 
                 for v in parsed_var_list {
                     if let Some(v_obj) = v.as_object() {
-                        let name = v_obj.get("name")
+                        let name = v_obj
+                            .get("name")
                             .or_else(|| v_obj.get("key"))
                             .and_then(|k| k.as_str())
                             .unwrap_or_default();
                         if !name.is_empty() {
-                            let val = v_obj.get("value").cloned().unwrap_or(serde_json::Value::Null);
+                            let val = v_obj
+                                .get("value")
+                                .cloned()
+                                .unwrap_or(serde_json::Value::Null);
                             let sv = StorageVariable {
                                 id: None,
                                 name: Some(name.to_string()),
@@ -225,12 +250,18 @@ pub async fn restore_storage_backup(
 
                 for t in parsed_tbl_list {
                     if let Some(t_obj) = t.as_object() {
-                        let name = t_obj.get("name").and_then(|n| n.as_str()).unwrap_or_default();
+                        let name = t_obj
+                            .get("name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or_default();
                         if !name.is_empty() {
-                            let id = t_obj.get("id")
+                            let id = t_obj
+                                .get("id")
                                 .and_then(|i| i.as_str())
                                 .map(|s| s.to_string())
-                                .unwrap_or_else(|| format!("tbl_{}", uuid::Uuid::new_v4().simple()));
+                                .unwrap_or_else(|| {
+                                    format!("tbl_{}", uuid::Uuid::new_v4().simple())
+                                });
                             let columns = t_obj.get("columns").cloned();
                             let cols_idx = t_obj.get("columnsIndex").cloned();
                             let now = std::time::SystemTime::now()
@@ -250,14 +281,17 @@ pub async fn restore_storage_backup(
 
                             if db.tables().save_table(&st).is_ok() {
                                 total_tables += 1;
-                                let rows_arr = t_obj.get("rows")
+                                let rows_arr = t_obj
+                                    .get("rows")
                                     .or_else(|| t_obj.get("items"))
                                     .and_then(|r| r.as_array());
 
                                 if let Some(rows) = rows_arr {
                                     for row in rows {
-                                        let row_id = format!("row_{}", uuid::Uuid::new_v4().simple());
-                                        let row_str = serde_json::to_string(row).unwrap_or_default();
+                                        let row_id =
+                                            format!("row_{}", uuid::Uuid::new_v4().simple());
+                                        let row_str =
+                                            serde_json::to_string(row).unwrap_or_default();
                                         let _ = db.tables().add_table_row(&row_id, &id, &row_str);
                                     }
                                 }
@@ -270,20 +304,28 @@ pub async fn restore_storage_backup(
             total_workflows += 1;
         }
     } else {
-        return Err(AutomaError::BadRequest("Backup payload must be a JSON object or array".into()));
+        return Err(AutomaError::BadRequest(
+            "Backup payload must be a JSON object or array".into(),
+        ));
     }
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "action": "restore_backup",
-        "workflowsCount": total_workflows,
-        "variablesCount": total_variables,
-        "tablesCount": total_tables,
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "action": "restore_backup",
+            "workflowsCount": total_workflows,
+            "variablesCount": total_variables,
+            "tablesCount": total_tables,
+        })
+        .to_string(),
+    );
 
     Ok(Json(RestoreBackupResponse {
         success: true,
-        message: format!("Successfully restored {} workflow(s), {} variable(s), {} table(s)", total_workflows, total_variables, total_tables),
+        message: format!(
+            "Successfully restored {} workflow(s), {} variable(s), {} table(s)",
+            total_workflows, total_variables, total_tables
+        ),
         workflows_count: total_workflows,
         variables_count: total_variables,
         tables_count: total_tables,
@@ -311,17 +353,20 @@ pub async fn export_storage_backup(
 ) -> Result<Json<ExportBackupResponse>, AutomaError> {
     let db = state.db.lock().await;
 
-    let raw_workflows = db.workflows().get_workflows(None, None, None)
+    let raw_workflows = db
+        .workflows()
+        .get_workflows(None, None, None)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     let mut workflows_array = Vec::new();
     for w in raw_workflows {
-        let mut wf_obj: serde_json::Value = serde_json::from_str(&w.data).unwrap_or(serde_json::json!({
-            "id": w.id,
-            "name": w.name,
-            "description": w.description,
-            "version": w.version,
-        }));
+        let mut wf_obj: serde_json::Value =
+            serde_json::from_str(&w.data).unwrap_or(serde_json::json!({
+                "id": w.id,
+                "name": w.name,
+                "description": w.description,
+                "version": w.version,
+            }));
         if let Some(map) = wf_obj.as_object_mut() {
             map.insert("id".to_string(), serde_json::Value::String(w.id));
             map.insert("name".to_string(), serde_json::Value::String(w.name));
@@ -333,7 +378,9 @@ pub async fn export_storage_backup(
         workflows_array.push(wf_obj);
     }
 
-    let (is_protected, workflows_val) = if let Some(pass) = query.password.as_deref().filter(|p| !p.trim().is_empty()) {
+    let (is_protected, workflows_val) = if let Some(pass) =
+        query.password.as_deref().filter(|p| !p.trim().is_empty())
+    {
         let serialized = serde_json::to_string(&workflows_array)
             .map_err(|e| AutomaError::Internal(format!("Failed to serialize workflows: {}", e)))?;
         let encrypted = crate::core::crypto::encrypt_secret(&serialized, pass)
@@ -343,15 +390,22 @@ pub async fn export_storage_backup(
         (false, serde_json::Value::Array(workflows_array))
     };
 
-    let variables = db.storage().get_variables(None, None, None)
+    let variables = db
+        .storage()
+        .get_variables(None, None, None)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let mut tables = db.tables().get_tables(None, None, None)
+    let mut tables = db
+        .tables()
+        .get_tables(None, None, None)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     for t in &mut tables {
         if let Some(ref tid) = t.id {
-            let rows = db.tables().get_table_rows(tid, None, None, None).unwrap_or_default();
+            let rows = db
+                .tables()
+                .get_table_rows(tid, None, None, None)
+                .unwrap_or_default();
             let row_items: Vec<serde_json::Value> = rows.into_iter().map(|r| r.data).collect();
             t.items = Some(serde_json::Value::Array(row_items));
         }

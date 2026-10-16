@@ -1,16 +1,9 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::AppState;
-use crate::infrastructure::cloud::{
-    CloudApiClient, CredentialStore, TenancyManager, TenantInfo,
-};
+use crate::infrastructure::cloud::{CloudApiClient, CredentialStore, TenancyManager, TenantInfo};
 
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -89,9 +82,7 @@ pub struct SwitchTenantResponse {
         (status = 401, description = "Workstation not enrolled or unauthenticated", body = crate::core::error::ApiErrorResponse)
     )
 )]
-pub async fn get_tenants(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn get_tenants(State(state): State<AppState>) -> impl IntoResponse {
     let creds = match CredentialStore::load(&state.config.data_dir).await {
         Some(c) => c,
         None => {
@@ -104,14 +95,19 @@ pub async fn get_tenants(
                     active_tenant_name: None,
                     tenants: Vec::new(),
                 }),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
-    let cloud_url = creds.cloud_url.clone()
+    let cloud_url = creds
+        .cloud_url
+        .clone()
         .or_else(|| state.config.cloud_url.clone())
         .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-    let api_key = creds.api_key.clone()
+    let api_key = creds
+        .api_key
+        .clone()
         .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
 
     let client = CloudApiClient::build_http_client();
@@ -142,7 +138,8 @@ pub async fn get_tenants(
             active_tenant_name: creds.tenant_name,
             tenants,
         }),
-    ).into_response()
+    )
+        .into_response()
 }
 
 #[utoipa::path(
@@ -166,12 +163,15 @@ pub async fn switch_tenant(
     match TenancyManager::switch_tenant(&state.config.data_dir, &payload.target).await {
         Ok(active_tenant) => {
             // Broadcast tenant switch event to global SSE stream
-            let _ = state.tx.send(serde_json::json!({
-                "type": "tenant_switched",
-                "tenantId": active_tenant.id,
-                "tenantSlug": active_tenant.slug,
-                "tenantName": active_tenant.name
-            }).to_string());
+            let _ = state.tx.send(
+                serde_json::json!({
+                    "type": "tenant_switched",
+                    "tenantId": active_tenant.id,
+                    "tenantSlug": active_tenant.slug,
+                    "tenantName": active_tenant.name
+                })
+                .to_string(),
+            );
 
             (
                 StatusCode::OK,
@@ -180,7 +180,8 @@ pub async fn switch_tenant(
                     message: format!("Switched active workspace to '{}'", active_tenant.name),
                     active_tenant: Some(active_tenant),
                 }),
-            ).into_response()
+            )
+                .into_response()
         }
         Err(e) => (
             StatusCode::BAD_REQUEST,
@@ -189,6 +190,7 @@ pub async fn switch_tenant(
                 message: format!("Failed to switch workspace: {}", e),
                 active_tenant: None,
             }),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

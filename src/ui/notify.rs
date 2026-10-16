@@ -2,12 +2,12 @@
 //! Uses `@clack/prompts` visual grammar (`◇`, `◆`, `▲`, `■`, `┌`, `│`, `└`) on TTY
 //! and single-line token-compact output on Non-TTY (AI Agent / CI pipes).
 
-use std::io::{self, IsTerminal};
 use crate::ui::colors;
 use crate::ui::prompt::{
-    clack_cancel, clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok,
-    clack_step_warn, strip_ansi_codes, S_BAR,
+    S_BAR, clack_cancel, clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok,
+    clack_step_warn, strip_ansi_codes,
 };
+use std::io::{self, IsTerminal};
 
 pub struct Notify;
 

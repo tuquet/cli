@@ -46,7 +46,10 @@ impl SupabaseAuthClient {
         email: &str,
         password: &str,
     ) -> Result<AuthSession, Box<dyn std::error::Error + Send + Sync>> {
-        let endpoint = format!("{}/auth/v1/token?grant_type=password", cloud_url.trim_end_matches('/'));
+        let endpoint = format!(
+            "{}/auth/v1/token?grant_type=password",
+            cloud_url.trim_end_matches('/')
+        );
         let payload = serde_json::json!({
             "email": email.trim(),
             "password": password
@@ -70,7 +73,9 @@ impl SupabaseAuthClient {
         }
 
         let mut session: AuthSession = res.json().await?;
-        if session.expires_at.is_none() && let Some(in_secs) = session.expires_in {
+        if session.expires_at.is_none()
+            && let Some(in_secs) = session.expires_in
+        {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs() as i64)
@@ -123,7 +128,7 @@ impl SupabaseAuthClient {
         code: &str,
     ) -> Result<AuthSession, Box<dyn std::error::Error + Send + Sync>> {
         let endpoint = format!("{}/auth/v1/verify", cloud_url.trim_end_matches('/'));
-        
+
         // Try type "email" first (standard for OTP codes)
         let payload_email = serde_json::json!({
             "type": "email",
@@ -141,7 +146,9 @@ impl SupabaseAuthClient {
 
         if res.status().is_success() {
             let mut session: AuthSession = res.json().await?;
-            if session.expires_at.is_none() && let Some(in_secs) = session.expires_in {
+            if session.expires_at.is_none()
+                && let Some(in_secs) = session.expires_in
+            {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs() as i64)
@@ -168,7 +175,9 @@ impl SupabaseAuthClient {
 
         if res_magic.status().is_success() {
             let mut session: AuthSession = res_magic.json().await?;
-            if session.expires_at.is_none() && let Some(in_secs) = session.expires_in {
+            if session.expires_at.is_none()
+                && let Some(in_secs) = session.expires_in
+            {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs() as i64)
@@ -218,7 +227,10 @@ impl SupabaseAuthClient {
         api_key: &str,
         refresh_token: &str,
     ) -> Result<AuthSession, Box<dyn std::error::Error + Send + Sync>> {
-        let endpoint = format!("{}/auth/v1/token?grant_type=refresh_token", cloud_url.trim_end_matches('/'));
+        let endpoint = format!(
+            "{}/auth/v1/token?grant_type=refresh_token",
+            cloud_url.trim_end_matches('/')
+        );
         let payload = serde_json::json!({
             "refresh_token": refresh_token.trim()
         });
@@ -237,7 +249,9 @@ impl SupabaseAuthClient {
         }
 
         let mut session: AuthSession = res.json().await?;
-        if session.expires_at.is_none() && let Some(in_secs) = session.expires_in {
+        if session.expires_at.is_none()
+            && let Some(in_secs) = session.expires_in
+        {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs() as i64)
@@ -279,22 +293,34 @@ mod tests {
     #[test]
     fn test_gotrue_error_deserialization_formats() {
         // Format 1: error_description
-        let json1 = r#"{"error": "invalid_grant", "error_description": "Invalid login credentials"}"#;
+        let json1 =
+            r#"{"error": "invalid_grant", "error_description": "Invalid login credentials"}"#;
         let err1: GoTrueError = serde_json::from_str(json1).expect("Deserialize err1");
-        let msg1 = err1.error_description.or(err1.msg).or(err1.message).or(err1.error);
+        let msg1 = err1
+            .error_description
+            .or(err1.msg)
+            .or(err1.message)
+            .or(err1.error);
         assert_eq!(msg1, Some("Invalid login credentials".to_string()));
 
         // Format 2: msg
         let json2 = r#"{"msg": "Email rate limit exceeded"}"#;
         let err2: GoTrueError = serde_json::from_str(json2).expect("Deserialize err2");
-        let msg2 = err2.error_description.or(err2.msg).or(err2.message).or(err2.error);
+        let msg2 = err2
+            .error_description
+            .or(err2.msg)
+            .or(err2.message)
+            .or(err2.error);
         assert_eq!(msg2, Some("Email rate limit exceeded".to_string()));
 
         // Format 3: message
         let json3 = r#"{"message": "User not found"}"#;
         let err3: GoTrueError = serde_json::from_str(json3).expect("Deserialize err3");
-        let msg3 = err3.error_description.or(err3.msg).or(err3.message).or(err3.error);
+        let msg3 = err3
+            .error_description
+            .or(err3.msg)
+            .or(err3.message)
+            .or(err3.error);
         assert_eq!(msg3, Some("User not found".to_string()));
     }
 }
-

@@ -1,10 +1,10 @@
 use aes::Aes256;
+use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
 use base64::Engine;
 use cbc::{Decryptor, Encryptor};
-use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, BlockDecryptMut, KeyIvInit};
 use hmac::{Hmac, Mac};
 use md5::{Digest, Md5};
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 use sha2::Sha256;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -46,7 +46,8 @@ pub fn encrypt_aes(plaintext: &str, passphrase: &str) -> Result<String> {
     let pt_len = plaintext.len();
     let mut buf = vec![0u8; pt_len + 32];
     buf[..pt_len].copy_from_slice(plaintext.as_bytes());
-    let ciphertext = cipher.encrypt_padded_mut::<Pkcs7>(&mut buf, pt_len)
+    let ciphertext = cipher
+        .encrypt_padded_mut::<Pkcs7>(&mut buf, pt_len)
         .map_err(|_| "Encryption padding failed")?;
 
     let mut result = Vec::new();
@@ -74,7 +75,8 @@ pub fn decrypt_aes(encrypted_base64: &str, passphrase: &str) -> Result<String> {
     let cipher = Aes256CbcDec::new(key.as_slice().into(), iv.as_slice().into());
     let _ct_len = ciphertext.len();
     let mut buf = ciphertext.to_vec();
-    let decrypted = cipher.decrypt_padded_mut::<Pkcs7>(&mut buf)
+    let decrypted = cipher
+        .decrypt_padded_mut::<Pkcs7>(&mut buf)
         .map_err(|_| "Decryption failed (incorrect padding or passphrase)")?;
 
     let plaintext = String::from_utf8(decrypted.to_vec())?;
@@ -165,7 +167,10 @@ mod tests {
 
         let result = decrypt_secret(&encrypted, passphrase);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Integrity check failed: HMAC signature does not match!");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Integrity check failed: HMAC signature does not match!"
+        );
     }
 
     #[test]
@@ -183,10 +188,16 @@ mod tests {
 
     #[test]
     fn test_decrypt_aes_missing_salted_prefix_err() {
-        let invalid_prefix_base64 = base64::engine::general_purpose::STANDARD.encode(b"NotSaltedData123456");
+        let invalid_prefix_base64 =
+            base64::engine::general_purpose::STANDARD.encode(b"NotSaltedData123456");
         let result = decrypt_aes(&invalid_prefix_base64, "pass");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("missing Salted__ prefix"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("missing Salted__ prefix")
+        );
     }
 
     #[test]
@@ -201,8 +212,14 @@ mod tests {
 
     #[test]
     fn test_constant_time_compare() {
-        assert!(constant_time_compare(b"secret_hash_value_12345", b"secret_hash_value_12345"));
-        assert!(!constant_time_compare(b"secret_hash_value_12345", b"secret_hash_value_12346"));
+        assert!(constant_time_compare(
+            b"secret_hash_value_12345",
+            b"secret_hash_value_12345"
+        ));
+        assert!(!constant_time_compare(
+            b"secret_hash_value_12345",
+            b"secret_hash_value_12346"
+        ));
         assert!(!constant_time_compare(b"short", b"longer_string"));
         assert!(!constant_time_compare(b"", b"a"));
         assert!(constant_time_compare(b"", b""));

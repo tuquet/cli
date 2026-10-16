@@ -1,7 +1,7 @@
-use axum::extract::{Path, Json, Query, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::storage::StorageVariable;
+use axum::extract::{Json, Path, Query, State};
 use serde::Deserialize;
 use utoipa::IntoParams;
 
@@ -35,7 +35,9 @@ pub async fn get_variables(
     Query(query): Query<GetVariablesQuery>,
 ) -> Result<Json<Vec<StorageVariable>>, AutomaError> {
     let db = state.db.lock().await;
-    let vars = db.storage().get_variables(query.limit, query.offset, query.search.as_deref())?;
+    let vars = db
+        .storage()
+        .get_variables(query.limit, query.offset, query.search.as_deref())?;
     Ok(Json(vars))
 }
 
@@ -60,13 +62,16 @@ pub async fn add_variable(
     let db = state.db.lock().await;
     let res = db.storage().save_variable(&payload)?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "variable",
-        "action": "upsert",
-        "id": res.id.as_deref().unwrap_or_default(),
-        "name": res.name.as_deref().unwrap_or_default()
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "variable",
+            "action": "upsert",
+            "id": res.id.as_deref().unwrap_or_default(),
+            "name": res.name.as_deref().unwrap_or_default()
+        })
+        .to_string(),
+    );
 
     Ok(Json(res))
 }
@@ -94,12 +99,15 @@ pub async fn delete_variable(
     let db = state.db.lock().await;
     db.storage().delete_variable(&id)?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "variable",
-        "action": "delete",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "variable",
+            "action": "delete",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(super::StorageActionResponse {
         success: true,

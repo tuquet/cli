@@ -4,16 +4,16 @@ use std::path::Path;
 
 use super::cache::get_cached_update;
 use super::client::{check_and_save_latest_version, fetch_bytes_with_fallback};
-use super::types::{UpdateInfo, GITHUB_REPO};
+use super::types::{GITHUB_REPO, UpdateInfo};
 
 /// Perform upgrade: checks if managed by Scoop, otherwise performs in-place self-update.
 pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     use crate::ui::prompt::{
-        clack_intro, clack_outro, clack_step_info, clack_step_ok, clack_step_warn, ClackSpinner,
+        ClackSpinner, clack_intro, clack_outro, clack_step_info, clack_step_ok, clack_step_warn,
     };
 
     clack_intro("spc upgrade", "Specter CLI Self-Updater & Release Manager");
-    let sp = ClackSpinner::start(&format!(
+    let sp = ClackSpinner::start(format!(
         "Checking for latest release from GitHub ({})...",
         GITHUB_REPO
     ));
@@ -29,7 +29,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             sp.clear();
-            clack_step_warn(&format!(
+            clack_step_warn(format!(
                 "Failed to reach GitHub API ({}). Checking local cache...",
                 e
             ));
@@ -42,7 +42,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if !info.has_update {
-        clack_step_ok(&format!(
+        clack_step_ok(format!(
             "Specter is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
             current
         ));
@@ -50,15 +50,15 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    clack_step_warn(&format!(
+    clack_step_warn(format!(
         "New version available: \x1b[38;2;251;191;36mv{}\x1b[0m -> \x1b[1;32mv{}\x1b[0m",
         current, info.latest_version
     ));
 
     let current_exe = std::env::current_exe()?;
     let exe_lower = current_exe.to_string_lossy().to_lowercase();
-    let is_scoop_install = exe_lower.contains("scoop\\apps\\specter")
-        || exe_lower.contains("scoop/apps/specter");
+    let is_scoop_install =
+        exe_lower.contains("scoop\\apps\\specter") || exe_lower.contains("scoop/apps/specter");
 
     // 1. If installed as a dedicated Scoop app, delegate to scoop update
     if is_scoop_install {
@@ -83,7 +83,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             {
                 let stdout_str = String::from_utf8_lossy(&output.stdout);
                 if output.status.success() && !stdout_str.contains("isn't installed") {
-                    clack_step_ok(&format!(
+                    clack_step_ok(format!(
                         "Successfully upgraded Specter to v{} via Scoop!",
                         info.latest_version
                     ));
@@ -115,7 +115,10 @@ async fn perform_in_place_self_update(
     println!("╰───────────────────────────────────────────────────────────────────────────╯");
     println!();
 
-    let url = format!("https://api.github.com/repos/{}/releases/latest", GITHUB_REPO);
+    let url = format!(
+        "https://api.github.com/repos/{}/releases/latest",
+        GITHUB_REPO
+    );
     let release_bytes = fetch_bytes_with_fallback(&url, 30).await?;
 
     let release_json: serde_json::Value = serde_json::from_slice(&release_bytes)?;
@@ -172,7 +175,10 @@ async fn perform_in_place_self_update(
             }
             // Fallback raw binary
             if selected_asset.is_none()
-                && (name == "spc.exe" || name == "spc" || name == "specter.exe" || name == "specter")
+                && (name == "spc.exe"
+                    || name == "spc"
+                    || name == "specter.exe"
+                    || name == "specter")
             {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
@@ -251,8 +257,7 @@ async fn perform_in_place_self_update(
                 break;
             }
         }
-        extracted
-            .ok_or("Failed to locate 'spc' executable inside the downloaded ZIP archive")?
+        extracted.ok_or("Failed to locate 'spc' executable inside the downloaded ZIP archive")?
     } else if asset_name.ends_with(".tar.gz") {
         println!(
             "{} Extracting binary from Tarball archive in-memory...",
@@ -357,7 +362,10 @@ fn legacy_binary_name() -> &'static str {
     }
 }
 
-fn atomic_swap_binary(target_exe: &Path, binary_bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+fn atomic_swap_binary(
+    target_exe: &Path,
+    binary_bytes: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(windows)]
     {
         let old_exe = target_exe.with_extension("exe.old");

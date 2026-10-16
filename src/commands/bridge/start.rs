@@ -1,10 +1,10 @@
 use crate::infrastructure::bridge::{
-    check_dependencies, probe_port, BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge,
-    ServerConfig, ServerSelector,
+    BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge, ServerConfig, ServerSelector,
+    check_dependencies, probe_port,
 };
 use crate::ui::prompt::{
-    clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok, clack_step_skip,
-    clack_step_warn, ClackSpinner,
+    ClackSpinner, clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok,
+    clack_step_skip, clack_step_warn,
 };
 
 pub struct BridgeStartOptions<'a> {
@@ -34,7 +34,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         (_, Some(tag)) => {
             let matches = ServerSelector::filter_by_tag(&config, tag);
             if matches.is_empty() {
-                clack_step_err(&format!("No enabled servers found matching tag '{}'", tag));
+                clack_step_err(format!("No enabled servers found matching tag '{}'", tag));
                 return Err(format!("No enabled servers found matching tag '{}'", tag).into());
             }
             matches
@@ -46,7 +46,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             } else if target.contains('*') {
                 let matches = ServerSelector::filter_by_pattern(&config, target);
                 if matches.is_empty() {
-                    clack_step_err(&format!("No enabled servers matching pattern '{}'", target));
+                    clack_step_err(format!("No enabled servers matching pattern '{}'", target));
                     return Err(format!("No enabled servers matching pattern '{}'", target).into());
                 }
                 matches
@@ -59,7 +59,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                     )
                 })?;
                 if !srv.is_enabled() {
-                    clack_step_warn(&format!(
+                    clack_step_warn(format!(
                         "Server '{}' is disabled in {} (Enable with: spc bridge enable {})",
                         target,
                         BridgeConfig::config_path().display(),
@@ -81,7 +81,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         || opts.server.map(|s| s.contains('*')).unwrap_or(false)
     {
         for (id, _) in &disabled {
-            clack_step_skip(&format!("SKIPPED Server '{}' (disabled in bridge.json)", id));
+            clack_step_skip(format!("SKIPPED Server '{}' (disabled in bridge.json)", id));
         }
     }
 
@@ -91,7 +91,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         return Ok(());
     }
 
-    clack_step_info(&format!(
+    clack_step_info(format!(
         "Activating bridge connection(s) for {} server(s)...",
         servers_to_start.len()
     ));
@@ -109,7 +109,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             if !d.found
                 && (d.name == "cloudflared" && srv.server_type == "cloudflare" || d.name == "ssh")
             {
-                clack_step_err(&format!(
+                clack_step_err(format!(
                     "Missing required tool: '{}' (Install: {})",
                     d.name, d.install_hint
                 ));
@@ -117,11 +117,11 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             }
         }
 
-        let sp = ClackSpinner::start(&format!("Connecting to '{}' ({})...", srv_id, srv.name));
+        let sp = ClackSpinner::start(format!("Connecting to '{}' ({})...", srv_id, srv.name));
         match BridgeSupervisor::start_server(srv_id, srv, opts.ssh).await {
             Ok(result) => {
                 let port = result.socks_port.unwrap_or(1080);
-                sp.finish(&format!(
+                sp.finish(format!(
                     "Server '{}' is ready! SOCKS5 proxy active on 127.0.0.1:{}",
                     result.server_id, port
                 ));
@@ -129,7 +129,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                 started_count += 1;
             }
             Err(e) => {
-                sp.fail(&format!("Failed to start server '{}': {}", srv_id, e));
+                sp.fail(format!("Failed to start server '{}': {}", srv_id, e));
             }
         }
     }
@@ -153,13 +153,13 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         if opts.foreground {
             let bridge = HttpToSocks5Bridge::new(http_port, default_srv_socks);
             bridge.start().await?;
-            clack_step_ok(&format!(
+            clack_step_ok(format!(
                 "Embedded HTTP-to-SOCKS5 adapter active on 127.0.0.1:{} -> 127.0.0.1:{}",
                 http_port, default_srv_socks
             ));
         } else {
-            let current_exe = std::env::current_exe()
-                .unwrap_or_else(|_| std::path::PathBuf::from("specter"));
+            let current_exe =
+                std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("specter"));
             let mut cmd = std::process::Command::new(current_exe);
             cmd.arg("bridge")
                 .arg("start")
@@ -191,7 +191,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                 if let Ok(json) = serde_json::to_string(&pids) {
                     let _ = std::fs::write(pid_path, json);
                 }
-                clack_step_ok(&format!(
+                clack_step_ok(format!(
                     "Embedded HTTP-to-SOCKS5 adapter active on 127.0.0.1:{} (Background daemon PID {})",
                     http_port,
                     child.id()
@@ -223,7 +223,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                     for (srv_id, srv) in &sorted_servers {
                         let socks_port = srv.socks_port.unwrap_or(1080);
                         if !probe_port(socks_port) {
-                            clack_step_warn(&format!(
+                            clack_step_warn(format!(
                                 "Tunnel for '{}' dropped on port {}. Reconnecting...",
                                 srv_id, socks_port
                             ));

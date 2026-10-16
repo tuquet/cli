@@ -1,13 +1,13 @@
-use std::fs;
-use std::io::IsTerminal;
-use serde_json::{json, Map, Value};
 use crate::commands::schema::get_config_schema;
 use crate::config::registry::ConfigRegistry;
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_outro, clack_password, clack_select,
-    clack_step_ok, clack_step_warn, clack_text, colors, is_interactive_tty, Card, ClackOption,
-    Column, Table,
+    Card, ClackOption, Column, Table, badge_online, clack_cancel, clack_intro, clack_outro,
+    clack_password, clack_select, clack_step_ok, clack_step_warn, clack_text, colors,
+    is_interactive_tty,
 };
+use serde_json::{Map, Value, json};
+use std::fs;
+use std::io::IsTerminal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConfigOptionDef {
@@ -115,11 +115,7 @@ impl ConfigController {
                 MUTED = colors::MUTED,
                 RESET = colors::RESET,
             );
-            let desc = format!(
-                "{}{RESET}",
-                opt.description,
-                RESET = colors::RESET,
-            );
+            let desc = format!("{}{RESET}", opt.description, RESET = colors::RESET,);
 
             table.add_row(vec![opt_key, cur_val, choices, def_val, desc]);
         }
@@ -164,7 +160,11 @@ impl ConfigController {
                 format!("[{}]", items.join(", "))
             } else if let Some(t) = prop.get("type").and_then(|t| t.as_str()) {
                 if t == "array" {
-                    if let Some(items_type) = prop.get("items").and_then(|i| i.get("type")).and_then(|it| it.as_str()) {
+                    if let Some(items_type) = prop
+                        .get("items")
+                        .and_then(|i| i.get("type"))
+                        .and_then(|it| it.as_str())
+                    {
                         format!("array[{}]", items_type)
                     } else {
                         "array".to_string()
@@ -191,7 +191,10 @@ impl ConfigController {
             } else {
                 "—".to_string()
             };
-            let current_val = if is_sensitive_config_key(key) && raw_current_val != "—" && !raw_current_val.is_empty() {
+            let current_val = if is_sensitive_config_key(key)
+                && raw_current_val != "—"
+                && !raw_current_val.is_empty()
+            {
                 mask_secret_value(&raw_current_val)
             } else {
                 raw_current_val
@@ -230,11 +233,18 @@ impl ConfigController {
         let (actual_key, prop_def) = match prop_entry {
             Some((k, p)) => (k.as_str(), p),
             None => {
-                let available: Vec<&str> = properties.keys().filter(|k| *k != "$schema").map(|s| s.as_str()).collect();
+                let available: Vec<&str> = properties
+                    .keys()
+                    .filter(|k| *k != "$schema")
+                    .map(|s| s.as_str())
+                    .collect();
                 return Err(format!(
                     "Unknown option '{}' for service '{}'. Available options: [{}]",
-                    key, canonical, available.join(", ")
-                ).into());
+                    key,
+                    canonical,
+                    available.join(", ")
+                )
+                .into());
             }
         };
 
@@ -250,18 +260,21 @@ impl ConfigController {
             json!({})
         };
 
-        let val_opt = current_json.get(actual_key).or_else(|| prop_def.get("default"));
+        let val_opt = current_json
+            .get(actual_key)
+            .or_else(|| prop_def.get("default"));
         let val_str = match val_opt {
             Some(v) => format_json_value(v),
             None => "—".to_string(),
         };
 
         if std::io::stdout().is_terminal() {
-            let display_val = if is_sensitive_config_key(actual_key) && val_str != "—" && !val_str.is_empty() {
-                mask_secret_value(&val_str)
-            } else {
-                val_str.clone()
-            };
+            let display_val =
+                if is_sensitive_config_key(actual_key) && val_str != "—" && !val_str.is_empty() {
+                    mask_secret_value(&val_str)
+                } else {
+                    val_str.clone()
+                };
             clack_intro(
                 &format!("spc config {}", canonical),
                 &format!("Inspect Option: {}", actual_key),
@@ -274,7 +287,10 @@ impl ConfigController {
             if let Some(desc) = prop_def.get("description").and_then(|d| d.as_str()) {
                 card.add_kv("Description", desc);
             }
-            card.with_footer(format!("To update: spc config {} {} <new_value>", canonical, actual_key));
+            card.with_footer(format!(
+                "To update: spc config {} {} <new_value>",
+                canonical, actual_key
+            ));
             card.print();
             clack_outro("Option inspected.");
         } else {
@@ -285,7 +301,11 @@ impl ConfigController {
     }
 
     /// Set a specific config key with type & enum validation
-    pub fn set_key(service: &str, key: &str, raw_value: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_key(
+        service: &str,
+        key: &str,
+        raw_value: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let canonical = ConfigRegistry::canonical_service(service)
             .ok_or_else(|| format!("Unknown service '{}'", service))?;
 
@@ -303,11 +323,18 @@ impl ConfigController {
         let (actual_key, prop_def) = match prop_entry {
             Some((k, p)) => (k.clone(), p),
             None => {
-                let available: Vec<&str> = properties.keys().filter(|k| *k != "$schema").map(|s| s.as_str()).collect();
+                let available: Vec<&str> = properties
+                    .keys()
+                    .filter(|k| *k != "$schema")
+                    .map(|s| s.as_str())
+                    .collect();
                 return Err(format!(
                     "Unknown option '{}' for service '{}'. Available options: [{}]",
-                    key, canonical, available.join(", ")
-                ).into());
+                    key,
+                    canonical,
+                    available.join(", ")
+                )
+                .into());
             }
         };
 
@@ -360,7 +387,7 @@ impl ConfigController {
         } else {
             raw_display
         };
-        clack_step_ok(&format!(
+        clack_step_ok(format!(
             "Updated {}.{} = {} ({})",
             canonical,
             actual_key,
@@ -402,7 +429,12 @@ impl ConfigController {
             "All Pillar Paths Overview",
         ));
 
-        match clack_select("Select a microservice pillar to inspect or configure", &opts, 0, 10)? {
+        match clack_select(
+            "Select a microservice pillar to inspect or configure",
+            &opts,
+            0,
+            10,
+        )? {
             Some(idx) if idx < entries.len() => {
                 Self::interactive_service_config_inner(entries[idx].pillar, true)?;
             }
@@ -438,7 +470,11 @@ impl ConfigController {
         if !intro_already_shown {
             clack_intro(
                 &format!("spc config {}", canonical),
-                &format!("{} Configuration • {}", canonical.to_uppercase(), path.display()),
+                &format!(
+                    "{} Configuration • {}",
+                    canonical.to_uppercase(),
+                    path.display()
+                ),
             );
         }
 
@@ -490,7 +526,11 @@ impl ConfigController {
 
         if choice_idx == options.len() {
             Self::render_options_table(canonical)?;
-            clack_outro(&format!("Inspected {} options for '{}'.", options.len(), canonical));
+            clack_outro(&format!(
+                "Inspected {} options for '{}'.",
+                options.len(),
+                canonical
+            ));
             return Ok(());
         }
         if choice_idx == options.len() + 1 {
@@ -504,8 +544,9 @@ impl ConfigController {
             .get("properties")
             .and_then(|p| p.get(&target_opt.key));
 
-        let new_val_opt: Option<String> = if let Some(enums) =
-            prop_def.and_then(|p| p.get("enum")).and_then(|e| e.as_array())
+        let new_val_opt: Option<String> = if let Some(enums) = prop_def
+            .and_then(|p| p.get("enum"))
+            .and_then(|e| e.as_array())
         {
             let choices: Vec<String> = enums
                 .iter()
@@ -531,15 +572,13 @@ impl ConfigController {
                     ClackOption::new(c, hint, c)
                 })
                 .collect();
-            match clack_select(
+            clack_select(
                 &format!("Select new value for {}.{}", canonical, target_opt.key),
                 &enum_opts,
                 default_idx,
                 8,
-            )? {
-                Some(i) => Some(choices[i].clone()),
-                None => None,
-            }
+            )?
+            .map(|i| choices[i].clone())
         } else if prop_def
             .and_then(|p| p.get("type"))
             .and_then(|t| t.as_str())
@@ -660,18 +699,25 @@ impl ConfigController {
                 Self::get_key(canonical, key)?;
             }
             [key, val] if !key.eq_ignore_ascii_case("set") && !key.eq_ignore_ascii_case("get") => {
-                clack_intro(&format!("spc config {}", canonical), "Update Configuration Key");
+                clack_intro(
+                    &format!("spc config {}", canonical),
+                    "Update Configuration Key",
+                );
                 Self::set_key(canonical, key, val)?;
             }
             [action, key, val] if action.eq_ignore_ascii_case("set") => {
-                clack_intro(&format!("spc config {}", canonical), "Update Configuration Key");
+                clack_intro(
+                    &format!("spc config {}", canonical),
+                    "Update Configuration Key",
+                );
                 Self::set_key(canonical, key, val)?;
             }
             other => {
                 return Err(format!(
                     "Invalid arguments for config: {:?}. Usage: 'spc config {} [key] [value]'",
                     other, canonical
-                ).into());
+                )
+                .into());
             }
         }
 
@@ -717,29 +763,37 @@ pub fn convert_and_validate(
             .collect();
 
         // Case-insensitive match against allowed enum values
-        if let Some(matched) = valid_choices.iter().find(|c| c.eq_ignore_ascii_case(trimmed)) {
+        if let Some(matched) = valid_choices
+            .iter()
+            .find(|c| c.eq_ignore_ascii_case(trimmed))
+        {
             return Ok(Value::String(matched.clone()));
         } else {
             return Err(format!(
                 "Invalid value '{}' for option '{}'. Allowed choices: [{}]",
-                raw_val, key, valid_choices.join(", ")
-            ).into());
+                raw_val,
+                key,
+                valid_choices.join(", ")
+            )
+            .into());
         }
     }
 
     // 2. Check property type
-    let prop_type = prop_def.get("type").and_then(|t| t.as_str()).unwrap_or("string");
+    let prop_type = prop_def
+        .get("type")
+        .and_then(|t| t.as_str())
+        .unwrap_or("string");
     match prop_type {
-        "boolean" => {
-            match trimmed.to_ascii_lowercase().as_str() {
-                "true" | "1" | "yes" | "on" => Ok(Value::Bool(true)),
-                "false" | "0" | "no" | "off" => Ok(Value::Bool(false)),
-                _ => Err(format!(
-                    "Invalid boolean value '{}' for '{}'. Expected 'true' or 'false'",
-                    raw_val, key
-                ).into()),
-            }
-        }
+        "boolean" => match trimmed.to_ascii_lowercase().as_str() {
+            "true" | "1" | "yes" | "on" => Ok(Value::Bool(true)),
+            "false" | "0" | "no" | "off" => Ok(Value::Bool(false)),
+            _ => Err(format!(
+                "Invalid boolean value '{}' for '{}'. Expected 'true' or 'false'",
+                raw_val, key
+            )
+            .into()),
+        },
         "integer" => {
             let n = trimmed.parse::<i64>().map_err(|_| {
                 format!(
@@ -827,7 +881,11 @@ pub fn format_json_value(val: &Value) -> String {
         Value::Number(n) => n.to_string(),
         Value::Array(arr) => {
             if arr.iter().all(|item| item.is_string()) {
-                let items: Vec<String> = arr.iter().filter_map(|i| i.as_str()).map(|s| format!("\"{}\"", s)).collect();
+                let items: Vec<String> = arr
+                    .iter()
+                    .filter_map(|i| i.as_str())
+                    .map(|s| format!("\"{}\"", s))
+                    .collect();
                 format!("[{}]", items.join(", "))
             } else {
                 serde_json::to_string(val).unwrap_or_else(|_| "[]".to_string())
@@ -846,7 +904,8 @@ mod tests {
 
     #[test]
     fn test_extract_options_from_faker_schema() {
-        let schema_raw = crate::commands::schema::get_config_schema("faker").expect("Faker schema exists");
+        let schema_raw =
+            crate::commands::schema::get_config_schema("faker").expect("Faker schema exists");
         let schema: Value = serde_json::from_str(schema_raw).expect("Valid JSON");
         let current = json!({
             "default_nat": "US",
@@ -856,7 +915,10 @@ mod tests {
         let opts = ConfigController::extract_options(&schema, &current);
         assert!(!opts.is_empty());
 
-        let nat_opt = opts.iter().find(|o| o.key == "default_nat").expect("default_nat option exists");
+        let nat_opt = opts
+            .iter()
+            .find(|o| o.key == "default_nat")
+            .expect("default_nat option exists");
         assert_eq!(nat_opt.current_value, "US");
         assert_eq!(nat_opt.default_value, "US");
         assert!(nat_opt.type_or_choices.contains("US"));
@@ -885,15 +947,27 @@ mod tests {
     #[test]
     fn test_convert_and_validate_boolean_and_integer() {
         let bool_prop = json!({ "type": "boolean" });
-        assert_eq!(convert_and_validate(&bool_prop, "true", "headless").unwrap(), Value::Bool(true));
-        assert_eq!(convert_and_validate(&bool_prop, "0", "headless").unwrap(), Value::Bool(false));
+        assert_eq!(
+            convert_and_validate(&bool_prop, "true", "headless").unwrap(),
+            Value::Bool(true)
+        );
+        assert_eq!(
+            convert_and_validate(&bool_prop, "0", "headless").unwrap(),
+            Value::Bool(false)
+        );
         assert!(convert_and_validate(&bool_prop, "maybe", "headless").is_err());
 
         let int_prop = json!({ "type": "integer" });
-        assert_eq!(convert_and_validate(&int_prop, "1280", "viewport_width").unwrap(), json!(1280));
+        assert_eq!(
+            convert_and_validate(&int_prop, "1280", "viewport_width").unwrap(),
+            json!(1280)
+        );
         assert!(convert_and_validate(&int_prop, "abc", "viewport_width").is_err());
         assert!(convert_and_validate(&int_prop, "70000", "default_port").is_err());
-        assert_eq!(convert_and_validate(&int_prop, "8765", "default_port").unwrap(), json!(8765));
+        assert_eq!(
+            convert_and_validate(&int_prop, "8765", "default_port").unwrap(),
+            json!(8765)
+        );
     }
 
     #[test]
@@ -913,4 +987,3 @@ mod tests {
         assert_eq!(val, json!(["automa", "stealth"]));
     }
 }
-

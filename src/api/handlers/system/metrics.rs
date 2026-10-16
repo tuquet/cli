@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use sysinfo::System;
 
 use super::types::{MachineInfo, RunnerIdentityResponse, SystemMetricsResponse};
@@ -23,17 +18,19 @@ pub async fn get_metrics() -> impl IntoResponse {
     let mut sys = System::new();
     sys.refresh_cpu_all();
     sys.refresh_memory();
-    
+
     let cpu_usage = sys.global_cpu_usage();
     let memory_free = sys.free_memory();
     let memory_total = sys.total_memory();
-    
+
     // Connect to connected_browsers for active runners
     let active_runners = {
-        let guard = crate::api::handlers::jobs::connected_browsers().read().await;
+        let guard = crate::api::handlers::jobs::connected_browsers()
+            .read()
+            .await;
         guard.len()
     };
-    
+
     (
         StatusCode::OK,
         Json(SystemMetricsResponse {
@@ -41,8 +38,9 @@ pub async fn get_metrics() -> impl IntoResponse {
             memory_free,
             memory_total,
             active_runners,
-        })
-    ).into_response()
+        }),
+    )
+        .into_response()
 }
 
 #[utoipa::path(
@@ -56,9 +54,7 @@ pub async fn get_metrics() -> impl IntoResponse {
         (status = 200, description = "Runner machine identity information", body = RunnerIdentityResponse)
     )
 )]
-pub async fn get_system_info(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
+pub async fn get_system_info(State(state): State<crate::AppState>) -> impl IntoResponse {
     let mut sys = System::new();
     sys.refresh_memory();
 
@@ -78,7 +74,9 @@ pub async fn get_system_info(
     let total_memory = sys.total_memory();
 
     let active_runners = {
-        let guard = crate::api::handlers::jobs::connected_browsers().read().await;
+        let guard = crate::api::handlers::jobs::connected_browsers()
+            .read()
+            .await;
         guard.len()
     };
 
@@ -100,5 +98,6 @@ pub async fn get_system_info(
             server_port: state.config.server_port,
             data_dir: state.config.data_dir.clone(),
         }),
-    ).into_response()
+    )
+        .into_response()
 }

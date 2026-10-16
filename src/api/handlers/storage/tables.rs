@@ -1,7 +1,7 @@
-use axum::extract::{Path, Json, Query, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
 use crate::core::models::storage::{StorageTable, TableRow};
+use axum::extract::{Json, Path, Query, State};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -35,7 +35,9 @@ pub async fn get_tables(
     Query(query): Query<GetTablesQuery>,
 ) -> Result<Json<Vec<StorageTable>>, AutomaError> {
     let db = state.db.lock().await;
-    let tables = db.tables().get_tables(query.limit, query.offset, query.search.as_deref())
+    let tables = db
+        .tables()
+        .get_tables(query.limit, query.offset, query.search.as_deref())
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
     Ok(Json(tables))
 }
@@ -62,19 +64,23 @@ pub async fn add_table(
         payload.id = Some(format!("table_{}", uuid::Uuid::new_v4()));
     }
     let db = state.db.lock().await;
-    db.tables().save_table(&payload)
+    db.tables()
+        .save_table(&payload)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     let table_id = payload.id.clone().unwrap_or_default();
     let table_name = payload.name.clone().unwrap_or_default();
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "table",
-        "action": "upsert",
-        "id": table_id,
-        "name": table_name
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "table",
+            "action": "upsert",
+            "id": table_id,
+            "name": table_name
+        })
+        .to_string(),
+    );
 
     Ok(Json(payload))
 }
@@ -100,15 +106,19 @@ pub async fn delete_table(
     Path(id): Path<String>,
 ) -> Result<Json<super::StorageActionResponse>, AutomaError> {
     let db = state.db.lock().await;
-    db.tables().delete_table(&id)
+    db.tables()
+        .delete_table(&id)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "table",
-        "action": "delete",
-        "id": id
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "table",
+            "action": "delete",
+            "id": id
+        })
+        .to_string(),
+    );
 
     Ok(Json(super::StorageActionResponse {
         success: true,
@@ -158,7 +168,9 @@ pub async fn get_table_rows(
     let search = query.search.as_deref();
 
     let db = state.db.lock().await;
-    let rows = db.tables().get_table_rows(&table_id, limit, offset, search)
+    let rows = db
+        .tables()
+        .get_table_rows(&table_id, limit, offset, search)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
     Ok(Json(rows))
 }
@@ -209,19 +221,25 @@ pub async fn add_table_row(
     Json(payload): Json<AddTableRowPayload>,
 ) -> Result<Json<AddTableRowResponse>, AutomaError> {
     let row_id = uuid::Uuid::new_v4().to_string();
-    let data_str = serde_json::to_string(&payload.data)
-        .map_err(AutomaError::JsonError)?;
+    let data_str = serde_json::to_string(&payload.data).map_err(AutomaError::JsonError)?;
     let db = state.db.lock().await;
-    db.tables().add_table_row(&row_id, &table_id, &data_str)
+    db.tables()
+        .add_table_row(&row_id, &table_id, &data_str)
         .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
-    let _ = state.tx.send(serde_json::json!({
-        "type": "storage_changed",
-        "entity": "table_row",
-        "action": "insert",
-        "tableId": table_id,
-        "id": row_id
-    }).to_string());
+    let _ = state.tx.send(
+        serde_json::json!({
+            "type": "storage_changed",
+            "entity": "table_row",
+            "action": "insert",
+            "tableId": table_id,
+            "id": row_id
+        })
+        .to_string(),
+    );
 
-    Ok(Json(AddTableRowResponse { id: row_id, table_id }))
+    Ok(Json(AddTableRowResponse {
+        id: row_id,
+        table_id,
+    }))
 }

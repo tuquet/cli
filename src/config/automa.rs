@@ -1,8 +1,8 @@
+use crate::config::expander::{EnvExpander, canonical_specter_dir};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutomaConfig {
@@ -22,10 +22,18 @@ pub struct AutomaConfig {
     pub variables: HashMap<String, String>,
 }
 
-fn default_timeout() -> u64 { crate::constants::DEFAULT_TIMEOUT_SECS }
-fn default_browser() -> String { crate::constants::DEFAULT_BROWSER_NAME.to_string() }
-fn default_studio_port() -> u16 { crate::constants::DEFAULT_RUNNER_PORT }
-fn default_true() -> bool { true }
+fn default_timeout() -> u64 {
+    crate::constants::DEFAULT_TIMEOUT_SECS
+}
+fn default_browser() -> String {
+    crate::constants::DEFAULT_BROWSER_NAME.to_string()
+}
+fn default_studio_port() -> u16 {
+    crate::constants::DEFAULT_RUNNER_PORT
+}
+fn default_true() -> bool {
+    true
+}
 
 impl Default for AutomaConfig {
     fn default() -> Self {
@@ -53,12 +61,13 @@ impl AutomaConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         if path.exists()
-            && let Ok(content) = fs::read_to_string(&path) {
-                let expanded = EnvExpander::expand(&content);
-                if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
-                    return cfg;
-                }
+            && let Ok(content) = fs::read_to_string(&path)
+        {
+            let expanded = EnvExpander::expand(&content);
+            if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
+                return cfg;
             }
+        }
         let default = Self::default();
         let _ = default.save();
         default
@@ -94,6 +103,11 @@ mod tests {
         assert_eq!(config.default_timeout_secs, 300);
         assert_eq!(config.studio_port, 8765);
         assert!(config.auto_backup);
-        assert!(config.resolved_vault_dir().to_string_lossy().contains("automa"));
+        assert!(
+            config
+                .resolved_vault_dir()
+                .to_string_lossy()
+                .contains("automa")
+        );
     }
 }

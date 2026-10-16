@@ -1,8 +1,8 @@
-use thiserror::Error;
-use axum::response::{IntoResponse, Response};
-use axum::http::StatusCode;
 use axum::Json;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -46,7 +46,9 @@ impl IntoResponse for AutomaError {
         let (status, message) = match self {
             AutomaError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
             AutomaError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.clone()),
-            AutomaError::ExecutionFailed(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AutomaError::ExecutionFailed(ref msg) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, msg.clone())
+            }
             AutomaError::DatabaseError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
             AutomaError::IoError(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AutomaError::JsonError(ref err) => (StatusCode::BAD_REQUEST, err.to_string()),

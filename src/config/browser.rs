@@ -1,7 +1,7 @@
+use crate::config::expander::{EnvExpander, canonical_specter_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserConfig {
@@ -23,9 +23,15 @@ pub struct BrowserConfig {
     pub autoload_extensions: Vec<String>,
 }
 
-fn default_browser_name() -> String { crate::constants::DEFAULT_BROWSER_NAME.to_string() }
-fn default_width() -> u32 { crate::constants::DEFAULT_VIEWPORT_WIDTH }
-fn default_height() -> u32 { crate::constants::DEFAULT_VIEWPORT_HEIGHT }
+fn default_browser_name() -> String {
+    crate::constants::DEFAULT_BROWSER_NAME.to_string()
+}
+fn default_width() -> u32 {
+    crate::constants::DEFAULT_VIEWPORT_WIDTH
+}
+fn default_height() -> u32 {
+    crate::constants::DEFAULT_VIEWPORT_HEIGHT
+}
 fn default_args() -> Vec<String> {
     vec![
         "--disable-blink-features=AutomationControlled".to_string(),
@@ -61,12 +67,13 @@ impl BrowserConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         if path.exists()
-            && let Ok(content) = fs::read_to_string(&path) {
-                let expanded = EnvExpander::expand(&content);
-                if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
-                    return cfg;
-                }
+            && let Ok(content) = fs::read_to_string(&path)
+        {
+            let expanded = EnvExpander::expand(&content);
+            if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
+                return cfg;
             }
+        }
         let default = Self::default();
         let _ = default.save();
         default

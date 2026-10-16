@@ -4,9 +4,15 @@ pub async fn execute_specter_faker_generate(args: &Value) -> Result<String, Stri
     let count = args.get("count").and_then(|v| v.as_u64()).unwrap_or(1) as u32;
     let gender = args.get("gender").and_then(|v| v.as_str());
     let nat = args.get("nat").and_then(|v| v.as_str()).unwrap_or("VN");
-    let avatar = args.get("avatar").and_then(|v| v.as_str()).unwrap_or("real");
+    let avatar = args
+        .get("avatar")
+        .and_then(|v| v.as_str())
+        .unwrap_or("real");
     let domain = args.get("domain").and_then(|v| v.as_str());
-    let format_str = args.get("format").and_then(|v| v.as_str()).unwrap_or("json");
+    let format_str = args
+        .get("format")
+        .and_then(|v| v.as_str())
+        .unwrap_or("json");
     let output_file = args.get("output_file").and_then(|v| v.as_str());
 
     let gender_opt = gender.filter(|&g| g != "all");

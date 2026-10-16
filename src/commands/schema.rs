@@ -1,8 +1,8 @@
 use crate::cli::SchemaSubcommands;
-use crate::infrastructure::manifest::{manifest, raw_json, CommandDef};
+use crate::infrastructure::manifest::{CommandDef, manifest, raw_json};
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_info, colors,
-    is_interactive_tty, Card, ClackOption, Column, Table,
+    Card, ClackOption, Column, Table, badge_online, clack_cancel, clack_intro, clack_outro,
+    clack_select, clack_step_info, colors, is_interactive_tty,
 };
 use serde_json::json;
 
@@ -59,13 +59,25 @@ pub async fn handle(
                 if is_interactive_tty() && !json_output {
                     clack_intro("spc schema config", "Microservice JSON Schema Definitions");
                     let services = [
-                        ("bridge", "Network Bridge & Multi-VPS Mesh (bridge.schema.json)"),
+                        (
+                            "bridge",
+                            "Network Bridge & Multi-VPS Mesh (bridge.schema.json)",
+                        ),
                         ("faker", "Synthetic Persona Generator (faker.schema.json)"),
-                        ("browser", "Antidetect Chromium Runtime (browser.schema.json)"),
+                        (
+                            "browser",
+                            "Antidetect Chromium Runtime (browser.schema.json)",
+                        ),
                         ("automa", "Workflow Automation Engine (automa.schema.json)"),
                         ("runner", "Distributed Worker Daemon (runner.schema.json)"),
-                        ("system", "Machine Identity & Cloud Fleet (system.schema.json)"),
-                        ("inbox", "Catch-All Email & OTP Interceptor (inbox.schema.json)"),
+                        (
+                            "system",
+                            "Machine Identity & Cloud Fleet (system.schema.json)",
+                        ),
+                        (
+                            "inbox",
+                            "Catch-All Email & OTP Interceptor (inbox.schema.json)",
+                        ),
                     ];
                     let opts: Vec<ClackOption> = services
                         .iter()
@@ -94,7 +106,10 @@ pub async fn handle(
                 let pretty = serde_json::to_string_pretty(&mcp_tools)?;
                 println!("{}", pretty);
             } else {
-                clack_intro("spc schema mcp", "Model Context Protocol (MCP) Tool Definitions");
+                clack_intro(
+                    "spc schema mcp",
+                    "Model Context Protocol (MCP) Tool Definitions",
+                );
                 let m = manifest();
                 let mcp_cmds: Vec<&CommandDef> = m
                     .commands
@@ -114,7 +129,10 @@ pub async fn handle(
 }
 
 fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
-    clack_intro("spc schema", "CLI Manifest & Microservice JSON Schema Inspector");
+    clack_intro(
+        "spc schema",
+        "CLI Manifest & Microservice JSON Schema Inspector",
+    );
 
     let opts = vec![
         ClackOption::new(
@@ -214,13 +232,23 @@ fn show_overview() {
     card.with_badge(badge_online(&format!("v{}", m.version)));
     card.with_min_width(70);
 
-    card.add_kv("Specification", "VS Code Contributes Standard (Draft 2020-12)");
-    card.add_kv("Schema ID", m.schema.as_deref().unwrap_or("cli.manifest.schema.json"));
+    card.add_kv(
+        "Specification",
+        "VS Code Contributes Standard (Draft 2020-12)",
+    );
+    card.add_kv(
+        "Schema ID",
+        m.schema.as_deref().unwrap_or("cli.manifest.schema.json"),
+    );
     card.add_kv("Ecosystem Root", root.display().to_string());
     card.add_kv("Total Commands", m.commands.len().to_string());
 
     for p in &m.pillars {
-        let count = m.commands.iter().filter(|c| c.pillar.eq_ignore_ascii_case(p)).count();
+        let count = m
+            .commands
+            .iter()
+            .filter(|c| c.pillar.eq_ignore_ascii_case(p))
+            .count();
         card.add_kv(
             format!("Pillar: {}", p),
             format!("{} command{}", count, if count == 1 { "" } else { "s" }),
@@ -295,9 +323,17 @@ fn show_commands_table(commands: &[&CommandDef], pillar_filter: Option<&str>) {
         );
 
         let mcp_indicator = if cmd.mcp.as_ref().is_some_and(|m| m.exported) {
-            format!("{GREEN}✓{RESET}", GREEN = colors::GREEN, RESET = colors::RESET)
+            format!(
+                "{GREEN}✓{RESET}",
+                GREEN = colors::GREEN,
+                RESET = colors::RESET
+            )
         } else {
-            format!("{MUTED}—{RESET}", MUTED = colors::MUTED, RESET = colors::RESET)
+            format!(
+                "{MUTED}—{RESET}",
+                MUTED = colors::MUTED,
+                RESET = colors::RESET
+            )
         };
 
         table.add_row(vec![route_str, pillar_badge, title_and_desc, mcp_indicator]);
@@ -316,7 +352,10 @@ fn show_config_overview() {
     card.with_min_width(70);
 
     card.add_kv("Standard", "JSON Schema Specification (Draft 2020-12)");
-    card.add_kv("Supported Services", "bridge, browser, automa, runner, faker, system, inbox");
+    card.add_kv(
+        "Supported Services",
+        "bridge, browser, automa, runner, faker, system, inbox",
+    );
     card.add_line("");
     card.add_line(format!(
         "  {BOLD_WHITE}Usage Example:{RESET}",
@@ -375,14 +414,20 @@ fn export_mcp_tools() -> serde_json::Value {
             let mut required = Vec::new();
 
             for arg in &cmd.arguments {
-                properties.insert(arg.name.clone(), json!({ "type": arg.arg_type, "description": arg.description }));
+                properties.insert(
+                    arg.name.clone(),
+                    json!({ "type": arg.arg_type, "description": arg.description }),
+                );
                 if arg.required {
                     required.push(json!(arg.name));
                 }
             }
 
             for opt in &cmd.options {
-                properties.insert(opt.name.clone(), json!({ "type": opt.opt_type, "description": opt.description }));
+                properties.insert(
+                    opt.name.clone(),
+                    json!({ "type": opt.opt_type, "description": opt.description }),
+                );
             }
 
             Some(json!({

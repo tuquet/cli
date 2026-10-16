@@ -1,13 +1,13 @@
-use std::fs;
-use std::path::PathBuf;
 use crate::cli::{FakerGenerateArgs, FakerSubcommands};
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_ok, clack_text,
-    is_interactive_tty, Card, ClackOption, Column, Table,
+    Card, ClackOption, Column, Table, badge_online, clack_cancel, clack_intro, clack_outro,
+    clack_select, clack_step_ok, clack_text, is_interactive_tty,
 };
 use specter_faker::{
     generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value,
 };
+use std::fs;
+use std::path::PathBuf;
 
 pub async fn handle(
     subcommand: Option<FakerSubcommands>,
@@ -119,13 +119,7 @@ async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
                 clack_cancel("Operation cancelled.");
                 return Ok(());
             };
-            let data = generate_users(
-                1,
-                gender.as_deref(),
-                nat.as_deref(),
-                Some("real"),
-                None,
-            );
+            let data = generate_users(1, gender.as_deref(), nat.as_deref(), Some("real"), None);
             if let Some(u) = data["results"].as_array().and_then(|a| a.first()) {
                 render_single_card(u);
             }
@@ -136,7 +130,8 @@ async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
                 clack_cancel("Operation cancelled.");
                 return Ok(());
             };
-            let Some(count_str) = clack_text("Number of profiles to generate", Some("5"), Some("5"))?
+            let Some(count_str) =
+                clack_text("Number of profiles to generate", Some("5"), Some("5"))?
             else {
                 clack_cancel("Operation cancelled.");
                 return Ok(());
@@ -167,14 +162,21 @@ async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
 
             let (format_str, output_path) = match fmt_idx {
                 1 => {
-                    let Some(p) = clack_text("CSV output file path", Some("users.csv"), Some("users.csv"))? else {
+                    let Some(p) =
+                        clack_text("CSV output file path", Some("users.csv"), Some("users.csv"))?
+                    else {
                         clack_cancel("Operation cancelled.");
                         return Ok(());
                     };
                     ("csv".to_string(), Some(PathBuf::from(p)))
                 }
                 2 => {
-                    let Some(p) = clack_text("JSON output file path", Some("users.json"), Some("users.json"))? else {
+                    let Some(p) = clack_text(
+                        "JSON output file path",
+                        Some("users.json"),
+                        Some("users.json"),
+                    )?
+                    else {
                         clack_cancel("Operation cancelled.");
                         return Ok(());
                     };
@@ -220,7 +222,9 @@ async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn prompt_nationality_choice(allow_all: bool) -> Result<Option<Option<String>>, Box<dyn std::error::Error>> {
+fn prompt_nationality_choice(
+    allow_all: bool,
+) -> Result<Option<Option<String>>, Box<dyn std::error::Error>> {
     let mut opts = vec![
         ClackOption::new(
             "VN — Vietnam",
@@ -286,7 +290,9 @@ async fn run_generate_inner(
         args.avatar.as_deref(),
         args.domain.as_deref(),
     );
-    let users = data["results"].as_array().expect("results should be an array");
+    let users = data["results"]
+        .as_array()
+        .expect("results should be an array");
 
     let format_lower = args.format.to_lowercase();
     let effective_format = if args.json && args.output.is_none() {
@@ -300,11 +306,7 @@ async fn run_generate_inner(
     } else if matches!(format_lower.as_str(), "card" | "table" | "csv" | "json") {
         format_lower.as_str()
     } else if is_interactive_tty() && args.output.is_none() {
-        if args.count == 1 {
-            "card"
-        } else {
-            "table"
-        }
+        if args.count == 1 { "card" } else { "table" }
     } else {
         "json"
     };
@@ -333,14 +335,46 @@ async fn run_generate_inner(
                 );
             }
             let columns = vec![
-                Column { title: "STT".to_string(), min_width: 4, align_right: false },
-                Column { title: "Họ và tên".to_string(), min_width: 20, align_right: false },
-                Column { title: "Giới".to_string(), min_width: 6, align_right: false },
-                Column { title: "Tuổi".to_string(), min_width: 4, align_right: true },
-                Column { title: "CCCD / National ID".to_string(), min_width: 14, align_right: false },
-                Column { title: "Email".to_string(), min_width: 24, align_right: false },
-                Column { title: "Số điện thoại".to_string(), min_width: 12, align_right: false },
-                Column { title: "Tỉnh / Thành phố".to_string(), min_width: 14, align_right: false },
+                Column {
+                    title: "STT".to_string(),
+                    min_width: 4,
+                    align_right: false,
+                },
+                Column {
+                    title: "Họ và tên".to_string(),
+                    min_width: 20,
+                    align_right: false,
+                },
+                Column {
+                    title: "Giới".to_string(),
+                    min_width: 6,
+                    align_right: false,
+                },
+                Column {
+                    title: "Tuổi".to_string(),
+                    min_width: 4,
+                    align_right: true,
+                },
+                Column {
+                    title: "CCCD / National ID".to_string(),
+                    min_width: 14,
+                    align_right: false,
+                },
+                Column {
+                    title: "Email".to_string(),
+                    min_width: 24,
+                    align_right: false,
+                },
+                Column {
+                    title: "Số điện thoại".to_string(),
+                    min_width: 12,
+                    align_right: false,
+                },
+                Column {
+                    title: "Tỉnh / Thành phố".to_string(),
+                    min_width: 14,
+                    align_right: false,
+                },
             ];
 
             let mut table = Table::new(columns);
@@ -373,7 +407,10 @@ async fn run_generate_inner(
                 users.len()
             );
             table.with_footer(footer).print();
-            clack_outro(&format!("Rendered {} synthetic identity profile(s).", users.len()));
+            clack_outro(&format!(
+                "Rendered {} synthetic identity profile(s).",
+                users.len()
+            ));
         }
         "csv" => {
             let csv_str = to_csv(users);
@@ -382,7 +419,7 @@ async fn run_generate_inner(
                     clack_intro("spc faker", "CSV Dataset Exporter");
                 }
                 fs::write(path, csv_str.as_bytes())?;
-                clack_step_ok(&format!(
+                clack_step_ok(format!(
                     "Exported {} identity profile(s) to {}",
                     users.len(),
                     path.display()
@@ -399,7 +436,7 @@ async fn run_generate_inner(
                     clack_intro("spc faker", "JSON Dataset Exporter");
                 }
                 fs::write(path, json_str.as_bytes())?;
-                clack_step_ok(&format!(
+                clack_step_ok(format!(
                     "Exported {} identity profile(s) to {}",
                     users.len(),
                     path.display()
@@ -428,12 +465,36 @@ fn run_nationalities_inner(
             clack_intro("spc faker", "Supported Nationality Providers & ID Schemas");
         }
         let columns = vec![
-            Column { title: "Code".to_string(), min_width: 6, align_right: false },
-            Column { title: "Country".to_string(), min_width: 18, align_right: false },
-            Column { title: "ID Type".to_string(), min_width: 12, align_right: false },
-            Column { title: "Phone Prefix".to_string(), min_width: 14, align_right: false },
-            Column { title: "Timezone".to_string(), min_width: 10, align_right: false },
-            Column { title: "Address Hierarchy".to_string(), min_width: 32, align_right: false },
+            Column {
+                title: "Code".to_string(),
+                min_width: 6,
+                align_right: false,
+            },
+            Column {
+                title: "Country".to_string(),
+                min_width: 18,
+                align_right: false,
+            },
+            Column {
+                title: "ID Type".to_string(),
+                min_width: 12,
+                align_right: false,
+            },
+            Column {
+                title: "Phone Prefix".to_string(),
+                min_width: 14,
+                align_right: false,
+            },
+            Column {
+                title: "Timezone".to_string(),
+                min_width: 10,
+                align_right: false,
+            },
+            Column {
+                title: "Address Hierarchy".to_string(),
+                min_width: 32,
+                align_right: false,
+            },
         ];
         let mut t = Table::new(columns);
         for item in &list {
@@ -537,7 +598,11 @@ fn render_single_card(u: &serde_json::Value) {
     let full_name = format!("{} {}", first, last);
     let gender = u["gender"].as_str().unwrap_or("");
     let dob_raw = u["dob"]["date"].as_str().unwrap_or("");
-    let dob = if dob_raw.len() >= 10 { &dob_raw[..10] } else { dob_raw };
+    let dob = if dob_raw.len() >= 10 {
+        &dob_raw[..10]
+    } else {
+        dob_raw
+    };
     let age = u["dob"]["age"].to_string();
     let cccd = u["id"]["value"].as_str().unwrap_or("");
     let email = u["email"].as_str().unwrap_or("");
@@ -574,11 +639,17 @@ fn render_single_card(u: &serde_json::Value) {
     card.with_min_width(70);
 
     card.add_kv(format!("{} / ID", id_name), cccd);
-    card.add_kv("Gender / Age", format!("{} • {} tuổi (DOB: {})", gender, age, dob));
+    card.add_kv(
+        "Gender / Age",
+        format!("{} • {} tuổi (DOB: {})", gender, age, dob),
+    );
     card.add_kv("Job / Title", job);
     card.add_kv("Phone", phone);
     card.add_kv("Email", email);
-    card.add_kv("Credentials", format!("user: {} | pass: {}", username, password));
+    card.add_kv(
+        "Credentials",
+        format!("user: {} | pass: {}", username, password),
+    );
     card.add_kv("Address", address_full);
     card.add_kv("Postal Code", postcode);
 

@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, Result};
+use rusqlite::{Connection, Result, params};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -52,7 +52,12 @@ impl<'a> SqliteBrowserRepository<'a> {
         Ok(())
     }
 
-    pub fn get_browsers(&self, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<Browser>> {
+    pub fn get_browsers(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<Browser>> {
         let l = limit.map(|v| v as i64).unwrap_or(-1);
         let o = offset.unwrap_or(0) as i64;
         let mut browsers = Vec::new();
@@ -136,7 +141,8 @@ impl<'a> SqliteBrowserRepository<'a> {
         extensions: Option<&[String]>,
     ) -> Result<()> {
         if let Some(exts) = extensions {
-            let exts_json = serde_json::to_string(exts).unwrap_or_else(|_| "[\"automa\"]".to_string());
+            let exts_json =
+                serde_json::to_string(exts).unwrap_or_else(|_| "[\"automa\"]".to_string());
             self.conn.execute(
                 "UPDATE browsers SET name = ?1, user_agent = ?2, timezone = ?3, proxy = ?4, extensions = ?5, updated_at = CURRENT_TIMESTAMP WHERE id = ?6",
                 params![name, user_agent, timezone, proxy, exts_json, id],
@@ -151,11 +157,11 @@ impl<'a> SqliteBrowserRepository<'a> {
     }
 
     pub fn delete_browser(&self, id: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM browsers WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM browsers WHERE id = ?1", params![id])?;
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -169,17 +175,40 @@ mod tests {
         let repo = SqliteBrowserRepository::new(conn);
 
         let initial_exts = vec!["automa".to_string(), "ublock".to_string()];
-        repo.create_browser("b_test_1", "Profile 1", Some("UA/1.0"), Some("UTC"), Some("socks5://127.0.0.1:1080"), Some(&initial_exts)).unwrap();
+        repo.create_browser(
+            "b_test_1",
+            "Profile 1",
+            Some("UA/1.0"),
+            Some("UTC"),
+            Some("socks5://127.0.0.1:1080"),
+            Some(&initial_exts),
+        )
+        .unwrap();
 
-        let b = repo.get_browser("b_test_1").unwrap().expect("Browser should exist");
+        let b = repo
+            .get_browser("b_test_1")
+            .unwrap()
+            .expect("Browser should exist");
         assert_eq!(b.name, "Profile 1");
         assert_eq!(b.user_agent.as_deref(), Some("UA/1.0"));
         assert_eq!(b.timezone.as_deref(), Some("UTC"));
         assert_eq!(b.proxy.as_deref(), Some("socks5://127.0.0.1:1080"));
         assert_eq!(b.extensions.as_ref().unwrap(), &initial_exts);
 
-        let updated_exts = vec!["automa".to_string(), "ublock".to_string(), "cookie-injector".to_string()];
-        repo.update_browser("b_test_1", "Profile 1 Renamed", Some("UA/2.0"), None, None, Some(&updated_exts)).unwrap();
+        let updated_exts = vec![
+            "automa".to_string(),
+            "ublock".to_string(),
+            "cookie-injector".to_string(),
+        ];
+        repo.update_browser(
+            "b_test_1",
+            "Profile 1 Renamed",
+            Some("UA/2.0"),
+            None,
+            None,
+            Some(&updated_exts),
+        )
+        .unwrap();
         let updated = repo.get_browser("b_test_1").unwrap().unwrap();
         assert_eq!(updated.name, "Profile 1 Renamed");
         assert_eq!(updated.user_agent.as_deref(), Some("UA/2.0"));

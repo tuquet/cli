@@ -1,7 +1,7 @@
+use crate::config::expander::{EnvExpander, canonical_specter_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use crate::config::expander::{canonical_specter_dir, EnvExpander};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemConfig {
@@ -22,10 +22,18 @@ fn default_machine_name() -> String {
         .or_else(|_| std::env::var("HOSTNAME"))
         .unwrap_or_else(|_| "WORKSTATION".to_string())
 }
-fn default_cloud_url() -> String { crate::constants::DEFAULT_CLOUD_URL.to_string() }
-fn default_true() -> bool { true }
-fn default_channel() -> String { crate::constants::DEFAULT_UPDATE_CHANNEL.to_string() }
-fn default_env() -> String { "production".to_string() }
+fn default_cloud_url() -> String {
+    crate::constants::DEFAULT_CLOUD_URL.to_string()
+}
+fn default_true() -> bool {
+    true
+}
+fn default_channel() -> String {
+    crate::constants::DEFAULT_UPDATE_CHANNEL.to_string()
+}
+fn default_env() -> String {
+    "production".to_string()
+}
 
 impl Default for SystemConfig {
     fn default() -> Self {
@@ -49,12 +57,13 @@ impl SystemConfig {
     pub fn load() -> Self {
         let path = Self::config_path();
         if path.exists()
-            && let Ok(content) = fs::read_to_string(&path) {
-                let expanded = EnvExpander::expand(&content);
-                if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
-                    return cfg;
-                }
+            && let Ok(content) = fs::read_to_string(&path)
+        {
+            let expanded = EnvExpander::expand(&content);
+            if let Ok(cfg) = serde_json::from_str::<Self>(&expanded) {
+                return cfg;
             }
+        }
         let default = Self::default();
         let _ = default.save();
         default

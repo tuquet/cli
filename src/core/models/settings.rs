@@ -28,7 +28,6 @@ pub struct AppSettings {
     pub runner: RunnerSettings,
 }
 
-
 // === NAMESPACE 1: GRID SYSTEM ===
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq)]
 pub struct GridSettings {
@@ -149,7 +148,11 @@ impl Default for GridBehavior {
 pub struct BrowserSettings {
     #[serde(alias = "defaultType")]
     pub default_type: String,
-    #[serde(alias = "defaultProfileId", alias = "defaultBrowser", alias = "default_browser")]
+    #[serde(
+        alias = "defaultProfileId",
+        alias = "defaultBrowser",
+        alias = "default_browser"
+    )]
     pub default_profile_id: Option<String>,
     #[serde(alias = "executablePath")]
     pub executable_path: Option<String>,
@@ -242,7 +245,11 @@ pub struct UpdateGridBehaviorRequest {
 pub struct UpdateBrowserSettingsRequest {
     #[serde(alias = "defaultType")]
     pub default_type: Option<String>,
-    #[serde(alias = "defaultProfileId", alias = "defaultBrowser", alias = "default_browser")]
+    #[serde(
+        alias = "defaultProfileId",
+        alias = "defaultBrowser",
+        alias = "default_browser"
+    )]
     pub default_profile_id: Option<String>,
     #[serde(alias = "executablePath")]
     pub executable_path: Option<String>,
@@ -348,7 +355,10 @@ mod tests {
     fn test_calculate_slot_bounds() {
         let grid = GridSettings {
             enabled: true,
-            matrix: GridMatrix { columns: 3, rows: 2 },
+            matrix: GridMatrix {
+                columns: 3,
+                rows: 2,
+            },
             display: DisplaySettings {
                 screen_width: 1920,
                 screen_height: 1080,
@@ -395,7 +405,10 @@ mod tests {
     fn test_calculate_slot_bounds_zero_dimensions_no_panic() {
         let grid = GridSettings {
             enabled: true,
-            matrix: GridMatrix { columns: 0, rows: 0 },
+            matrix: GridMatrix {
+                columns: 0,
+                rows: 0,
+            },
             display: DisplaySettings {
                 screen_width: 0,
                 screen_height: 0,
@@ -423,7 +436,10 @@ mod tests {
     fn test_calculate_slot_bounds_no_recycle_caps_at_max() {
         let grid = GridSettings {
             enabled: true,
-            matrix: GridMatrix { columns: 2, rows: 2 },
+            matrix: GridMatrix {
+                columns: 2,
+                rows: 2,
+            },
             display: DisplaySettings::default(),
             behavior: GridBehavior {
                 auto_recycle_slots: false,
@@ -438,4 +454,3 @@ mod tests {
         assert_eq!(y_last, y_huge);
     }
 }
-

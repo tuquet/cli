@@ -1,7 +1,7 @@
 use crate::infrastructure::bridge::{BridgeConfig, BridgeSupervisor};
 use crate::ui::prompt::{
-    clack_cancel, clack_intro, clack_outro, clack_select, clack_step_err, clack_step_ok,
-    clack_step_warn, ClackOption,
+    ClackOption, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_err,
+    clack_step_ok, clack_step_warn,
 };
 
 pub fn toggle_server(
@@ -61,15 +61,18 @@ pub fn toggle_server(
     };
 
     if config.set_server_enabled(&server_id, enabled)? {
-        clack_step_ok(&format!(
+        clack_step_ok(format!(
             "Server '{}' has been {} in {}",
             server_id,
             action_str,
             BridgeConfig::config_path().display()
         ));
-        clack_outro(&format!("Bridge configuration updated ({} = {}).", server_id, action_str));
+        clack_outro(&format!(
+            "Bridge configuration updated ({} = {}).",
+            server_id, action_str
+        ));
     } else {
-        clack_step_err(&format!(
+        clack_step_err(format!(
             "Server '{}' not found in configuration {}",
             server_id,
             BridgeConfig::config_path().display()
@@ -90,10 +93,10 @@ pub async fn stop_bridge(server_opt: Option<&str>) -> Result<(), Box<dyn std::er
             clack_outro("All tunnels offline.");
         } else if let Some(srv) = config.servers.get(target) {
             BridgeSupervisor::stop_server(target, srv)?;
-            clack_step_ok(&format!("Bridge for '{}' stopped.", target));
+            clack_step_ok(format!("Bridge for '{}' stopped.", target));
             clack_outro(&format!("Tunnel '{}' offline.", target));
         } else {
-            clack_step_warn(&format!("Unknown server '{}'", target));
+            clack_step_warn(format!("Unknown server '{}'", target));
         }
     } else {
         // Default stop all

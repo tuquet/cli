@@ -1,16 +1,16 @@
-use std::convert::Infallible;
-use std::sync::Arc;
 use axum::{
     extract::{Query, State},
     response::sse::{Event, Sse},
 };
 use futures::stream::Stream;
-use tokio_stream::wrappers::BroadcastStream;
+use std::convert::Infallible;
+use std::sync::Arc;
 use tokio_stream::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 
-use crate::core::browser::worker_coordinator::connected_browsers;
-use crate::AppState;
 use super::types::WorkerSseQuery;
+use crate::AppState;
+use crate::core::browser::worker_coordinator::connected_browsers;
 
 #[utoipa::path(
     tag = "Jobs",
@@ -31,7 +31,9 @@ pub async fn worker_sse(
     Query(query): Query<WorkerSseQuery>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let rx = state.worker_tx.subscribe();
-    let expected_browser = query.browser_id.unwrap_or_else(|| "daemon_worker".to_string());
+    let expected_browser = query
+        .browser_id
+        .unwrap_or_else(|| "daemon_worker".to_string());
 
     // Register the connected browser
     {
@@ -54,7 +56,9 @@ pub async fn worker_sse(
             }
         }
     }
-    let _guard = Arc::new(BrowserGuard { browser_id: expected_browser.clone() });
+    let _guard = Arc::new(BrowserGuard {
+        browser_id: expected_browser.clone(),
+    });
 
     let stream = BroadcastStream::new(rx).filter_map(move |msg| {
         let _guard_clone = _guard.clone();
@@ -70,7 +74,6 @@ pub async fn worker_sse(
     });
 
     Sse::new(stream).keep_alive(
-        axum::response::sse::KeepAlive::new()
-            .interval(std::time::Duration::from_secs(2))
+        axum::response::sse::KeepAlive::new().interval(std::time::Duration::from_secs(2)),
     )
 }

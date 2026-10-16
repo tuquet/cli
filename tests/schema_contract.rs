@@ -9,10 +9,15 @@ fn test_manifest_schema_and_json_validity() {
     // 1. Basic manifest identity & SSOT standards
     assert_eq!(m.name, "specter", "Manifest name must be 'specter'");
     assert!(!m.version.is_empty(), "Manifest version must not be empty");
-    assert!(!m.description.is_empty(), "Manifest description must not be empty");
+    assert!(
+        !m.description.is_empty(),
+        "Manifest description must not be empty"
+    );
 
     // 2. Canonical pillars check (5 microservice storage pillars + execution runtimes)
-    let required_pillars = ["system", "automa", "browser", "bridge", "faker", "runner", "cloud", "inbox"];
+    let required_pillars = [
+        "system", "automa", "browser", "bridge", "faker", "runner", "cloud", "inbox",
+    ];
     for p in &required_pillars {
         assert!(
             m.pillars.iter().any(|item| item.eq_ignore_ascii_case(p)),
@@ -24,7 +29,10 @@ fn test_manifest_schema_and_json_validity() {
     // 3. Raw JSON export check
     let raw = raw_json();
     assert!(raw.is_object(), "raw_json() must return a JSON object");
-    assert!(raw.get("commands").is_some(), "raw_json must contain 'commands'");
+    assert!(
+        raw.get("commands").is_some(),
+        "raw_json must contain 'commands'"
+    );
 }
 
 #[test]
@@ -60,7 +68,11 @@ fn test_command_manifest_quality_and_schema_contract() {
         );
 
         // Assert metadata quality
-        assert!(!cmd.title.trim().is_empty(), "Command '{}' title must not be empty", cmd.id);
+        assert!(
+            !cmd.title.trim().is_empty(),
+            "Command '{}' title must not be empty",
+            cmd.id
+        );
         assert!(
             cmd.description.trim().len() >= 10,
             "Command '{}' description is too short: '{}'",
@@ -75,16 +87,44 @@ fn test_command_manifest_quality_and_schema_contract() {
 
         // Assert arguments metadata
         for arg in &cmd.arguments {
-            assert!(!arg.name.trim().is_empty(), "Command '{}' has arg with empty name", cmd.id);
-            assert!(!arg.arg_type.trim().is_empty(), "Command '{}' arg '{}' has empty type", cmd.id, arg.name);
-            assert!(!arg.description.trim().is_empty(), "Command '{}' arg '{}' has empty description", cmd.id, arg.name);
+            assert!(
+                !arg.name.trim().is_empty(),
+                "Command '{}' has arg with empty name",
+                cmd.id
+            );
+            assert!(
+                !arg.arg_type.trim().is_empty(),
+                "Command '{}' arg '{}' has empty type",
+                cmd.id,
+                arg.name
+            );
+            assert!(
+                !arg.description.trim().is_empty(),
+                "Command '{}' arg '{}' has empty description",
+                cmd.id,
+                arg.name
+            );
         }
 
         // Assert options metadata
         for opt in &cmd.options {
-            assert!(!opt.name.trim().is_empty(), "Command '{}' has option with empty name", cmd.id);
-            assert!(!opt.opt_type.trim().is_empty(), "Command '{}' option '{}' has empty type", cmd.id, opt.name);
-            assert!(!opt.description.trim().is_empty(), "Command '{}' option '{}' has empty description", cmd.id, opt.name);
+            assert!(
+                !opt.name.trim().is_empty(),
+                "Command '{}' has option with empty name",
+                cmd.id
+            );
+            assert!(
+                !opt.opt_type.trim().is_empty(),
+                "Command '{}' option '{}' has empty type",
+                cmd.id,
+                opt.name
+            );
+            assert!(
+                !opt.description.trim().is_empty(),
+                "Command '{}' option '{}' has empty description",
+                cmd.id,
+                opt.name
+            );
         }
     }
 }
@@ -149,19 +189,30 @@ fn test_mcp_exported_tools_contract() {
 #[test]
 fn test_runtime_manifest_queries() {
     let browser_cmds = list_by_pillar("browser");
-    assert!(!browser_cmds.is_empty(), "Expected browser commands in manifest");
+    assert!(
+        !browser_cmds.is_empty(),
+        "Expected browser commands in manifest"
+    );
 
     let bridge_cmds = list_by_pillar("bridge");
-    assert!(!bridge_cmds.is_empty(), "Expected bridge commands in manifest");
+    assert!(
+        !bridge_cmds.is_empty(),
+        "Expected bridge commands in manifest"
+    );
 
     let schema_cmd = find_by_route(&["schema", "commands"]);
-    assert!(schema_cmd.is_some(), "Expected 'specter schema commands' to resolve via find_by_route");
+    assert!(
+        schema_cmd.is_some(),
+        "Expected 'specter schema commands' to resolve via find_by_route"
+    );
     assert_eq!(schema_cmd.unwrap().id, "specter.schema.commands");
 }
 
 #[test]
 fn test_config_schemas_contract() {
-    let services = ["bridge", "browser", "automa", "runner", "faker", "system", "inbox"];
+    let services = [
+        "bridge", "browser", "automa", "runner", "faker", "system", "inbox",
+    ];
     for s in services {
         let path = std::path::Path::new("schema/config").join(format!("{}.schema.json", s));
         assert!(path.exists(), "Schema file {:?} must exist", path);
@@ -173,7 +224,15 @@ fn test_config_schemas_contract() {
             "Schema for {} must adhere to Draft 2020-12",
             s
         );
-        assert!(val.get("title").is_some(), "Schema for {} must have a title", s);
-        assert!(val.get("properties").is_some(), "Schema for {} must have properties", s);
+        assert!(
+            val.get("title").is_some(),
+            "Schema for {} must have a title",
+            s
+        );
+        assert!(
+            val.get("properties").is_some(),
+            "Schema for {} must have properties",
+            s
+        );
     }
 }

@@ -1,26 +1,38 @@
-use std::path::PathBuf;
 use super::get_flag_value;
+use std::path::PathBuf;
 
 pub async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "run" => {
             if args.is_empty() {
-                println!("Usage: run <workflow.json | stored_id> [--headless] [--browser <name>] [--timeout <sec>]");
+                println!(
+                    "Usage: run <workflow.json | stored_id> [--headless] [--browser <name>] [--timeout <sec>]"
+                );
             } else {
                 let wf = Some(args[0].to_string());
                 let headless = args.contains(&"--headless");
                 let browser = get_flag_value(args, "-b", "--browser").map(|s| s.to_string());
-                let timeout = get_flag_value(args, "-t", "--timeout").and_then(|s| s.parse::<u64>().ok());
+                let timeout =
+                    get_flag_value(args, "-t", "--timeout").and_then(|s| s.parse::<u64>().ok());
 
                 crate::commands::automa::run_workflow(
-                    wf, None, headless, browser, None, Vec::new(), timeout,
+                    wf,
+                    None,
+                    headless,
+                    browser,
+                    None,
+                    Vec::new(),
+                    timeout,
                 )
                 .await?;
             }
         }
         "list" => {
             let format = super::parse_format(args);
-            let search = args.iter().find(|a| !a.starts_with('-')).map(|s| s.to_string());
+            let search = args
+                .iter()
+                .find(|a| !a.starts_with('-'))
+                .map(|s| s.to_string());
             crate::commands::automa::list_workflows(search, false, false, format).await?;
         }
         "inspect" => {
@@ -72,7 +84,10 @@ pub async fn dispatch_automa(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             crate::commands::automa::manage_config(&positional, edit, show)?;
         }
         other => {
-            println!("Unknown automa command '{}'. Type 'help' to see valid commands.", other);
+            println!(
+                "Unknown automa command '{}'. Type 'help' to see valid commands.",
+                other
+            );
         }
     }
     Ok(())

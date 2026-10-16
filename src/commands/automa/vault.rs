@@ -28,29 +28,46 @@ pub async fn import_workflow(
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
     let id = id_opt
-        .or_else(|| val.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .or_else(|| {
+            val.get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .unwrap_or(derived_stem);
 
     let name = name_opt
-        .or_else(|| val.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .or_else(|| {
+            val.get("name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .unwrap_or_else(|| id.clone());
 
-    let description = desc_opt
-        .or_else(|| val.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()));
+    let description = desc_opt.or_else(|| {
+        val.get("description")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    });
 
     let version = val
         .get("version")
         .and_then(|v| v.as_str())
         .unwrap_or("1.0.0")
         .to_string();
-    let icon = val.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let icon = val
+        .get("icon")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     // Synchronize ID and Name into JSON data
     if let Some(obj) = val.as_object_mut() {
         obj.insert("id".to_string(), serde_json::Value::String(id.clone()));
         obj.insert("name".to_string(), serde_json::Value::String(name.clone()));
         if let Some(ref desc) = description {
-            obj.insert("description".to_string(), serde_json::Value::String(desc.clone()));
+            obj.insert(
+                "description".to_string(),
+                serde_json::Value::String(desc.clone()),
+            );
         }
     }
 
@@ -117,9 +134,10 @@ pub async fn export_workflow(
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
-            && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id) {
-                workflow_json = Some(wf.data);
-            }
+        && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id)
+    {
+        workflow_json = Some(wf.data);
+    }
 
     // 2. Check Vault
     if workflow_json.is_none() {
@@ -134,11 +152,13 @@ pub async fn export_workflow(
         ];
 
         for c in &candidates {
-            if c.exists() && c.is_file()
-                && let Ok(content) = tokio::fs::read_to_string(c).await {
-                    workflow_json = Some(content);
-                    break;
-                }
+            if c.exists()
+                && c.is_file()
+                && let Ok(content) = tokio::fs::read_to_string(c).await
+            {
+                workflow_json = Some(content);
+                break;
+            }
         }
     }
 
@@ -161,7 +181,10 @@ pub async fn export_workflow(
     }
     tokio::fs::write(&dest, final_content).await?;
 
-    crate::ui::Notify::success(format!("Workflow '{}' exported successfully to: {:?}", id, dest));
+    crate::ui::Notify::success(format!(
+        "Workflow '{}' exported successfully to: {:?}",
+        id, dest
+    ));
     Ok(())
 }
 
@@ -177,9 +200,10 @@ pub async fn delete_workflow(
     let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
-            && let Ok(res) = db.workflows().delete_workflow(&id) {
-                deleted_db = res;
-            }
+        && let Ok(res) = db.workflows().delete_workflow(&id)
+    {
+        deleted_db = res;
+    }
 
     // 2. Delete from Vault if requested
     if delete_from_vault {
@@ -194,10 +218,9 @@ pub async fn delete_workflow(
         ];
 
         for c in &candidates {
-            if c.exists() && c.is_file()
-                && tokio::fs::remove_file(c).await.is_ok() {
-                    deleted_vault = true;
-                }
+            if c.exists() && c.is_file() && tokio::fs::remove_file(c).await.is_ok() {
+                deleted_vault = true;
+            }
         }
     }
 
@@ -207,7 +230,10 @@ pub async fn delete_workflow(
             id, deleted_db, deleted_vault
         ));
     } else {
-        crate::ui::Notify::warn(format!("Workflow '{}' was not found in database or vault.", id));
+        crate::ui::Notify::warn(format!(
+            "Workflow '{}' was not found in database or vault.",
+            id
+        ));
     }
 
     Ok(())

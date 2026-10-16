@@ -1,9 +1,9 @@
+use super::history::record_history;
+use super::scanner::DiscoveredPackage;
+use crate::ui::{clack_outro, colors};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
-use crate::ui::{clack_outro, colors};
-use super::history::record_history;
-use super::scanner::DiscoveredPackage;
 
 static ACTIVE_CHILD_PID: AtomicU32 = AtomicU32::new(0);
 static ACTIVE_JOB_HANDLE: AtomicUsize = AtomicUsize::new(0);
@@ -139,9 +139,11 @@ pub fn run_package_script(
             ));
             return Ok(());
         }
-        return Err(
-            format!("Command '{} ({})' exited with status code {}", pm, script, code).into(),
-        );
+        return Err(format!(
+            "Command '{} ({})' exited with status code {}",
+            pm, script, code
+        )
+        .into());
     }
 
     Ok(())
@@ -264,7 +266,11 @@ fn spawn_shell_cmd(program: &str) -> Command {
 
 #[cfg(target_os = "windows")]
 fn resolve_windows_direct_exe(program: &str) -> Option<PathBuf> {
-    if program.contains('\\') || program.contains('/') || program.ends_with(".cmd") || program.ends_with(".bat") {
+    if program.contains('\\')
+        || program.contains('/')
+        || program.ends_with(".cmd")
+        || program.ends_with(".bat")
+    {
         return None;
     }
     let exe_name = if program.to_lowercase().ends_with(".exe") {
@@ -303,7 +309,10 @@ pub fn resolve_scoop_jdk_home(version: &str) -> Option<(String, PathBuf)> {
     let entries = std::fs::read_dir(&scoop_apps).ok()?;
     for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_lowercase();
-        if (name.contains("jdk") || name.contains("temurin") || name.contains("zulu") || name.contains("graalvm"))
+        if (name.contains("jdk")
+            || name.contains("temurin")
+            || name.contains("zulu")
+            || name.contains("graalvm"))
             && name.contains(version)
         {
             let current_dir = entry.path().join("current");
@@ -318,11 +327,11 @@ pub fn resolve_scoop_jdk_home(version: &str) -> Option<(String, PathBuf)> {
 #[cfg(windows)]
 #[allow(non_snake_case, clippy::upper_case_acronyms)]
 mod win_process_guard {
+    use super::{ACTIVE_CHILD_PID, ACTIVE_JOB_HANDLE, CTRL_C_INTERRUPTED, kill_process_tree};
     use std::ffi::c_void;
     use std::os::windows::io::AsRawHandle;
     use std::process::Child;
     use std::sync::atomic::Ordering;
-    use super::{kill_process_tree, ACTIVE_CHILD_PID, ACTIVE_JOB_HANDLE, CTRL_C_INTERRUPTED};
 
     type HANDLE = *mut c_void;
     type BOOL = i32;
@@ -450,7 +459,9 @@ mod win_process_guard {
                         &info as *const _ as *const c_void,
                         std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
                     );
-                    if ok != 0 && AssignProcessToJobObject(job, child.as_raw_handle() as HANDLE) != 0 {
+                    if ok != 0
+                        && AssignProcessToJobObject(job, child.as_raw_handle() as HANDLE) != 0
+                    {
                         ACTIVE_JOB_HANDLE.store(job as usize, Ordering::SeqCst);
                     } else {
                         CloseHandle(job);
@@ -521,6 +532,9 @@ mod tests {
         drop(guard);
 
         let status = child.wait().expect("wait after job drop");
-        assert!(!status.success(), "Child process in job should have been terminated");
+        assert!(
+            !status.success(),
+            "Child process in job should have been terminated"
+        );
     }
 }

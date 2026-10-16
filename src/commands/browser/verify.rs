@@ -1,4 +1,4 @@
-use crate::ui::{badge_online, Card};
+use crate::ui::{Card, badge_online};
 
 pub async fn verify_stealth_presentation(
     url_opt: Option<String>,
@@ -8,10 +8,26 @@ pub async fn verify_stealth_presentation(
     let mut header_card = Card::new("SPECTER BROWSER STEALTH VERIFICATION");
     header_card.with_badge(badge_online("LIVE PRESENTATION"));
     header_card.with_min_width(74);
-    header_card.add_kv("Engine", "Chromium C++ Antidetect Engine (Blink/V8 Native Spoofing)");
-    header_card.add_kv("Driver", "Native Pure Rust CDP Driver (Isolated World & Bézier Physics)");
-    header_card.add_kv("Mode", if headless { "Headless Engine Mode" } else { "Headful Visual Inspection (Real-time Pointer)" });
-    header_card.add_kv("Verification Scope", "Turnstile Challenge + Bézier Trajectory + Momentum Wheel");
+    header_card.add_kv(
+        "Engine",
+        "Chromium C++ Antidetect Engine (Blink/V8 Native Spoofing)",
+    );
+    header_card.add_kv(
+        "Driver",
+        "Native Pure Rust CDP Driver (Isolated World & Bézier Physics)",
+    );
+    header_card.add_kv(
+        "Mode",
+        if headless {
+            "Headless Engine Mode"
+        } else {
+            "Headful Visual Inspection (Real-time Pointer)"
+        },
+    );
+    header_card.add_kv(
+        "Verification Scope",
+        "Turnstile Challenge + Bézier Trajectory + Momentum Wheel",
+    );
     header_card.with_footer("Press Ctrl+C to abort early at any point");
     println!();
     header_card.print();
@@ -20,13 +36,17 @@ pub async fn verify_stealth_presentation(
     // 1. Resolve Antidetect Chromium binary
     let exe_path = crate::core::browser::resolve_executable_path("default").await?;
     if !std::path::Path::new(&exe_path).exists() {
-        crate::ui::Notify::error(format!("Dedicated Antidetect Chromium binary not found at: {}", exe_path));
+        crate::ui::Notify::error(format!(
+            "Dedicated Antidetect Chromium binary not found at: {}",
+            exe_path
+        ));
         eprintln!("Run 'specter browser install' to provision Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 
     // 2. Create isolated ephemeral sandbox directory (Zero collision guarantee)
-    let temp_profile = std::env::temp_dir().join(format!("specter_verify_{}", uuid::Uuid::new_v4()));
+    let temp_profile =
+        std::env::temp_dir().join(format!("specter_verify_{}", uuid::Uuid::new_v4()));
     tokio::fs::create_dir_all(&temp_profile).await?;
 
     println!("[1/4] Spawning Antidetect Chromium with dynamic ephemeral port...");
@@ -61,7 +81,10 @@ pub async fn verify_stealth_presentation(
     let mut child = cmd.spawn()?;
     let pid = child.id();
     if !headless {
-        println!("      ✨ Browser window is live on your display (PID: {})!", pid);
+        println!(
+            "      ✨ Browser window is live on your display (PID: {})!",
+            pid
+        );
     }
 
     // 3. Attach native CDP Driver
@@ -79,7 +102,9 @@ pub async fn verify_stealth_presentation(
 
     // Visual pointer helper function
     async fn inject_visual_pointer(s: &specter_runner::CdpSession) {
-        let _ = s.evaluate(r#"(() => {
+        let _ = s
+            .evaluate(
+                r#"(() => {
             if (document.getElementById('specter-visual-pointer')) return;
             const dot = document.createElement('div');
             dot.id = 'specter-visual-pointer';
@@ -101,12 +126,17 @@ pub async fn verify_stealth_presentation(
             window.addEventListener('mousemove', (e) => {
                 dot.style.transform = `translate(${e.clientX - 9}px, ${e.clientY - 9}px)`;
             }, true);
-        })()"#).await;
+        })()"#,
+            )
+            .await;
     }
 
     // 4. Stage 1: Bot Detection & Natural Interaction Test
     let test_url_stage1 = "https://bot.sannysoft.com/";
-    println!("\n[3/4] Stage 1: Bot Detection & Momentum Scrolling ({})...", test_url_stage1);
+    println!(
+        "\n[3/4] Stage 1: Bot Detection & Momentum Scrolling ({})...",
+        test_url_stage1
+    );
     if let Err(e) = session.navigate(test_url_stage1).await {
         println!("      ⚠ Navigation warning: {}", e);
     }
@@ -126,7 +156,9 @@ pub async fn verify_stealth_presentation(
     tokio::time::sleep(std::time::Duration::from_millis(400)).await;
 
     // Verify webdriver flag is false in isolated world
-    let is_webdriver = session.evaluate("navigator.webdriver").await
+    let is_webdriver = session
+        .evaluate("navigator.webdriver")
+        .await
         .unwrap_or(serde_json::Value::Bool(false));
     let webdriver_clean = is_webdriver.as_bool() == Some(false) || is_webdriver.is_null();
     if webdriver_clean {
@@ -136,13 +168,19 @@ pub async fn verify_stealth_presentation(
     }
 
     // 5. Stage 2: Cloudflare Turnstile Challenge Bypass
-    let target_cf_url = url_opt.unwrap_or_else(|| "https://peet.ws/turnstile-test/managed.html".to_string());
-    println!("\n[4/4] Stage 2: Cloudflare Turnstile Challenge Bypass ({})...", target_cf_url);
+    let target_cf_url =
+        url_opt.unwrap_or_else(|| "https://peet.ws/turnstile-test/managed.html".to_string());
+    println!(
+        "\n[4/4] Stage 2: Cloudflare Turnstile Challenge Bypass ({})...",
+        target_cf_url
+    );
     session.navigate(&target_cf_url).await.ok();
     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     inject_visual_pointer(&session).await;
 
-    println!("      👉 Waiting for Turnstile widget render and executing humanized click on checkbox...");
+    println!(
+        "      👉 Waiting for Turnstile widget render and executing humanized click on checkbox..."
+    );
     let timeout = std::time::Duration::from_secs(timeout_secs);
     let turnstile_passed = match session.solve_turnstile(timeout).await {
         Ok(true) => {
@@ -179,13 +217,35 @@ pub async fn verify_stealth_presentation(
     let mut card = Card::new("SPECTER STEALTH VERIFICATION SCORECARD");
     card.with_badge(badge_online("ALL PASS"));
     card.with_min_width(74);
-    card.add_kv("Engine Architecture", "C++ Antidetect Chromium v148 ( adryfish )");
-    card.add_kv("Driver Protocol", "Native Pure Rust CDP (WebSocket Handshake)");
-    card.add_kv("Isolated World", "Page.createIsolatedWorld (Zero Prototype Pollution)");
-    card.add_kv("Mouse Trajectory", "Cubic Bézier (Randomized ease-in-out + Jitter)");
+    card.add_kv(
+        "Engine Architecture",
+        "C++ Antidetect Chromium v148 ( adryfish )",
+    );
+    card.add_kv(
+        "Driver Protocol",
+        "Native Pure Rust CDP (WebSocket Handshake)",
+    );
+    card.add_kv(
+        "Isolated World",
+        "Page.createIsolatedWorld (Zero Prototype Pollution)",
+    );
+    card.add_kv(
+        "Mouse Trajectory",
+        "Cubic Bézier (Randomized ease-in-out + Jitter)",
+    );
     card.add_kv("Mouse Wheel", "Multi-tick Momentum Deceleration");
-    card.add_kv("Cloudflare Turnstile", if turnstile_passed { "● PASSED (Token Verified)" } else { "● COMPLETED" });
-    card.add_kv("Port Concurrency", "Dynamic Ephemeral Port (Zero Port Collision)");
+    card.add_kv(
+        "Cloudflare Turnstile",
+        if turnstile_passed {
+            "● PASSED (Token Verified)"
+        } else {
+            "● COMPLETED"
+        },
+    );
+    card.add_kv(
+        "Port Concurrency",
+        "Dynamic Ephemeral Port (Zero Port Collision)",
+    );
     card.with_footer("All stealth verification benchmarks executed and validated successfully.");
     card.print();
     println!();

@@ -1,7 +1,7 @@
-use std::path::PathBuf;
 use crate::cli::ExtCommands;
-use crate::ui::{badge_error, badge_online, badge_warn, Card};
 use crate::core::browser::{Extension, ExtensionRegistry};
+use crate::ui::{Card, badge_error, badge_online, badge_warn};
+use std::path::PathBuf;
 
 pub async fn handle_ext(
     subcmd: Option<ExtCommands>,
@@ -71,13 +71,22 @@ pub async fn handle_ext(
             };
 
             let mut card = Card::new("EXTENSION CATALOG");
-            card.with_badge(badge_online(&format!("{} AVAILABLE (SCOOP)", filtered.len())));
+            card.with_badge(badge_online(&format!(
+                "{} AVAILABLE (SCOOP)",
+                filtered.len()
+            )));
             card.with_min_width(68);
 
             for pkg in &filtered {
                 let installed = registry
                     .get(&pkg.id)
-                    .map(|e| if e.path.exists() { " [INSTALLED]" } else { " [BROKEN PATH]" })
+                    .map(|e| {
+                        if e.path.exists() {
+                            " [INSTALLED]"
+                        } else {
+                            " [BROKEN PATH]"
+                        }
+                    })
                     .unwrap_or("");
                 card.add_kv(
                     format!("ID: {}{}", pkg.id, installed),
@@ -129,79 +138,75 @@ pub async fn handle_ext(
                 }
             }
         }
-        Some(ExtCommands::Add { path, id }) => {
-            match Extension::from_unpacked_dir(&path, id) {
-                Ok(ext) => {
-                    let ext_id = ext.id.clone();
-                    let name = ext.name.clone();
-                    let version = ext.version.clone();
-                    let resolved_path = ext.path.display().to_string();
-                    registry.register(ext)?;
+        Some(ExtCommands::Add { path, id }) => match Extension::from_unpacked_dir(&path, id) {
+            Ok(ext) => {
+                let ext_id = ext.id.clone();
+                let name = ext.name.clone();
+                let version = ext.version.clone();
+                let resolved_path = ext.path.display().to_string();
+                registry.register(ext)?;
 
-                    let mut card = Card::new("BROWSER EXTENSION");
-                    card.with_badge(badge_online("REGISTERED"));
-                    card.with_min_width(64);
-                    card.add_kv("ID", ext_id);
-                    card.add_kv("Name", name);
-                    card.add_kv("Version", version);
-                    card.add_kv("Path", resolved_path);
-                    card.with_footer("Extension is now active and ready for browser sessions");
-                    println!();
-                    card.print();
-                    println!();
-                    Ok(())
-                }
-                Err(e) => {
-                    let mut card = Card::new("BROWSER EXTENSION");
-                    card.with_badge(badge_error("REGISTRATION FAILED"));
-                    card.with_min_width(64);
-                    card.add_kv("Target Path", path.display().to_string());
-                    card.add_kv("Error", format!("{}", e));
-                    card.with_footer("Ensure path contains a valid Chrome manifest.json file");
-                    println!();
-                    card.print();
-                    println!();
-                    Err(e.into())
-                }
+                let mut card = Card::new("BROWSER EXTENSION");
+                card.with_badge(badge_online("REGISTERED"));
+                card.with_min_width(64);
+                card.add_kv("ID", ext_id);
+                card.add_kv("Name", name);
+                card.add_kv("Version", version);
+                card.add_kv("Path", resolved_path);
+                card.with_footer("Extension is now active and ready for browser sessions");
+                println!();
+                card.print();
+                println!();
+                Ok(())
             }
-        }
-        Some(ExtCommands::Remove { id }) => {
-            match registry.unregister(&id) {
-                Ok(true) => {
-                    let mut card = Card::new("BROWSER EXTENSION");
-                    card.with_badge(badge_online("REMOVED"));
-                    card.with_min_width(64);
-                    card.add_kv("Removed ID", id);
-                    card.add_line("Extension unregistered from local Specter registry.");
-                    println!();
-                    card.print();
-                    println!();
-                    Ok(())
-                }
-                Ok(false) => {
-                    let mut card = Card::new("BROWSER EXTENSION");
-                    card.with_badge(badge_warn("NOT FOUND"));
-                    card.with_min_width(64);
-                    card.add_kv("Target ID", id);
-                    card.add_line("No extension with this ID was found in the registry.");
-                    println!();
-                    card.print();
-                    println!();
-                    Ok(())
-                }
-                Err(e) => {
-                    let mut card = Card::new("BROWSER EXTENSION");
-                    card.with_badge(badge_error("ERROR"));
-                    card.with_min_width(64);
-                    card.add_kv("Target ID", id);
-                    card.add_kv("Error", format!("{}", e));
-                    println!();
-                    card.print();
-                    println!();
-                    Err(e.into())
-                }
+            Err(e) => {
+                let mut card = Card::new("BROWSER EXTENSION");
+                card.with_badge(badge_error("REGISTRATION FAILED"));
+                card.with_min_width(64);
+                card.add_kv("Target Path", path.display().to_string());
+                card.add_kv("Error", format!("{}", e));
+                card.with_footer("Ensure path contains a valid Chrome manifest.json file");
+                println!();
+                card.print();
+                println!();
+                Err(e.into())
             }
-        }
+        },
+        Some(ExtCommands::Remove { id }) => match registry.unregister(&id) {
+            Ok(true) => {
+                let mut card = Card::new("BROWSER EXTENSION");
+                card.with_badge(badge_online("REMOVED"));
+                card.with_min_width(64);
+                card.add_kv("Removed ID", id);
+                card.add_line("Extension unregistered from local Specter registry.");
+                println!();
+                card.print();
+                println!();
+                Ok(())
+            }
+            Ok(false) => {
+                let mut card = Card::new("BROWSER EXTENSION");
+                card.with_badge(badge_warn("NOT FOUND"));
+                card.with_min_width(64);
+                card.add_kv("Target ID", id);
+                card.add_line("No extension with this ID was found in the registry.");
+                println!();
+                card.print();
+                println!();
+                Ok(())
+            }
+            Err(e) => {
+                let mut card = Card::new("BROWSER EXTENSION");
+                card.with_badge(badge_error("ERROR"));
+                card.with_min_width(64);
+                card.add_kv("Target ID", id);
+                card.add_kv("Error", format!("{}", e));
+                println!();
+                card.print();
+                println!();
+                Err(e.into())
+            }
+        },
         Some(ExtCommands::Enable { id }) => {
             if registry.set_enabled(&id, true)? {
                 let mut card = Card::new("BROWSER EXTENSION");
@@ -249,18 +254,36 @@ pub async fn handle_ext(
         Some(ExtCommands::Info { id }) => {
             if let Some(ext) = registry.get(&id) {
                 let mut card = Card::new("BROWSER EXTENSION");
-                card.with_badge(if ext.enabled { badge_online("ACTIVE") } else { badge_warn("DISABLED") });
+                card.with_badge(if ext.enabled {
+                    badge_online("ACTIVE")
+                } else {
+                    badge_warn("DISABLED")
+                });
                 card.with_min_width(64);
                 card.add_kv("ID", &ext.id);
                 card.add_kv("Name", &ext.name);
                 card.add_kv("Version", &ext.version);
                 card.add_kv("Manifest Version", format!("MV{}", ext.manifest_version));
-                card.add_kv("Type", if ext.is_builtin { "Built-in System Extension" } else { "Custom Extension" });
+                card.add_kv(
+                    "Type",
+                    if ext.is_builtin {
+                        "Built-in System Extension"
+                    } else {
+                        "Custom Extension"
+                    },
+                );
                 if let Some(ref desc) = ext.description {
                     card.add_kv("Description", desc);
                 }
                 card.add_kv("Filesystem Path", ext.path.display().to_string());
-                card.add_kv("Directory Exists", if ext.path.exists() { "Yes" } else { "No (Missing on disk)" });
+                card.add_kv(
+                    "Directory Exists",
+                    if ext.path.exists() {
+                        "Yes"
+                    } else {
+                        "No (Missing on disk)"
+                    },
+                );
                 println!();
                 card.print();
                 println!();
@@ -269,7 +292,9 @@ pub async fn handle_ext(
                 card.with_badge(badge_warn("NOT FOUND"));
                 card.with_min_width(64);
                 card.add_kv("ID", id);
-                card.add_line("Extension not found in local registry. Run 'specter browser ext list'.");
+                card.add_line(
+                    "Extension not found in local registry. Run 'specter browser ext list'.",
+                );
                 println!();
                 card.print();
                 println!();
@@ -306,8 +331,14 @@ pub async fn handle_ext(
             card.with_badge(badge_online("CONFIGURED"));
             card.with_min_width(68);
             card.add_kv("Target Browser", browser);
-            card.add_kv("Loaded Extensions", format!("{} extension(s)", paths_to_load.len()));
-            card.add_line(format!("Launch command: chrome.exe --load-extension=\"{}\"", load_arg));
+            card.add_kv(
+                "Loaded Extensions",
+                format!("{} extension(s)", paths_to_load.len()),
+            );
+            card.add_line(format!(
+                "Launch command: chrome.exe --load-extension=\"{}\"",
+                load_arg
+            ));
             card.with_footer("Ready to launch and attach to worker daemon");
             println!();
             card.print();
@@ -342,7 +373,10 @@ pub async fn setup_extension(
         card.add_line("Status: Extension unpacked directory does not exist yet.");
         card.with_footer("Build extension with: pnpm --filter @automa/runner build");
     } else {
-        card.add_line(format!("Launch command: chrome.exe --load-extension=\"{}\"", ext_dir.display()));
+        card.add_line(format!(
+            "Launch command: chrome.exe --load-extension=\"{}\"",
+            ext_dir.display()
+        ));
         card.with_footer("Ready to launch and attach to worker daemon");
     }
     println!();

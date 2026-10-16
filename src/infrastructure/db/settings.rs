@@ -1,6 +1,5 @@
-use rusqlite::{params, Connection, Result};
 use crate::core::models::settings::AppSettings;
-
+use rusqlite::{Connection, Result, params};
 
 pub struct SqliteSettingsRepository<'a> {
     conn: &'a Connection,
@@ -14,7 +13,9 @@ impl<'a> SqliteSettingsRepository<'a> {
 
 impl<'a> SqliteSettingsRepository<'a> {
     pub fn get_settings(&self) -> Result<AppSettings> {
-        let mut stmt = self.conn.prepare("SELECT value FROM system_settings WHERE key = 'app_settings'")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT value FROM system_settings WHERE key = 'app_settings'")?;
         let mut rows = stmt.query([])?;
 
         if let Some(row) = rows.next()? {
@@ -47,4 +48,3 @@ impl<'a> SqliteSettingsRepository<'a> {
         Ok(())
     }
 }
-

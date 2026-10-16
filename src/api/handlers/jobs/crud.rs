@@ -215,9 +215,7 @@ pub async fn get_active_jobs(
                 true
             }
         })
-        .map(|id| ActiveJobResponse {
-            job_id: id.clone(),
-        })
+        .map(|id| ActiveJobResponse { job_id: id.clone() })
         .collect();
 
     jobs.sort_by(|a, b| a.job_id.cmp(&b.job_id));

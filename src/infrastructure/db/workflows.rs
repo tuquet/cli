@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, Result};
+use rusqlite::{Connection, Result, params};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -48,12 +48,16 @@ impl<'a> SqliteWorkflowRepository<'a> {
             params![id, name, description, data, ver, icon],
         )?;
 
-        self.get_workflow(id)?.ok_or_else(|| {
-            rusqlite::Error::QueryReturnedNoRows
-        })
+        self.get_workflow(id)?
+            .ok_or_else(|| rusqlite::Error::QueryReturnedNoRows)
     }
 
-    pub fn get_workflows(&self, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<DbWorkflow>> {
+    pub fn get_workflows(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<DbWorkflow>> {
         let l = limit.map(|v| v as i64).unwrap_or(-1);
         let o = offset.unwrap_or(0) as i64;
         let mut list = Vec::new();
@@ -225,11 +229,12 @@ impl<'a> SqliteWorkflowRepository<'a> {
     }
 
     pub fn delete_workflow(&self, id: &str) -> Result<bool> {
-        let affected = self.conn.execute("DELETE FROM workflows WHERE id = ?1", params![id])?;
+        let affected = self
+            .conn
+            .execute("DELETE FROM workflows WHERE id = ?1", params![id])?;
         Ok(affected > 0)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -243,21 +248,26 @@ mod tests {
         let repo = SqliteWorkflowRepository::new(conn);
 
         let initial_data = r#"{"nodes":[{"id":"node_1","type":"trigger"}],"edges":[]}"#;
-        let created = repo.create_workflow(
-            "wf_search",
-            "Search Google",
-            Some("Automated search"),
-            initial_data,
-            Some("1.0.0"),
-            Some("search"),
-        ).unwrap();
+        let created = repo
+            .create_workflow(
+                "wf_search",
+                "Search Google",
+                Some("Automated search"),
+                initial_data,
+                Some("1.0.0"),
+                Some("search"),
+            )
+            .unwrap();
 
         assert_eq!(created.id, "wf_search");
         assert_eq!(created.name, "Search Google");
         assert_eq!(created.description.as_deref(), Some("Automated search"));
 
         // Get by ID
-        let fetched = repo.get_workflow("wf_search").unwrap().expect("Should exist");
+        let fetched = repo
+            .get_workflow("wf_search")
+            .unwrap()
+            .expect("Should exist");
         assert_eq!(fetched.data, initial_data);
 
         // List
@@ -266,14 +276,17 @@ mod tests {
 
         // Update
         let updated_data = r#"{"nodes":[{"id":"node_1","type":"trigger"},{"id":"node_2","type":"click-element"}],"edges":[]}"#;
-        let updated = repo.update_workflow(
-            "wf_search",
-            Some("Search Google & Bing"),
-            None,
-            Some(updated_data),
-            Some("1.1.0"),
-            None,
-        ).unwrap().expect("Should update");
+        let updated = repo
+            .update_workflow(
+                "wf_search",
+                Some("Search Google & Bing"),
+                None,
+                Some(updated_data),
+                Some("1.1.0"),
+                None,
+            )
+            .unwrap()
+            .expect("Should update");
 
         assert_eq!(updated.name, "Search Google & Bing");
         assert_eq!(updated.version, "1.1.0");
@@ -299,7 +312,8 @@ mod tests {
             data,
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // Exact ID
         let by_id = repo.get_workflow_by_id_or_name("flow_google_01").unwrap();
@@ -307,12 +321,16 @@ mod tests {
         assert_eq!(by_id.unwrap().name, "Google Search Bot");
 
         // Exact Name
-        let by_name = repo.get_workflow_by_id_or_name("Google Search Bot").unwrap();
+        let by_name = repo
+            .get_workflow_by_id_or_name("Google Search Bot")
+            .unwrap();
         assert!(by_name.is_some());
         assert_eq!(by_name.unwrap().id, "flow_google_01");
 
         // Lowercase Name (case-insensitive)
-        let by_name_lower = repo.get_workflow_by_id_or_name("google search bot").unwrap();
+        let by_name_lower = repo
+            .get_workflow_by_id_or_name("google search bot")
+            .unwrap();
         assert!(by_name_lower.is_some());
         assert_eq!(by_name_lower.unwrap().id, "flow_google_01");
 

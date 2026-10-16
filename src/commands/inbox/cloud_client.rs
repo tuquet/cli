@@ -1,6 +1,6 @@
-use std::time::{Duration, Instant};
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 use thiserror::Error;
 
 use crate::commands::inbox::parser::EmailParser;
@@ -12,7 +12,9 @@ use crate::infrastructure::cloud::MachineFingerprint;
 pub enum CloudError {
     #[error("Reqwest HTTP error: {0}")]
     Http(#[from] reqwest::Error),
-    #[error("Supabase cloud not configured (set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.specter/inbox/inbox.json)")]
+    #[error(
+        "Supabase cloud not configured (set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.specter/inbox/inbox.json)"
+    )]
     NotConfigured,
     #[error("Local storage error: {0}")]
     Storage(#[from] crate::commands::inbox::storage::StorageError),
@@ -69,25 +71,40 @@ impl InboxCloudClient {
             .unwrap_or_else(|_| reqwest::Client::new());
 
         // 1. Auto-discover from SSOT identity file (~/.specter/system/.identity.json)
-        let identity_path = crate::config::canonical_specter_dir().join("system").join(".identity.json");
-        let (discovered_url, discovered_key, discovered_dev_id, discovered_tenant_id) = if identity_path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&identity_path) {
-                if let Ok(creds) = serde_json::from_str::<serde_json::Value>(&content) {
-                    (
-                        creds.get("cloud_url").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                        creds.get("api_key").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                        creds.get("device_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                        creds.get("tenant_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    )
+        let identity_path = crate::config::canonical_specter_dir()
+            .join("system")
+            .join(".identity.json");
+        let (discovered_url, discovered_key, discovered_dev_id, discovered_tenant_id) =
+            if identity_path.exists() {
+                if let Ok(content) = std::fs::read_to_string(&identity_path) {
+                    if let Ok(creds) = serde_json::from_str::<serde_json::Value>(&content) {
+                        (
+                            creds
+                                .get("cloud_url")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            creds
+                                .get("api_key")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            creds
+                                .get("device_id")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            creds
+                                .get("tenant_id")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                        )
+                    } else {
+                        (None, None, None, None)
+                    }
                 } else {
                     (None, None, None, None)
                 }
             } else {
                 (None, None, None, None)
-            }
-        } else {
-            (None, None, None, None)
-        };
+            };
 
         // 2. Cascade priority: inbox.json -> ENV -> identity.json -> Dev Default
         let supabase_url = config
@@ -155,7 +172,10 @@ impl InboxCloudClient {
             .client
             .get(&url)
             .header("apikey", &self.supabase_anon_key)
-            .header("Authorization", format!("Bearer {}", self.supabase_anon_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.supabase_anon_key),
+            )
             .send()
             .await?;
         Ok(res.status().as_u16())
@@ -209,7 +229,10 @@ impl InboxCloudClient {
                 .client
                 .get(&url)
                 .header("apikey", &self.supabase_anon_key)
-                .header("Authorization", format!("Bearer {}", self.supabase_anon_key))
+                .header(
+                    "Authorization",
+                    format!("Bearer {}", self.supabase_anon_key),
+                )
                 .header("Accept", "application/json")
                 .send()
                 .await;
@@ -251,7 +274,11 @@ impl InboxCloudClient {
         Ok(None)
     }
 
-    pub async fn consume_otp_remote(&self, otp_id: &str, device_id: &str) -> Result<bool, CloudError> {
+    pub async fn consume_otp_remote(
+        &self,
+        otp_id: &str,
+        device_id: &str,
+    ) -> Result<bool, CloudError> {
         if !self.is_configured() {
             return Err(CloudError::NotConfigured);
         }
@@ -266,23 +293,27 @@ impl InboxCloudClient {
             .client
             .post(&url)
             .header("apikey", &self.supabase_anon_key)
-            .header("Authorization", format!("Bearer {}", self.supabase_anon_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.supabase_anon_key),
+            )
             .json(&payload)
             .send()
             .await?;
 
         if !res.status().is_success() {
             let body = res.text().await.unwrap_or_default();
-            return Err(CloudError::Api {
-                status: 400,
-                body,
-            });
+            return Err(CloudError::Api { status: 400, body });
         }
 
         Ok(true)
     }
 
-    pub async fn sync_recent(&self, storage: &InboxStorage, limit: usize) -> Result<usize, CloudError> {
+    pub async fn sync_recent(
+        &self,
+        storage: &InboxStorage,
+        limit: usize,
+    ) -> Result<usize, CloudError> {
         if !self.is_configured() {
             return Err(CloudError::NotConfigured);
         }
@@ -296,7 +327,10 @@ impl InboxCloudClient {
             .client
             .get(&url)
             .header("apikey", &self.supabase_anon_key)
-            .header("Authorization", format!("Bearer {}", self.supabase_anon_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.supabase_anon_key),
+            )
             .send()
             .await?;
 
@@ -398,4 +432,3 @@ mod tests {
         assert!(client.is_configured());
     }
 }
-

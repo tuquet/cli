@@ -1,11 +1,11 @@
-use std::time::Instant;
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 use crate::commands::inbox::cloud_client::InboxCloudClient;
 use crate::commands::inbox::parser::EmailParser;
 use crate::commands::inbox::storage::{EmailRecord, InboxStorage, OtpRecord};
 use crate::config::inbox::InboxConfig;
-use crate::ui::{badge_offline, badge_online, Card};
+use crate::ui::{Card, badge_offline, badge_online};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AcceptanceCheckResult {
@@ -66,7 +66,10 @@ pub async fn run_acceptance_test(
     let t1 = Instant::now();
     let cloud = InboxCloudClient::new(&config);
     let is_configured = cloud.is_configured();
-    let dev_id = cloud.device_id().map(|s| s.to_string()).unwrap_or_else(|| "unpaired".to_string());
+    let dev_id = cloud
+        .device_id()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "unpaired".to_string());
     let dur1 = t1.elapsed().as_millis();
 
     if is_configured {
@@ -96,7 +99,11 @@ pub async fn run_acceptance_test(
                 let ok = code == 200 || code == 404;
                 checks.push(AcceptanceCheckResult {
                     name: "Remote Cloud Endpoint".to_string(),
-                    status: if ok { "ONLINE".to_string() } else { "HTTP_ERROR".to_string() },
+                    status: if ok {
+                        "ONLINE".to_string()
+                    } else {
+                        "HTTP_ERROR".to_string()
+                    },
                     detail: format!("HTTP {} ({}ms)", code, dur2),
                     duration_ms: dur2,
                     passed: ok,
@@ -131,7 +138,8 @@ pub async fn run_acceptance_test(
                 checks.push(AcceptanceCheckResult {
                     name: "Remote Cloud Endpoint".to_string(),
                     status: "STANDBY".to_string(),
-                    detail: "Standby / Restricted network (Start bridge if sync needed)".to_string(),
+                    detail: "Standby / Restricted network (Start bridge if sync needed)"
+                        .to_string(),
                     duration_ms: dur2,
                     passed: true, // Non-fatal for offline MMO execution
                 });
@@ -140,7 +148,10 @@ pub async fn run_acceptance_test(
     }
 
     // 4. Ingestion & Regex Extraction Test
-    let test_recipient = format!("test_mmo_{}@specter.local", test_start.elapsed().as_millis());
+    let test_recipient = format!(
+        "test_mmo_{}@specter.local",
+        test_start.elapsed().as_millis()
+    );
     let test_code = "839201";
     let t3 = Instant::now();
     let parsed = EmailParser::parse(
@@ -156,7 +167,12 @@ pub async fn run_acceptance_test(
         checks.push(AcceptanceCheckResult {
             name: "Ingestion & Regex Engine".to_string(),
             status: "OK".to_string(),
-            detail: format!("Code '{}' intercepted (Service: {}) in {}ms", otp.code, otp.service.as_deref().unwrap_or("Unknown"), dur3),
+            detail: format!(
+                "Code '{}' intercepted (Service: {}) in {}ms",
+                otp.code,
+                otp.service.as_deref().unwrap_or("Unknown"),
+                dur3
+            ),
             duration_ms: dur3,
             passed: true,
         });
@@ -206,9 +222,13 @@ pub async fn run_acceptance_test(
         let _ = storage.save_otp(&otp_rec);
 
         // First consume must succeed
-        let consume1 = storage.consume_otp(&otp_id, "runner_worker_01").unwrap_or(false);
+        let consume1 = storage
+            .consume_otp(&otp_id, "runner_worker_01")
+            .unwrap_or(false);
         // Second consume must be rejected (idempotence)
-        let consume2 = storage.consume_otp(&otp_id, "runner_worker_02").unwrap_or(false);
+        let consume2 = storage
+            .consume_otp(&otp_id, "runner_worker_02")
+            .unwrap_or(false);
 
         let dur4 = t4.elapsed().as_millis();
         if consume1 && !consume2 {
@@ -223,7 +243,10 @@ pub async fn run_acceptance_test(
             checks.push(AcceptanceCheckResult {
                 name: "Anti-Duplicate Lock".to_string(),
                 status: "FAILED".to_string(),
-                detail: format!("Concurrency lock violated: consume1={}, consume2={}", consume1, consume2),
+                detail: format!(
+                    "Concurrency lock violated: consume1={}, consume2={}",
+                    consume1, consume2
+                ),
                 duration_ms: dur4,
                 passed: false,
             });

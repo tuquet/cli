@@ -1,37 +1,34 @@
-use tower_http::cors::{Any, CorsLayer};
-use axum::{routing::get, routing::post, routing::delete, response::IntoResponse, Router};
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-use crate::api::handlers::history::{
-    get_history, get_logs, delete_history_item, clear_history
+use crate::api::handlers::browsers::{
+    auto_detect_browsers, create_browser, delete_browser, get_browser_detail, get_browsers,
+    import_csv, set_default_browser, sideload_extension, start_browser, stop_browser,
+    update_browser,
 };
-use crate::api::handlers::sse::sse;
 use crate::api::handlers::health::health;
+use crate::api::handlers::history::{clear_history, delete_history_item, get_history, get_logs};
 use crate::api::handlers::jobs::{
-    submit_job, get_job_status, get_active_jobs, kill_job, pause_job, resume_job,
-    worker_sse, job_log, job_finish
-};
-use crate::api::handlers::system::{
-    open_studio, kill_browsers, get_metrics, get_system_info,
-    get_cloud_status, trigger_cloud_sync, cloud_login, cloud_logout,
-    get_tenants, switch_tenant, start_desktop_auth, desktop_auth_callback, desktop_auth_callback_post
+    get_active_jobs, get_job_status, job_finish, job_log, kill_job, pause_job, resume_job,
+    submit_job, worker_sse,
 };
 use crate::api::handlers::lint::lint_workflow;
+use crate::api::handlers::settings::{get_settings, patch_settings, update_settings};
+use crate::api::handlers::sse::sse;
 use crate::api::handlers::storage::{
-    get_variables, add_variable, delete_variable,
-    get_credentials, add_credential, delete_credential,
-    get_tables, add_table, delete_table,
-    get_table_rows, add_table_row,
-    get_workflows, get_workflow_by_id,
-    create_storage_workflow, update_storage_workflow, delete_storage_workflow,
-    import_storage_workflow, restore_storage_backup, export_storage_backup,
-    get_workflow, save_workflow
+    add_credential, add_table, add_table_row, add_variable, create_storage_workflow,
+    delete_credential, delete_storage_workflow, delete_table, delete_variable,
+    export_storage_backup, get_credentials, get_table_rows, get_tables, get_variables,
+    get_workflow, get_workflow_by_id, get_workflows, import_storage_workflow,
+    restore_storage_backup, save_workflow, update_storage_workflow,
 };
-use crate::api::handlers::browsers::{
-    get_browsers, create_browser, update_browser, delete_browser, get_browser_detail, start_browser, stop_browser, import_csv, sideload_extension, auto_detect_browsers, set_default_browser
+use crate::api::handlers::system::{
+    cloud_login, cloud_logout, desktop_auth_callback, desktop_auth_callback_post, get_cloud_status,
+    get_metrics, get_system_info, get_tenants, kill_browsers, open_studio, start_desktop_auth,
+    switch_tenant, trigger_cloud_sync,
 };
-use crate::api::handlers::settings::{get_settings, update_settings, patch_settings};
 use crate::api::handlers::ws::ws_handler;
+use axum::{Router, response::IntoResponse, routing::delete, routing::get, routing::post};
+use tower_http::cors::{Any, CorsLayer};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -211,14 +208,23 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/system/cloud/login", post(cloud_login))
         .route("/system/cloud/logout", post(cloud_logout))
         .route("/system/cloud/auth/start", post(start_desktop_auth))
-        .route("/auth/callback", get(desktop_auth_callback).post(desktop_auth_callback_post))
+        .route(
+            "/auth/callback",
+            get(desktop_auth_callback).post(desktop_auth_callback_post),
+        )
         .route("/system/tenants", get(get_tenants))
         .route("/system/tenants/switch", post(switch_tenant))
-        .route("/system/settings", get(get_settings).put(update_settings).patch(patch_settings))
+        .route(
+            "/system/settings",
+            get(get_settings).put(update_settings).patch(patch_settings),
+        )
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))
         .route("/jobs/{job_id}", delete(kill_job))
-        .route("/jobs/{job_id}/status", get(get_job_status).patch(job_finish))
+        .route(
+            "/jobs/{job_id}/status",
+            get(get_job_status).patch(job_finish),
+        )
         .route("/jobs/{job_id}/pause", post(pause_job))
         .route("/jobs/{job_id}/resume", post(resume_job))
         .route("/jobs/{job_id}/logs", post(job_log))
@@ -228,21 +234,43 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/history/{job_id}", delete(delete_history_item))
         .route("/storage/variables", get(get_variables).post(add_variable))
         .route("/storage/variables/{id}", delete(delete_variable))
-        .route("/storage/credentials", get(get_credentials).post(add_credential))
+        .route(
+            "/storage/credentials",
+            get(get_credentials).post(add_credential),
+        )
         .route("/storage/credentials/{id}", delete(delete_credential))
         .route("/storage/tables", get(get_tables).post(add_table))
         .route("/storage/tables/{id}", delete(delete_table))
-        .route("/storage/tables/{id}/rows", get(get_table_rows).post(add_table_row))
+        .route(
+            "/storage/tables/{id}/rows",
+            get(get_table_rows).post(add_table_row),
+        )
         .route("/storage/backup/restore", post(restore_storage_backup))
         .route("/storage/backup/export", get(export_storage_backup))
-        .route("/storage/workflows", get(get_workflows).post(create_storage_workflow))
+        .route(
+            "/storage/workflows",
+            get(get_workflows).post(create_storage_workflow),
+        )
         .route("/storage/workflows/import", post(import_storage_workflow))
-        .route("/storage/workflows/{id}", get(get_workflow_by_id).put(update_storage_workflow).delete(delete_storage_workflow))
+        .route(
+            "/storage/workflows/{id}",
+            get(get_workflow_by_id)
+                .put(update_storage_workflow)
+                .delete(delete_storage_workflow),
+        )
         .route("/browsers", get(get_browsers).post(create_browser))
         .route("/browsers/auto-detect", post(auto_detect_browsers))
         .route("/browsers/sessions", delete(kill_browsers))
-        .route("/browsers/{id}", get(get_browser_detail).put(update_browser).delete(delete_browser))
-        .route("/browsers/{id}/session", post(start_browser).delete(stop_browser))
+        .route(
+            "/browsers/{id}",
+            get(get_browser_detail)
+                .put(update_browser)
+                .delete(delete_browser),
+        )
+        .route(
+            "/browsers/{id}/session",
+            post(start_browser).delete(stop_browser),
+        )
         .route("/browsers/{id}/set-default", post(set_default_browser))
         .route("/browsers/{id}/extensions", post(sideload_extension))
         .route("/browsers/import-csv", post(import_csv))
@@ -293,10 +321,10 @@ pub fn create_router(state: crate::AppState) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
-    use tokio::sync::{broadcast, Mutex};
-    use crate::infrastructure::db::AutomaDb;
     use crate::AppState;
+    use crate::infrastructure::db::AutomaDb;
+    use std::sync::Arc;
+    use tokio::sync::{Mutex, broadcast};
 
     fn create_test_state() -> AppState {
         let (tx, _) = broadcast::channel(10);
@@ -317,10 +345,19 @@ mod tests {
         let state = create_test_state();
         let app = create_router(state);
 
-        use tower::ServiceExt;
         use axum::http::{Request, StatusCode};
+        use tower::ServiceExt;
 
-        let res_root = app.clone().oneshot(Request::builder().uri("/").body(axum::body::Body::empty()).unwrap()).await.unwrap();
+        let res_root = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         assert_eq!(res_root.status(), StatusCode::OK);
     }
 
@@ -329,8 +366,8 @@ mod tests {
         let state = create_test_state();
         let app = create_router(state);
 
-        use tower::ServiceExt;
         use axum::http::{Request, StatusCode};
+        use tower::ServiceExt;
 
         let valid_origins = [
             "tauri://localhost",
@@ -357,9 +394,18 @@ mod tests {
                 .unwrap();
 
             let res = app.clone().oneshot(req).await.unwrap();
-            assert_eq!(res.status(), StatusCode::OK, "Failed for origin: {}", origin);
+            assert_eq!(
+                res.status(),
+                StatusCode::OK,
+                "Failed for origin: {}",
+                origin
+            );
             let allow_origin = res.headers().get("access-control-allow-origin");
-            assert!(allow_origin.is_some(), "CORS header missing for origin: {}", origin);
+            assert!(
+                allow_origin.is_some(),
+                "CORS header missing for origin: {}",
+                origin
+            );
         }
     }
 
@@ -368,8 +414,8 @@ mod tests {
         let state = create_test_state();
         let app = create_router(state);
 
-        use tower::ServiceExt;
         use axum::http::{Request, StatusCode};
+        use tower::ServiceExt;
 
         let req = Request::builder()
             .method("GET")
@@ -385,7 +431,11 @@ mod tests {
     fn test_openapi_spec_generation() {
         let openapi = ApiDoc::openapi();
         let json_result = openapi.to_pretty_json();
-        assert!(json_result.is_ok(), "OpenAPI spec serialization failed: {:?}", json_result.err());
+        assert!(
+            json_result.is_ok(),
+            "OpenAPI spec serialization failed: {:?}",
+            json_result.err()
+        );
         let json_str = json_result.unwrap();
         assert!(json_str.contains("Specter CLI & Core Bridge API"));
         assert!(json_str.contains("/api/v1/system/tenants"));

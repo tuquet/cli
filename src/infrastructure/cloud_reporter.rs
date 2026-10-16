@@ -1,11 +1,10 @@
+use crate::AppState;
 use std::path::PathBuf;
 use tracing::{info, warn};
-use crate::AppState;
 
 pub use super::cloud::{
-    CloudApiClient, CredentialStore, MachineFingerprint,
-    DeviceCredentials, CloudSyncResult, CloudStatusInfo,
-    DEFAULT_SUPABASE_ANON_KEY,
+    CloudApiClient, CloudStatusInfo, CloudSyncResult, CredentialStore, DEFAULT_SUPABASE_ANON_KEY,
+    DeviceCredentials, MachineFingerprint,
 };
 
 /// Facade coordinator for Specter Cloud communication, local identity, and background telemetry
@@ -28,7 +27,10 @@ impl CloudReporter {
         CredentialStore::load(data_dir).await
     }
 
-    pub async fn save_credentials(data_dir: &str, creds: &DeviceCredentials) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn save_credentials(
+        data_dir: &str,
+        creds: &DeviceCredentials,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         CredentialStore::save(data_dir, creds).await
     }
 
@@ -42,9 +44,13 @@ impl CloudReporter {
             return Ok(existing);
         }
 
-        let creds = CloudApiClient::enroll(client, cloud_url, None, enrollment_token, None, None).await?;
+        let creds =
+            CloudApiClient::enroll(client, cloud_url, None, enrollment_token, None, None).await?;
         Self::save_credentials(data_dir, &creds).await?;
-        info!("[CloudReporter] Workstation enrolled successfully [Device ID: {}]", creds.device_id);
+        info!(
+            "[CloudReporter] Workstation enrolled successfully [Device ID: {}]",
+            creds.device_id
+        );
         Ok(creds)
     }
 
@@ -56,7 +62,15 @@ impl CloudReporter {
         bearer_token: Option<&str>,
     ) -> Result<DeviceCredentials, Box<dyn std::error::Error + Send + Sync>> {
         let client = Self::build_http_client();
-        let creds = CloudApiClient::enroll(&client, cloud_url, custom_name, enrollment_token, Some("cli_login"), bearer_token).await?;
+        let creds = CloudApiClient::enroll(
+            &client,
+            cloud_url,
+            custom_name,
+            enrollment_token,
+            Some("cli_login"),
+            bearer_token,
+        )
+        .await?;
         Self::save_credentials(data_dir, &creds).await?;
         Ok(creds)
     }
@@ -73,7 +87,10 @@ impl CloudReporter {
         state: &AppState,
     ) -> Result<CloudSyncResult, Box<dyn std::error::Error + Send + Sync>> {
         let saved_creds = Self::load_credentials(&state.config.data_dir).await;
-        let cloud_url_owned = state.config.cloud_url.clone()
+        let cloud_url_owned = state
+            .config
+            .cloud_url
+            .clone()
             .or_else(|| saved_creds.as_ref().and_then(|c| c.cloud_url.clone()));
 
         let cloud_url = match cloud_url_owned.as_deref() {
@@ -97,41 +114,56 @@ impl CloudReporter {
             cloud_url,
             &state.config.data_dir,
             state.config.cloud_enrollment_token.as_deref(),
-        ).await?;
+        )
+        .await?;
 
         // 1. Gather all local browser profiles from SQLite
         let local_browsers = {
             let db = state.db.lock().await;
-            db.browsers().get_browsers(None, None, None).unwrap_or_default()
+            db.browsers()
+                .get_browsers(None, None, None)
+                .unwrap_or_default()
         };
 
         let active_sessions = {
-            crate::core::browser::manager::browser_sessions().read().await.clone()
+            crate::core::browser::manager::browser_sessions()
+                .read()
+                .await
+                .clone()
         };
 
-        let browsers_payload: Vec<serde_json::Value> = local_browsers.into_iter().map(|b| {
-            let is_running = active_sessions.contains_key(&b.id);
-            serde_json::json!({
-                "id": b.id,
-                "name": b.name,
-                "browserType": "chromium",
-                "status": if is_running { "running" } else { "idle" },
-                "userAgent": b.user_agent,
-                "timezone": b.timezone,
-                "proxy": b.proxy
+        let browsers_payload: Vec<serde_json::Value> = local_browsers
+            .into_iter()
+            .map(|b| {
+                let is_running = active_sessions.contains_key(&b.id);
+                serde_json::json!({
+                    "id": b.id,
+                    "name": b.name,
+                    "browserType": "chromium",
+                    "status": if is_running { "running" } else { "idle" },
+                    "userAgent": b.user_agent,
+                    "timezone": b.timezone,
+                    "proxy": b.proxy
+                })
             })
-        }).collect();
+            .collect();
 
         let browsers_count = browsers_payload.len();
 
         let env_key = std::env::var("SPECTER_API_KEY").ok();
-        let anon_key = creds.api_key.as_deref()
+        let anon_key = creds
+            .api_key
+            .as_deref()
             .or(env_key.as_deref())
             .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
 
         // 2. Report Browser Inventory to Central Hub
-        let report_url = format!("{}/rest/v1/rpc/report_browser_inventory", cloud_url.trim_end_matches('/'));
-        let report_res = client.post(&report_url)
+        let report_url = format!(
+            "{}/rest/v1/rpc/report_browser_inventory",
+            cloud_url.trim_end_matches('/')
+        );
+        let report_res = client
+            .post(&report_url)
             .header("apikey", anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
@@ -144,7 +176,10 @@ impl CloudReporter {
 
         let browsers_synced = match report_res {
             Ok(res) if res.status().is_success() => {
-                info!("[CloudReporter] Synced {} local browser profiles to Specter Cloud", browsers_count);
+                info!(
+                    "[CloudReporter] Synced {} local browser profiles to Specter Cloud",
+                    browsers_count
+                );
                 browsers_count
             }
             Ok(res) => {
@@ -153,7 +188,10 @@ impl CloudReporter {
                 0
             }
             Err(e) => {
-                warn!("[CloudReporter] Network error syncing browser inventory: {}", e);
+                warn!(
+                    "[CloudReporter] Network error syncing browser inventory: {}",
+                    e
+                );
                 0
             }
         };
@@ -169,7 +207,8 @@ impl CloudReporter {
         let ram_total = (sys.total_memory() / (1024 * 1024)) as f64;
 
         let heartbeat_url = format!("{}/rest/v1/rpc/heartbeat", cloud_url.trim_end_matches('/'));
-        let heartbeat_res = client.post(&heartbeat_url)
+        let heartbeat_res = client
+            .post(&heartbeat_url)
             .header("apikey", anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
@@ -205,20 +244,28 @@ impl CloudReporter {
             device_id: creds.device_id,
             browsers_synced,
             heartbeat_sent,
-            message: format!("Successfully synced {} browsers and heartbeat to Specter Cloud", browsers_synced),
+            message: format!(
+                "Successfully synced {} browsers and heartbeat to Specter Cloud",
+                browsers_synced
+            ),
         })
     }
 
     pub fn start_background_loop(state: AppState) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             let interval_secs = state.config.cloud_heartbeat_interval_secs.max(10);
-            
+
             let saved_creds = Self::load_credentials(&state.config.data_dir).await;
-            let active_url = state.config.cloud_url.clone()
+            let active_url = state
+                .config
+                .cloud_url
+                .clone()
                 .or_else(|| saved_creds.as_ref().and_then(|c| c.cloud_url.clone()));
 
             if active_url.is_none() {
-                info!("[CloudReporter] No SPECTER_CLOUD_URL or saved login found. Running in offline/standalone mode.");
+                info!(
+                    "[CloudReporter] No SPECTER_CLOUD_URL or saved login found. Running in offline/standalone mode."
+                );
                 return;
             }
 

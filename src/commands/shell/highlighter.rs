@@ -24,7 +24,9 @@ impl Highlighter for SpecterHighlighter {
         let mut word_index = 0;
 
         while !remaining.is_empty() {
-            let next_word_end = remaining.find(char::is_whitespace).unwrap_or(remaining.len());
+            let next_word_end = remaining
+                .find(char::is_whitespace)
+                .unwrap_or(remaining.len());
             let word = &remaining[..next_word_end];
 
             if word_index == 0 {
@@ -40,7 +42,11 @@ impl Highlighter for SpecterHighlighter {
                 } else {
                     styled.push((Color::Red.normal(), word.to_string()));
                 }
-            } else if word_index == 1 && first_word.map(|w| w.eq_ignore_ascii_case("use")).unwrap_or(false) {
+            } else if word_index == 1
+                && first_word
+                    .map(|w| w.eq_ignore_ascii_case("use"))
+                    .unwrap_or(false)
+            {
                 // Second word after `use <scope>`
                 if ShellScope::from_name(word).is_some() {
                     styled.push((Color::Magenta.bold(), word.to_string()));
@@ -54,7 +60,10 @@ impl Highlighter for SpecterHighlighter {
                 } else {
                     styled.push((Color::Red.normal(), word.to_string()));
                 }
-            } else if word_index == 1 && self.scope == ShellScope::Global && ShellScope::from_name(first_word.unwrap_or("")).is_some() {
+            } else if word_index == 1
+                && self.scope == ShellScope::Global
+                && ShellScope::from_name(first_word.unwrap_or("")).is_some()
+            {
                 // Second word after scope name in Global: e.g. "bridge status", "automa run"
                 if let Some(target_scope) = ShellScope::from_name(first_word.unwrap_or("")) {
                     if target_scope.is_valid_subcommand(word) {
@@ -98,7 +107,9 @@ mod tests {
 
     #[test]
     fn test_highlighter_valid_and_invalid_first_words() {
-        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter {
+            scope: ShellScope::Bridge,
+        };
 
         // Valid subcommand "status"
         let styled = hl.highlight("status", 0);
@@ -115,7 +126,9 @@ mod tests {
 
     #[test]
     fn test_highlighter_use_scope_arguments() {
-        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter {
+            scope: ShellScope::Bridge,
+        };
 
         // "use automa" -> 'use' (cyan), ' ' (default), 'automa' (magenta)
         let styled = hl.highlight("use automa", 0);
@@ -135,7 +148,9 @@ mod tests {
 
     #[test]
     fn test_highlighter_prefix_redundancy() {
-        let hl = SpecterHighlighter { scope: ShellScope::Bridge };
+        let hl = SpecterHighlighter {
+            scope: ShellScope::Bridge,
+        };
 
         // "bridge status" in Bridge scope -> 'bridge' (magenta), ' ' (default), 'status' (cyan)
         let styled = hl.highlight("bridge status", 0);

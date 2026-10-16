@@ -1,5 +1,5 @@
-use rusqlite::{params, Connection, Result};
-use crate::core::models::storage::{StorageVariable, StorageCredential};
+use crate::core::models::storage::{StorageCredential, StorageVariable};
+use rusqlite::{Connection, Result, params};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct SqliteStorageRepository<'a> {
@@ -20,7 +20,12 @@ impl<'a> SqliteStorageRepository<'a> {
 
     // --- Variables ---
 
-    pub fn get_variables(&self, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<StorageVariable>> {
+    pub fn get_variables(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<StorageVariable>> {
         let l = limit.map(|v| v as i64).unwrap_or(-1);
         let o = offset.unwrap_or(0) as i64;
         let mut vars = Vec::new();
@@ -72,12 +77,23 @@ impl<'a> SqliteStorageRepository<'a> {
     }
 
     pub fn save_variable(&self, var: &StorageVariable) -> Result<StorageVariable> {
-        let id = var.id.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-        let name = var.name.clone().or_else(|| var.key.clone()).unwrap_or_default();
-        let val_str = var.value.as_ref().map(|v| match v {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        }).unwrap_or_default();
+        let id = var
+            .id
+            .clone()
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        let name = var
+            .name
+            .clone()
+            .or_else(|| var.key.clone())
+            .unwrap_or_default();
+        let val_str = var
+            .value
+            .as_ref()
+            .map(|v| match v {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            })
+            .unwrap_or_default();
         let now = Self::current_time_millis();
 
         self.conn.execute(
@@ -107,7 +123,12 @@ impl<'a> SqliteStorageRepository<'a> {
 
     // --- Credentials ---
 
-    pub fn get_credentials(&self, limit: Option<usize>, offset: Option<usize>, search: Option<&str>) -> Result<Vec<StorageCredential>> {
+    pub fn get_credentials(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        search: Option<&str>,
+    ) -> Result<Vec<StorageCredential>> {
         let l = limit.map(|v| v as i64).unwrap_or(-1);
         let o = offset.unwrap_or(0) as i64;
         let mut creds = Vec::new();
@@ -155,8 +176,15 @@ impl<'a> SqliteStorageRepository<'a> {
     }
 
     pub fn save_credential(&self, cred: &StorageCredential) -> Result<StorageCredential> {
-        let id = cred.id.clone().unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-        let name = cred.name.clone().or_else(|| cred.key.clone()).unwrap_or_default();
+        let id = cred
+            .id
+            .clone()
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        let name = cred
+            .name
+            .clone()
+            .or_else(|| cred.key.clone())
+            .unwrap_or_default();
         let raw_val = cred.value.as_deref().unwrap_or_default();
 
         // Auto-encrypt with AES if not already encrypted
@@ -201,7 +229,6 @@ impl<'a> SqliteStorageRepository<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,7 +253,10 @@ mod tests {
         let vars = storage.get_variables(None, None, None).unwrap();
         assert_eq!(vars.len(), 1);
         assert_eq!(vars[0].name.as_deref(), Some("API_ENDPOINT"));
-        assert_eq!(vars[0].value, Some(serde_json::json!("https://api.example.com")));
+        assert_eq!(
+            vars[0].value,
+            Some(serde_json::json!("https://api.example.com"))
+        );
 
         // 3. Update variable
         let var_updated = StorageVariable {
@@ -238,7 +268,10 @@ mod tests {
         storage.save_variable(&var_updated).unwrap();
         let vars_after = storage.get_variables(None, None, None).unwrap();
         assert_eq!(vars_after.len(), 1);
-        assert_eq!(vars_after[0].value, Some(serde_json::json!("https://api.v2.example.com")));
+        assert_eq!(
+            vars_after[0].value,
+            Some(serde_json::json!("https://api.v2.example.com"))
+        );
 
         // 4. Delete variable
         storage.delete_variable("API_ENDPOINT").unwrap();
@@ -260,7 +293,7 @@ mod tests {
         };
         let saved = storage.save_credential(&cred).unwrap();
         let encrypted_val = saved.value.unwrap();
-        
+
         // Assert it is encrypted (not plaintext)
         assert_ne!(encrypted_val, "ghp_secret_token_123456");
         assert!(encrypted_val.len() > 64);

@@ -6,16 +6,16 @@ pub mod storage;
 pub mod test_runner;
 pub mod worker_template;
 
-use std::path::PathBuf;
 use crate::cli::InboxSubcommands;
 use crate::commands::inbox::cloud_client::InboxCloudClient;
 use crate::commands::inbox::server::{read_pid, remove_pid, run_server};
 use crate::commands::inbox::storage::InboxStorage;
 use crate::commands::inbox::worker_template::{
-    generate_cloudflare_worker_script, WorkerTemplateOptions,
+    WorkerTemplateOptions, generate_cloudflare_worker_script,
 };
 use crate::config::inbox::InboxConfig;
-use crate::ui::{badge_offline, badge_online, respond_with, Card, Column, Table};
+use crate::ui::{Card, Column, Table, badge_offline, badge_online, respond_with};
+use std::path::PathBuf;
 
 pub async fn handle(subcmd: InboxSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     match subcmd {
@@ -27,17 +27,39 @@ pub async fn handle(subcmd: InboxSubcommands) -> Result<(), Box<dyn std::error::
             no_consume,
             copy,
             format,
-        } => handle_otp(&recipient, wait, timeout, raw, no_consume, copy, format.resolve()).await?,
+        } => {
+            handle_otp(
+                &recipient,
+                wait,
+                timeout,
+                raw,
+                no_consume,
+                copy,
+                format.resolve(),
+            )
+            .await?
+        }
         InboxSubcommands::Link {
             recipient,
             link_type,
             open,
             raw,
             format,
-        } => handle_link(&recipient, link_type.as_deref(), open, raw, format.resolve()).await?,
-        InboxSubcommands::List { recipient, limit, format } => {
-            handle_list(recipient.as_deref(), limit, format.resolve()).await?
+        } => {
+            handle_link(
+                &recipient,
+                link_type.as_deref(),
+                open,
+                raw,
+                format.resolve(),
+            )
+            .await?
         }
+        InboxSubcommands::List {
+            recipient,
+            limit,
+            format,
+        } => handle_list(recipient.as_deref(), limit, format.resolve()).await?,
         InboxSubcommands::Start {
             port,
             host,
@@ -45,9 +67,11 @@ pub async fn handle(subcmd: InboxSubcommands) -> Result<(), Box<dyn std::error::
         } => handle_start(port, host, foreground).await?,
         InboxSubcommands::Stop => handle_stop().await?,
         InboxSubcommands::Status { format } => handle_status(format.resolve()).await?,
-        InboxSubcommands::Test { simulate, remote, json } => {
-            test_runner::run_acceptance_test(simulate, remote, json).await?
-        }
+        InboxSubcommands::Test {
+            simulate,
+            remote,
+            json,
+        } => test_runner::run_acceptance_test(simulate, remote, json).await?,
         InboxSubcommands::SetupWorker { output, secret } => {
             handle_setup_worker(output.as_deref(), secret.as_deref()).await?
         }
@@ -58,7 +82,7 @@ pub async fn handle(subcmd: InboxSubcommands) -> Result<(), Box<dyn std::error::
 }
 
 pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
-    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, clack_text, ClackOption};
+    use crate::ui::prompt::{ClackOption, clack_cancel, clack_intro, clack_select, clack_text};
 
     if !crate::ui::is_interactive_tty() {
         return handle_status(crate::ui::OutputFormat::Json).await;
@@ -101,7 +125,9 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
 
     match idx {
         0 => {
-            let Some(recipient) = clack_text("Recipient email address:", Some("user@example.com"), None)? else {
+            let Some(recipient) =
+                clack_text("Recipient email address:", Some("user@example.com"), None)?
+            else {
                 clack_cancel("Cancelled.");
                 return Ok(());
             };
@@ -123,7 +149,6 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         _ => Ok(()),
     }
 }
-
 
 pub async fn handle_otp(
     recipient: &str,
@@ -166,7 +191,9 @@ pub async fn handle_otp(
             None => {
                 // If not in local cache, do a fast 3-second cloud check if cloud is enabled
                 if cloud.is_configured() {
-                    cloud.poll_otp(&storage, recipient, 3, mark_consumed).await?
+                    cloud
+                        .poll_otp(&storage, recipient, 3, mark_consumed)
+                        .await?
                 } else {
                     None
                 }
@@ -265,7 +292,9 @@ pub async fn handle_link(
                 #[cfg(target_os = "macos")]
                 let _ = std::process::Command::new("open").arg(&link.url).spawn();
                 #[cfg(target_os = "linux")]
-                let _ = std::process::Command::new("xdg-open").arg(&link.url).spawn();
+                let _ = std::process::Command::new("xdg-open")
+                    .arg(&link.url)
+                    .spawn();
             }
 
             if raw {
@@ -291,11 +320,7 @@ pub async fn handle_link(
             }
             Ok(())
         }
-        None => Err(format!(
-            "No verification or action link found for '{}'.",
-            recipient
-        )
-        .into()),
+        None => Err(format!("No verification or action link found for '{}'.", recipient).into()),
     }
 }
 
@@ -315,107 +340,107 @@ pub async fn handle_list(
 
     respond_with(format, &payload, |_| {
         println!();
-    println!("📬 RECENT EMAILS (showing max {})", limit);
-    if emails.is_empty() {
-        println!("  (No emails found in local cache)");
-    } else {
-        let columns = vec![
-            Column {
-                title: "ID".to_string(),
-                min_width: 8,
-                align_right: false,
-            },
-            Column {
-                title: "FROM".to_string(),
-                min_width: 20,
-                align_right: false,
-            },
-            Column {
-                title: "TO".to_string(),
-                min_width: 20,
-                align_right: false,
-            },
-            Column {
-                title: "SUBJECT".to_string(),
-                min_width: 25,
-                align_right: false,
-            },
-            Column {
-                title: "RECEIVED AT".to_string(),
-                min_width: 18,
-                align_right: false,
-            },
-        ];
-        let mut table = Table::new(columns);
-        for e in &emails {
-            let short_id = if e.id.len() > 8 { &e.id[..8] } else { &e.id };
-            let subj = e.subject.as_deref().unwrap_or("<No Subject>");
-            let short_subj = if subj.chars().count() > 30 {
-                format!("{}...", subj.chars().take(27).collect::<String>())
-            } else {
-                subj.to_string()
-            };
-            table.add_row(vec![
-                short_id.to_string(),
-                e.sender.clone(),
-                e.recipient.clone(),
-                short_subj,
-                e.received_at.clone(),
-            ]);
+        println!("📬 RECENT EMAILS (showing max {})", limit);
+        if emails.is_empty() {
+            println!("  (No emails found in local cache)");
+        } else {
+            let columns = vec![
+                Column {
+                    title: "ID".to_string(),
+                    min_width: 8,
+                    align_right: false,
+                },
+                Column {
+                    title: "FROM".to_string(),
+                    min_width: 20,
+                    align_right: false,
+                },
+                Column {
+                    title: "TO".to_string(),
+                    min_width: 20,
+                    align_right: false,
+                },
+                Column {
+                    title: "SUBJECT".to_string(),
+                    min_width: 25,
+                    align_right: false,
+                },
+                Column {
+                    title: "RECEIVED AT".to_string(),
+                    min_width: 18,
+                    align_right: false,
+                },
+            ];
+            let mut table = Table::new(columns);
+            for e in &emails {
+                let short_id = if e.id.len() > 8 { &e.id[..8] } else { &e.id };
+                let subj = e.subject.as_deref().unwrap_or("<No Subject>");
+                let short_subj = if subj.chars().count() > 30 {
+                    format!("{}...", subj.chars().take(27).collect::<String>())
+                } else {
+                    subj.to_string()
+                };
+                table.add_row(vec![
+                    short_id.to_string(),
+                    e.sender.clone(),
+                    e.recipient.clone(),
+                    short_subj,
+                    e.received_at.clone(),
+                ]);
+            }
+            table.print();
         }
-        table.print();
-    }
 
-    println!();
-    println!("🔑 RECENT OTPs");
-    if otps.is_empty() {
-        println!("  (No OTPs found in local cache)");
-    } else {
-        let columns = vec![
-            Column {
-                title: "CODE".to_string(),
-                min_width: 10,
-                align_right: false,
-            },
-            Column {
-                title: "RECIPIENT".to_string(),
-                min_width: 22,
-                align_right: false,
-            },
-            Column {
-                title: "SERVICE".to_string(),
-                min_width: 12,
-                align_right: false,
-            },
-            Column {
-                title: "STATUS".to_string(),
-                min_width: 10,
-                align_right: false,
-            },
-            Column {
-                title: "CREATED AT".to_string(),
-                min_width: 18,
-                align_right: false,
-            },
-        ];
-        let mut table = Table::new(columns);
-        for o in &otps {
-            let status = if o.consumed_at.is_some() {
-                "Consumed"
-            } else {
-                "Active"
-            };
-            let svc = o.service_name.as_deref().unwrap_or("Unknown");
-            table.add_row(vec![
-                o.otp_code.clone(),
-                o.recipient.clone(),
-                svc.to_string(),
-                status.to_string(),
-                o.created_at.clone(),
-            ]);
+        println!();
+        println!("🔑 RECENT OTPs");
+        if otps.is_empty() {
+            println!("  (No OTPs found in local cache)");
+        } else {
+            let columns = vec![
+                Column {
+                    title: "CODE".to_string(),
+                    min_width: 10,
+                    align_right: false,
+                },
+                Column {
+                    title: "RECIPIENT".to_string(),
+                    min_width: 22,
+                    align_right: false,
+                },
+                Column {
+                    title: "SERVICE".to_string(),
+                    min_width: 12,
+                    align_right: false,
+                },
+                Column {
+                    title: "STATUS".to_string(),
+                    min_width: 10,
+                    align_right: false,
+                },
+                Column {
+                    title: "CREATED AT".to_string(),
+                    min_width: 18,
+                    align_right: false,
+                },
+            ];
+            let mut table = Table::new(columns);
+            for o in &otps {
+                let status = if o.consumed_at.is_some() {
+                    "Consumed"
+                } else {
+                    "Active"
+                };
+                let svc = o.service_name.as_deref().unwrap_or("Unknown");
+                table.add_row(vec![
+                    o.otp_code.clone(),
+                    o.recipient.clone(),
+                    svc.to_string(),
+                    status.to_string(),
+                    o.created_at.clone(),
+                ]);
+            }
+            table.print();
         }
-        table.print();
-    }
         println!();
     })
 }
@@ -497,7 +522,9 @@ pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub async fn handle_status(format: crate::ui::OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_status(
+    format: crate::ui::OutputFormat,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())?;
     let stats = storage.stats().unwrap_or_default();
@@ -539,18 +566,33 @@ pub async fn handle_status(format: crate::ui::OutputFormat) -> Result<(), Box<dy
                 format!("http://{}:{}", config.host, config.port),
             );
         } else {
-            card.add_kv("Daemon Status", "Not running (Start with 'specter inbox start')");
+            card.add_kv(
+                "Daemon Status",
+                "Not running (Start with 'specter inbox start')",
+            );
         }
 
-        card.add_kv("Local SQLite DB", InboxConfig::sqlite_path().display().to_string());
+        card.add_kv(
+            "Local SQLite DB",
+            InboxConfig::sqlite_path().display().to_string(),
+        );
         card.add_kv("Total Cached Emails", format!("{}", stats.total_emails));
         card.add_kv("Total Intercepted OTPs", format!("{}", stats.total_otps));
-        card.add_kv("Active Unconsumed OTPs", format!("{}", stats.unconsumed_otps));
+        card.add_kv(
+            "Active Unconsumed OTPs",
+            format!("{}", stats.unconsumed_otps),
+        );
         card.add_kv("Extracted Links", format!("{}", stats.total_links));
 
         if cloud.is_configured() {
-            let dev_info = cloud.device_id().map(|d| format!(" [Device: {}]", d)).unwrap_or_default();
-            card.add_kv("Cloud Sync", format!("Enabled (SSOT Device Identity Connected{})", dev_info));
+            let dev_info = cloud
+                .device_id()
+                .map(|d| format!(" [Device: {}]", d))
+                .unwrap_or_default();
+            card.add_kv(
+                "Cloud Sync",
+                format!("Enabled (SSOT Device Identity Connected{})", dev_info),
+            );
         } else {
             card.add_kv(
                 "Cloud Sync",
@@ -615,6 +657,10 @@ pub async fn handle_sync(limit: usize) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-pub fn manage_config(args: &[String], edit: bool, show: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub fn manage_config(
+    args: &[String],
+    edit: bool,
+    show: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     crate::config::ConfigController::handle_dispatch("inbox", args, edit, show)
 }

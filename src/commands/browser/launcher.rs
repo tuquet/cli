@@ -1,5 +1,5 @@
-use crate::ui::{badge_error, badge_online, badge_warn, Card};
 use crate::core::browser::ExtensionRegistry;
+use crate::ui::{Card, badge_error, badge_online, badge_warn};
 
 pub async fn launch_browser(
     profile_arg: String,
@@ -48,7 +48,9 @@ pub async fn launch_browser(
             Ok(p) => p,
             Err(e) => {
                 crate::ui::Notify::error(&e);
-                eprintln!("Run 'specter browser profile list' to view available profiles, or 'profile create <name>'.\n");
+                eprintln!(
+                    "Run 'specter browser profile list' to view available profiles, or 'profile create <name>'.\n"
+                );
                 return Err(e.into());
             }
         }
@@ -60,14 +62,26 @@ pub async fn launch_browser(
 
     // Guard against duplicate active instances unless --force
     if !force {
-        if let Some(active) = crate::core::browser::pid_tracker::find_active_session(&profile.id, &base_dir) {
+        if let Some(active) =
+            crate::core::browser::pid_tracker::find_active_session(&profile.id, &base_dir)
+        {
             println!();
             let mut card = Card::new("PROFILE ALREADY RUNNING");
             card.with_badge(badge_warn("ACTIVE INSTANCE DETECTED"));
             card.with_min_width(74);
-            card.add_kv("Profile", format!("{} [{}]", active.profile_name, active.profile_id));
+            card.add_kv(
+                "Profile",
+                format!("{} [{}]", active.profile_name, active.profile_id),
+            );
             card.add_kv("Active PID", active.pid.to_string());
-            card.add_kv("Running Port", if active.port > 0 { format!("http://127.0.0.1:{}", active.port) } else { "Zero-Port Stealth (Disabled)".to_string() });
+            card.add_kv(
+                "Running Port",
+                if active.port > 0 {
+                    format!("http://127.0.0.1:{}", active.port)
+                } else {
+                    "Zero-Port Stealth (Disabled)".to_string()
+                },
+            );
             card.add_kv("Uptime", active.uptime_formatted());
             card.add_line("");
             card.add_line("Safety Guardrail Triggered:");
@@ -108,7 +122,10 @@ pub async fn launch_browser(
 
             let egress = probe.egress_ip.as_deref().unwrap_or("Verified");
             let loc = probe.country.as_deref().unwrap_or("ISO");
-            format!("{} (● ONLINE - {}ms, IP: {} [{}])", pxy, probe.rtt_ms, egress, loc)
+            format!(
+                "{} (● ONLINE - {}ms, IP: {} [{}])",
+                pxy, probe.rtt_ms, egress, loc
+            )
         } else {
             format!("{} (○ PRE-FLIGHT SKIPPED)", pxy)
         }
@@ -119,7 +136,10 @@ pub async fn launch_browser(
     // 3. Resolve executable
     let exe_path = crate::core::browser::resolve_executable_path("default").await?;
     if !std::path::Path::new(&exe_path).exists() {
-        crate::ui::Notify::error(format!("Dedicated Antidetect Chromium runtime not found at: {}", exe_path));
+        crate::ui::Notify::error(format!(
+            "Dedicated Antidetect Chromium runtime not found at: {}",
+            exe_path
+        ));
         eprintln!("Run 'specter browser install' to download and set up Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
@@ -155,13 +175,14 @@ pub async fn launch_browser(
         .map(|p| p.display().to_string())
         .collect::<Vec<_>>();
 
-    let mut launcher = crate::core::browser::BrowserLauncher::new(crate::core::browser::BrowserLauncherOptions {
-        executable_path: exe_path.clone(),
-        user_data_dir: user_data_dir.clone(),
-        debugging_port: effective_port,
-        extension_paths: extension_paths.clone(),
-        custom_args: custom_args.clone(),
-    });
+    let mut launcher =
+        crate::core::browser::BrowserLauncher::new(crate::core::browser::BrowserLauncherOptions {
+            executable_path: exe_path.clone(),
+            user_data_dir: user_data_dir.clone(),
+            debugging_port: effective_port,
+            extension_paths: extension_paths.clone(),
+            custom_args: custom_args.clone(),
+        });
 
     if effective_detach {
         let args = launcher.build_args();
@@ -197,7 +218,8 @@ pub async fn launch_browser(
                 tokio::time::sleep(std::time::Duration::from_millis(250)).await;
                 if let Ok(resp) = client.get(&url).send().await {
                     if let Ok(json) = resp.json::<serde_json::Value>().await {
-                        if let Some(ws) = json.get("webSocketDebuggerUrl").and_then(|v| v.as_str()) {
+                        if let Some(ws) = json.get("webSocketDebuggerUrl").and_then(|v| v.as_str())
+                        {
                             ws_url = ws.to_string();
                             break;
                         }
@@ -211,9 +233,17 @@ pub async fn launch_browser(
             &profile.id,
             &profile.name,
             pid,
-            if is_extension_mode { "extension" } else { "driver" },
+            if is_extension_mode {
+                "extension"
+            } else {
+                "driver"
+            },
             effective_port,
-            if ws_url.is_empty() { None } else { Some(ws_url.clone()) },
+            if ws_url.is_empty() {
+                None
+            } else {
+                Some(ws_url.clone())
+            },
             headless,
             profile.proxy.clone(),
         );
@@ -233,7 +263,13 @@ pub async fn launch_browser(
         let mut card = Card::new(title);
         card.with_badge(badge);
         card.with_min_width(74);
-        card.add_kv("Engine", format!("adryfish/fingerprint-chromium (v{})", crate::core::browser::resolver::get_active_version()));
+        card.add_kv(
+            "Engine",
+            format!(
+                "adryfish/fingerprint-chromium (v{})",
+                crate::core::browser::resolver::get_active_version()
+            ),
+        );
         card.add_kv("Profile", format!("{} [{}]", profile.name, profile.id));
         if let Some(seed) = profile.fingerprint_seed {
             card.add_kv("Seed (PRNG)", format!("{} (Deterministic Hardware)", seed));
@@ -242,10 +278,19 @@ pub async fn launch_browser(
             card.add_kv("Proxy", &proxy_display);
         }
         if is_extension_mode {
-            card.add_kv("CDP Port", "Disabled (Zero-Port Protection against localhost port scanning)");
-            card.add_kv("Extensions", format!("{} active extension(s)", extension_paths.len()));
+            card.add_kv(
+                "CDP Port",
+                "Disabled (Zero-Port Protection against localhost port scanning)",
+            );
+            card.add_kv(
+                "Extensions",
+                format!("{} active extension(s)", extension_paths.len()),
+            );
         } else {
-            card.add_kv("CDP Endpoint", format!("http://127.0.0.1:{}", effective_port));
+            card.add_kv(
+                "CDP Endpoint",
+                format!("http://127.0.0.1:{}", effective_port),
+            );
             if !ws_url.is_empty() {
                 card.add_kv("WebSocket URL", &ws_url);
             }
@@ -262,7 +307,11 @@ pub async fn launch_browser(
     println!();
     let ws_url = launcher.launch().await?;
     let pid_num = launcher.get_pid().unwrap_or(0);
-    let pid_str = if pid_num > 0 { pid_num.to_string() } else { "N/A".to_string() };
+    let pid_str = if pid_num > 0 {
+        pid_num.to_string()
+    } else {
+        "N/A".to_string()
+    };
     let active_ver = crate::core::browser::resolver::get_active_version();
 
     if pid_num > 0 {
@@ -270,9 +319,17 @@ pub async fn launch_browser(
             &profile.id,
             &profile.name,
             pid_num,
-            if is_extension_mode { "extension" } else { "driver" },
+            if is_extension_mode {
+                "extension"
+            } else {
+                "driver"
+            },
             effective_port,
-            if ws_url.is_empty() { None } else { Some(ws_url.clone()) },
+            if ws_url.is_empty() {
+                None
+            } else {
+                Some(ws_url.clone())
+            },
             headless,
             profile.proxy.clone(),
         );
@@ -293,32 +350,60 @@ pub async fn launch_browser(
     let mut card = Card::new(title);
     card.with_badge(badge);
     card.with_min_width(74);
-    card.add_kv("Engine", format!("adryfish/fingerprint-chromium (v{})", active_ver));
+    card.add_kv(
+        "Engine",
+        format!("adryfish/fingerprint-chromium (v{})", active_ver),
+    );
     card.add_kv("Profile", format!("{} [{}]", profile.name, profile.id));
     if let Some(seed) = profile.fingerprint_seed {
-        card.add_kv("Seed (PRNG)", format!("{} (Deterministic Hardware Spoofing)", seed));
+        card.add_kv(
+            "Seed (PRNG)",
+            format!("{} (Deterministic Hardware Spoofing)", seed),
+        );
     }
-    card.add_kv("Hardware", format!("{} cores / {} GB RAM", profile.hardware_concurrency.unwrap_or(8), profile.device_memory_gb.unwrap_or(16)));
+    card.add_kv(
+        "Hardware",
+        format!(
+            "{} cores / {} GB RAM",
+            profile.hardware_concurrency.unwrap_or(8),
+            profile.device_memory_gb.unwrap_or(16)
+        ),
+    );
     if profile.proxy.is_some() {
         card.add_kv("Proxy", &proxy_display);
     }
 
     if is_extension_mode {
-        card.add_kv("CDP Port", "Disabled (Zero-Port Protection against localhost port scanning)");
-        card.add_kv("Extensions", format!("{} active extension(s)", extension_paths.len()));
+        card.add_kv(
+            "CDP Port",
+            "Disabled (Zero-Port Protection against localhost port scanning)",
+        );
+        card.add_kv(
+            "Extensions",
+            format!("{} active extension(s)", extension_paths.len()),
+        );
         card.add_line("");
         card.add_line("Ultra-Stealth Mode Active:");
         card.add_line("  • No listening CDP socket on localhost (anti-port scanning)");
         card.add_line("  • Automa MV3 background service worker / isolated world active");
         card.add_line("  • Native chrome.tabs and chrome.cookies execution");
     } else {
-        card.add_kv("CDP Endpoint", format!("http://127.0.0.1:{}", effective_port));
+        card.add_kv(
+            "CDP Endpoint",
+            format!("http://127.0.0.1:{}", effective_port),
+        );
         card.add_kv("WebSocket URL", &ws_url);
         card.add_line("");
         card.add_line("Playwright Connection Snippet (Python):");
-        card.add_line(format!("  browser = await playwright.chromium.connect_over_cdp('http://localhost:{}')", effective_port));
+        card.add_line(format!(
+            "  browser = await playwright.chromium.connect_over_cdp('http://localhost:{}')",
+            effective_port
+        ));
         card.add_line("Playwright Connection Snippet (Node.js):");
-        card.add_line(format!("  const browser = await chromium.connectOverCDP('http://localhost:{}');", effective_port));
+        card.add_line(format!(
+            "  const browser = await chromium.connectOverCDP('http://localhost:{}');",
+            effective_port
+        ));
     }
     card.add_kv("PID", pid_str);
 

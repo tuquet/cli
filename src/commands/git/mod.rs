@@ -1,16 +1,15 @@
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use serde::{Deserialize, Serialize};
 
-use crate::commands::bridge::start::{start_bridge, BridgeStartOptions};
+use crate::commands::bridge::start::{BridgeStartOptions, start_bridge};
 use crate::commands::dev::scanner::{
     collect_machine_scan_roots, format_clean_package_id, get_user_home_dir, should_skip_dir_entry,
 };
 use crate::infrastructure::bridge::probe_port;
 use crate::ui::{
-    badge_online, badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
-    TabularRow,
+    ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
+    badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
 };
 
 const MAX_GIT_SCAN_DEPTH: usize = 6;
@@ -77,7 +76,9 @@ pub async fn handle(
     }
 
     let sp = if interactive_flow {
-        Some(ClackSpinner::start("Scanning machine for Git repositories..."))
+        Some(ClackSpinner::start(
+            "Scanning machine for Git repositories...",
+        ))
     } else {
         None
     };
@@ -87,7 +88,10 @@ pub async fn handle(
             custom_root.display().to_string(),
             scan_git_repositories(Some(custom_root), &cwd),
         ),
-        None => ("Full Machine".to_string(), scan_git_repositories(None, &cwd)),
+        None => (
+            "Full Machine".to_string(),
+            scan_git_repositories(None, &cwd),
+        ),
     };
 
     let repos: Vec<DiscoveredGitRepo> = if all || repo_query.is_some() {
@@ -98,16 +102,12 @@ pub async fn handle(
             .filter(|r| r.needs_attention())
             .cloned()
             .collect();
-        if dirty.is_empty() {
-            all_repos
-        } else {
-            dirty
-        }
+        if dirty.is_empty() { all_repos } else { dirty }
     };
 
     if let Some(spinner) = sp {
         let dirty_count = repos.iter().filter(|r| r.needs_attention()).count();
-        spinner.finish(&format!(
+        spinner.finish(format!(
             "Discovered {} repos ({} needing attention • {})",
             repos.len(),
             dirty_count,
@@ -136,8 +136,7 @@ pub async fn handle(
                         let marker = if r.needs_attention() { "● " } else { "○ " };
                         let label = format!("{}{} [{}]", marker, r.id, r.branch);
                         let hint = format!("{} — {}", r.status_summary(), r.dir.display());
-                        let summary =
-                            format!("{} [{}] ({})", r.id, r.branch, r.status_summary());
+                        let summary = format!("{} [{}] ({})", r.id, r.branch, r.status_summary());
                         ClackOption::new(label, hint, summary)
                     })
                     .collect();
@@ -178,8 +177,7 @@ pub async fn handle(
                     .map(|r| {
                         let label = format!("{} [{}]", r.id, r.branch);
                         let hint = format!("{} — {}", r.status_summary(), r.dir.display());
-                        let summary =
-                            format!("{} [{}] ({})", r.id, r.branch, r.status_summary());
+                        let summary = format!("{} [{}] ({})", r.id, r.branch, r.status_summary());
                         ClackOption::new(label, hint, summary)
                     })
                     .collect();
@@ -229,7 +227,10 @@ pub async fn handle(
                 })
                 .collect();
             match clack_select(
-                &format!("Select action for {} [{}]", target_repo.id, target_repo.branch),
+                &format!(
+                    "Select action for {} [{}]",
+                    target_repo.id, target_repo.branch
+                ),
                 &act_opts,
                 0,
                 6,
@@ -416,7 +417,9 @@ pub fn scan_git_repositories(
         b.needs_attention()
             .cmp(&a.needs_attention())
             .then_with(|| b.ahead.cmp(&a.ahead))
-            .then_with(|| (b.modified + b.staged + b.untracked).cmp(&(a.modified + a.staged + a.untracked)))
+            .then_with(|| {
+                (b.modified + b.staged + b.untracked).cmp(&(a.modified + a.staged + a.untracked))
+            })
             .then_with(|| a.id.cmp(&b.id))
     });
 
@@ -452,7 +455,13 @@ fn walk_for_git_dirs(current: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 
 fn inspect_git_repo(dir: &Path, id: String) -> Option<DiscoveredGitRepo> {
     let output = Command::new("git")
-        .args(["-C", &dir.to_string_lossy(), "status", "--porcelain=v1", "-b"])
+        .args([
+            "-C",
+            &dir.to_string_lossy(),
+            "status",
+            "--porcelain=v1",
+            "-b",
+        ])
         .output()
         .ok()?;
 
@@ -464,11 +473,7 @@ fn inspect_git_repo(dir: &Path, id: String) -> Option<DiscoveredGitRepo> {
     Some(parse_git_status_porcelain(&text, id, dir.to_path_buf()))
 }
 
-pub fn parse_git_status_porcelain(
-    text: &str,
-    id: String,
-    dir: PathBuf,
-) -> DiscoveredGitRepo {
+pub fn parse_git_status_porcelain(text: &str, id: String, dir: PathBuf) -> DiscoveredGitRepo {
     let mut branch = "HEAD".to_string();
     let mut ahead = 0usize;
     let mut behind = 0usize;

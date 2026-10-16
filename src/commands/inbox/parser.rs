@@ -44,13 +44,11 @@ static CONTEXT_OTP_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
 });
 
 // Fallback pattern for isolated 4-8 digit standalone numbers surrounded by whitespace
-static STANDALONE_OTP_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"\b([0-9]{4,8})\b"#).unwrap()
-});
+static STANDALONE_OTP_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"\b([0-9]{4,8})\b"#).unwrap());
 
-static URL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"https?://[^\s<>"'{}|\\^`\[\]]+"#).unwrap()
-});
+static URL_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"https?://[^\s<>"'{}|\\^`\[\]]+"#).unwrap());
 
 pub struct EmailParser;
 
@@ -63,7 +61,10 @@ impl EmailParser {
 
         if combined.contains("facebook") || combined.contains("meta.com") {
             Some("Facebook".to_string())
-        } else if combined.contains("google") || combined.contains("gmail") || combined.contains("youtube") {
+        } else if combined.contains("google")
+            || combined.contains("gmail")
+            || combined.contains("youtube")
+        {
             Some("Google".to_string())
         } else if combined.contains("tiktok") {
             Some("TikTok".to_string())
@@ -77,7 +78,10 @@ impl EmailParser {
             Some("Lazada".to_string())
         } else if combined.contains("amazon") || combined.contains("aws") {
             Some("Amazon".to_string())
-        } else if combined.contains("microsoft") || combined.contains("live.com") || combined.contains("outlook.com") {
+        } else if combined.contains("microsoft")
+            || combined.contains("live.com")
+            || combined.contains("outlook.com")
+        {
             Some("Microsoft".to_string())
         } else if combined.contains("twitter") || combined.contains("x.com") {
             Some("X".to_string())
@@ -152,7 +156,10 @@ impl EmailParser {
                 for caps in STANDALONE_OTP_REGEX.captures_iter(subj) {
                     if let Some(matched) = caps.get(1) {
                         let code = matched.as_str().trim();
-                        if (code.len() == 6 || code.len() == 4) && is_likely_otp(code) && seen_codes.insert(code.to_string()) {
+                        if (code.len() == 6 || code.len() == 4)
+                            && is_likely_otp(code)
+                            && seen_codes.insert(code.to_string())
+                        {
                             results.push(ParsedOtp {
                                 code: code.to_string(),
                                 service: service.map(String::from),
@@ -182,7 +189,9 @@ impl EmailParser {
             let mut url = mat.as_str().to_string();
 
             // Trim trailing punctuation and HTML entities
-            url = url.trim_end_matches(['.', ',', ';', ')', ']', '>', '"', '\'']).to_string();
+            url = url
+                .trim_end_matches(['.', ',', ';', ')', ']', '>', '"', '\''])
+                .to_string();
 
             if is_actionable_link(&url) && seen_urls.insert(url.clone()) {
                 let link_type = classify_link(&url);
@@ -201,12 +210,7 @@ impl EmailParser {
         body_html: Option<&str>,
     ) -> ParsedEmailContent {
         let detected_service = Self::detect_service(sender, subject);
-        let otps = Self::extract_otps(
-            subject,
-            body_text,
-            body_html,
-            detected_service.as_deref(),
-        );
+        let otps = Self::extract_otps(subject, body_text, body_html, detected_service.as_deref());
         let links = Self::extract_links(body_text, body_html);
 
         ParsedEmailContent {
@@ -224,7 +228,13 @@ fn is_likely_otp(code: &str) -> bool {
     }
 
     // Filter out common years
-    if code == "2024" || code == "2025" || code == "2026" || code == "2027" || code == "1999" || code == "2000" {
+    if code == "2024"
+        || code == "2025"
+        || code == "2026"
+        || code == "2027"
+        || code == "1999"
+        || code == "2000"
+    {
         return false;
     }
 
@@ -314,16 +324,49 @@ mod tests {
 
     #[test]
     fn test_detect_service() {
-        assert_eq!(EmailParser::detect_service("security@facebookmail.com", None), Some("Facebook".to_string()));
-        assert_eq!(EmailParser::detect_service("no-reply@accounts.google.com", None), Some("Google".to_string()));
-        assert_eq!(EmailParser::detect_service("verify@tiktok.com", None), Some("TikTok".to_string()));
-        assert_eq!(EmailParser::detect_service("login@telegram.org", None), Some("Telegram".to_string()));
-        assert_eq!(EmailParser::detect_service("noreply@discord.com", None), Some("Discord".to_string()));
-        assert_eq!(EmailParser::detect_service("noreply@shopee.vn", None), Some("Shopee".to_string()));
-        assert_eq!(EmailParser::detect_service("account-update@amazon.com", None), Some("Amazon".to_string()));
-        assert_eq!(EmailParser::detect_service("account-security-noreply@accountprotection.microsoft.com", None), Some("Microsoft".to_string()));
-        assert_eq!(EmailParser::detect_service("verify@x.com", None), Some("X".to_string()));
-        assert_eq!(EmailParser::detect_service("noreply@tm.openai.com", None), Some("OpenAI".to_string()));
+        assert_eq!(
+            EmailParser::detect_service("security@facebookmail.com", None),
+            Some("Facebook".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("no-reply@accounts.google.com", None),
+            Some("Google".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("verify@tiktok.com", None),
+            Some("TikTok".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("login@telegram.org", None),
+            Some("Telegram".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("noreply@discord.com", None),
+            Some("Discord".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("noreply@shopee.vn", None),
+            Some("Shopee".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("account-update@amazon.com", None),
+            Some("Amazon".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service(
+                "account-security-noreply@accountprotection.microsoft.com",
+                None
+            ),
+            Some("Microsoft".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("verify@x.com", None),
+            Some("X".to_string())
+        );
+        assert_eq!(
+            EmailParser::detect_service("noreply@tm.openai.com", None),
+            Some("OpenAI".to_string())
+        );
     }
 
     #[test]
@@ -349,12 +392,7 @@ mod tests {
         assert_eq!(p2[0].code, "739102");
 
         // Template 3: Mã OTP đăng nhập: 4920
-        let p3 = EmailParser::extract_otps(
-            None,
-            Some("Mã OTP đăng nhập: 4920"),
-            None,
-            None,
-        );
+        let p3 = EmailParser::extract_otps(None, Some("Mã OTP đăng nhập: 4920"), None, None);
         assert_eq!(p3.len(), 1);
         assert_eq!(p3[0].code, "4920");
 
@@ -440,11 +478,17 @@ mod tests {
 
         let verify_link = links.iter().find(|l| l.link_type == "verification");
         assert!(verify_link.is_some());
-        assert_eq!(verify_link.unwrap().url, "https://example.com/auth/verify?token=abc123xyz");
+        assert_eq!(
+            verify_link.unwrap().url,
+            "https://example.com/auth/verify?token=abc123xyz"
+        );
 
         let reset_link = links.iter().find(|l| l.link_type == "reset_password");
         assert!(reset_link.is_some());
-        assert_eq!(reset_link.unwrap().url, "https://example.com/account/reset-password?id=999");
+        assert_eq!(
+            reset_link.unwrap().url,
+            "https://example.com/account/reset-password?id=999"
+        );
     }
 
     #[test]
@@ -458,7 +502,10 @@ mod tests {
         assert!(!res.otps.is_empty());
         assert_eq!(res.otps[0].code, "741852");
         assert!(!res.links.is_empty());
-        assert_eq!(res.links[0].url, "https://facebook.com/confirm?token=fb9988");
+        assert_eq!(
+            res.links[0].url,
+            "https://facebook.com/confirm?token=fb9988"
+        );
         assert_eq!(res.links[0].link_type, "verification");
     }
 }

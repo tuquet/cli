@@ -1,11 +1,11 @@
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::process::Command;
-use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessesToUpdate, System};
 
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_multiselect, clack_outro, clack_step_ok, colors,
-    create_tabular_card, ClackOption, Column, Notify, OutputFormat, Table, TabularRow,
+    ClackOption, Column, Notify, OutputFormat, Table, TabularRow, badge_online, clack_cancel,
+    clack_intro, clack_multiselect, clack_outro, clack_step_ok, colors, create_tabular_card,
 };
 
 const DEV_PROCESS_KEYWORDS: &[&str] = &[
@@ -184,7 +184,7 @@ fn kill_port_process(item: &ListeningPort) -> Result<(), Box<dyn std::error::Err
         }
     }
 
-    clack_step_ok(&format!(
+    clack_step_ok(format!(
         "Freed port {BOLD}{CYAN}:{port}{RESET} — terminated {BOLD_WHITE}{proc}{RESET} {MUTED}(PID {pid}){RESET}",
         BOLD = colors::BOLD,
         CYAN = colors::CYAN,
@@ -259,9 +259,7 @@ pub fn scan_listening_ports(include_all: bool) -> Vec<ListeningPort> {
 
         let name_lower = proc_name.to_lowercase();
         let is_os_sys = OS_SYSTEM_PROCESSES.iter().any(|s| *s == name_lower);
-        let is_dev_runtime = DEV_PROCESS_KEYWORDS
-            .iter()
-            .any(|k| name_lower.contains(k));
+        let is_dev_runtime = DEV_PROCESS_KEYWORDS.iter().any(|k| name_lower.contains(k));
         let is_common_dev_port = (1024..=49151).contains(&port);
 
         if !include_all {
@@ -397,7 +395,11 @@ fn render_port_list(ports: &[ListeningPort], include_all: bool, format: OutputFo
             .with_footer(format!(
                 "Found {} listening port(s){} • Run 'spc port [port]' to select & kill",
                 ports.len(),
-                if include_all { " (all system)" } else { " (developer)" }
+                if include_all {
+                    " (all system)"
+                } else {
+                    " (developer)"
+                }
             ));
 
             for p in ports {

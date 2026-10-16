@@ -1,18 +1,18 @@
-use std::net::SocketAddr;
-use std::sync::Arc;
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
+use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::commands::inbox::parser::EmailParser;
 use crate::commands::inbox::storage::{
-    generate_uuid, now_rfc3339, EmailRecord, InboxStorage, LinkRecord, OtpRecord,
+    EmailRecord, InboxStorage, LinkRecord, OtpRecord, generate_uuid, now_rfc3339,
 };
 use crate::config::inbox::InboxConfig;
 
@@ -60,32 +60,44 @@ pub fn create_inbox_router(state: Arc<InboxServerState>) -> Router {
 }
 
 async fn health_handler() -> impl IntoResponse {
-    (StatusCode::OK, Json(serde_json::json!({
-        "status": "healthy",
-        "service": "specter-inbox",
-        "version": env!("CARGO_PKG_VERSION")
-    })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "healthy",
+            "service": "specter-inbox",
+            "version": env!("CARGO_PKG_VERSION")
+        })),
+    )
 }
 
 async fn status_handler(State(state): State<Arc<InboxServerState>>) -> impl IntoResponse {
     match state.storage.stats() {
-        Ok(stats) => (StatusCode::OK, Json(serde_json::json!({
-            "status": "online",
-            "stats": stats
-        }))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
-            "status": "error",
-            "message": e.to_string()
-        }))),
+        Ok(stats) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "status": "online",
+                "stats": stats
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "status": "error",
+                "message": e.to_string()
+            })),
+        ),
     }
 }
 
 async fn stats_handler(State(state): State<Arc<InboxServerState>>) -> impl IntoResponse {
     match state.storage.stats() {
         Ok(stats) => (StatusCode::OK, Json(serde_json::json!(stats))),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
-            "error": e.to_string()
-        }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "error": e.to_string()
+            })),
+        ),
     }
 }
 
@@ -295,11 +307,14 @@ pub async fn run_server(config: InboxConfig) -> Result<(), Box<dyn std::error::E
     let app = create_inbox_router(state);
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
 
-    println!("⚡ Specter Inbox Webhook Daemon listening on http://{}", addr);
+    println!(
+        "⚡ Specter Inbox Webhook Daemon listening on http://{}",
+        addr
+    );
     write_pid(std::process::id())?;
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    
+
     // Run with graceful shutdown on Ctrl-C
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
@@ -315,8 +330,8 @@ pub async fn run_server(config: InboxConfig) -> Result<(), Box<dyn std::error::E
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tower::ServiceExt;
     use axum::http::Request;
+    use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_inbox_api_router() {
@@ -358,7 +373,9 @@ mod tests {
                     .uri("/webhook")
                     .header("Content-Type", "application/json")
                     .header("X-Specter-Secret", "test-secret")
-                    .body(axum::body::Body::from(serde_json::to_vec(&webhook_payload).unwrap()))
+                    .body(axum::body::Body::from(
+                        serde_json::to_vec(&webhook_payload).unwrap(),
+                    ))
                     .unwrap(),
             )
             .await

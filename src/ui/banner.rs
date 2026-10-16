@@ -19,7 +19,7 @@ pub fn render_hero(
     let c5 = "\x1b[38;2;192;132;252m";
 
     format!(
-"
+        "
 {c1}  ______          ____                  __ {reset}
 {c2} /_  __/_  __    / __ \\__  __  ___     / /_{reset}
 {c3}  / /  / / / /  / / / // / / // _ \\   / __/{reset}   {cyan}v{version}{reset}

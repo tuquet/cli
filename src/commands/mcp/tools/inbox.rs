@@ -1,8 +1,8 @@
-use serde_json::{json, Value};
-use crate::config::inbox::InboxConfig;
 use crate::commands::inbox::cloud_client::InboxCloudClient;
-use crate::commands::inbox::storage::InboxStorage;
 use crate::commands::inbox::server::read_pid;
+use crate::commands::inbox::storage::InboxStorage;
+use crate::config::inbox::InboxConfig;
+use serde_json::{Value, json};
 
 pub async fn execute_specter_inbox_otp(args: &Value) -> Result<String, String> {
     let recipient = args
@@ -40,7 +40,10 @@ pub async fn execute_specter_inbox_otp(args: &Value) -> Result<String, String> {
             });
             Ok(serde_json::to_string_pretty(&out).unwrap_or_default())
         }
-        None => Err(format!("No OTP found for recipient '{}' within timeout", recipient)),
+        None => Err(format!(
+            "No OTP found for recipient '{}' within timeout",
+            recipient
+        )),
     }
 }
 

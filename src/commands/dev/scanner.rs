@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::path::{Path, PathBuf};
 
 /// Directories pruned during full recursive scan (build artifacts, dependencies, OS & cloud folders)
 pub const EXCLUDED_DIRS: &[&str] = &[
@@ -222,9 +222,12 @@ fn path_to_slash(p: &Path) -> String {
     p.components()
         .filter_map(|c| match c {
             std::path::Component::Normal(os) => Some(os.to_string_lossy().into_owned()),
-            std::path::Component::Prefix(pre) => {
-                Some(pre.as_os_str().to_string_lossy().trim_end_matches('\\').to_string())
-            }
+            std::path::Component::Prefix(pre) => Some(
+                pre.as_os_str()
+                    .to_string_lossy()
+                    .trim_end_matches('\\')
+                    .to_string(),
+            ),
             _ => None,
         })
         .collect::<Vec<_>>()
@@ -233,7 +236,8 @@ fn path_to_slash(p: &Path) -> String {
 
 fn sort_packages(packages: &mut [DiscoveredPackage], current_dir: Option<&Path>) {
     let home = get_user_home_dir();
-    let prioritize_cwd = current_dir.filter(|cwd| cwd.parent().is_some() && Some(*cwd) != home.as_deref());
+    let prioritize_cwd =
+        current_dir.filter(|cwd| cwd.parent().is_some() && Some(*cwd) != home.as_deref());
 
     packages.sort_by(|a, b| {
         let a_in_cwd = prioritize_cwd
@@ -643,7 +647,8 @@ fn parse_pom_xml(root: &Path, dir: &Path, pom_path: &Path) -> Option<DiscoveredP
 
 fn parse_gradle_build(root: &Path, dir: &Path, gradle_path: &Path) -> Option<DiscoveredPackage> {
     let content = std::fs::read_to_string(gradle_path).ok()?;
-    let is_spring_boot = content.contains("org.springframework.boot") || content.contains("bootRun");
+    let is_spring_boot =
+        content.contains("org.springframework.boot") || content.contains("bootRun");
     let is_app = is_spring_boot || content.contains("application");
     if !is_app {
         return None;
@@ -692,11 +697,26 @@ fn parse_docker_compose(root: &Path, dir: &Path, compose_file: &str) -> Option<D
         .map(|s| s.to_string());
 
     let scripts = vec![
-        ("up".to_string(), format!("docker compose -f {} up", compose_file)),
-        ("up-d".to_string(), format!("docker compose -f {} up -d", compose_file)),
-        ("down".to_string(), format!("docker compose -f {} down", compose_file)),
-        ("logs".to_string(), format!("docker compose -f {} logs -f", compose_file)),
-        ("ps".to_string(), format!("docker compose -f {} ps", compose_file)),
+        (
+            "up".to_string(),
+            format!("docker compose -f {} up", compose_file),
+        ),
+        (
+            "up-d".to_string(),
+            format!("docker compose -f {} up -d", compose_file),
+        ),
+        (
+            "down".to_string(),
+            format!("docker compose -f {} down", compose_file),
+        ),
+        (
+            "logs".to_string(),
+            format!("docker compose -f {} logs -f", compose_file),
+        ),
+        (
+            "ps".to_string(),
+            format!("docker compose -f {} ps", compose_file),
+        ),
     ];
 
     Some(DiscoveredPackage {
@@ -896,7 +916,10 @@ pub fn filter_packages<'a>(
         .filter(|p| {
             p.id.to_lowercase() == q
                 || p.short_name().to_lowercase() == q
-                || p.name.as_deref().map(|n| n.to_lowercase() == q).unwrap_or(false)
+                || p.name
+                    .as_deref()
+                    .map(|n| n.to_lowercase() == q)
+                    .unwrap_or(false)
         })
         .collect();
     if exact.len() == 1 {
@@ -1013,7 +1036,10 @@ mod tests {
         assert_eq!(studio.id, "apps/studio");
         assert_eq!(studio.package_manager, "pnpm");
         assert_eq!(studio.framework.as_deref(), Some("Vite"));
-        assert_eq!(studio.scripts[0].0, "dev", "dev script should be sorted first");
+        assert_eq!(
+            studio.scripts[0].0, "dev",
+            "dev script should be sorted first"
+        );
         assert_eq!(studio.default_script_index(), 0);
 
         let web = discovered

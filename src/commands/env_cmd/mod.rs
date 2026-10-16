@@ -1,14 +1,13 @@
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
 
 use crate::commands::dev::scanner::{
-    filter_packages, scan_machine_packages, scan_workspace_packages, DiscoveredPackage,
+    DiscoveredPackage, filter_packages, scan_machine_packages, scan_workspace_packages,
 };
 use crate::ui::{
-    badge_online, badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
-    TabularRow,
+    ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
+    badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
 };
 
 const SECRET_KEYWORDS: &[&str] = &[
@@ -64,7 +63,9 @@ pub async fn handle(
             intro_shown = true;
         }
         let sp = if interactive_scan {
-            Some(ClackSpinner::start("Scanning workspace for .env configurations..."))
+            Some(ClackSpinner::start(
+                "Scanning workspace for .env configurations...",
+            ))
         } else {
             None
         };
@@ -85,7 +86,10 @@ pub async fn handle(
         };
 
         if let Some(spinner) = sp {
-            spinner.finish(&format!("Discovered {} project(s) with .env* files", pool.len()));
+            spinner.finish(format!(
+                "Discovered {} project(s) with .env* files",
+                pool.len()
+            ));
         }
 
         if pool.is_empty() {
@@ -218,7 +222,10 @@ pub async fn handle(
             format!("switch:{}", prof),
             ClackOption::new(
                 format!("Switch profile → .env.{}", prof),
-                format!("Copies .env.{} to .env (backs up current .env to .env.bak)", prof),
+                format!(
+                    "Copies .env.{} to .env (backs up current .env to .env.bak)",
+                    prof
+                ),
                 format!("Switch profile → .env.{}", prof),
             ),
         ));
@@ -603,7 +610,10 @@ fn render_env_multi_list(reports: &[EnvProjectReport], format: OutputFormat) {
                     align_right: false,
                 },
             ])
-            .with_footer(format!("Total: {} project(s) with .env* files", reports.len()));
+            .with_footer(format!(
+                "Total: {} project(s) with .env* files",
+                reports.len()
+            ));
 
             for r in reports {
                 table.add_row(vec![
@@ -639,11 +649,7 @@ mod tests {
             "PORT=3000\nAPI_SECRET_KEY=supersecret123\nDATABASE_URL=postgres://localhost/db\n",
         )
         .unwrap();
-        std::fs::write(
-            temp_dir.join(".env"),
-            "PORT=5173\nAPI_SECRET_KEY=\n",
-        )
-        .unwrap();
+        std::fs::write(temp_dir.join(".env"), "PORT=5173\nAPI_SECRET_KEY=\n").unwrap();
         std::fs::write(temp_dir.join(".env.staging"), "PORT=8080\n").unwrap();
 
         let report = inspect_project_env("test-app", &temp_dir);

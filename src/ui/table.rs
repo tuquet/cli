@@ -36,7 +36,11 @@ impl Table {
 
     pub fn render(&self) -> String {
         // Compute column widths
-        let mut widths: Vec<usize> = self.columns.iter().map(|c| c.title.len().max(c.min_width)).collect();
+        let mut widths: Vec<usize> = self
+            .columns
+            .iter()
+            .map(|c| c.title.len().max(c.min_width))
+            .collect();
         for row in &self.rows {
             for (i, cell) in row.iter().enumerate() {
                 if i < widths.len() {
@@ -287,9 +291,9 @@ pub fn default_workstation_endpoints(
 /// Represents a row entry in a standardized 4-column tabular card
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TabularRow {
-    pub col1: String, // Component / Protocol (14 chars visible width)
-    pub col2: String, // Endpoint / Resource / Version (20 chars visible width)
-    pub col3: String, // Role / Details (26 chars visible width)
+    pub col1: String,   // Component / Protocol (14 chars visible width)
+    pub col2: String,   // Endpoint / Resource / Version (20 chars visible width)
+    pub col3: String,   // Role / Details (26 chars visible width)
     pub status: String, // Formatted badge string
 }
 

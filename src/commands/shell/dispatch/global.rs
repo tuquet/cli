@@ -15,17 +15,23 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         }
         "whoami" => {
             let fmt = parse_format(args);
-            crate::commands::cloud::whoami(fmt).await.map_err(|e| format!("{}", e))?;
+            crate::commands::cloud::whoami(fmt)
+                .await
+                .map_err(|e| format!("{}", e))?;
         }
         "login" => {
             let token = args.first().map(|s| s.to_string());
             let fmt = parse_format(args);
-            crate::commands::cloud::login(None, None, None, false, None, token, None, None, None, fmt)
-                .await
-                .map_err(|e| format!("{}", e))?;
+            crate::commands::cloud::login(
+                None, None, None, false, None, token, None, None, None, fmt,
+            )
+            .await
+            .map_err(|e| format!("{}", e))?;
         }
         "logout" => {
-            crate::commands::cloud::logout().await.map_err(|e| format!("{}", e))?;
+            crate::commands::cloud::logout()
+                .await
+                .map_err(|e| format!("{}", e))?;
         }
         "tenant" | "workspace" => {
             let sub = args.first().copied().unwrap_or("current");
@@ -72,7 +78,9 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
                 None => {
                     if edit {
                         println!("Please specify a service to edit: config <service> --edit");
-                        println!("Available: bridge, faker, browser, automa, runner, cloud, system, inbox");
+                        println!(
+                            "Available: bridge, faker, browser, automa, runner, cloud, system, inbox"
+                        );
                     } else {
                         crate::config::ConfigRegistry::render_overview_card();
                     }
@@ -84,14 +92,18 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
         }
         "automa" => {
             if args.is_empty() {
-                println!("Usage: automa <run | list | inspect | import | export | delete | studio>");
+                println!(
+                    "Usage: automa <run | list | inspect | import | export | delete | studio>"
+                );
             } else {
                 dispatch_automa(args[0], &args[1..]).await?;
             }
         }
         "runner" => {
             if args.is_empty() {
-                println!("Usage: runner <start | stop | restart | status | logs | probe | export-openapi | setup-ext>");
+                println!(
+                    "Usage: runner <start | stop | restart | status | logs | probe | export-openapi | setup-ext>"
+                );
             } else {
                 dispatch_runner(args[0], &args[1..]).await?;
             }
@@ -224,7 +236,8 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             let mut i = 0;
             while i < args.len() {
                 match args[i] {
-                    "--all" | "-a" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" | "-c" => {}
+                    "--all" | "-a" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t"
+                    | "--card" | "-c" => {}
                     "--path" | "-P" => {
                         if let Some(val) = args.get(i + 1) {
                             path = Some(std::path::PathBuf::from(*val));
@@ -256,7 +269,8 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             let mut i = 0;
             while i < args.len() {
                 match args[i] {
-                    "--check" | "-c" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t" | "--card" => {}
+                    "--check" | "-c" | "--list" | "-l" | "--json" | "-j" | "--table" | "-t"
+                    | "--card" => {}
                     "--switch" | "-s" => {
                         if let Some(val) = args.get(i + 1) {
                             switch_profile = Some((*val).to_string());
@@ -279,7 +293,8 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
                 }
                 i += 1;
             }
-            crate::commands::env_cmd::handle(project, check, switch_profile, list, path, fmt).await?;
+            crate::commands::env_cmd::handle(project, check, switch_profile, list, path, fmt)
+                .await?;
         }
         "run" | "list" | "inspect" | "import" | "export" | "delete" | "studio" => {
             dispatch_automa(cmd, args).await?;
@@ -291,7 +306,10 @@ pub async fn dispatch_global(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             dispatch_bridge(cmd, args).await?;
         }
         other => {
-            println!("Unknown global command: '{}'. Type 'help' or 'use <service>' to enter a scope.", other);
+            println!(
+                "Unknown global command: '{}'. Type 'help' or 'use <service>' to enter a scope.",
+                other
+            );
         }
     }
     Ok(())

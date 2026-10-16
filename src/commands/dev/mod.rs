@@ -2,15 +2,13 @@ pub mod history;
 pub mod runner;
 pub mod scanner;
 
-use std::path::PathBuf;
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_select, create_tabular_card, ClackOption,
-    ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow,
+    ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
+    clack_cancel, clack_intro, clack_select, create_tabular_card,
 };
 use history::{format_relative_time, load_history};
-use scanner::{
-    filter_packages, scan_machine_packages, scan_workspace_packages, DiscoveredPackage,
-};
+use scanner::{DiscoveredPackage, filter_packages, scan_machine_packages, scan_workspace_packages};
+use std::path::PathBuf;
 
 /// Parse `<project>:<script>` shorthand if `script` was not passed as a separate positional arg.
 /// Preserves Windows drive letters (e.g. `C:\path` where colon is at index 1).
@@ -60,7 +58,9 @@ pub async fn handle(
     }
 
     let sp = if interactive_flow {
-        Some(ClackSpinner::start("Scanning machine for runnable projects..."))
+        Some(ClackSpinner::start(
+            "Scanning machine for runnable projects...",
+        ))
     } else {
         None
     };
@@ -74,7 +74,7 @@ pub async fn handle(
     };
 
     if let Some(spinner) = sp {
-        spinner.finish(&format!(
+        spinner.finish(format!(
             "Discovered {} runnable projects ({})",
             packages.len(),
             scan_label
@@ -87,10 +87,7 @@ pub async fn handle(
     }
 
     if packages.is_empty() {
-        Notify::warn(format!(
-            "No runnable projects found ({}).",
-            scan_label
-        ));
+        Notify::warn(format!("No runnable projects found ({}).", scan_label));
         return Ok(());
     }
 
@@ -114,7 +111,11 @@ pub async fn handle(
                         let label = format!("★ {} : {}", pkg.id, entry.script);
                         let hint = format!(
                             "Recent ({}) • {} ({}) — {} run {}",
-                            rel_time, fw_part, pkg.package_manager, pkg.package_manager, entry.script
+                            rel_time,
+                            fw_part,
+                            pkg.package_manager,
+                            pkg.package_manager,
+                            entry.script
                         );
                         let summary = format!(
                             "★ {} → {} ({} • {})",
@@ -129,7 +130,12 @@ pub async fn handle(
                     clack_opts.push(build_package_clack_option(pkg));
                 }
 
-                match clack_select("Select a project (or ★ Recent to run immediately)", &clack_opts, 0, 10)? {
+                match clack_select(
+                    "Select a project (or ★ Recent to run immediately)",
+                    &clack_opts,
+                    0,
+                    10,
+                )? {
                     Some(idx) => {
                         if idx < recent_shortcuts.len() {
                             let (pkg, recent_script) = &recent_shortcuts[idx];
@@ -177,8 +183,10 @@ pub async fn handle(
                 }
                 matched[0]
             } else {
-                let clack_opts: Vec<ClackOption> =
-                    matched.iter().map(|p| build_package_clack_option(p)).collect();
+                let clack_opts: Vec<ClackOption> = matched
+                    .iter()
+                    .map(|p| build_package_clack_option(p))
+                    .collect();
                 match clack_select(
                     &format!("Multiple projects match '{}'. Select target project", q),
                     &clack_opts,
@@ -196,7 +204,9 @@ pub async fn handle(
     };
 
     // 2. Resolve Target Script
-    let pm = pm_override.as_deref().unwrap_or(&target_pkg.package_manager);
+    let pm = pm_override
+        .as_deref()
+        .unwrap_or(&target_pkg.package_manager);
     let selected_script: String = match script_query {
         Some(ref s) => {
             if let Some((exact_name, _)) = target_pkg
@@ -289,11 +299,7 @@ fn prompt_for_script_clack(
     Ok(chosen_idx.map(|idx| pkg.scripts[idx].0.clone()))
 }
 
-fn render_package_list(
-    packages: &[DiscoveredPackage],
-    scan_label: &str,
-    format: OutputFormat,
-) {
+fn render_package_list(packages: &[DiscoveredPackage], scan_label: &str, format: OutputFormat) {
     match format {
         OutputFormat::Json => {
             if let Ok(json) = serde_json::to_string_pretty(packages) {
@@ -373,7 +379,12 @@ fn render_package_list(
             let card = create_tabular_card(
                 "WORKSPACE PROJECTS",
                 Some(badge_online(&format!("{} FOUND", packages.len()))),
-                ["PROJECT PATH", "PACKAGE NAME", "AVAILABLE SCRIPTS", "STACK / PM"],
+                [
+                    "PROJECT PATH",
+                    "PACKAGE NAME",
+                    "AVAILABLE SCRIPTS",
+                    "STACK / PM",
+                ],
                 &rows,
                 Some(&footer),
                 76,

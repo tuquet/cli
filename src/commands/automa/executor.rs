@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::AppState;
 use crate::config::AppConfig;
 use crate::infrastructure::db::AutomaDb;
-use crate::AppState;
 
 pub async fn run_workflow(
     workflow_path_opt: Option<String>,
@@ -47,12 +47,12 @@ pub async fn run_workflow(
         let _ = axum::serve(listener, app).await;
     });
 
-    let workflow_json_val: Option<serde_json::Value> =
-        if let Some(ref raw_json) = workflow_json_opt {
-            serde_json::from_str(raw_json).ok()
-        } else {
-            None
-        };
+    let workflow_json_val: Option<serde_json::Value> = if let Some(ref raw_json) = workflow_json_opt
+    {
+        serde_json::from_str(raw_json).ok()
+    } else {
+        None
+    };
 
     let vars_map: Option<serde_json::Value> = if !variables.is_empty() {
         let mut map = serde_json::Map::new();
@@ -88,7 +88,10 @@ pub async fn run_workflow(
         close_browser_on_finish: Some(true),
     };
 
-    crate::ui::Notify::info("Submitting workflow to native browser worker via CDP (Zero Extension Stealth)...".to_string());
+    crate::ui::Notify::info(
+        "Submitting workflow to native browser worker via CDP (Zero Extension Stealth)..."
+            .to_string(),
+    );
 
     use crate::core::engine::job_coordinator::JobCoordinator;
     let job_id = match JobCoordinator::submit(

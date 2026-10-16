@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{Json, http::StatusCode, response::IntoResponse};
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -31,6 +31,6 @@ pub async fn health() -> impl IntoResponse {
         version: env!("CARGO_PKG_VERSION").to_string(),
         message: "Specter Daemon is running".to_string(),
     };
-    
+
     (StatusCode::OK, Json(response)).into_response()
 }

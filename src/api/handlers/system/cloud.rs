@@ -1,18 +1,12 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::sync::Mutex;
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-static PENDING_AUTH_NONCES: LazyLock<Mutex<HashMap<String, Instant>>> = LazyLock::new(|| {
-    Mutex::new(HashMap::new())
-});
+static PENDING_AUTH_NONCES: LazyLock<Mutex<HashMap<String, Instant>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 use super::types::{
     CloudLoginRequest, CloudLoginResponse, CloudLogoutResponse, CloudStatusResponse,
@@ -31,15 +25,26 @@ use super::types::{
         (status = 200, description = "Cloud reporting status retrieved successfully", body = CloudStatusResponse)
     )
 )]
-pub async fn get_cloud_status(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
+pub async fn get_cloud_status(State(state): State<crate::AppState>) -> impl IntoResponse {
     let cloud_url = state.config.cloud_url.clone();
     let enabled = cloud_url.is_some();
-    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&state.config.data_dir).await;
-    let fingerprint = crate::infrastructure::cloud_reporter::CloudReporter::generate_machine_fingerprint();
+    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+        &state.config.data_dir,
+    )
+    .await;
+    let fingerprint =
+        crate::infrastructure::cloud_reporter::CloudReporter::generate_machine_fingerprint();
 
-    let (enrolled, device_id, device_name, user_email, tenant_id, tenant_slug, tenant_name, tenant_role) = match creds {
+    let (
+        enrolled,
+        device_id,
+        device_name,
+        user_email,
+        tenant_id,
+        tenant_slug,
+        tenant_name,
+        tenant_role,
+    ) = match creds {
         Some(c) => (
             true,
             Some(c.device_id),
@@ -69,7 +74,8 @@ pub async fn get_cloud_status(
             tenant_name,
             tenant_role,
         }),
-    ).into_response()
+    )
+        .into_response()
 }
 
 #[utoipa::path(
@@ -83,10 +89,10 @@ pub async fn get_cloud_status(
         (status = 200, description = "Sync completed or attempted", body = CloudSyncResponse)
     )
 )]
-pub async fn trigger_cloud_sync(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
-    match crate::infrastructure::cloud_reporter::CloudReporter::sync_inventory_and_heartbeat(&state).await {
+pub async fn trigger_cloud_sync(State(state): State<crate::AppState>) -> impl IntoResponse {
+    match crate::infrastructure::cloud_reporter::CloudReporter::sync_inventory_and_heartbeat(&state)
+        .await
+    {
         Ok(res) => (
             StatusCode::OK,
             Json(CloudSyncResponse {
@@ -97,7 +103,8 @@ pub async fn trigger_cloud_sync(
                 heartbeat_sent: res.heartbeat_sent,
                 message: res.message,
             }),
-        ).into_response(),
+        )
+            .into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(CloudSyncResponse {
@@ -108,7 +115,8 @@ pub async fn trigger_cloud_sync(
                 heartbeat_sent: false,
                 message: e.to_string(),
             }),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -129,9 +137,8 @@ pub async fn cloud_login(
     State(state): State<crate::AppState>,
     Json(payload): Json<CloudLoginRequest>,
 ) -> impl IntoResponse {
-    let cloud_url = payload.cloud_url
-        .or_else(|| state.config.cloud_url.clone());
-    
+    let cloud_url = payload.cloud_url.or_else(|| state.config.cloud_url.clone());
+
     let is_otp = payload.otp.unwrap_or(false);
 
     match crate::commands::cloud::login(
@@ -145,9 +152,14 @@ pub async fn cloud_login(
         payload.name,
         payload.api_key,
         crate::ui::OutputFormat::Json,
-    ).await {
+    )
+    .await
+    {
         Ok(()) => {
-            let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&state.config.data_dir).await;
+            let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+                &state.config.data_dir,
+            )
+            .await;
             if let Some(c) = creds {
                 (
                     StatusCode::OK,
@@ -161,9 +173,12 @@ pub async fn cloud_login(
                         tenant_role: c.tenant_role,
                         user_email: c.email,
                         name: c.name,
-                        message: "Workstation authenticated and paired successfully with Specter Cloud".to_string(),
+                        message:
+                            "Workstation authenticated and paired successfully with Specter Cloud"
+                                .to_string(),
                     }),
-                ).into_response()
+                )
+                    .into_response()
             } else {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -177,9 +192,11 @@ pub async fn cloud_login(
                         tenant_role: None,
                         user_email: None,
                         name: "".to_string(),
-                        message: "Enrollment succeeded but failed to reload credentials".to_string(),
+                        message: "Enrollment succeeded but failed to reload credentials"
+                            .to_string(),
                     }),
-                ).into_response()
+                )
+                    .into_response()
             }
         }
         Err(e) => (
@@ -196,7 +213,8 @@ pub async fn cloud_login(
                 name: "".to_string(),
                 message: format!("Enrollment failed: {}", e),
             }),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -211,24 +229,28 @@ pub async fn cloud_login(
         (status = 200, description = "Successfully logged out", body = CloudLogoutResponse)
     )
 )]
-pub async fn cloud_logout(
-    State(state): State<crate::AppState>,
-) -> impl IntoResponse {
-    match crate::infrastructure::cloud_reporter::CloudReporter::logout(&state.config.data_dir).await {
+pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResponse {
+    match crate::infrastructure::cloud_reporter::CloudReporter::logout(&state.config.data_dir).await
+    {
         Ok(_) => {
-            let _ = state.tx.send(serde_json::json!({
-                "type": "auth_state_changed",
-                "isAuthenticated": false,
-                "message": "Logged out from Specter Cloud"
-            }).to_string());
+            let _ = state.tx.send(
+                serde_json::json!({
+                    "type": "auth_state_changed",
+                    "isAuthenticated": false,
+                    "message": "Logged out from Specter Cloud"
+                })
+                .to_string(),
+            );
 
             (
                 StatusCode::OK,
                 Json(CloudLogoutResponse {
                     success: true,
-                    message: "Successfully logged out and disconnected from Specter Cloud".to_string(),
+                    message: "Successfully logged out and disconnected from Specter Cloud"
+                        .to_string(),
                 }),
-            ).into_response()
+            )
+                .into_response()
         }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -236,7 +258,8 @@ pub async fn cloud_logout(
                 success: false,
                 message: format!("Failed to remove credentials: {}", e),
             }),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -251,9 +274,7 @@ pub async fn cloud_logout(
         (status = 200, description = "Desktop auth URL generated successfully", body = DesktopAuthStartResponse)
     )
 )]
-pub async fn start_desktop_auth(
-    State(_state): State<crate::AppState>,
-) -> impl IntoResponse {
+pub async fn start_desktop_auth(State(_state): State<crate::AppState>) -> impl IntoResponse {
     let nonce = uuid::Uuid::new_v4().to_string();
     let hostname = std::env::var("COMPUTERNAME")
         .or_else(|_| std::env::var("HOSTNAME"))
@@ -278,7 +299,8 @@ pub async fn start_desktop_auth(
             state: nonce,
             port,
         }),
-    ).into_response()
+    )
+        .into_response()
 }
 
 async fn process_desktop_auth_payload(
@@ -299,22 +321,34 @@ async fn process_desktop_auth_payload(
     };
 
     if !is_valid_state {
-        return Err((StatusCode::BAD_REQUEST, "CSRF state nonce is invalid or expired".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "CSRF state nonce is invalid or expired".to_string(),
+        ));
     }
 
     // 2. Validate token and persist session
     if let Some(ref token) = params.token {
         let tenant_id = params.tenant_id.clone();
         let data_dir = state.config.data_dir.clone();
-        let cloud_url = state.config.cloud_url.clone()
+        let cloud_url = state
+            .config
+            .cloud_url
+            .clone()
             .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
 
         let client = crate::infrastructure::cloud::CloudApiClient::build_http_client();
         let anon_key = crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string();
 
-        match crate::infrastructure::cloud::SupabaseAuthClient::validate_token(&client, &cloud_url, &anon_key, token).await {
+        match crate::infrastructure::cloud::SupabaseAuthClient::validate_token(
+            &client, &cloud_url, &anon_key, token,
+        )
+        .await
+        {
             Ok(user) => {
-                let mut creds = crate::infrastructure::cloud::CredentialStore::load(&data_dir).await.unwrap_or_default();
+                let mut creds = crate::infrastructure::cloud::CredentialStore::load(&data_dir)
+                    .await
+                    .unwrap_or_default();
                 creds.user_id = Some(user.id.clone());
                 creds.email = user.email.clone();
                 creds.access_token = Some(token.clone());
@@ -327,23 +361,33 @@ async fn process_desktop_auth_payload(
                     creds.tenant_id = Some(t.clone());
                 }
 
-                let _ = crate::infrastructure::cloud::CredentialStore::save(&data_dir, &creds).await;
+                let _ =
+                    crate::infrastructure::cloud::CredentialStore::save(&data_dir, &creds).await;
 
                 // Broadcast SSE event
-                let _ = state.tx.send(serde_json::json!({
-                    "type": "auth_state_changed",
-                    "isAuthenticated": true,
-                    "userEmail": user.email,
-                    "tenantId": tenant_id,
-                    "message": "Authenticated with Tuquet Admin successfully"
-                }).to_string());
+                let _ = state.tx.send(
+                    serde_json::json!({
+                        "type": "auth_state_changed",
+                        "isAuthenticated": true,
+                        "userEmail": user.email,
+                        "tenantId": tenant_id,
+                        "message": "Authenticated with Tuquet Admin successfully"
+                    })
+                    .to_string(),
+                );
 
                 Ok((user.email, tenant_id))
             }
-            Err(e) => Err((StatusCode::UNAUTHORIZED, format!("Token validation failed: {}", e))),
+            Err(e) => Err((
+                StatusCode::UNAUTHORIZED,
+                format!("Token validation failed: {}", e),
+            )),
         }
     } else {
-        Err((StatusCode::BAD_REQUEST, "Missing authentication token".to_string()))
+        Err((
+            StatusCode::BAD_REQUEST,
+            "Missing authentication token".to_string(),
+        ))
     }
 }
 
@@ -393,7 +437,8 @@ pub async fn desktop_auth_callback(
                 StatusCode::OK,
                 [("content-type", "text/html; charset=utf-8")],
                 html.to_string(),
-            ).into_response()
+            )
+                .into_response()
         }
         Err((code, msg)) => {
             let html = format!(
@@ -403,11 +448,7 @@ pub async fn desktop_auth_callback(
                 <p>Vui lòng mở lại Specter Desk và thử lại.</p></body></html>"#,
                 code, msg
             );
-            (
-                code,
-                [("content-type", "text/html; charset=utf-8")],
-                html,
-            ).into_response()
+            (code, [("content-type", "text/html; charset=utf-8")], html).into_response()
         }
     }
 }
@@ -439,7 +480,8 @@ pub async fn desktop_auth_callback_post(
                 user_email,
                 tenant_id,
             }),
-        ).into_response(),
+        )
+            .into_response(),
         Err((code, msg)) => (
             code,
             Json(DesktopAuthCallbackResponse {
@@ -448,6 +490,7 @@ pub async fn desktop_auth_callback_post(
                 user_email: None,
                 tenant_id: None,
             }),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

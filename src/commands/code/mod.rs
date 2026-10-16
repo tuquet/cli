@@ -1,16 +1,15 @@
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use serde::{Deserialize, Serialize};
 
 use crate::commands::dev::history::load_history;
 use crate::commands::dev::scanner::{
-    filter_packages, scan_machine_packages, scan_workspace_packages, DiscoveredPackage,
+    DiscoveredPackage, filter_packages, scan_machine_packages, scan_workspace_packages,
 };
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::ui::{
-    badge_online, clack_cancel, clack_intro, clack_outro, clack_select, colors,
-    create_tabular_card, ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table,
-    TabularRow,
+    ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
+    clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,7 +92,7 @@ pub async fn handle(
     };
 
     if let Some(spinner) = sp {
-        spinner.finish(&format!(
+        spinner.finish(format!(
             "Discovered {} projects ({})",
             packages.len(),
             scan_label
@@ -192,7 +191,9 @@ pub async fn handle(
     let selected_editor: &DetectedEditor = match editor {
         Some(ref ed_query) => editors
             .iter()
-            .find(|e| e.id.eq_ignore_ascii_case(ed_query) || e.binary.eq_ignore_ascii_case(ed_query))
+            .find(|e| {
+                e.id.eq_ignore_ascii_case(ed_query) || e.binary.eq_ignore_ascii_case(ed_query)
+            })
             .ok_or_else(|| {
                 let avail: Vec<&str> = editors.iter().map(|e| e.id.as_str()).collect();
                 format!(

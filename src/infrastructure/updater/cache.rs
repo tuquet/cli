@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::client::check_and_save_latest_version;
-use super::types::{UpdateInfo, CACHE_TTL_SECS};
+use super::types::{CACHE_TTL_SECS, UpdateInfo};
 
 pub fn get_cache_file_path() -> PathBuf {
     crate::config::canonical_specter_dir()

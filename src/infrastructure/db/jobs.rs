@@ -1,6 +1,6 @@
-use rusqlite::{params, Connection, OptionalExtension, Result};
+use rusqlite::{Connection, OptionalExtension, Result, params};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -48,7 +48,6 @@ pub struct LogItem {
     pub created_at: String,
 }
 
-
 pub struct SqliteJobRepository<'a> {
     pub conn: &'a Connection,
 }
@@ -58,14 +57,23 @@ impl<'a> SqliteJobRepository<'a> {
         Self { conn }
     }
 
-    pub fn create_job(&self, job_id: &str, name: &str, data: &Value, options: &Value, status: &str) -> bool {
+    pub fn create_job(
+        &self,
+        job_id: &str,
+        name: &str,
+        data: &Value,
+        options: &Value,
+        status: &str,
+    ) -> bool {
         let data_str = serde_json::to_string(data).unwrap_or_else(|_| "{}".to_string());
         let options_str = serde_json::to_string(options).unwrap_or_else(|_| "{}".to_string());
-        
-        self.conn.execute(
-            "INSERT INTO jobs (id, name, data, options, status) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![job_id, name, data_str, options_str, status],
-        ).is_ok()
+
+        self.conn
+            .execute(
+                "INSERT INTO jobs (id, name, data, options, status) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![job_id, name, data_str, options_str, status],
+            )
+            .is_ok()
     }
 
     pub fn update_job_status(&self, job_id: &str, status: &str) -> Result<()> {
@@ -77,14 +85,22 @@ impl<'a> SqliteJobRepository<'a> {
     }
 
     pub fn get_job_status(&self, job_id: &str) -> Result<Option<String>> {
-        self.conn.query_row(
-            "SELECT status FROM jobs WHERE id = ?1",
-            params![job_id],
-            |row| row.get(0),
-        ).optional()
+        self.conn
+            .query_row(
+                "SELECT status FROM jobs WHERE id = ?1",
+                params![job_id],
+                |row| row.get(0),
+            )
+            .optional()
     }
 
-    pub fn finish_job(&self, job_id: &str, status: &str, results: &Value, duration: i64) -> Result<()> {
+    pub fn finish_job(
+        &self,
+        job_id: &str,
+        status: &str,
+        results: &Value,
+        duration: i64,
+    ) -> Result<()> {
         let row_res: Result<String> = self.conn.query_row(
             "SELECT data FROM jobs WHERE id = ?1",
             params![job_id],
@@ -139,8 +155,10 @@ impl<'a> SqliteJobRepository<'a> {
     }
 
     pub fn delete_job(&self, job_id: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM logs WHERE job_id = ?1", params![job_id])?;
-        self.conn.execute("DELETE FROM jobs WHERE id = ?1", params![job_id])?;
+        self.conn
+            .execute("DELETE FROM logs WHERE job_id = ?1", params![job_id])?;
+        self.conn
+            .execute("DELETE FROM jobs WHERE id = ?1", params![job_id])?;
         Ok(())
     }
 
@@ -190,7 +208,8 @@ impl<'a> SqliteJobRepository<'a> {
         param_values.push(Box::new(l));
         param_values.push(Box::new(o));
 
-        let params_slice: Vec<&dyn rusqlite::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+        let params_slice: Vec<&dyn rusqlite::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
 
         let mut stmt = self.conn.prepare(&sql)?;
         let iter = stmt.query_map(params_slice.as_slice(), |row| {
@@ -209,24 +228,28 @@ impl<'a> SqliteJobRepository<'a> {
     }
 
     pub fn get_job_details(&self, job_id: &str) -> Result<JobDetails> {
-        let job_res = self.conn.query_row(
-            "SELECT id, name, status, data, created_at, updated_at FROM jobs WHERE id = ?1",
-            params![job_id],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, String>(3)?,
-                    row.get::<_, String>(4)?,
-                    row.get::<_, String>(5)?,
-                ))
-            },
-        ).optional();
+        let job_res = self
+            .conn
+            .query_row(
+                "SELECT id, name, status, data, created_at, updated_at FROM jobs WHERE id = ?1",
+                params![job_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, String>(5)?,
+                    ))
+                },
+            )
+            .optional();
 
         match job_res {
             Ok(Some((id, name, status, data_str, created_at, updated_at))) => {
-                let data_val = serde_json::from_str::<Value>(&data_str).unwrap_or_else(|_| json!({}));
+                let data_val =
+                    serde_json::from_str::<Value>(&data_str).unwrap_or_else(|_| json!({}));
                 let workflow_id = data_val
                     .get("workflowData")
                     .and_then(|w| w.get("id"))
@@ -234,8 +257,11 @@ impl<'a> SqliteJobRepository<'a> {
                     .unwrap_or(&id)
                     .to_string();
                 let duration = data_val.get("duration").and_then(|d| d.as_i64());
-                let results = data_val.get("results").cloned().unwrap_or_else(|| json!({"table": [], "variables": {}}));
-                
+                let results = data_val
+                    .get("results")
+                    .cloned()
+                    .unwrap_or_else(|| json!({"table": [], "variables": {}}));
+
                 let job_info = JobInfo {
                     id,
                     name,
@@ -261,7 +287,7 @@ impl<'a> SqliteJobRepository<'a> {
                 logs: None,
                 error: Some("Job not found".to_string()),
             }),
-            Err(e) => Err(e)
+            Err(e) => Err(e),
         }
     }
 
@@ -281,7 +307,7 @@ impl<'a> SqliteJobRepository<'a> {
                 params![job_id, log_type, message],
             )?;
         }
-        tx.commit()?; 
+        tx.commit()?;
         Ok(())
     }
 
@@ -305,7 +331,9 @@ impl<'a> SqliteJobRepository<'a> {
 
     pub fn get_parsed_job_logs(&self, job_id: &str) -> Result<Vec<Value>> {
         let mut logs = Vec::new();
-        let mut stmt = self.conn.prepare("SELECT id, type, message, created_at FROM logs WHERE job_id = ?1 ORDER BY id ASC")?;
+        let mut stmt = self.conn.prepare(
+            "SELECT id, type, message, created_at FROM logs WHERE job_id = ?1 ORDER BY id ASC",
+        )?;
         let iter = stmt.query_map(params![job_id], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
@@ -324,17 +352,18 @@ impl<'a> SqliteJobRepository<'a> {
             });
 
             if let Ok(parsed_msg) = serde_json::from_str::<Value>(&item.2)
-                && let (Some(obj), Some(parsed_obj)) = (log_obj.as_object_mut(), parsed_msg.as_object()) {
-                    for (k, v) in parsed_obj {
-                        obj.insert(k.clone(), v.clone());
-                    }
+                && let (Some(obj), Some(parsed_obj)) =
+                    (log_obj.as_object_mut(), parsed_msg.as_object())
+            {
+                for (k, v) in parsed_obj {
+                    obj.insert(k.clone(), v.clone());
                 }
+            }
             logs.push(log_obj);
         }
         Ok(logs)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -348,16 +377,25 @@ mod tests {
         let repo = SqliteJobRepository::new(conn);
 
         // 1. Create job
-        let created = repo.create_job("job_abc", "My Workflow Job", &json!({"step": 1}), &json!({"headless": true}), "pending");
+        let created = repo.create_job(
+            "job_abc",
+            "My Workflow Job",
+            &json!({"step": 1}),
+            &json!({"headless": true}),
+            "pending",
+        );
         assert!(created);
 
         // 2. Add logs
-        repo.insert_log("job_abc", "info", "Starting execution").unwrap();
-        repo.insert_log("job_abc", "success", r#"{"duration": 150, "status": "ok"}"#).unwrap();
+        repo.insert_log("job_abc", "info", "Starting execution")
+            .unwrap();
+        repo.insert_log("job_abc", "success", r#"{"duration": 150, "status": "ok"}"#)
+            .unwrap();
 
         // 3. Update status & finish job
         repo.update_job_status("job_abc", "running").unwrap();
-        repo.finish_job("job_abc", "completed", &json!({"items_extracted": 5}), 1500).unwrap();
+        repo.finish_job("job_abc", "completed", &json!({"items_extracted": 5}), 1500)
+            .unwrap();
 
         // 4. Retrieve job details & logs
         let details = repo.get_job_details("job_abc").unwrap();

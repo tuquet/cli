@@ -2,19 +2,21 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, Level};
+use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
 
+use crate::AppState;
 use crate::config::AppConfig;
 use crate::infrastructure::db::AutomaDb;
-use crate::AppState;
 
 pub fn get_pid_file_path(data_dir: &str) -> PathBuf {
     Path::new(data_dir).join(crate::constants::FILE_RUNNER_PID)
 }
 
 pub fn get_log_file_path(data_dir: &str) -> PathBuf {
-    Path::new(data_dir).join(crate::constants::DIR_LOGS).join(crate::constants::FILE_RUNNER_LOG)
+    Path::new(data_dir)
+        .join(crate::constants::DIR_LOGS)
+        .join(crate::constants::FILE_RUNNER_LOG)
 }
 
 pub fn is_valid_runner_name(raw_name: &str) -> bool {
@@ -23,9 +25,12 @@ pub fn is_valid_runner_name(raw_name: &str) -> bool {
     base_name == "spc" || base_name == "specter" || base_name == "runner"
 }
 
-use crate::ui::{respond_with, OutputFormat};
+use crate::ui::{OutputFormat, respond_with};
 
-pub async fn check_status(url: &str, format: OutputFormat) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn check_status(
+    url: &str,
+    format: OutputFormat,
+) -> Result<(), Box<dyn std::error::Error>> {
     let target = format!("{}/api/v1/health", url.trim_end_matches('/'));
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_millis(1500))
@@ -42,9 +47,24 @@ pub async fn check_status(url: &str, format: OutputFormat) -> Result<(), Box<dyn
             });
             respond_with(format, &out, |_| {
                 let rows = vec![
-                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_online("ONLINE")),
-                    crate::ui::TabularRow::new("Health Route", &target, "HTTP Keepalive (200)", crate::ui::badge_online("HEALTHY")),
-                    crate::ui::TabularRow::new("Worker Driver", "mv3_extension", "Blink Automation Engine", crate::ui::badge_online("READY")),
+                    crate::ui::TabularRow::new(
+                        "Worker Daemon",
+                        url,
+                        "CDP Extension Worker",
+                        crate::ui::badge_online("ONLINE"),
+                    ),
+                    crate::ui::TabularRow::new(
+                        "Health Route",
+                        &target,
+                        "HTTP Keepalive (200)",
+                        crate::ui::badge_online("HEALTHY"),
+                    ),
+                    crate::ui::TabularRow::new(
+                        "Worker Driver",
+                        "mv3_extension",
+                        "Blink Automation Engine",
+                        crate::ui::badge_online("READY"),
+                    ),
                 ];
                 let card = crate::ui::create_tabular_card(
                     "RUNNER WORKER ENGINE",
@@ -68,8 +88,18 @@ pub async fn check_status(url: &str, format: OutputFormat) -> Result<(), Box<dyn
             });
             respond_with(format, &out, |_| {
                 let rows = vec![
-                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_error(&format!("HTTP {}", res.status()))),
-                    crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_warn("DEGRADED")),
+                    crate::ui::TabularRow::new(
+                        "Worker Daemon",
+                        url,
+                        "CDP Extension Worker",
+                        crate::ui::badge_error(&format!("HTTP {}", res.status())),
+                    ),
+                    crate::ui::TabularRow::new(
+                        "Health Route",
+                        &target,
+                        "Health Check Endpoint",
+                        crate::ui::badge_warn("DEGRADED"),
+                    ),
                 ];
                 let card = crate::ui::create_tabular_card(
                     "RUNNER WORKER ENGINE",
@@ -92,8 +122,18 @@ pub async fn check_status(url: &str, format: OutputFormat) -> Result<(), Box<dyn
             });
             respond_with(format, &out, |_| {
                 let rows = vec![
-                    crate::ui::TabularRow::new("Worker Daemon", url, "CDP Extension Worker", crate::ui::badge_offline("OFFLINE")),
-                    crate::ui::TabularRow::new("Health Route", &target, "Health Check Endpoint", crate::ui::badge_offline("UNREACHABLE")),
+                    crate::ui::TabularRow::new(
+                        "Worker Daemon",
+                        url,
+                        "CDP Extension Worker",
+                        crate::ui::badge_offline("OFFLINE"),
+                    ),
+                    crate::ui::TabularRow::new(
+                        "Health Route",
+                        &target,
+                        "Health Check Endpoint",
+                        crate::ui::badge_offline("UNREACHABLE"),
+                    ),
                 ];
                 let card = crate::ui::create_tabular_card(
                     "RUNNER WORKER ENGINE",
@@ -115,14 +155,14 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
     let _ = force;
     let config = AppConfig::load();
     let pid_file = get_pid_file_path(&config.data_dir);
-    
+
     let pid_to_kill: Option<u32> = std::fs::read_to_string(&pid_file)
         .ok()
         .and_then(|c| c.trim().parse::<u32>().ok());
 
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
-    
+
     let current_pid = std::process::id();
     let mut found_pids = Vec::new();
     if let Some(p) = pid_to_kill {
@@ -136,7 +176,12 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         }
         let name = proc.name().to_string_lossy().to_lowercase();
         if name.contains("specter") {
-            let cmd = proc.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
+            let cmd = proc
+                .cmd()
+                .iter()
+                .map(|s| s.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" ");
             if cmd.contains("runner") && cmd.contains("start") && !found_pids.contains(&p_u32) {
                 found_pids.push(p_u32);
             }
@@ -144,9 +189,19 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     if found_pids.is_empty() {
-        let health_url = format!("http://{}:{}/api/v1/health", config.server_host, config.server_port);
-        let client = reqwest::Client::builder().timeout(std::time::Duration::from_millis(500)).build()?;
-        let is_running = client.get(&health_url).send().await.map(|r| r.status().is_success()).unwrap_or(false);
+        let health_url = format!(
+            "http://{}:{}/api/v1/health",
+            config.server_host, config.server_port
+        );
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_millis(500))
+            .build()?;
+        let is_running = client
+            .get(&health_url)
+            .send()
+            .await
+            .map(|r| r.status().is_success())
+            .unwrap_or(false);
         if !is_running {
             let mut card = crate::ui::Card::new("RUNNER");
             card.with_badge(crate::ui::badge_offline("NOT RUNNING"));
@@ -165,8 +220,14 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
     for &pid in &found_pids {
         let sys_pid = sysinfo::Pid::from(pid as usize);
         let Some(proc) = sys.process(sys_pid) else {
-            tracing::warn!("Stale PID {} detected (process not found in system table). Skipping kill.", pid);
-            eprintln!("Warning: Stale PID {} detected (process not found). Skipping kill.", pid);
+            tracing::warn!(
+                "Stale PID {} detected (process not found in system table). Skipping kill.",
+                pid
+            );
+            eprintln!(
+                "Warning: Stale PID {} detected (process not found). Skipping kill.",
+                pid
+            );
             continue;
         };
 
@@ -179,8 +240,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
             );
             eprintln!(
                 "Warning: Stale PID {} detected: process name '{}' does not match specter or runner. Skipping kill.",
-                pid,
-                raw_name
+                pid, raw_name
             );
             continue;
         }
@@ -216,7 +276,11 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
     card.with_badge(crate::ui::badge_online("STOPPED"));
     card.with_min_width(64);
     if !terminated_pids.is_empty() {
-        let pids_str = terminated_pids.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(", ");
+        let pids_str = terminated_pids
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
         card.add_kv("Terminated PID(s)", pids_str);
     }
     card.add_line("Runner worker daemon has been gracefully terminated.");
@@ -320,7 +384,10 @@ pub async fn run_server(
         };
         card.add_kv("Mode", mode_desc);
         card.add_kv("PID", child_pid.to_string());
-        card.add_kv("Endpoint", format!("http://{}:{}", config.server_host, config.server_port));
+        card.add_kv(
+            "Endpoint",
+            format!("http://{}:{}", config.server_host, config.server_port),
+        );
         card.add_kv("Log File", log_file_path.display().to_string());
         card.with_footer("Stop daemon with 'specter runner stop'");
         println!();
@@ -337,9 +404,7 @@ pub async fn run_server(
         _ => Level::INFO,
     };
 
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(log_level)
-        .finish();
+    let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
     info!("Specter Automa Core Bridge starting in Native Launcher mode...");
@@ -373,7 +438,10 @@ pub async fn run_server(
         crate::infrastructure::cloud_reporter::CloudReporter::start_background_loop(state.clone());
 
     if cloud {
-        let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(&config.data_dir).await;
+        let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+            &config.data_dir,
+        )
+        .await;
         let mut card = crate::ui::Card::new("RUNNER CLOUD FLEET MESH");
         card.with_badge(crate::ui::badge_online("FLEET CONNECTED"));
         card.with_min_width(74);
@@ -384,10 +452,24 @@ pub async fn run_server(
                 card.add_kv("Tenant ID", t);
             }
         }
-        card.add_kv("Cloud Hub", config.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"));
-        card.add_kv("Proxy Mesh", "Smart Bridge Auto-Detect (127.0.0.1:1080 / 8118)");
-        card.add_kv("Local Endpoint", format!("http://{}:{}", config.server_host, config.server_port));
-        card.with_footer("Runner daemon active in Cloud Fleet Mesh mode. Ready for distributed workloads.");
+        card.add_kv(
+            "Cloud Hub",
+            config
+                .cloud_url
+                .as_deref()
+                .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"),
+        );
+        card.add_kv(
+            "Proxy Mesh",
+            "Smart Bridge Auto-Detect (127.0.0.1:1080 / 8118)",
+        );
+        card.add_kv(
+            "Local Endpoint",
+            format!("http://{}:{}", config.server_host, config.server_port),
+        );
+        card.with_footer(
+            "Runner daemon active in Cloud Fleet Mesh mode. Ready for distributed workloads.",
+        );
         println!();
         card.print();
         println!();

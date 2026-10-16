@@ -20,7 +20,8 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
             let mut resolved = None;
 
             // Check SQLite DB
-            let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
+            let db_path =
+                PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
             if db_path.exists()
                 && let Ok(db) = AutomaDb::new(&db_path)
                 && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
@@ -91,21 +92,20 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
         .and_then(|v| v.as_str())
         .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
 
-    let nodes: Vec<serde_json::Value> = if let Some(arr) =
-        val.pointer("/drawflow/nodes").and_then(|v| v.as_array())
-    {
-        arr.clone()
-    } else if let Some(arr) = parsed_drawflow_opt
-        .as_ref()
-        .and_then(|d| d.get("nodes"))
-        .and_then(|v| v.as_array())
-    {
-        arr.clone()
-    } else if let Some(arr) = val.get("nodes").and_then(|v| v.as_array()) {
-        arr.clone()
-    } else {
-        Vec::new()
-    };
+    let nodes: Vec<serde_json::Value> =
+        if let Some(arr) = val.pointer("/drawflow/nodes").and_then(|v| v.as_array()) {
+            arr.clone()
+        } else if let Some(arr) = parsed_drawflow_opt
+            .as_ref()
+            .and_then(|d| d.get("nodes"))
+            .and_then(|v| v.as_array())
+        {
+            arr.clone()
+        } else if let Some(arr) = val.get("nodes").and_then(|v| v.as_array()) {
+            arr.clone()
+        } else {
+            Vec::new()
+        };
 
     let edge_count = if let Some(arr) = val.pointer("/drawflow/edges").and_then(|v| v.as_array()) {
         arr.len()
@@ -121,7 +121,11 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
         0
     };
 
-    println!("Structure:   {} nodes, {} connections", nodes.len(), edge_count);
+    println!(
+        "Structure:   {} nodes, {} connections",
+        nodes.len(),
+        edge_count
+    );
     println!("------------------------------------------------------------");
 
     let mut triggers = Vec::new();

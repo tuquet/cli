@@ -1,5 +1,5 @@
 use super::get_flag_value;
-use crate::commands::shell::{print_scope_help, ShellScope};
+use crate::commands::shell::{ShellScope, print_scope_help};
 
 pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
@@ -31,7 +31,8 @@ pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
                 http: start_http,
                 ssh: enable_ssh,
                 foreground,
-            }).await?;
+            })
+            .await?;
         }
         "stop" => {
             let server_opt = args.iter().find(|a| !a.starts_with('-')).copied();
@@ -62,7 +63,10 @@ pub async fn dispatch_bridge(cmd: &str, args: &[&str]) -> Result<(), Box<dyn std
             print_scope_help(ShellScope::Bridge);
         }
         other => {
-            println!("Unknown bridge command '{}'. Type 'help' to see valid commands.", other);
+            println!(
+                "Unknown bridge command '{}'. Type 'help' to see valid commands.",
+                other
+            );
         }
     }
     Ok(())

@@ -2,8 +2,8 @@ use axum::{
     extract::State,
     response::sse::{Event, Sse},
 };
-use futures::stream::Stream;
 use futures::StreamExt;
+use futures::stream::Stream;
 use std::convert::Infallible;
 use tokio_stream::wrappers::BroadcastStream;
 
@@ -22,14 +22,13 @@ pub async fn sse(
     State(state): State<crate::AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let receiver = state.tx.subscribe();
-    
-    let stream = BroadcastStream::new(receiver)
-        .filter_map(|res| async {
-            match res {
-                Ok(msg) => Some(Ok(Event::default().data(msg))),
-                Err(_) => None, // Handle lag by simply dropping/ignoring
-            }
-        });
+
+    let stream = BroadcastStream::new(receiver).filter_map(|res| async {
+        match res {
+            Ok(msg) => Some(Ok(Event::default().data(msg))),
+            Err(_) => None, // Handle lag by simply dropping/ignoring
+        }
+    });
 
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
 }

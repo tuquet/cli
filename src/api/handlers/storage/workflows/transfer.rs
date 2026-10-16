@@ -1,6 +1,6 @@
-use axum::extract::{Json, State};
 use crate::AppState;
 use crate::core::error::AutomaError;
+use axum::extract::{Json, State};
 
 use super::types::{ImportWorkflowStorageRequest, WorkflowStorageItem};
 
@@ -24,27 +24,34 @@ pub async fn import_storage_workflow(
 ) -> Result<Json<WorkflowStorageItem>, AutomaError> {
     let wf = &payload.workflow;
     if !wf.is_object() {
-        return Err(AutomaError::BadRequest("Import payload must contain a valid JSON object".into()));
+        return Err(AutomaError::BadRequest(
+            "Import payload must contain a valid JSON object".into(),
+        ));
     }
 
-    let id = payload.id
+    let id = payload
+        .id
         .or_else(|| wf.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .unwrap_or_else(|| format!("wf_{}", uuid::Uuid::new_v4().simple()));
 
-    let name = wf.get("name")
+    let name = wf
+        .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or(&id)
         .to_string();
 
-    let description = wf.get("description")
+    let description = wf
+        .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let version = wf.get("version")
+    let version = wf
+        .get("version")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let icon = wf.get("icon")
+    let icon = wf
+        .get("icon")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
@@ -52,20 +59,26 @@ pub async fn import_storage_workflow(
         .map_err(|e| AutomaError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
 
     let db = state.db.lock().await;
-    let created = db.workflows().create_workflow(
-        &id,
-        &name,
-        description.as_deref(),
-        &data_str,
-        version.as_deref(),
-        icon.as_deref(),
-    ).map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+    let created = db
+        .workflows()
+        .create_workflow(
+            &id,
+            &name,
+            description.as_deref(),
+            &data_str,
+            version.as_deref(),
+            icon.as_deref(),
+        )
+        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
 
     // Also import nested sub-workflows from `includedWorkflows` if present (automa-webe export standard)
     if let Some(included) = wf.get("includedWorkflows").and_then(|v| v.as_object()) {
         for (sub_id, sub_wf) in included {
             if sub_wf.is_object() {
-                let sub_name = sub_wf.get("name").and_then(|v| v.as_str()).unwrap_or(sub_id);
+                let sub_name = sub_wf
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(sub_id);
                 let sub_desc = sub_wf.get("description").and_then(|v| v.as_str());
                 let sub_ver = sub_wf.get("version").and_then(|v| v.as_str());
                 let sub_icon = sub_wf.get("icon").and_then(|v| v.as_str());
@@ -83,8 +96,8 @@ pub async fn import_storage_workflow(
         }
     }
 
-    let parsed_data = serde_json::from_str::<serde_json::Value>(&created.data)
-        .unwrap_or(serde_json::json!({}));
+    let parsed_data =
+        serde_json::from_str::<serde_json::Value>(&created.data).unwrap_or(serde_json::json!({}));
 
     Ok(Json(WorkflowStorageItem {
         id: created.id,

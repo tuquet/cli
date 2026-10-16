@@ -76,7 +76,7 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
 }
 
 pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
-    use crate::ui::prompt::{clack_cancel, clack_intro, clack_select, clack_text, ClackOption};
+    use crate::ui::prompt::{ClackOption, clack_cancel, clack_intro, clack_select, clack_text};
 
     if !crate::ui::is_interactive_tty() {
         return list_workflows(None, false, false, crate::ui::OutputFormat::Json).await;
@@ -124,16 +124,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
                 clack_cancel("Cancelled.");
                 return Ok(());
             };
-            run_workflow(
-                Some(wf),
-                None,
-                false,
-                None,
-                None,
-                Vec::new(),
-                Some(300),
-            )
-            .await
+            run_workflow(Some(wf), None, false, None, None, Vec::new(), Some(300)).await
         }
         2 => {
             let Some(wf) = clack_text("Workflow name or ID to inspect:", None, None)? else {
@@ -147,4 +138,3 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         _ => Ok(()),
     }
 }
-

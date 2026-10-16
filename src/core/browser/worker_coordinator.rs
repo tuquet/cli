@@ -36,7 +36,11 @@ pub async fn ensure_browser_worker(
                 || name_lower.contains("msedge")
                 || name_lower.contains("specter")
             {
-                tracing::info!("Terminating stale browser process PID {} ({})", _pid, raw_name);
+                tracing::info!(
+                    "Terminating stale browser process PID {} ({})",
+                    _pid,
+                    raw_name
+                );
                 #[cfg(target_os = "windows")]
                 {
                     let mut cmd = tokio::process::Command::new("taskkill");
@@ -83,15 +87,18 @@ pub async fn ensure_browser_worker(
     let mut custom_args = Vec::new();
     if app_settings.grid.enabled {
         let active_browsers_count = connected_browsers().read().await.len() as u32;
-        let (pos_x, pos_y, slot_w, slot_h) = app_settings.grid.calculate_slot_bounds(active_browsers_count);
+        let (pos_x, pos_y, slot_w, slot_h) = app_settings
+            .grid
+            .calculate_slot_bounds(active_browsers_count);
         custom_args.push(format!("--window-position={},{}", pos_x, pos_y));
         custom_args.push(format!("--window-size={},{}", slot_w, slot_h));
     }
 
     if let Some(ref ua) = app_settings.browser.default_user_agent
-        && !ua.is_empty() {
-            custom_args.push(format!("--user-agent={}", ua));
-        }
+        && !ua.is_empty()
+    {
+        custom_args.push(format!("--user-agent={}", ua));
+    }
 
     let mut manager = BrowserManager::new(BrowserManagerOptions {
         default_browser,
@@ -104,13 +111,29 @@ pub async fn ensure_browser_worker(
 
     match manager.launch().await {
         Ok(ws_url) => {
-            tracing::info!("[ensure_browser_worker] Browser launched successfully via CDP: {}", ws_url);
-            connected_browsers().write().await.insert(browser_id.to_string());
+            tracing::info!(
+                "[ensure_browser_worker] Browser launched successfully via CDP: {}",
+                ws_url
+            );
+            connected_browsers()
+                .write()
+                .await
+                .insert(browser_id.to_string());
         }
         Err(e) => {
-            eprintln!("Failed to launch browser worker (maybe already running): {}", e);
-            if browser_registry().read().await.contains_key(&browser_id.to_string()) {
-                connected_browsers().write().await.insert(browser_id.to_string());
+            eprintln!(
+                "Failed to launch browser worker (maybe already running): {}",
+                e
+            );
+            if browser_registry()
+                .read()
+                .await
+                .contains_key(&browser_id.to_string())
+            {
+                connected_browsers()
+                    .write()
+                    .await
+                    .insert(browser_id.to_string());
             }
         }
     }

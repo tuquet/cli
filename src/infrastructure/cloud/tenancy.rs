@@ -1,8 +1,8 @@
+use super::client::CloudApiClient;
+use super::credential_store::{CredentialStore, TenantInfo};
+use super::supabase_auth::SupabaseAuthClient;
 use reqwest::Client;
 use serde_json::Value;
-use super::credential_store::{CredentialStore, TenantInfo};
-use super::client::CloudApiClient;
-use super::supabase_auth::SupabaseAuthClient;
 
 pub struct TenancyManager;
 
@@ -18,7 +18,10 @@ impl TenancyManager {
         let base = cloud_url.trim_end_matches('/');
 
         // 1. Fetch tenants filtered by RLS
-        let tenants_url = format!("{}/rest/v1/tenants?select=id,slug,name,status,created_by", base);
+        let tenants_url = format!(
+            "{}/rest/v1/tenants?select=id,slug,name,status,created_by",
+            base
+        );
         let res = client
             .get(&tenants_url)
             .header("apikey", api_key)
@@ -45,39 +48,63 @@ impl TenancyManager {
             .send()
             .await;
 
-        let mut role_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut role_map: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
         if let Ok(m_res) = member_res
             && m_res.status().is_success()
-            && let Ok(members_json) = m_res.json::<Vec<Value>>().await {
-                for m in members_json {
-                    if let Some(tid) = m.get("tenant_id").and_then(|v| v.as_str()) {
-                        // Extract role name if present
-                        if let Some(mr_array) = m.get("member_roles").and_then(|v| v.as_array()) {
-                            for mr in mr_array {
-                                if let Some(role_obj) = mr.get("roles")
-                                    && let Some(name) = role_obj.get("name").and_then(|v| v.as_str()) {
-                                        role_map.insert(tid.to_string(), name.to_string());
-                                        break;
-                                    }
+            && let Ok(members_json) = m_res.json::<Vec<Value>>().await
+        {
+            for m in members_json {
+                if let Some(tid) = m.get("tenant_id").and_then(|v| v.as_str()) {
+                    // Extract role name if present
+                    if let Some(mr_array) = m.get("member_roles").and_then(|v| v.as_array()) {
+                        for mr in mr_array {
+                            if let Some(role_obj) = mr.get("roles")
+                                && let Some(name) = role_obj.get("name").and_then(|v| v.as_str())
+                            {
+                                role_map.insert(tid.to_string(), name.to_string());
+                                break;
                             }
                         }
                     }
                 }
             }
+        }
 
         let mut results = Vec::new();
         for t in tenants_json {
-            let id = t.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-            let slug = t.get("slug").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-            let name = t.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-            let status = t.get("status").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let created_by = t.get("created_by").and_then(|v| v.as_str()).unwrap_or_default();
+            let id = t
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let slug = t
+                .get("slug")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let name = t
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let status = t
+                .get("status")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let created_by = t
+                .get("created_by")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
 
             // Default role is 'owner' if created_by matches user_id, or mapped role, or 'member'
             let role = if created_by == user_id {
                 Some("owner".to_string())
             } else {
-                role_map.get(&id).cloned().or_else(|| Some("member".to_string()))
+                role_map
+                    .get(&id)
+                    .cloned()
+                    .or_else(|| Some("member".to_string()))
             };
 
             results.push(TenantInfo {
@@ -107,8 +134,15 @@ impl TenancyManager {
             let req_clean = req.trim();
             tenants
                 .iter()
-                .position(|t| t.slug.eq_ignore_ascii_case(req_clean) || t.id.eq_ignore_ascii_case(req_clean))
-                .ok_or_else(|| format!("Requested workspace '{}' not found in your accessible tenants", req))?
+                .position(|t| {
+                    t.slug.eq_ignore_ascii_case(req_clean) || t.id.eq_ignore_ascii_case(req_clean)
+                })
+                .ok_or_else(|| {
+                    format!(
+                        "Requested workspace '{}' not found in your accessible tenants",
+                        req
+                    )
+                })?
         } else if let Some(fb) = fallback_tenant_id {
             tenants
                 .iter()
@@ -130,12 +164,17 @@ impl TenancyManager {
         data_dir: &str,
         target_slug_or_id: &str,
     ) -> Result<TenantInfo, Box<dyn std::error::Error + Send + Sync>> {
-        let mut creds = CredentialStore::load(data_dir).await
+        let mut creds = CredentialStore::load(data_dir)
+            .await
             .ok_or("No active cloud session found on this machine. Run 'specter login' first.")?;
 
-        let cloud_url = creds.cloud_url.clone()
+        let cloud_url = creds
+            .cloud_url
+            .clone()
             .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-        let api_key = creds.api_key.clone()
+        let api_key = creds
+            .api_key
+            .clone()
             .unwrap_or_else(|| super::credential_store::DEFAULT_SUPABASE_ANON_KEY.to_string());
 
         let client = CloudApiClient::build_http_client();
@@ -143,7 +182,10 @@ impl TenancyManager {
         // 1. Refresh access token if expired
         let access_token = match (creds.access_token.as_ref(), creds.refresh_token.as_ref()) {
             (Some(tok), Some(refresh)) if creds.is_token_expired() => {
-                if let Ok(new_sess) = SupabaseAuthClient::refresh_access_token(&client, &cloud_url, &api_key, refresh).await {
+                if let Ok(new_sess) =
+                    SupabaseAuthClient::refresh_access_token(&client, &cloud_url, &api_key, refresh)
+                        .await
+                {
                     creds.access_token = Some(new_sess.access_token.clone());
                     creds.refresh_token = new_sess.refresh_token.or(Some(refresh.clone()));
                     creds.token_expires_at = new_sess.expires_at;
@@ -154,18 +196,23 @@ impl TenancyManager {
             }
             (Some(tok), _) => tok.clone(),
             _ => {
-                return Err("No active user session found. Please run 'specter login' to authenticate.".into());
+                return Err(
+                    "No active user session found. Please run 'specter login' to authenticate."
+                        .into(),
+                );
             }
         };
 
         let user_id = creds.user_id.clone().unwrap_or_default();
 
         // 2. Refresh tenants list
-        let mut tenants = Self::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id).await
-            .unwrap_or_else(|_| creds.available_tenants.clone().unwrap_or_default());
+        let mut tenants =
+            Self::fetch_user_tenants(&client, &cloud_url, &api_key, &access_token, &user_id)
+                .await
+                .unwrap_or_else(|_| creds.available_tenants.clone().unwrap_or_default());
 
-        let target_tenant = Self::resolve_active_tenant(&mut tenants, Some(target_slug_or_id), None)?
-            .clone();
+        let target_tenant =
+            Self::resolve_active_tenant(&mut tenants, Some(target_slug_or_id), None)?.clone();
 
         // 3. Re-enroll device under target tenant
         let new_device_creds = CloudApiClient::enroll(
@@ -175,7 +222,8 @@ impl TenancyManager {
             Some(&target_tenant.slug),
             Some("cli_tenant_switch"),
             Some(&access_token),
-        ).await?;
+        )
+        .await?;
 
         // 4. Update credentials
         creds.device_id = new_device_creds.device_id;
@@ -281,7 +329,10 @@ mod tests {
         let mut tenants: Vec<TenantInfo> = Vec::new();
         let res = TenancyManager::resolve_active_tenant(&mut tenants, None, None);
         assert!(res.is_err());
-        assert!(res.unwrap_err().to_string().contains("No accessible workspaces"));
+        assert!(
+            res.unwrap_err()
+                .to_string()
+                .contains("No accessible workspaces")
+        );
     }
 }
-

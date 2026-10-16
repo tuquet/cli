@@ -1,7 +1,7 @@
+use super::scanner::DiscoveredPackage;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use super::scanner::DiscoveredPackage;
 
 const MAX_HISTORY_ENTRIES: usize = 20;
 

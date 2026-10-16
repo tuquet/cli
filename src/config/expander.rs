@@ -8,34 +8,35 @@ impl EnvExpander {
 
         while let Some((_, c)) = chars.next() {
             if c == '$'
-                && let Some(&(_, '{')) = chars.peek() {
-                    chars.next(); // consume '{'
-                    let mut var_expr = String::new();
-                    let mut closed = false;
-                    for (_, inner) in chars.by_ref() {
-                        if inner == '}' {
-                            closed = true;
-                            break;
-                        }
-                        var_expr.push(inner);
+                && let Some(&(_, '{')) = chars.peek()
+            {
+                chars.next(); // consume '{'
+                let mut var_expr = String::new();
+                let mut closed = false;
+                for (_, inner) in chars.by_ref() {
+                    if inner == '}' {
+                        closed = true;
+                        break;
                     }
-                    if closed {
-                        if let Some((var_name, default_val)) = var_expr.split_once(":-") {
-                            let val = std::env::var(var_name.trim())
-                                .unwrap_or_else(|_| default_val.to_string());
-                            output.push_str(&val);
-                        } else {
-                            let val = std::env::var(var_expr.trim()).unwrap_or_default();
-                            output.push_str(&val);
-                        }
-                        continue;
-                    } else {
-                        output.push('$');
-                        output.push('{');
-                        output.push_str(&var_expr);
-                        continue;
-                    }
+                    var_expr.push(inner);
                 }
+                if closed {
+                    if let Some((var_name, default_val)) = var_expr.split_once(":-") {
+                        let val = std::env::var(var_name.trim())
+                            .unwrap_or_else(|_| default_val.to_string());
+                        output.push_str(&val);
+                    } else {
+                        let val = std::env::var(var_expr.trim()).unwrap_or_default();
+                        output.push_str(&val);
+                    }
+                    continue;
+                } else {
+                    output.push('$');
+                    output.push('{');
+                    output.push_str(&var_expr);
+                    continue;
+                }
+            }
             output.push(c);
         }
         output
@@ -90,4 +91,3 @@ mod tests {
         assert!(dir.to_string_lossy().contains(".specter"));
     }
 }
-

@@ -1,5 +1,5 @@
-use reedline::{Completer, CompletionResult, Span, Suggestion};
 use super::scope::ShellScope;
+use reedline::{Completer, CompletionResult, Span, Suggestion};
 
 fn make_suggestion(value: impl Into<String>, desc: impl Into<String>, span: Span) -> Suggestion {
     Suggestion {
@@ -15,7 +15,9 @@ fn make_suggestion(value: impl Into<String>, desc: impl Into<String>, span: Span
 }
 
 fn suggest_workflows(current_word: &str, span: Span, suggestions: &mut Vec<Suggestion>) {
-    let vault_dir = crate::config::canonical_ssot_dir().join("automa").join("workflows");
+    let vault_dir = crate::config::canonical_ssot_dir()
+        .join("automa")
+        .join("workflows");
     if let Ok(entries) = std::fs::read_dir(vault_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -24,7 +26,10 @@ fn suggest_workflows(current_word: &str, span: Span, suggestions: &mut Vec<Sugge
                 && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
             {
                 let clean_id = stem.trim_end_matches(".workflow");
-                if clean_id.to_lowercase().starts_with(&current_word.to_lowercase()) {
+                if clean_id
+                    .to_lowercase()
+                    .starts_with(&current_word.to_lowercase())
+                {
                     suggestions.push(make_suggestion(clean_id, "Workflow from vault", span));
                 }
             }
@@ -104,8 +109,12 @@ pub fn complete_dev_for_packages(
         let mut seen = std::collections::HashSet::new();
         for pkg in packages {
             let fw = pkg.framework.as_deref().unwrap_or("Node");
-            let scripts_preview: Vec<&str> =
-                pkg.scripts.iter().take(4).map(|(k, _)| k.as_str()).collect();
+            let scripts_preview: Vec<&str> = pkg
+                .scripts
+                .iter()
+                .take(4)
+                .map(|(k, _)| k.as_str())
+                .collect();
             let desc = format!(
                 "[{} • {}] {} (scripts: {})",
                 pkg.package_manager,
@@ -129,8 +138,14 @@ pub fn complete_dev_for_packages(
 
         // 3. Suggest flags
         for (flag, desc) in &[
-            ("--list", "List all discovered package.json projects in workspace"),
-            ("-l", "List all discovered package.json projects in workspace"),
+            (
+                "--list",
+                "List all discovered package.json projects in workspace",
+            ),
+            (
+                "-l",
+                "List all discovered package.json projects in workspace",
+            ),
             ("--pm", "Override package manager (pnpm, bun, yarn, npm)"),
             ("--path", "Custom workspace root directory to scan"),
         ] {
@@ -219,8 +234,15 @@ pub struct SpecterCompleter {
 
 impl Completer for SpecterCompleter {
     fn complete(&mut self, line: &str, pos: usize) -> CompletionResult {
-        let prefix = if pos <= line.len() { &line[..pos] } else { line };
-        let start = prefix.rfind(|c: char| c.is_whitespace()).map(|idx| idx + 1).unwrap_or(0);
+        let prefix = if pos <= line.len() {
+            &line[..pos]
+        } else {
+            line
+        };
+        let start = prefix
+            .rfind(|c: char| c.is_whitespace())
+            .map(|idx| idx + 1)
+            .unwrap_or(0);
         let current_word = &prefix[start..];
         let span = Span::new(start, pos);
 
@@ -291,84 +313,107 @@ impl Completer for SpecterCompleter {
         let last_word = words_before.last().copied().unwrap_or("");
 
         match effective_scope {
-            ShellScope::Bridge => {
-                match cmd.as_str() {
-                    "start" => {
-                        let config = crate::infrastructure::bridge::BridgeConfig::load()
-                            .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
-                        if matches!(last_word, "-t" | "--tag") {
-                            let mut all_tags: std::collections::BTreeSet<String> = config
-                                .servers
-                                .values()
-                                .flat_map(|s| s.tags.clone())
-                                .collect();
-                            if all_tags.is_empty() {
-                                all_tags.insert("primary".to_string());
-                                all_tags.insert("git".to_string());
-                                all_tags.insert("mmo".to_string());
-                            }
-                            for tag in all_tags {
-                                if matches_filter(&tag, current_word) {
-                                    suggestions.push(make_suggestion(tag, "Bridge server tag", span));
-                                }
-                            }
-                        } else {
-                            for id in config.servers.keys() {
-                                if matches_filter(id, current_word) {
-                                    suggestions.push(make_suggestion(id, "Configured VPS server target", span));
-                                }
-                            }
-                            if matches_filter("all", current_word) {
-                                suggestions.push(make_suggestion("all", "All configured servers", span));
-                            }
-                            for flag in &["--http", "-t", "--tag"] {
-                                if matches_filter(flag, current_word) {
-                                    let desc = match *flag {
-                                        "--http" => "Start embedded HTTP adapter (port 8118)",
-                                        "-t" | "--tag" => "Filter servers by tag",
-                                        _ => "",
-                                    };
-                                    suggestions.push(make_suggestion(*flag, desc, span));
-                                }
+            ShellScope::Bridge => match cmd.as_str() {
+                "start" => {
+                    let config = crate::infrastructure::bridge::BridgeConfig::load()
+                        .unwrap_or_else(|_| {
+                            crate::infrastructure::bridge::BridgeConfig::default_config()
+                        });
+                    if matches!(last_word, "-t" | "--tag") {
+                        let mut all_tags: std::collections::BTreeSet<String> = config
+                            .servers
+                            .values()
+                            .flat_map(|s| s.tags.clone())
+                            .collect();
+                        if all_tags.is_empty() {
+                            all_tags.insert("primary".to_string());
+                            all_tags.insert("git".to_string());
+                            all_tags.insert("mmo".to_string());
+                        }
+                        for tag in all_tags {
+                            if matches_filter(&tag, current_word) {
+                                suggestions.push(make_suggestion(tag, "Bridge server tag", span));
                             }
                         }
-                    }
-                    "stop" => {
-                        let config = crate::infrastructure::bridge::BridgeConfig::load()
-                            .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
+                    } else {
                         for id in config.servers.keys() {
                             if matches_filter(id, current_word) {
-                                suggestions.push(make_suggestion(id, "Configured VPS server target", span));
+                                suggestions.push(make_suggestion(
+                                    id,
+                                    "Configured VPS server target",
+                                    span,
+                                ));
                             }
                         }
                         if matches_filter("all", current_word) {
-                            suggestions.push(make_suggestion("all", "All configured servers", span));
+                            suggestions.push(make_suggestion(
+                                "all",
+                                "All configured servers",
+                                span,
+                            ));
                         }
-                    }
-                    "enable" | "disable" => {
-                        let config = crate::infrastructure::bridge::BridgeConfig::load()
-                            .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
-                        for id in config.servers.keys() {
-                            if matches_filter(id, current_word) {
-                                suggestions.push(make_suggestion(id, "Configured VPS server target", span));
-                            }
-                        }
-                    }
-                    "config" => {
-                        for (flag, desc) in &[
-                            ("--edit", "Open bridge.json in default editor"),
-                            ("-e", "Open bridge.json in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
-                            ("-s", "Display structured configuration details"),
-                        ] {
+                        for flag in &["--http", "-t", "--tag"] {
                             if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
+                                let desc = match *flag {
+                                    "--http" => "Start embedded HTTP adapter (port 8118)",
+                                    "-t" | "--tag" => "Filter servers by tag",
+                                    _ => "",
+                                };
+                                suggestions.push(make_suggestion(*flag, desc, span));
                             }
                         }
                     }
-                    _ => {}
                 }
-            }
+                "stop" => {
+                    let config = crate::infrastructure::bridge::BridgeConfig::load()
+                        .unwrap_or_else(|_| {
+                            crate::infrastructure::bridge::BridgeConfig::default_config()
+                        });
+                    for id in config.servers.keys() {
+                        if matches_filter(id, current_word) {
+                            suggestions.push(make_suggestion(
+                                id,
+                                "Configured VPS server target",
+                                span,
+                            ));
+                        }
+                    }
+                    if matches_filter("all", current_word) {
+                        suggestions.push(make_suggestion("all", "All configured servers", span));
+                    }
+                }
+                "enable" | "disable" => {
+                    let config = crate::infrastructure::bridge::BridgeConfig::load()
+                        .unwrap_or_else(|_| {
+                            crate::infrastructure::bridge::BridgeConfig::default_config()
+                        });
+                    for id in config.servers.keys() {
+                        if matches_filter(id, current_word) {
+                            suggestions.push(make_suggestion(
+                                id,
+                                "Configured VPS server target",
+                                span,
+                            ));
+                        }
+                    }
+                }
+                "config" => {
+                    for (flag, desc) in &[
+                        ("--edit", "Open bridge.json in default editor"),
+                        ("-e", "Open bridge.json in default editor"),
+                        (
+                            "--show",
+                            "Display structured configuration details and summary card",
+                        ),
+                        ("-s", "Display structured configuration details"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                _ => {}
+            },
             ShellScope::Faker => {
                 match cmd.as_str() {
                     "generate" | "gen" | "g" | "card" | "show" | "inspect" => {
@@ -376,32 +421,52 @@ impl Completer for SpecterCompleter {
                         if matches!(last_word, "-g" | "--gender") {
                             for g in &["male", "female", "all"] {
                                 if matches_filter(g, current_word) {
-                                    suggestions.push(make_suggestion(*g, "Gender filter option", span));
+                                    suggestions.push(make_suggestion(
+                                        *g,
+                                        "Gender filter option",
+                                        span,
+                                    ));
                                 }
                             }
                         } else if last_word == "--nat" {
                             for n in &["VN", "US", "JP", "all"] {
                                 if matches_filter(n, current_word) {
-                                    suggestions.push(make_suggestion(*n, "Nationality filter option", span));
+                                    suggestions.push(make_suggestion(
+                                        *n,
+                                        "Nationality filter option",
+                                        span,
+                                    ));
                                 }
                             }
                         } else if last_word == "--avatar" {
                             for a in &["real", "svg"] {
                                 if matches_filter(a, current_word) {
-                                    suggestions.push(make_suggestion(*a, "Avatar style option", span));
+                                    suggestions.push(make_suggestion(
+                                        *a,
+                                        "Avatar style option",
+                                        span,
+                                    ));
                                 }
                             }
                         } else if matches!(last_word, "-f" | "--format") {
                             for f in &["table", "card", "json", "csv"] {
                                 if matches_filter(f, current_word) {
-                                    suggestions.push(make_suggestion(*f, "Output format option", span));
+                                    suggestions.push(make_suggestion(
+                                        *f,
+                                        "Output format option",
+                                        span,
+                                    ));
                                 }
                             }
                         } else if matches!(last_word, "-d" | "--domain") {
                             let faker_cfg = specter_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
-                                    suggestions.push(make_suggestion(d.as_str(), "Configured email domain", span));
+                                    suggestions.push(make_suggestion(
+                                        d.as_str(),
+                                        "Configured email domain",
+                                        span,
+                                    ));
                                 }
                             }
                         } else {
@@ -437,14 +502,21 @@ impl Completer for SpecterCompleter {
                             let faker_cfg = specter_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
-                                    suggestions.push(make_suggestion(d.as_str(), "Configured email domain", span));
+                                    suggestions.push(make_suggestion(
+                                        d.as_str(),
+                                        "Configured email domain",
+                                        span,
+                                    ));
                                 }
                             }
                         } else {
                             for (flag, desc) in &[
                                 ("--edit", "Open faker.json in default editor"),
                                 ("-e", "Open faker.json in default editor"),
-                                ("--show", "Display structured configuration details and summary card"),
+                                (
+                                    "--show",
+                                    "Display structured configuration details and summary card",
+                                ),
                                 ("-s", "Display structured configuration details"),
                                 ("--domain", "Set default email domain (e.g. flowup.io.vn)"),
                                 ("-d", "Set default email domain"),
@@ -497,7 +569,10 @@ impl Completer for SpecterCompleter {
                         for (flag, desc) in &[
                             ("--edit", "Open automa.json in default editor"),
                             ("-e", "Open automa.json in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
+                            (
+                                "--show",
+                                "Display structured configuration details and summary card",
+                            ),
                             ("-s", "Display structured configuration details"),
                         ] {
                             if matches_filter(flag, current_word) {
@@ -508,210 +583,254 @@ impl Completer for SpecterCompleter {
                     _ => {}
                 }
             }
-            ShellScope::Browser => {
-                match cmd.as_str() {
-                    "install" => {
-                        for (flag, desc) in &[
-                            ("-f", "Force reinstall Chromium runtime"),
-                            ("--force", "Force reinstall Chromium runtime"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
+            ShellScope::Browser => match cmd.as_str() {
+                "install" => {
+                    for (flag, desc) in &[
+                        ("-f", "Force reinstall Chromium runtime"),
+                        ("--force", "Force reinstall Chromium runtime"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
                         }
                     }
-                    "ext" => {
-                        if args.is_empty() {
-                            let ext_subcmds = [
-                                ("catalog", "Browse available extensions in catalog"),
-                                ("install", "Download and install extension from catalog"),
-                                ("list", "List all registered extensions"),
-                                ("add", "Register custom extension from local directory"),
-                                ("remove", "Unregister extension by ID"),
-                                ("enable", "Enable extension for automated sessions"),
-                                ("disable", "Disable extension"),
-                                ("info", "Show extension details and manifest metadata"),
-                                ("path", "Print absolute path of extension"),
-                                ("launch", "Launch browser with loaded extensions"),
-                            ];
-                            for (sc, desc) in &ext_subcmds {
-                                if matches_filter(sc, current_word) {
-                                    suggestions.push(make_suggestion(*sc, *desc, span));
-                                }
+                }
+                "ext" => {
+                    if args.is_empty() {
+                        let ext_subcmds = [
+                            ("catalog", "Browse available extensions in catalog"),
+                            ("install", "Download and install extension from catalog"),
+                            ("list", "List all registered extensions"),
+                            ("add", "Register custom extension from local directory"),
+                            ("remove", "Unregister extension by ID"),
+                            ("enable", "Enable extension for automated sessions"),
+                            ("disable", "Disable extension"),
+                            ("info", "Show extension details and manifest metadata"),
+                            ("path", "Print absolute path of extension"),
+                            ("launch", "Launch browser with loaded extensions"),
+                        ];
+                        for (sc, desc) in &ext_subcmds {
+                            if matches_filter(sc, current_word) {
+                                suggestions.push(make_suggestion(*sc, *desc, span));
                             }
-                        } else if args.len() == 1 {
-                            match args[0] {
-                                "install" => {
-                                    for ext in &["automa", "ublock-origin", "captcha-solver"] {
-                                        if matches_filter(ext, current_word) {
-                                            suggestions.push(make_suggestion(*ext, "Catalog extension ID", span));
-                                        }
-                                    }
-                                }
-                                "remove" | "enable" | "disable" | "info" | "path" | "launch" => {
-                                    let ext = "automa";
+                        }
+                    } else if args.len() == 1 {
+                        match args[0] {
+                            "install" => {
+                                for ext in &["automa", "ublock-origin", "captcha-solver"] {
                                     if matches_filter(ext, current_word) {
-                                        suggestions.push(make_suggestion(ext, "Installed extension ID", span));
+                                        suggestions.push(make_suggestion(
+                                            *ext,
+                                            "Catalog extension ID",
+                                            span,
+                                        ));
                                     }
                                 }
-                                _ => {}
                             }
-                        }
-                    }
-                    "config" => {
-                        for (flag, desc) in &[
-                            ("--edit", "Open browser.json in default editor"),
-                            ("-e", "Open browser.json in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
-                            ("-s", "Display structured configuration details"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    "profile" => {
-                        if args.is_empty() {
-                            let profile_subcmds = [
-                                ("list", "List all local browser profiles"),
-                                ("create", "Create new isolated profile with deterministic fingerprint"),
-                                ("inspect", "Inspect profile hardware specs and disk size"),
-                                ("delete", "Delete a browser profile and sandbox data"),
-                                ("pack", "Pack profile into .tar.zst delta archive"),
-                                ("unpack", "Restore profile from .tar.zst archive"),
-                                ("test-proxy", "Probe and test proxy configured for profile"),
-                                ("cloud", "Manage cloud-synchronized browser profiles and lease locks"),
-                            ];
-                            for (sc, desc) in &profile_subcmds {
-                                if matches_filter(sc, current_word) {
-                                    suggestions.push(make_suggestion(*sc, *desc, span));
+                            "remove" | "enable" | "disable" | "info" | "path" | "launch" => {
+                                let ext = "automa";
+                                if matches_filter(ext, current_word) {
+                                    suggestions.push(make_suggestion(
+                                        ext,
+                                        "Installed extension ID",
+                                        span,
+                                    ));
                                 }
                             }
-                        } else if args.len() == 1 && args[0] == "cloud" {
-                            let cloud_subcmds = [
-                                ("list", "List remote cloud profiles and lease locks"),
-                                ("acquire", "Acquire exclusive distributed lease lock"),
-                                ("release", "Release distributed lease lock"),
-                            ];
-                            for (sc, desc) in &cloud_subcmds {
-                                if matches_filter(sc, current_word) {
-                                    suggestions.push(make_suggestion(*sc, *desc, span));
-                                }
-                            }
+                            _ => {}
                         }
                     }
-                    "launch" => {
-                        for (flag, desc) in &[
-                            ("--port", "CDP DevTools remote debugging port (default: 9222)"),
-                            ("--headless", "Run browser in headless background mode"),
-                            ("--url", "Initial URL to navigate to"),
-                            ("--proxy", "Override proxy URL (e.g. socks5://127.0.0.1:1080)"),
-                            ("--detach", "Run in background without keeping terminal attached"),
-                            ("--no-cdp", "Ultra-stealth zero-port mode"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
-            }
-            ShellScope::Runner => {
-                match cmd.as_str() {
-                    "start" | "restart" => {
-                        for (flag, desc) in &[
-                            ("-d", "Run daemon in background (detached)"),
-                            ("--detach", "Run daemon in background (detached)"),
-                            ("-p", "Daemon server port (default: 8765)"),
-                            ("--port", "Daemon server port (default: 8765)"),
-                            ("--host", "Daemon server host (default: 127.0.0.1)"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
+                "config" => {
+                    for (flag, desc) in &[
+                        ("--edit", "Open browser.json in default editor"),
+                        ("-e", "Open browser.json in default editor"),
+                        (
+                            "--show",
+                            "Display structured configuration details and summary card",
+                        ),
+                        ("-s", "Display structured configuration details"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
                         }
                     }
-                    "stop" => {
-                        for (flag, desc) in &[
-                            ("-f", "Force kill daemon process"),
-                            ("--force", "Force kill daemon process"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    "logs" => {
-                        for (flag, desc) in &[
-                            ("-f", "Follow and stream daemon logs"),
-                            ("--follow", "Follow and stream daemon logs"),
-                            ("-n", "Number of lines to show (default: 50)"),
-                            ("--lines", "Number of lines to show"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    "config" => {
-                        for (flag, desc) in &[
-                            ("--edit", "Open runner.json in default editor"),
-                            ("-e", "Open runner.json in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
-                            ("-s", "Display structured configuration details"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
-            }
-            ShellScope::Cloud => {
-                match cmd.as_str() {
-                    "login" => {
-                        for (flag, desc) in &[
-                            ("-u", "Specter Cloud API endpoint URL"),
-                            ("--url", "Specter Cloud API endpoint URL"),
-                            ("-t", "Cloud access / pairing token"),
-                            ("--token", "Cloud access / pairing token"),
-                            ("-n", "Workstation display name"),
-                            ("--name", "Workstation display name"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
+                "profile" => {
+                    if args.is_empty() {
+                        let profile_subcmds = [
+                            ("list", "List all local browser profiles"),
+                            (
+                                "create",
+                                "Create new isolated profile with deterministic fingerprint",
+                            ),
+                            ("inspect", "Inspect profile hardware specs and disk size"),
+                            ("delete", "Delete a browser profile and sandbox data"),
+                            ("pack", "Pack profile into .tar.zst delta archive"),
+                            ("unpack", "Restore profile from .tar.zst archive"),
+                            ("test-proxy", "Probe and test proxy configured for profile"),
+                            (
+                                "cloud",
+                                "Manage cloud-synchronized browser profiles and lease locks",
+                            ),
+                        ];
+                        for (sc, desc) in &profile_subcmds {
+                            if matches_filter(sc, current_word) {
+                                suggestions.push(make_suggestion(*sc, *desc, span));
+                            }
+                        }
+                    } else if args.len() == 1 && args[0] == "cloud" {
+                        let cloud_subcmds = [
+                            ("list", "List remote cloud profiles and lease locks"),
+                            ("acquire", "Acquire exclusive distributed lease lock"),
+                            ("release", "Release distributed lease lock"),
+                        ];
+                        for (sc, desc) in &cloud_subcmds {
+                            if matches_filter(sc, current_word) {
+                                suggestions.push(make_suggestion(*sc, *desc, span));
                             }
                         }
                     }
-                    "config" => {
-                        for (flag, desc) in &[
-                            ("--edit", "Open system.json in default editor"),
-                            ("-e", "Open system.json in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
-                            ("-s", "Display structured configuration details"),
-                        ] {
-                            if matches_filter(flag, current_word) {
-                                suggestions.push(make_suggestion(*flag, *desc, span));
-                            }
-                        }
-                    }
-                    _ => {}
                 }
-            }
+                "launch" => {
+                    for (flag, desc) in &[
+                        (
+                            "--port",
+                            "CDP DevTools remote debugging port (default: 9222)",
+                        ),
+                        ("--headless", "Run browser in headless background mode"),
+                        ("--url", "Initial URL to navigate to"),
+                        (
+                            "--proxy",
+                            "Override proxy URL (e.g. socks5://127.0.0.1:1080)",
+                        ),
+                        (
+                            "--detach",
+                            "Run in background without keeping terminal attached",
+                        ),
+                        ("--no-cdp", "Ultra-stealth zero-port mode"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                _ => {}
+            },
+            ShellScope::Runner => match cmd.as_str() {
+                "start" | "restart" => {
+                    for (flag, desc) in &[
+                        ("-d", "Run daemon in background (detached)"),
+                        ("--detach", "Run daemon in background (detached)"),
+                        ("-p", "Daemon server port (default: 8765)"),
+                        ("--port", "Daemon server port (default: 8765)"),
+                        ("--host", "Daemon server host (default: 127.0.0.1)"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                "stop" => {
+                    for (flag, desc) in &[
+                        ("-f", "Force kill daemon process"),
+                        ("--force", "Force kill daemon process"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                "logs" => {
+                    for (flag, desc) in &[
+                        ("-f", "Follow and stream daemon logs"),
+                        ("--follow", "Follow and stream daemon logs"),
+                        ("-n", "Number of lines to show (default: 50)"),
+                        ("--lines", "Number of lines to show"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                "config" => {
+                    for (flag, desc) in &[
+                        ("--edit", "Open runner.json in default editor"),
+                        ("-e", "Open runner.json in default editor"),
+                        (
+                            "--show",
+                            "Display structured configuration details and summary card",
+                        ),
+                        ("-s", "Display structured configuration details"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                _ => {}
+            },
+            ShellScope::Cloud => match cmd.as_str() {
+                "login" => {
+                    for (flag, desc) in &[
+                        ("-u", "Specter Cloud API endpoint URL"),
+                        ("--url", "Specter Cloud API endpoint URL"),
+                        ("-t", "Cloud access / pairing token"),
+                        ("--token", "Cloud access / pairing token"),
+                        ("-n", "Workstation display name"),
+                        ("--name", "Workstation display name"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                "config" => {
+                    for (flag, desc) in &[
+                        ("--edit", "Open system.json in default editor"),
+                        ("-e", "Open system.json in default editor"),
+                        (
+                            "--show",
+                            "Display structured configuration details and summary card",
+                        ),
+                        ("-s", "Display structured configuration details"),
+                    ] {
+                        if matches_filter(flag, current_word) {
+                            suggestions.push(make_suggestion(*flag, *desc, span));
+                        }
+                    }
+                }
+                _ => {}
+            },
             ShellScope::Global => {
                 // If in Global and user typed a direct shortcut like `dev`, `port`, `code`, `git`, `env`, `run`, `card`, etc.
                 match cmd.as_str() {
                     "dev" => {
-                        suggest_dev_completions(args, last_word, current_word, span, &mut suggestions);
+                        suggest_dev_completions(
+                            args,
+                            last_word,
+                            current_word,
+                            span,
+                            &mut suggestions,
+                        );
                     }
                     "port" => {
                         for (flag, desc) in &[
-                            ("--list", "List all listening TCP ports without interactive prompt"),
-                            ("-l", "List all listening TCP ports without interactive prompt"),
-                            ("--kill", "Terminate the process listening on the specified port"),
-                            ("-k", "Terminate the process listening on the specified port"),
+                            (
+                                "--list",
+                                "List all listening TCP ports without interactive prompt",
+                            ),
+                            (
+                                "-l",
+                                "List all listening TCP ports without interactive prompt",
+                            ),
+                            (
+                                "--kill",
+                                "Terminate the process listening on the specified port",
+                            ),
+                            (
+                                "-k",
+                                "Terminate the process listening on the specified port",
+                            ),
                             ("--format", "Output format: card, table, json"),
                             ("-f", "Output format: card, table, json"),
                         ] {
@@ -733,20 +852,27 @@ impl Completer for SpecterCompleter {
                                 }
                             }
                         } else {
-                            let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+                            let cwd = std::env::current_dir()
+                                .unwrap_or_else(|_| std::path::PathBuf::from("."));
                             let packages = cached_machine_packages(&cwd);
                             let mut seen = std::collections::HashSet::new();
                             for pkg in &packages {
                                 let short = pkg.short_name();
-                                if matches_filter(short, current_word) && seen.insert(short.to_string()) {
-                                    let desc = format!("[{}] {}", pkg.package_manager, pkg.dir.display());
+                                if matches_filter(short, current_word)
+                                    && seen.insert(short.to_string())
+                                {
+                                    let desc =
+                                        format!("[{}] {}", pkg.package_manager, pkg.dir.display());
                                     suggestions.push(make_suggestion(short, desc, span));
                                 }
                             }
                             for (flag, desc) in &[
                                 ("--editor", "Preferred editor (code, agy, cursor, explorer)"),
                                 ("-e", "Preferred editor (code, agy, cursor, explorer)"),
-                                ("--list", "List discovered projects without launching editor"),
+                                (
+                                    "--list",
+                                    "List discovered projects without launching editor",
+                                ),
                                 ("-l", "List discovered projects without launching editor"),
                                 ("--path", "Custom workspace root directory to scan"),
                                 ("-P", "Custom workspace root directory to scan"),
@@ -759,14 +885,23 @@ impl Completer for SpecterCompleter {
                     }
                     "git" => {
                         for (act, desc) in &[
-                            ("push-bridge", "Push via Specter Bridge SOCKS5 proxy (127.0.0.1:1080)"),
+                            (
+                                "push-bridge",
+                                "Push via Specter Bridge SOCKS5 proxy (127.0.0.1:1080)",
+                            ),
                             ("push", "Run git push directly on target repository"),
                             ("pull", "Run git pull --rebase on target repository"),
                             ("status", "Show detailed git status -sb"),
                             ("stash", "Stash uncommitted changes in target repository"),
-                            ("--all", "Include clean repositories (defaults to dirty or unpushed)"),
+                            (
+                                "--all",
+                                "Include clean repositories (defaults to dirty or unpushed)",
+                            ),
                             ("-a", "Include clean repositories"),
-                            ("--list", "List repositories and their branch/dirty/sync status"),
+                            (
+                                "--list",
+                                "List repositories and their branch/dirty/sync status",
+                            ),
                             ("-l", "List repositories and their branch/dirty/sync status"),
                             ("--path", "Custom workspace root directory to scan"),
                             ("-P", "Custom workspace root directory to scan"),
@@ -778,13 +913,22 @@ impl Completer for SpecterCompleter {
                     }
                     "env" => {
                         for (act, desc) in &[
-                            ("--check", "Check and display .env diff report non-interactively"),
+                            (
+                                "--check",
+                                "Check and display .env diff report non-interactively",
+                            ),
                             ("-c", "Check and display .env diff report non-interactively"),
-                            ("--switch", "Switch active .env from a profile (.env.local, .env.staging, etc.)"),
+                            (
+                                "--switch",
+                                "Switch active .env from a profile (.env.local, .env.staging, etc.)",
+                            ),
                             ("-s", "Switch active .env from a profile"),
                             ("--list", "List .env variables and diff report"),
                             ("-l", "List .env variables and diff report"),
-                            ("--path", "Target project directory (defaults to current working directory)"),
+                            (
+                                "--path",
+                                "Target project directory (defaults to current working directory)",
+                            ),
                             ("-P", "Target project directory"),
                         ] {
                             if matches_filter(act, current_word) {
@@ -794,7 +938,15 @@ impl Completer for SpecterCompleter {
                     }
                     "run" | "inspect" | "export" | "delete" => {
                         suggest_workflows(current_word, span, &mut suggestions);
-                        for flag in &["-h", "--headless", "-t", "--timeout", "-v", "--variables", "--browser"] {
+                        for flag in &[
+                            "-h",
+                            "--headless",
+                            "-t",
+                            "--timeout",
+                            "-v",
+                            "--variables",
+                            "--browser",
+                        ] {
                             if matches_filter(flag, current_word) {
                                 suggestions.push(make_suggestion(*flag, "Execution option", span));
                             }
@@ -809,7 +961,9 @@ impl Completer for SpecterCompleter {
                     }
                     "start" | "stop" | "enable" | "disable" => {
                         let config = crate::infrastructure::bridge::BridgeConfig::load()
-                            .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
+                            .unwrap_or_else(|_| {
+                                crate::infrastructure::bridge::BridgeConfig::default_config()
+                            });
                         if cmd == "start" && matches!(last_word, "-t" | "--tag") {
                             let mut all_tags: std::collections::BTreeSet<String> = config
                                 .servers
@@ -823,17 +977,31 @@ impl Completer for SpecterCompleter {
                             }
                             for tag in all_tags {
                                 if matches_filter(&tag, current_word) {
-                                    suggestions.push(make_suggestion(tag, "Bridge server tag", span));
+                                    suggestions.push(make_suggestion(
+                                        tag,
+                                        "Bridge server tag",
+                                        span,
+                                    ));
                                 }
                             }
                         } else {
                             for id in config.servers.keys() {
                                 if matches_filter(id, current_word) {
-                                    suggestions.push(make_suggestion(id, "Configured VPS server target", span));
+                                    suggestions.push(make_suggestion(
+                                        id,
+                                        "Configured VPS server target",
+                                        span,
+                                    ));
                                 }
                             }
-                            if (cmd == "start" || cmd == "stop") && matches_filter("all", current_word) {
-                                suggestions.push(make_suggestion("all", "All configured servers", span));
+                            if (cmd == "start" || cmd == "stop")
+                                && matches_filter("all", current_word)
+                            {
+                                suggestions.push(make_suggestion(
+                                    "all",
+                                    "All configured servers",
+                                    span,
+                                ));
                             }
                             if cmd == "start" {
                                 for flag in &["--http", "-t", "--tag"] {
@@ -864,15 +1032,24 @@ impl Completer for SpecterCompleter {
                         }
                     }
                     "config" => {
-                        for s in &["bridge", "faker", "browser", "automa", "runner", "cloud", "system"] {
+                        for s in &[
+                            "bridge", "faker", "browser", "automa", "runner", "cloud", "system",
+                        ] {
                             if matches_filter(s, current_word) {
-                                suggestions.push(make_suggestion(*s, "Target microservice configuration", span));
+                                suggestions.push(make_suggestion(
+                                    *s,
+                                    "Target microservice configuration",
+                                    span,
+                                ));
                             }
                         }
                         for (flag, desc) in &[
                             ("--edit", "Open configuration in default editor"),
                             ("-e", "Open configuration in default editor"),
-                            ("--show", "Display structured configuration details and summary card"),
+                            (
+                                "--show",
+                                "Display structured configuration details and summary card",
+                            ),
                             ("-s", "Display structured configuration details"),
                         ] {
                             if matches_filter(flag, current_word) {
@@ -888,7 +1065,6 @@ impl Completer for SpecterCompleter {
         CompletionResult::fresh(suggestions)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -971,37 +1147,56 @@ mod tests {
 
     #[test]
     fn test_completer_bridge_start_and_multiword() {
-        let mut completer = SpecterCompleter { scope: ShellScope::Bridge };
+        let mut completer = SpecterCompleter {
+            scope: ShellScope::Bridge,
+        };
 
         // "start " -> suggestions should include "all" and server names
         let res = completer.complete("start ", 6);
         let vals = extract_values(res);
-        assert!(vals.iter().any(|v| v == "all"), "Should suggest 'all' for start");
+        assert!(
+            vals.iter().any(|v| v == "all"),
+            "Should suggest 'all' for start"
+        );
 
         // "start my-vps -" -> suggestions should include "--http"
         let res = completer.complete("start my-vps -", 14);
         let vals = extract_values(res);
-        assert!(vals.iter().any(|v| v == "--http"), "Should suggest '--http' after server target");
+        assert!(
+            vals.iter().any(|v| v == "--http"),
+            "Should suggest '--http' after server target"
+        );
 
         // "enable " -> suggestions should include configured servers
         let res = completer.complete("enable ", 7);
         let vals = extract_values(res);
-        assert!(vals.iter().any(|v| v == "my-vps"), "Should suggest 'my-vps' for enable");
+        assert!(
+            vals.iter().any(|v| v == "my-vps"),
+            "Should suggest 'my-vps' for enable"
+        );
 
         // "disable " -> suggestions should include configured servers
         let res = completer.complete("disable ", 8);
         let vals = extract_values(res);
-        assert!(vals.iter().any(|v| v == "my-vps"), "Should suggest 'my-vps' for disable");
+        assert!(
+            vals.iter().any(|v| v == "my-vps"),
+            "Should suggest 'my-vps' for disable"
+        );
 
         // "start -t " -> suggestions should include server tags
         let res = completer.complete("start -t ", 9);
         let vals = extract_values(res);
-        assert!(vals.iter().any(|v| v == "primary" || v == "git"), "Should suggest server tags for start -t");
+        assert!(
+            vals.iter().any(|v| v == "primary" || v == "git"),
+            "Should suggest server tags for start -t"
+        );
     }
 
     #[test]
     fn test_completer_faker_flags_and_values() {
-        let mut completer = SpecterCompleter { scope: ShellScope::Faker };
+        let mut completer = SpecterCompleter {
+            scope: ShellScope::Faker,
+        };
 
         // "generate -g " -> should suggest gender values
         let res = completer.complete("generate -g ", 12);
@@ -1017,7 +1212,9 @@ mod tests {
 
     #[test]
     fn test_completer_global_delegation_and_case_insensitive() {
-        let mut completer = SpecterCompleter { scope: ShellScope::Global };
+        let mut completer = SpecterCompleter {
+            scope: ShellScope::Global,
+        };
 
         // "bridge " -> should suggest bridge subcommands
         let res = completer.complete("bridge ", 7);
@@ -1032,5 +1229,3 @@ mod tests {
         assert!(vals.iter().any(|v| v == "faker"));
     }
 }
-
-

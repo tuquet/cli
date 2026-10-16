@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-pub use crate::core::models::storage::{StorageCredential, StorageTable, StorageVariable, TableRow};
+pub use crate::core::models::storage::{
+    StorageCredential, StorageTable, StorageVariable, TableRow,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -16,27 +18,27 @@ pub struct StorageActionResponse {
     pub message: String,
 }
 
-pub mod variables;
+pub mod backup;
 pub mod credentials;
 pub mod tables;
+pub mod variables;
 pub mod workflows;
-pub mod backup;
 
-pub use variables::*;
+pub use backup::*;
 pub use credentials::*;
 pub use tables::*;
+pub use variables::*;
 pub use workflows::*;
-pub use backup::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::extract::{Path, Json, Query, State};
     use crate::AppState;
     use crate::config::AppConfig;
     use crate::infrastructure::db::AutomaDb;
+    use axum::extract::{Json, Path, Query, State};
     use std::sync::Arc;
-    use tokio::sync::{broadcast, Mutex, RwLock};
+    use tokio::sync::{Mutex, RwLock, broadcast};
 
     fn create_test_state() -> AppState {
         let (tx, _) = broadcast::channel(100);
@@ -64,19 +66,41 @@ mod tests {
             key: Some("api_key".to_string()),
             value: Some(serde_json::json!("sk_live_123456")),
         };
-        let added = add_variable(State(state.clone()), Json(var_payload)).await.unwrap();
+        let added = add_variable(State(state.clone()), Json(var_payload))
+            .await
+            .unwrap();
         assert_eq!(added.name.as_deref(), Some("API_KEY"));
 
         // 2. Query variables
-        let vars = get_variables(State(state.clone()), Query(GetVariablesQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let vars = get_variables(
+            State(state.clone()),
+            Query(GetVariablesQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(vars.len(), 1);
         assert_eq!(vars[0].name.as_deref(), Some("API_KEY"));
 
         // 3. Delete variable
-        let del_res = delete_variable(State(state.clone()), Path("var_test_1".to_string())).await.unwrap();
+        let del_res = delete_variable(State(state.clone()), Path("var_test_1".to_string()))
+            .await
+            .unwrap();
         assert!(del_res.success);
 
-        let vars_after = get_variables(State(state), Query(GetVariablesQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let vars_after = get_variables(
+            State(state),
+            Query(GetVariablesQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(vars_after.len(), 0);
     }
 
@@ -91,19 +115,41 @@ mod tests {
             key: Some("aws_token".to_string()),
             value: Some("super_secret_aws_token_value".to_string()),
         };
-        let added = add_credential(State(state.clone()), Json(cred_payload)).await.unwrap();
+        let added = add_credential(State(state.clone()), Json(cred_payload))
+            .await
+            .unwrap();
         assert_eq!(added.name.as_deref(), Some("AWS Token"));
 
         // 2. Query credentials
-        let creds = get_credentials(State(state.clone()), Query(GetCredentialsQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let creds = get_credentials(
+            State(state.clone()),
+            Query(GetCredentialsQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(creds.len(), 1);
         assert_eq!(creds[0].name.as_deref(), Some("AWS Token"));
 
         // 3. Delete credential
-        let del_res = delete_credential(State(state.clone()), Path("cred_test_1".to_string())).await.unwrap();
+        let del_res = delete_credential(State(state.clone()), Path("cred_test_1".to_string()))
+            .await
+            .unwrap();
         assert!(del_res.success);
 
-        let creds_after = get_credentials(State(state), Query(GetCredentialsQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let creds_after = get_credentials(
+            State(state),
+            Query(GetCredentialsQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(creds_after.len(), 0);
     }
 
@@ -123,11 +169,22 @@ mod tests {
             created_at: None,
             modified_at: None,
         };
-        let created_tbl = add_table(State(state.clone()), Json(table_payload)).await.unwrap();
+        let created_tbl = add_table(State(state.clone()), Json(table_payload))
+            .await
+            .unwrap();
         assert_eq!(created_tbl.name.as_deref(), Some("Users"));
 
         // 2. Get tables
-        let tables = get_tables(State(state.clone()), Query(GetTablesQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let tables = get_tables(
+            State(state.clone()),
+            Query(GetTablesQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(tables.len(), 1);
         assert_eq!(tables[0].name.as_deref(), Some("Users"));
 
@@ -135,21 +192,48 @@ mod tests {
         let mut row_map = std::collections::HashMap::new();
         row_map.insert("email".to_string(), serde_json::json!("user@example.com"));
         let row_payload = AddTableRowPayload { data: row_map };
-        let inserted_row = add_table_row(State(state.clone()), Path("tbl_users".to_string()), Json(row_payload)).await.unwrap();
+        let inserted_row = add_table_row(
+            State(state.clone()),
+            Path("tbl_users".to_string()),
+            Json(row_payload),
+        )
+        .await
+        .unwrap();
         assert_eq!(inserted_row.table_id, "tbl_users");
         assert!(!inserted_row.id.is_empty());
 
         // 4. Get table rows with pagination
-        let query = GetTableRowsQuery { limit: Some(10), offset: Some(0), search: None };
-        let rows = get_table_rows(State(state.clone()), Path("tbl_users".to_string()), Query(query)).await.unwrap();
+        let query = GetTableRowsQuery {
+            limit: Some(10),
+            offset: Some(0),
+            search: None,
+        };
+        let rows = get_table_rows(
+            State(state.clone()),
+            Path("tbl_users".to_string()),
+            Query(query),
+        )
+        .await
+        .unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].table_id, "tbl_users");
 
         // 5. Delete table
-        let del_res = delete_table(State(state.clone()), Path("tbl_users".to_string())).await.unwrap();
+        let del_res = delete_table(State(state.clone()), Path("tbl_users".to_string()))
+            .await
+            .unwrap();
         assert!(del_res.success);
 
-        let tables_after = get_tables(State(state), Query(GetTablesQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let tables_after = get_tables(
+            State(state),
+            Query(GetTablesQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(tables_after.len(), 0);
     }
 
@@ -169,17 +253,30 @@ mod tests {
             version: Some("1.0.0".to_string()),
             icon: Some("search".to_string()),
         };
-        let created = create_storage_workflow(State(state.clone()), Json(create_payload)).await.unwrap();
+        let created = create_storage_workflow(State(state.clone()), Json(create_payload))
+            .await
+            .unwrap();
         assert_eq!(created.id, "wf_test_1");
         assert_eq!(created.name, "Test Search");
 
         // 2. Get workflows
-        let list = get_workflows(State(state.clone()), Query(GetWorkflowsQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let list = get_workflows(
+            State(state.clone()),
+            Query(GetWorkflowsQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].id, "wf_test_1");
 
         // 3. Get workflow by ID
-        let detail = get_workflow_by_id(State(state.clone()), Path("wf_test_1".to_string())).await.unwrap();
+        let detail = get_workflow_by_id(State(state.clone()), Path("wf_test_1".to_string()))
+            .await
+            .unwrap();
         assert_eq!(detail.name, "Test Search");
 
         // 4. Update workflow
@@ -190,7 +287,13 @@ mod tests {
             version: Some("1.0.1".to_string()),
             icon: None,
         };
-        let updated = update_storage_workflow(State(state.clone()), Path("wf_test_1".to_string()), Json(update_payload)).await.unwrap();
+        let updated = update_storage_workflow(
+            State(state.clone()),
+            Path("wf_test_1".to_string()),
+            Json(update_payload),
+        )
+        .await
+        .unwrap();
         assert_eq!(updated.name, "Updated Test Search");
         assert_eq!(updated.version, "1.0.1");
 
@@ -202,15 +305,28 @@ mod tests {
                 "nodes": [{"id": "n2", "type": "click-element", "label": "click"}]
             }),
         };
-        let imported = import_storage_workflow(State(state.clone()), Json(import_payload)).await.unwrap();
+        let imported = import_storage_workflow(State(state.clone()), Json(import_payload))
+            .await
+            .unwrap();
         assert_eq!(imported.id, "wf_imported_1");
         assert_eq!(imported.name, "Imported Google Flow");
 
         // 6. Delete workflow
-        let del_res = delete_storage_workflow(State(state.clone()), Path("wf_test_1".to_string())).await.unwrap();
+        let del_res = delete_storage_workflow(State(state.clone()), Path("wf_test_1".to_string()))
+            .await
+            .unwrap();
         assert!(del_res.0.success);
 
-        let remaining = get_workflows(State(state), Query(GetWorkflowsQuery { limit: None, offset: None, search: None })).await.unwrap();
+        let remaining = get_workflows(
+            State(state),
+            Query(GetWorkflowsQuery {
+                limit: None,
+                offset: None,
+                search: None,
+            }),
+        )
+        .await
+        .unwrap();
         assert_eq!(remaining.len(), 1);
         assert_eq!(remaining[0].id, "wf_imported_1");
     }
