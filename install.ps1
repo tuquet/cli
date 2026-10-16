@@ -92,17 +92,30 @@ foreach ($Cand in $LocalBuildCandidates) {
 }
 
 if (-not $FoundLocal) {
-    Write-Step "Downloading latest specter release for Windows x64..."
-    $ReleaseBase = "https://github.com/tuquet/cli/releases/latest/download"
-    $ZipUrls = @(
-        "$ReleaseBase/specter-windows-x64.zip",
-        "$ReleaseBase/specter-v1.2.0-windows-x64.zip",
-        "$ReleaseBase/specter-v1.0.0-windows-x64.zip"
-    )
-    $ExeUrl = "$ReleaseBase/specter.exe"
-
+    Write-Step "Discovering and downloading latest specter release for Windows x64..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $Downloaded = $false
+
+    # Dynamic GitHub API query to always fetch the latest release asset
+    $ZipUrls = @()
+    try {
+        $ApiHeaders = @{ 'User-Agent' = 'curl/8.0' }
+        $ReleaseMeta = Invoke-RestMethod -Uri "https://api.github.com/repos/tuquet/cli/releases/latest" -Headers $ApiHeaders -ErrorAction SilentlyContinue
+        if ($ReleaseMeta -and $ReleaseMeta.assets) {
+            $Matched = $ReleaseMeta.assets | Where-Object { $_.name -like "*windows-x64*.zip" } | Select-Object -ExpandProperty browser_download_url
+            if ($Matched) {
+                $ZipUrls += $Matched
+            }
+        }
+    } catch {
+        # Fallback to direct latest release asset URLs
+    }
+
+    $ReleaseBase = "https://github.com/tuquet/cli/releases/latest/download"
+    $ZipUrls += @(
+        "$ReleaseBase/specter-windows-x64.zip"
+    )
+    $ExeUrl = "$ReleaseBase/specter.exe"
 
     # Try downloading and extracting release ZIP asset
     $TempZip = Join-Path $env:TEMP "specter_dl_$([guid]::NewGuid().ToString('N')).zip"

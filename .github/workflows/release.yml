@@ -130,11 +130,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
-    name: Notify Telegram
+    name: Notify & Sync Ecosystem
     needs: [build-release]
-    if: always()
+    if: success()
     runs-on: ubuntu-latest
     steps:
+      - name: Trigger Scoop Bucket Auto-Update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          repository: tuquet/scoop-bucket
+          event-type: upstream-release
+          client-payload: '{"tag": "${{ github.ref_name || github.event.inputs.tag }}"}'
+        continue-on-error: true
+
       - name: Send Telegram Notification
         uses: tuquet/bot@main
         with:
