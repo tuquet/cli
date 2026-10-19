@@ -3,10 +3,9 @@ use super::scanner::DiscoveredPackage;
 use crate::ui::{clack_outro, colors};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 static ACTIVE_CHILD_PID: AtomicU32 = AtomicU32::new(0);
-static ACTIVE_JOB_HANDLE: AtomicUsize = AtomicUsize::new(0);
 static CTRL_C_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
 /// Execute a script/target from a discovered project using the detected (or overridden) toolchain
@@ -327,11 +326,13 @@ pub fn resolve_scoop_jdk_home(version: &str) -> Option<(String, PathBuf)> {
 #[cfg(windows)]
 #[allow(non_snake_case, clippy::upper_case_acronyms)]
 mod win_process_guard {
-    use super::{ACTIVE_CHILD_PID, ACTIVE_JOB_HANDLE, CTRL_C_INTERRUPTED, kill_process_tree};
+    use super::{ACTIVE_CHILD_PID, CTRL_C_INTERRUPTED, kill_process_tree};
     use std::ffi::c_void;
     use std::os::windows::io::AsRawHandle;
     use std::process::Child;
-    use std::sync::atomic::Ordering;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static ACTIVE_JOB_HANDLE: AtomicUsize = AtomicUsize::new(0);
 
     type HANDLE = *mut c_void;
     type BOOL = i32;
