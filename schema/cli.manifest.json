@@ -1,13 +1,13 @@
 {
   "$schema": "https://tuquet.com/schema/cli.manifest.schema.json",
   "name": "specter",
-  "version": "1.2.0",
+  "version": "1.0.0",
   "description": "Specter - Autonomous Browser Automation & Distributed Mesh Runtime",
   "homepage": "https://tuquet.com",
   "repository": "https://github.com/tuquet/cli",
   "brand": {
     "productName": "Specter",
-    "cliAlias": "spc",
+    "cliAlias": "specter",
     "canonicalRoot": "specter",
     "category": "Hạ tầng Tự động hóa & Trình duyệt Ẩn danh All-in-One",
     "tagline": "Vũ khí All-in-One miễn phí chuẩn kỹ thuật cao dành cho dân MMO, Dropshipping và Web Scraper.",
@@ -26,212 +26,6 @@
     "inbox"
   ],
   "commands": [
-    {
-      "id": "specter.dev",
-      "route": [
-        "dev"
-      ],
-      "pillar": "system",
-      "title": "Universal Polyglot Project & Script Runner",
-      "description": "Scan machine for Node, Rust, Java/Spring Boot, and Docker Compose projects and interactively select & execute scripts.",
-      "arguments": [
-        {
-          "name": "project",
-          "type": "string",
-          "required": false,
-          "description": "Target project name, relative directory path, or <project>:<script> shorthand."
-        },
-        {
-          "name": "script",
-          "type": "string",
-          "required": false,
-          "description": "Optional script or target name to execute (e.g. dev, build, run, up)."
-        }
-      ],
-      "options": [
-        {
-          "name": "list",
-          "short": "l",
-          "type": "boolean",
-          "default": false,
-          "description": "List all discovered projects across Node, Rust, Java/Spring Boot, and Docker Compose."
-        },
-        {
-          "name": "path",
-          "short": "P",
-          "type": "string",
-          "description": "Custom workspace root directory to scan (defaults to full machine scan)."
-        },
-        {
-          "name": "pm",
-          "type": "string",
-          "description": "Override detected package manager or runner (npm, pnpm, yarn, bun, cargo, mvn, gradle, docker)."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "card",
-          "description": "Output format when listing: json, table, or card (default: card)."
-        }
-      ]
-    },
-    {
-      "id": "specter.port",
-      "route": [
-        "port"
-      ],
-      "pillar": "system",
-      "title": "Local TCP Port Inspector & Process Killer",
-      "description": "Inspect listening local TCP ports and interactively or directly terminate blocking processes.",
-      "arguments": [
-        {
-          "name": "target",
-          "type": "string",
-          "required": false,
-          "description": "Optional port number (e.g. 3000) or process name filter (e.g. node)."
-        }
-      ],
-      "options": [
-        {
-          "name": "kill",
-          "short": "k",
-          "type": "boolean",
-          "default": false,
-          "description": "Immediately kill the process listening on the specified port without prompting."
-        },
-        {
-          "name": "list",
-          "short": "l",
-          "type": "boolean",
-          "default": false,
-          "description": "List all listening TCP ports without entering interactive prompt."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "card",
-          "description": "Output format when listing: json, table, or card (default: card)."
-        }
-      ]
-    },
-    {
-      "id": "specter.code",
-      "route": [
-        "code"
-      ],
-      "pillar": "system",
-      "title": "Full-Machine Project Finder & Instant IDE Launcher",
-      "description": "Scan machine for developer projects and open immediately in VS Code, Antigravity IDE, Cursor, or system file manager.",
-      "arguments": [
-        {
-          "name": "query",
-          "type": "string",
-          "required": false,
-          "description": "Optional project name or path query to match and open."
-        }
-      ],
-      "options": [
-        {
-          "name": "editor",
-          "short": "e",
-          "type": "string",
-          "description": "Preferred editor command (code, agy, cursor, explorer)."
-        },
-        {
-          "name": "list",
-          "short": "l",
-          "type": "boolean",
-          "default": false,
-          "description": "List discovered projects without launching editor."
-        },
-        {
-          "name": "path",
-          "short": "P",
-          "type": "string",
-          "description": "Custom workspace root directory to scan."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "card",
-          "description": "Output format when listing: json, table, or card (default: card)."
-        }
-      ]
-    },
-    {
-      "id": "specter.git",
-      "route": [
-        "git"
-      ],
-      "pillar": "system",
-      "title": "Multi-Repository Git Radar & Specter Bridge Synchronizer",
-      "description": "Scan all local Git repositories in parallel for dirty working trees, unpushed commits, and push seamlessly through Specter Bridge SOCKS5 proxy.",
-      "arguments": [
-        {
-          "name": "action",
-          "type": "string",
-          "required": false,
-          "description": "Optional action: status, pull, push, push-bridge, stash."
-        }
-      ],
-      "options": [
-        {
-          "name": "dirty",
-          "short": "d",
-          "type": "boolean",
-          "default": false,
-          "description": "Show only dirty repositories or repositories with unpushed/unpulled commits."
-        },
-        {
-          "name": "path",
-          "short": "P",
-          "type": "string",
-          "description": "Custom workspace root directory to scan."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "card",
-          "description": "Output format when listing: json, table, or card (default: card)."
-        }
-      ]
-    },
-    {
-      "id": "specter.env",
-      "route": [
-        "env"
-      ],
-      "pillar": "system",
-      "title": "Environment Variable Doctor & Profile Switcher",
-      "description": "Compare .env against .env.example, detect missing or empty variables, sync missing keys safely, and switch .env.* profiles.",
-      "arguments": [
-        {
-          "name": "action",
-          "type": "string",
-          "required": false,
-          "description": "Optional sub-action: check, sync, switch."
-        }
-      ],
-      "options": [
-        {
-          "name": "path",
-          "short": "P",
-          "type": "string",
-          "description": "Target project directory (defaults to current working directory)."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "card",
-          "description": "Output format: json, table, or card (default: card)."
-        }
-      ]
-    },
     {
       "id": "specter.bootstrap",
       "route": [
@@ -257,7 +51,7 @@
       ],
       "pillar": "system",
       "title": "Unified Configuration Manager",
-      "description": "Inspect or edit configuration across Specter microservice pillars (~/.specter/).",
+      "description": "Inspect or edit configuration across Specter microservice pillars (~/.tuquet/).",
       "arguments": [
         {
           "name": "service",
@@ -1623,7 +1417,7 @@
       ],
       "pillar": "browser",
       "title": "List Browser Profiles",
-      "description": "List all local browser profiles in ~/.specter/browser/profiles/.",
+      "description": "List all local browser profiles in ~/.tuquet/browser/profiles/.",
       "options": [
         {
           "name": "format",
@@ -1942,7 +1736,7 @@
       ],
       "pillar": "bridge",
       "title": "Validate Bridge Configuration",
-      "description": "Validate ~/.specter/bridge/bridge.json configuration schema, ports, and workloads."
+      "description": "Validate ~/.tuquet/bridge/bridge.json configuration schema, ports, and workloads."
     },
     {
       "id": "specter.bridge.disable",
@@ -1952,7 +1746,7 @@
       ],
       "pillar": "bridge",
       "title": "Disable Bridge Server",
-      "description": "Disable a server in bridge configuration (~/.specter/bridge/bridge.json).",
+      "description": "Disable a server in bridge configuration (~/.tuquet/bridge/bridge.json).",
       "arguments": [
         {
           "name": "server",
@@ -1970,7 +1764,7 @@
       ],
       "pillar": "bridge",
       "title": "Enable Bridge Server",
-      "description": "Enable a server in bridge configuration (~/.specter/bridge/bridge.json).",
+      "description": "Enable a server in bridge configuration (~/.tuquet/bridge/bridge.json).",
       "arguments": [
         {
           "name": "server",
@@ -3103,14 +2897,14 @@
       ],
       "pillar": "inbox",
       "title": "Manage Inbox Configuration",
-      "description": "Display, inspect, or edit the canonical inbox configuration file (~/.specter/inbox/inbox.json).",
+      "description": "Display, inspect, or edit the canonical inbox configuration file (~/.tuquet/inbox/inbox.json).",
       "options": [
         {
           "name": "edit",
           "short": "e",
           "type": "boolean",
           "default": false,
-          "description": "Open ~/.specter/inbox/inbox.json in your default editor"
+          "description": "Open ~/.tuquet/inbox/inbox.json in your default editor"
         },
         {
           "name": "show",

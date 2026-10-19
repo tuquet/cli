@@ -263,7 +263,10 @@ mod tests {
         assert!(pillars.contains(&"inbox"));
 
         for entry in list {
-            assert!(entry.path.to_string_lossy().contains(".specter"));
+            assert!(
+                entry.path.to_string_lossy().contains(crate::constants::DEFAULT_SSOT_ROOT_DIR)
+                    || entry.path.to_string_lossy().contains(".specter")
+            );
         }
     }
 

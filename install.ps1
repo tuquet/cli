@@ -39,19 +39,10 @@ Write-Host ""
 
 # 1. Resolve Canonical SSOT Paths
 $UserHome = if ($env:USERPROFILE) { $env:USERPROFILE } else { $env:HOME }
-$SpecterRoot = if ($env:SPECTER_HOME) { $env:SPECTER_HOME } elseif ($env:SPECTER_DIR) { $env:SPECTER_DIR } elseif ($env:TUQUET_HOME) { $env:TUQUET_HOME } elseif ($env:TUQUET_DIR) { $env:TUQUET_DIR } else { Join-Path $UserHome ".specter" }
+$TuquetRoot = if ($env:TUQUET_HOME) { $env:TUQUET_HOME } elseif ($env:TUQUET_DIR) { $env:TUQUET_DIR } elseif ($env:SPECTER_HOME) { $env:SPECTER_HOME } elseif ($env:SPECTER_DIR) { $env:SPECTER_DIR } else { Join-Path $UserHome ".tuquet" }
+$SpecterRoot = $TuquetRoot
 $SpecterBinDir = Join-Path $SpecterRoot "bin"
 $TargetExe = Join-Path $SpecterBinDir "specter.exe"
-
-# Auto-migration if ~/.tuquet exists and ~/.specter does not
-$LegacyTuquet = Join-Path $UserHome ".tuquet"
-if ((-not (Test-Path $SpecterRoot)) -and (Test-Path $LegacyTuquet)) {
-    try {
-        New-Item -ItemType SymbolicLink -Path $SpecterRoot -Target $LegacyTuquet -Force | Out-Null
-    } catch {
-        # Fallback if unprivileged
-    }
-}
 
 Write-Step "Preparing canonical SSOT directory: $SpecterBinDir"
 if (-not (Test-Path $SpecterBinDir)) {

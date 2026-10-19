@@ -99,7 +99,7 @@ async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Configure Default Faker Settings",
-            "Inspect or update default_nat / default_domain in ~/.specter/faker/faker.json",
+            "Inspect or update default_nat / default_domain in ~/.tuquet/faker/faker.json",
             "Configure Default Faker Settings",
         ),
     ];

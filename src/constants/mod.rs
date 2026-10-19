@@ -50,6 +50,7 @@ pub mod pillars {
 }
 
 pub mod envs {
+    pub const ENV_TUQUET_HOME: &str = "TUQUET_HOME";
     pub const ENV_SPECTER_HOME: &str = "SPECTER_HOME";
     pub const ENV_SPECTER_ENV: &str = "SPECTER_ENV";
     pub const ENV_SPECTER_CLOUD_URL: &str = "SPECTER_CLOUD_URL";
@@ -86,7 +87,7 @@ pub mod endpoints {
 }
 
 pub mod paths {
-    pub const DEFAULT_SSOT_ROOT_DIR: &str = ".specter";
+    pub const DEFAULT_SSOT_ROOT_DIR: &str = ".tuquet";
 
     pub const FILE_AUTOMA_SQLITE: &str = "automa.sqlite";
     pub const FILE_BRIDGE_JSON: &str = "bridge.json";

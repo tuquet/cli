@@ -143,7 +143,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
 
             if runtimes.is_empty() {
                 card.add_line(
-                    "No Antidetect Chromium runtimes found in ~/.specter/browser/runtimes/.",
+                    "No Antidetect Chromium runtimes found in ~/.tuquet/browser/runtimes/.",
                 );
                 card.add_line(
                     "Run 'specter browser install' to provision the recommended Golden LTS v148.",
@@ -256,7 +256,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                     "executable_path": status.executable_path,
                     "size_mb": status.size_mb,
                     "profiles_count": profile_count,
-                    "sandbox_root": "~/.specter/browser/profiles"
+                    "sandbox_root": "~/.tuquet/browser/profiles"
                 });
                 println!("{}", serde_json::to_string_pretty(&payload)?);
                 return Ok(());
@@ -273,7 +273,20 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 .map(|mb| format!("{:.1} MB Physical Disk", mb))
                 .unwrap_or_else(|| "Physical Disk".to_string());
 
-            let exec_clean = if status.executable_path.contains(".specter") {
+            let ssot_dir = crate::constants::DEFAULT_SSOT_ROOT_DIR;
+            let exec_clean = if status.executable_path.contains(ssot_dir) {
+                format!(
+                    "~/{}//{}",
+                    ssot_dir,
+                    status
+                        .executable_path
+                        .split(ssot_dir)
+                        .nth(1)
+                        .unwrap_or("")
+                        .trim_start_matches(['/', '\\'])
+                        .replace('\\', "/")
+                )
+            } else if status.executable_path.contains(".specter") {
                 format!(
                     "~/.specter{}",
                     status
@@ -310,7 +323,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 ),
                 TabularRow::new(
                     "Sandbox Root",
-                    "~/.specter/browser/profiles",
+                    "~/.tuquet/browser/profiles",
                     format!("{} Profile Sandbox(es)", profile_count),
                     badge_online("READY"),
                 ),

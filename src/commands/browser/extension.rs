@@ -47,7 +47,7 @@ pub async fn handle_ext(
             card.add_line("  specter browser ext remove <id>      Unregister custom extension");
             card.add_line("  specter browser ext info <id>        View extension details");
             card.add_line("  specter browser ext launch           Launch browser with extensions");
-            card.with_footer("Registry SSOT: ~/.specter/browser/extensions/registry.json");
+            card.with_footer("Registry SSOT: ~/.tuquet/browser/extensions/registry.json");
 
             println!();
             card.print();

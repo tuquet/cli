@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "SpecterBrowserConfig",
-  "description": "Configuration schema for Specter Dedicated Isolated Chromium Runtime (~/.specter/browser/browser.json)",
+  "description": "Configuration schema for Specter Dedicated Isolated Chromium Runtime (~/.tuquet/browser/browser.json)",
   "type": "object",
   "properties": {
     "$schema": {

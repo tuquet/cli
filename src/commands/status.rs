@@ -53,14 +53,14 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ),
         TabularRow::new(
             "SSOT Storage",
-            "~/.specter",
+            "~/.tuquet",
             "Microservices Root",
             badge_online("READY"),
         ),
         TabularRow::new(
             "Cloud Mesh",
             cloud_display,
-            "Supabase Remote API",
+            "Control Plane Gateway",
             cloud_status,
         ),
         TabularRow::new(
@@ -76,7 +76,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     ];
 
     let system_card = create_tabular_card(
-        "SYSTEM & CLOUD",
+        "SYSTEM & MESH",
         Some(system_badge),
         ["COMPONENT", "IDENTITY / TARGET", "ROLE / DETAILS", "STATUS"],
         &system_rows,
@@ -133,9 +133,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     };
     let automa_rows = vec![
         TabularRow::new(
-            "Worker RPC",
+            "Runner RPC",
             format!("127.0.0.1:{}", port),
-            "CDP Extension Worker",
+            "Local Daemon Bridge",
             daemon_status,
         ),
         TabularRow::new(
@@ -161,7 +161,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         Some(if daemon_running {
             badge_online("RUNNING")
         } else {
-            badge_online("READY")
+            badge_offline("STANDBY")
         }),
         [
             "COMPONENT",
@@ -171,9 +171,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ],
         &automa_rows,
         Some(if daemon_running {
-            "Worker daemon active on local endpoint"
+            "Runner daemon active on local endpoint"
         } else {
-            "Start worker daemon with 'specter runner start --port 8765'"
+            "Start runner daemon with 'specter runner start --port 8765'"
         }),
         72,
     );
@@ -212,7 +212,20 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         .next()
         .unwrap_or(&browser_status.pinned_version);
 
-    let exec_clean = if browser_status.executable_path.contains(".specter") {
+    let ssot_dir = crate::constants::DEFAULT_SSOT_ROOT_DIR;
+    let exec_clean = if browser_status.executable_path.contains(ssot_dir) {
+        format!(
+            "~/{}//{}",
+            ssot_dir,
+            browser_status
+                .executable_path
+                .split(ssot_dir)
+                .nth(1)
+                .unwrap_or("")
+                .trim_start_matches(['/', '\\'])
+                .replace('\\', "/")
+        )
+    } else if browser_status.executable_path.contains(".specter") {
         format!(
             "~/.specter{}",
             browser_status

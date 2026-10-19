@@ -81,14 +81,10 @@ RELEASE_NAME="specter-${PLATFORM}-${TARGET_ARCH}"
 write_step "Detected environment: ${BOLD}${PLATFORM} (${TARGET_ARCH})${RESET}"
 
 # 2. Determine Canonical SSOT Paths
-SPECTER_DIR="${SPECTER_HOME:-${SPECTER_DIR:-${TUQUET_HOME:-${TUQUET_DIR:-${HOME}/.specter}}}}"
+TUQUET_DIR="${TUQUET_HOME:-${TUQUET_DIR:-${SPECTER_HOME:-${SPECTER_DIR:-${HOME}/.tuquet}}}}"
+SPECTER_DIR="${TUQUET_DIR}"
 SPECTER_BIN_DIR="${SPECTER_DIR}/bin"
 TARGET_EXE="${SPECTER_BIN_DIR}/specter"
-
-# Auto-migration if ~/.tuquet exists and ~/.specter does not
-if [ ! -e "${SPECTER_DIR}" ] && [ -d "${HOME}/.tuquet" ]; then
-    ln -s "${HOME}/.tuquet" "${SPECTER_DIR}" 2>/dev/null || true
-fi
 
 write_step "Preparing canonical SSOT directory: ${SPECTER_BIN_DIR}"
 mkdir -p "${SPECTER_BIN_DIR}"

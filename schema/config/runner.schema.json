@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "SpecterRunnerConfig",
-  "description": "Configuration schema for Specter Distributed Runner Daemon Worker (~/.specter/automa/runner.json)",
+  "description": "Configuration schema for Specter Distributed Runner Daemon Worker (~/.tuquet/automa/runner.json)",
   "type": "object",
   "properties": {
     "$schema": {

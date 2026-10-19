@@ -418,7 +418,7 @@ impl CloudFleetOrchestrator {
         }
         card.add_kv(
             "Delta Storage",
-            format!("~/.specter/browser/profiles/{}.tar.zst", lease.profile.id),
+            format!("~/.tuquet/browser/profiles/{}.tar.zst", lease.profile.id),
         );
         card.add_kv(
             "Compressed Size",

@@ -427,7 +427,7 @@ pub async fn handle_profile_cloud(
             );
             card.add_kv(
                 "Delta Archive",
-                format!("~/.specter/browser/{}", canonical_rel_storage),
+                format!("~/.tuquet/browser/{}", canonical_rel_storage),
             );
             card.add_kv(
                 "Compressed Size",

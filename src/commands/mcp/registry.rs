@@ -44,7 +44,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
         },
         {
             "name": "specter_workflow_list",
-            "description": "List all browser automation workflows stored in the local SQLite database and file vault (~/.specter/automa/workflows). Supports optional search filter.",
+            "description": "List all browser automation workflows stored in the local SQLite database and file vault (~/.tuquet/automa/workflows). Supports optional search filter.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -169,7 +169,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
                     },
                     "domain": {
                         "type": "string",
-                        "description": "Optional custom email domain (e.g. 'flowup.io.vn'). If omitted, follows ~/.specter/faker/faker.json configuration."
+                        "description": "Optional custom email domain (e.g. 'flowup.io.vn'). If omitted, follows ~/.tuquet/faker/faker.json configuration."
                     },
                     "format": {
                         "type": "string",
