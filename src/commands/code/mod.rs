@@ -74,7 +74,7 @@ pub async fn handle(
     let interactive_flow = !list && (project.is_none() || editor.is_none());
 
     if interactive_flow {
-        clack_intro("spc code", "Project Finder & IDE Launcher");
+        clack_intro("tq code", "Project Finder & IDE Launcher");
     }
 
     let sp = if interactive_flow {
@@ -353,7 +353,7 @@ fn render_code_list(
                 .collect();
 
             let footer = format!(
-                "Detected Editors: {} • Run 'spc code <project>' to open",
+                "Detected Editors: {} • Run 'tq code <project>' to open",
                 ed_summary.join(", ")
             );
             let card = create_tabular_card(

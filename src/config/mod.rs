@@ -9,7 +9,7 @@ pub mod system;
 
 pub use automa::AutomaConfig;
 pub use browser::BrowserConfig;
-pub use expander::{EnvExpander, canonical_specter_dir, canonical_ssot_dir};
+pub use expander::{EnvExpander, canonical_tuquet_dir, canonical_ssot_dir};
 pub use inbox::InboxConfig;
 pub use inspector::{ConfigController, ConfigOptionDef};
 pub use registry::ConfigRegistry;

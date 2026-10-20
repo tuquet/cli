@@ -40,7 +40,7 @@ pub async fn handle_stop(
         }
         card.add_line("");
         card.add_line("All active browser processes and child renderers closed cleanly.");
-        card.with_footer("Start profiles again with 'specter browser launch <name>'");
+        card.with_footer("Start profiles again with 'tuquet browser launch <name>'");
         card.print();
         println!();
         return Ok(());
@@ -55,7 +55,7 @@ pub async fn handle_stop(
                 return Ok(());
             }
             eprintln!(
-                "Specify a profile to stop: specter browser stop <profile_name|profile_id>, or stop all with '--all'."
+                "Specify a profile to stop: tq browser stop <profile_name|profile_id>, or stop all with '--all'."
             );
             eprintln!(
                 "Active profiles: {}",
@@ -86,7 +86,7 @@ pub async fn handle_stop(
         card.add_kv("Terminated PID", pid.to_string());
         card.add_line("");
         card.add_line("Process tree terminated and sandbox lock files cleaned up.");
-        card.with_footer("Relaunch with 'specter browser launch <name>'");
+        card.with_footer("Relaunch with 'tuquet browser launch <name>'");
         card.print();
         println!();
     } else {
@@ -94,7 +94,7 @@ pub async fn handle_stop(
             "No running browser profile found matching '{}'.",
             target
         ));
-        eprintln!("Run 'specter browser ps' to view active profiles.\n");
+        eprintln!("Run 'tuquet browser ps' to view active profiles.\n");
         return Err(format!("Running profile '{}' not found", target).into());
     }
 

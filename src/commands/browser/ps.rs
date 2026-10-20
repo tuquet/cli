@@ -11,7 +11,7 @@ pub async fn handle_ps(format: OutputFormat) -> Result<(), Box<dyn std::error::E
         header_card.with_min_width(74);
         header_card.add_kv("Session SSOT", base_dir.join("pids").display().to_string());
         header_card.with_footer(
-            "Run 'specter browser stop <id>' to terminate or 'specter browser launch <id>' to open",
+            "Run 'tuquet browser stop <id>' to terminate or 'tuquet browser launch <id>' to open",
         );
         header_card.print();
         println!();
@@ -22,8 +22,8 @@ pub async fn handle_ps(format: OutputFormat) -> Result<(), Box<dyn std::error::E
             empty_card.with_min_width(74);
             empty_card.add_line("No active browser profiles are currently running.");
             empty_card.add_line("Launch a profile with:");
-            empty_card.add_line("  specter browser launch <profile_name>");
-            empty_card.with_footer("List stored profiles with: specter browser profile list");
+            empty_card.add_line("  tq browser launch <profile_name>");
+            empty_card.with_footer("List stored profiles with: tq browser profile list");
             empty_card.print();
             println!();
             return;

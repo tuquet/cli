@@ -7,7 +7,7 @@ fn test_manifest_schema_and_json_validity() {
     let m = manifest();
 
     // 1. Basic manifest identity & SSOT standards
-    assert_eq!(m.name, "specter", "Manifest name must be 'specter'");
+    assert_eq!(m.name, "tuquet", "Manifest name must be 'tuquet'");
     assert!(!m.version.is_empty(), "Manifest version must not be empty");
     assert!(
         !m.description.is_empty(),
@@ -49,8 +49,8 @@ fn test_command_manifest_quality_and_schema_contract() {
     for cmd in &m.commands {
         // Assert ID uniqueness & convention
         assert!(
-            cmd.id.starts_with("specter."),
-            "Command ID '{}' must start with 'specter.'",
+            cmd.id.starts_with("tuquet."),
+            "Command ID '{}' must start with 'tuquet.'",
             cmd.id
         );
         assert!(
@@ -165,8 +165,8 @@ fn test_mcp_exported_tools_contract() {
         if let Some(ref mcp) = cmd.mcp {
             if mcp.exported {
                 assert!(
-                    mcp.tool_name.starts_with("specter_"),
-                    "MCP tool name '{}' for command '{}' must start with 'specter_'",
+                    mcp.tool_name.starts_with("tuquet_"),
+                    "MCP tool name '{}' for command '{}' must start with 'tuquet_'",
                     mcp.tool_name,
                     cmd.id
                 );
@@ -203,9 +203,9 @@ fn test_runtime_manifest_queries() {
     let schema_cmd = find_by_route(&["schema", "commands"]);
     assert!(
         schema_cmd.is_some(),
-        "Expected 'specter schema commands' to resolve via find_by_route"
+        "Expected 'tuquet schema commands' to resolve via find_by_route"
     );
-    assert_eq!(schema_cmd.unwrap().id, "specter.schema.commands");
+    assert_eq!(schema_cmd.unwrap().id, "tuquet.schema.commands");
 }
 
 #[test]

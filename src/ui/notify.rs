@@ -1,4 +1,4 @@
-//! Unified Notification & Log Dispatcher for Specter CLI
+//! Unified Notification & Log Dispatcher for Tuquet CLI
 //! Uses `@clack/prompts` visual grammar (`◇`, `◆`, `▲`, `■`, `┌`, `│`, `└`) on TTY
 //! and single-line token-compact output on Non-TTY (AI Agent / CI pipes).
 
@@ -67,10 +67,10 @@ impl Notify {
         clack_cancel(&msg.to_string());
     }
 
-    /// Clack-styled section header (`┌  specter  title`)
+    /// Clack-styled section header (`┌  tq  title`)
     pub fn header(title: impl std::fmt::Display) {
         let clean = strip_ansi_codes(&title.to_string());
-        clack_intro("specter", &clean);
+        clack_intro("tuquet", &clean);
     }
 
     /// Clack vertical rail connector / divider

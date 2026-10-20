@@ -1,8 +1,8 @@
 use serde_json::json;
 
-pub async fn execute_specter_runner_probe() -> Result<String, String> {
+pub async fn execute_tuquet_runner_probe() -> Result<String, String> {
     let manifest = json!({
-        "protocol": "specter.automa.v1",
+        "protocol": "tuquet.automa.v1",
         "name": "runner",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",

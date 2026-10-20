@@ -247,7 +247,7 @@ impl NetworkEndpoint {
     }
 }
 
-/// Helper to build standard workstation endpoints for Specter services
+/// Helper to build standard workstation endpoints for Tuquet services
 pub fn default_workstation_endpoints(
     socks5_port: u16,
     socks5_active: bool,
@@ -434,10 +434,10 @@ pub fn create_network_topology_card(
         if socks5_active && http_active {
             "Egress ready for Git push, cURL, and Supabase CLI".to_string()
         } else if socks5_active {
-            "Egress ready for Git & cURL. Run 'specter bridge start --http' for Supabase"
+            "Egress ready for Git & cURL. Run 'tuquet bridge start --http' for Supabase"
                 .to_string()
         } else {
-            "Tunnels run on demand. Start with 'specter bridge start'".to_string()
+            "Tunnels run on demand. Start with 'tuquet bridge start'".to_string()
         }
     };
 

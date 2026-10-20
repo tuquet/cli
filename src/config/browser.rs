@@ -1,4 +1,4 @@
-use crate::config::expander::{EnvExpander, canonical_specter_dir};
+use crate::config::expander::{EnvExpander, canonical_tuquet_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -59,7 +59,7 @@ impl Default for BrowserConfig {
 
 impl BrowserConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join(crate::constants::PILLAR_BROWSER);
+        let dir = canonical_tuquet_dir().join(crate::constants::PILLAR_BROWSER);
         let _ = fs::create_dir_all(&dir);
         dir.join(crate::constants::FILE_BROWSER_JSON)
     }

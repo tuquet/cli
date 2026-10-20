@@ -55,7 +55,7 @@ impl ConfigController {
             format!("schema/config/{}.schema.json (Draft 2020-12)", canonical),
         );
         card.with_footer(format!(
-            "Tip: 'spc config {} <option> <value>' to modify, or '--edit' to open editor",
+            "Tip: 'tq config {} <option> <value>' to modify, or '--edit' to open editor",
             canonical
         ));
         card.print();
@@ -276,7 +276,7 @@ impl ConfigController {
                     val_str.clone()
                 };
             clack_intro(
-                &format!("spc config {}", canonical),
+                &format!("tq config {}", canonical),
                 &format!("Inspect Option: {}", actual_key),
             );
             let mut card = Card::new(format!("{}: {}", canonical.to_uppercase(), actual_key));
@@ -288,7 +288,7 @@ impl ConfigController {
                 card.add_kv("Description", desc);
             }
             card.with_footer(format!(
-                "To update: spc config {} {} <new_value>",
+                "To update: tq config {} {} <new_value>",
                 canonical, actual_key
             ));
             card.print();
@@ -399,7 +399,7 @@ impl ConfigController {
         Ok(())
     }
 
-    /// Interactive global configuration picker (`spc config` on TTY)
+    /// Interactive global configuration picker (`tq config` on TTY)
     pub fn interactive_global_config() -> Result<(), Box<dyn std::error::Error>> {
         if !is_interactive_tty() {
             ConfigRegistry::render_overview_card();
@@ -407,7 +407,7 @@ impl ConfigController {
         }
 
         clack_intro(
-            "spc config",
+            "tq config",
             "Unified Microservice Pillar Configuration Controller",
         );
 
@@ -449,7 +449,7 @@ impl ConfigController {
         Ok(())
     }
 
-    /// Interactive service configuration editor (`spc config <service>` or `spc <service> config` on TTY)
+    /// Interactive service configuration editor (`tq config <service>` or `tq <service> config` on TTY)
     pub fn interactive_service_config(service: &str) -> Result<(), Box<dyn std::error::Error>> {
         Self::interactive_service_config_inner(service, false)
     }
@@ -469,7 +469,7 @@ impl ConfigController {
 
         if !intro_already_shown {
             clack_intro(
-                &format!("spc config {}", canonical),
+                &format!("tq config {}", canonical),
                 &format!(
                     "{} Configuration • {}",
                     canonical.to_uppercase(),
@@ -662,7 +662,7 @@ impl ConfigController {
 
         if edit {
             clack_intro(
-                &format!("spc config {}", canonical),
+                &format!("tq config {}", canonical),
                 "Launch Configuration Editor",
             );
             ConfigRegistry::open_in_editor_with_service(&path, canonical)?;
@@ -676,7 +676,7 @@ impl ConfigController {
                     Self::interactive_service_config(canonical)?;
                 } else {
                     clack_intro(
-                        &format!("spc config {}", canonical),
+                        &format!("tq config {}", canonical),
                         &format!("{} Schema Options", canonical.to_uppercase()),
                     );
                     Self::render_options_table(canonical)?;
@@ -686,7 +686,7 @@ impl ConfigController {
             [single] => {
                 if single.eq_ignore_ascii_case("list") || single.eq_ignore_ascii_case("all") {
                     clack_intro(
-                        &format!("spc config {}", canonical),
+                        &format!("tq config {}", canonical),
                         &format!("{} Schema Options", canonical.to_uppercase()),
                     );
                     Self::render_options_table(canonical)?;
@@ -700,21 +700,21 @@ impl ConfigController {
             }
             [key, val] if !key.eq_ignore_ascii_case("set") && !key.eq_ignore_ascii_case("get") => {
                 clack_intro(
-                    &format!("spc config {}", canonical),
+                    &format!("tq config {}", canonical),
                     "Update Configuration Key",
                 );
                 Self::set_key(canonical, key, val)?;
             }
             [action, key, val] if action.eq_ignore_ascii_case("set") => {
                 clack_intro(
-                    &format!("spc config {}", canonical),
+                    &format!("tq config {}", canonical),
                     "Update Configuration Key",
                 );
                 Self::set_key(canonical, key, val)?;
             }
             other => {
                 return Err(format!(
-                    "Invalid arguments for config: {:?}. Usage: 'spc config {} [key] [value]'",
+                    "Invalid arguments for config: {:?}. Usage: 'tq config {} [key] [value]'",
                     other, canonical
                 )
                 .into());

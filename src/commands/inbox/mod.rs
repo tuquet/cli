@@ -88,7 +88,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return handle_status(crate::ui::OutputFormat::Json).await;
     }
 
-    clack_intro("spc inbox", "Specter Verification Inbox & OTP Engine");
+    clack_intro("tq inbox", "Tuquet Verification Inbox & OTP Engine");
 
     let options = vec![
         ClackOption::new(
@@ -460,7 +460,7 @@ pub async fn handle_start(
 
     if let Some(existing_pid) = read_pid() {
         println!(
-            "⚠️ Specter Inbox daemon is already running (PID: {}). Use 'specter inbox stop' to stop it.",
+            "⚠️ Tuquet Inbox daemon is already running (PID: {}). Use 'tuquet inbox stop' to stop it.",
             existing_pid
         );
         return Ok(());
@@ -488,7 +488,7 @@ pub async fn handle_start(
 
         let child = cmd.spawn()?;
         println!(
-            "{} Specter Inbox daemon started in background (PID: {}).",
+            "{} Tuquet Inbox daemon started in background (PID: {}).",
             badge_online("STARTED"),
             child.id()
         );
@@ -501,7 +501,7 @@ pub async fn handle_start(
 
 pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(pid) = read_pid() {
-        println!("Stopping Specter Inbox daemon (PID: {})...", pid);
+        println!("Stopping Tuquet Inbox daemon (PID: {})...", pid);
         #[cfg(windows)]
         {
             let _ = std::process::Command::new("taskkill")
@@ -517,7 +517,7 @@ pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
         remove_pid();
         println!("{} Inbox daemon stopped.", badge_offline("STOPPED"));
     } else {
-        println!("Specter Inbox daemon is not currently running.");
+        println!("Tuquet Inbox daemon is not currently running.");
     }
     Ok(())
 }
@@ -568,7 +568,7 @@ pub async fn handle_status(
         } else {
             card.add_kv(
                 "Daemon Status",
-                "Not running (Start with 'specter inbox start')",
+                "Not running (Start with 'tuquet inbox start')",
             );
         }
 
@@ -596,7 +596,7 @@ pub async fn handle_status(
         } else {
             card.add_kv(
                 "Cloud Sync",
-                "Standalone / Local-only (Pair with 'specter login')",
+                "Standalone / Local-only (Pair with 'tuquet login')",
             );
         }
 
@@ -644,7 +644,7 @@ pub async fn handle_sync(limit: usize) -> Result<(), Box<dyn std::error::Error>>
     let cloud = InboxCloudClient::new(&config);
 
     if !cloud.is_configured() {
-        return Err("Supabase cloud not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.specter/inbox/inbox.json".into());
+        return Err("Supabase cloud not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tuquet/inbox/inbox.json".into());
     }
 
     println!("🔄 Pulling latest emails and OTPs from Supabase Cloud...");

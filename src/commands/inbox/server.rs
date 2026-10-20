@@ -64,7 +64,7 @@ async fn health_handler() -> impl IntoResponse {
         StatusCode::OK,
         Json(serde_json::json!({
             "status": "healthy",
-            "service": "specter-inbox",
+            "service": "tuquet-inbox",
             "version": env!("CARGO_PKG_VERSION")
         })),
     )
@@ -109,8 +109,8 @@ async fn webhook_handler(
     // Optional secret verification
     if !state.secret.is_empty() {
         let provided_secret = headers
-            .get("X-Specter-Secret")
-            .or_else(|| headers.get("x-specter-secret"))
+            .get("X-Tuquet-Secret")
+            .or_else(|| headers.get("x-tuquet-secret"))
             .and_then(|v| v.to_str().ok());
 
         if provided_secret != Some(&state.secret) {
@@ -118,7 +118,7 @@ async fn webhook_handler(
                 StatusCode::UNAUTHORIZED,
                 Json(serde_json::json!({
                     "ok": false,
-                    "error": "Invalid or missing X-Specter-Secret header"
+                    "error": "Invalid or missing X-Tuquet-Secret header"
                 })),
             );
         }
@@ -269,7 +269,7 @@ async fn get_link_handler(
 }
 
 pub fn get_pid_path() -> std::path::PathBuf {
-    crate::config::expander::canonical_specter_dir()
+    crate::config::expander::canonical_tuquet_dir()
         .join(crate::constants::PILLAR_INBOX)
         .join("inbox.pid")
 }
@@ -308,7 +308,7 @@ pub async fn run_server(config: InboxConfig) -> Result<(), Box<dyn std::error::E
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
 
     println!(
-        "⚡ Specter Inbox Webhook Daemon listening on http://{}",
+        "⚡ Tuquet Inbox Webhook Daemon listening on http://{}",
         addr
     );
     write_pid(std::process::id())?;
@@ -319,7 +319,7 @@ pub async fn run_server(config: InboxConfig) -> Result<(), Box<dyn std::error::E
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             let _ = tokio::signal::ctrl_c().await;
-            println!("\nShutting down Specter Inbox daemon...");
+            println!("\nShutting down Tuquet Inbox daemon...");
         })
         .await?;
 
@@ -372,7 +372,7 @@ mod tests {
                     .method("POST")
                     .uri("/webhook")
                     .header("Content-Type", "application/json")
-                    .header("X-Specter-Secret", "test-secret")
+                    .header("X-Tuquet-Secret", "test-secret")
                     .body(axum::body::Body::from(
                         serde_json::to_vec(&webhook_payload).unwrap(),
                     ))

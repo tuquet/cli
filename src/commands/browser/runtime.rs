@@ -50,7 +50,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
             header_card.add_kv("Active Version", format!("v{}", active_ver));
             header_card.add_kv("Last Sync", &manifest.updated_at);
             header_card.with_footer(
-                "Run 'specter browser install <version>' to install or 'use <version>' to switch",
+                "Run 'tuquet browser install <version>' to install or 'use <version>' to switch",
             );
             header_card.print();
             println!();
@@ -139,14 +139,14 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
             let mut card = Card::new("INSTALLED ANTIDETECT BROWSER VERSIONS");
             card.with_badge(badge_online("INSPECTED"));
             card.with_min_width(74);
-            card.with_footer("Use 'specter browser use <version>' to switch active version (e.g. '148', '144', 'lts')");
+            card.with_footer("Use 'tuquet browser use <version>' to switch active version (e.g. '148', '144', 'lts')");
 
             if runtimes.is_empty() {
                 card.add_line(
                     "No Antidetect Chromium runtimes found in ~/.tuquet/browser/runtimes/.",
                 );
                 card.add_line(
-                    "Run 'specter browser install' to provision the recommended Golden LTS v148.",
+                    "Run 'tuquet browser install' to provision the recommended Golden LTS v148.",
                 );
                 card.print();
                 return Ok(());
@@ -239,7 +239,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
         BrowserCommands::Status { format } => {
             let status = crate::core::browser::resolver::get_runtime_status();
             let active_ver = crate::core::browser::resolver::get_active_version();
-            let profile_dir = crate::config::canonical_specter_dir()
+            let profile_dir = crate::config::canonical_tuquet_dir()
                 .join("browser")
                 .join("profiles");
             let profile_count = std::fs::read_dir(&profile_dir)
@@ -286,12 +286,12 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                         .trim_start_matches(['/', '\\'])
                         .replace('\\', "/")
                 )
-            } else if status.executable_path.contains(".specter") {
+            } else if status.executable_path.contains(".tuquet") {
                 format!(
-                    "~/.specter{}",
+                    "~/.tuquet{}",
                     status
                         .executable_path
-                        .split(".specter")
+                        .split(".tuquet")
                         .nth(1)
                         .unwrap_or("")
                         .replace('\\', "/")
@@ -335,9 +335,9 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 ["COMPONENT", "VERSION / PATH", "ROLE / DETAILS", "STATUS"],
                 &rows,
                 Some(if !status.installed {
-                    "Run 'specter browser install' to download Golden LTS v148"
+                    "Run 'tuquet browser install' to download Golden LTS v148"
                 } else {
-                    "Engine ready. Run 'specter browser list' or 'use <version>' to manage."
+                    "Engine ready. Run 'tuquet browser list' or 'use <version>' to manage."
                 }),
                 72,
             );
@@ -352,7 +352,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
                 card.with_badge(badge_online("CLEANED"));
                 card.with_min_width(64);
                 card.add_line("Removed dedicated browser runtime to reclaim disk space.");
-                card.with_footer("Run 'specter browser install' when you need to reinstall");
+                card.with_footer("Run 'tuquet browser install' when you need to reinstall");
                 println!();
                 card.print();
                 println!();

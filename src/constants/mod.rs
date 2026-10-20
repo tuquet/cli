@@ -1,8 +1,8 @@
-//! Enterprise Constants for Specter CLI Ecosystem
+//! Enterprise Constants for Tuquet CLI Ecosystem
 //! Single Source of Truth (SSOT) Architecture
 
 pub mod ports {
-    /// Default port for Specter Automa / Runner HTTP and WebSocket API server
+    /// Default port for Tuquet Automa / Runner HTTP and WebSocket API server
     pub const DEFAULT_RUNNER_PORT: u16 = 8765;
     /// Default SOCKS5 proxy port
     pub const DEFAULT_SOCKS5_PORT: u16 = 1080;
@@ -14,17 +14,17 @@ pub mod ports {
     pub const DEFAULT_SSH_TUNNEL_PORT: u16 = 2222;
     /// Default port for local Docker Supabase stack
     pub const DEFAULT_LOCAL_DOCKER_SUPABASE_PORT: u16 = 54321;
-    /// Default port for Specter Inbox webhook listener daemon
+    /// Default port for Tuquet Inbox webhook listener daemon
     pub const DEFAULT_INBOX_PORT: u16 = 9123;
 }
 
 pub mod protocols {
     /// Protocol identifier for Automa workflow engine v1
-    pub const PROTOCOL_AUTOMA_V1: &str = "specter.automa.v1";
-    /// Protocol identifier for Specter dedicated browser runtime v1
-    pub const PROTOCOL_BROWSER_V1: &str = "specter.browser.v1";
-    /// Protocol identifier for Specter distributed execution agent v1
-    pub const PROTOCOL_AGENT_V1: &str = "specter.agent.v1";
+    pub const PROTOCOL_AUTOMA_V1: &str = "tuquet.automa.v1";
+    /// Protocol identifier for Tuquet dedicated browser runtime v1
+    pub const PROTOCOL_BROWSER_V1: &str = "tuquet.browser.v1";
+    /// Protocol identifier for Tuquet distributed execution agent v1
+    pub const PROTOCOL_AGENT_V1: &str = "tuquet.agent.v1";
 }
 
 pub mod pillars {
@@ -78,10 +78,10 @@ pub mod envs {
 
 pub mod endpoints {
     pub const DEFAULT_HOST: &str = "127.0.0.1";
-    pub const DEFAULT_CLOUD_URL: &str = "https://cloud.specter.dev";
+    pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tuquet.dev";
     pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
     pub const DEFAULT_AUTOMA_STUDIO_URL: &str = "https://automa-studio.vercel.app";
-    pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/specter";
+    pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/tuquet";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
     pub const GITHUB_REPO: &str = "tuquet/cli";
 }

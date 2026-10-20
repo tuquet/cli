@@ -438,7 +438,7 @@ mod win_process_guard {
             if !killed_by_job && pid != 0 {
                 kill_process_tree(pid);
             }
-            return 1; // Handled: do not terminate spc.exe before child cleanup finishes
+            return 1; // Handled: do not terminate tq.exe before child cleanup finishes
         }
         0
     }

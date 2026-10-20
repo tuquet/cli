@@ -14,8 +14,8 @@ const DEV_PROCESS_KEYWORDS: &[&str] = &[
     "javaw",
     "cargo",
     "rustc",
-    "specter",
-    "spc",
+    "tuquet",
+    "tq",
     "bun",
     "deno",
     "python",
@@ -89,16 +89,16 @@ pub async fn handle(
                 q
             )),
             None => Notify::info(
-                "No active developer listening ports found. (Use 'spc port --all' to view all system ports)",
+                "No active developer listening ports found. (Use 'tq port --all' to view all system ports)",
             ),
         }
         return Ok(());
     }
 
-    // Direct non-interactive kill: `spc port 5173 --kill`
+    // Direct non-interactive kill: `tq port 5173 --kill`
     if kill && query.is_some() {
         clack_intro(
-            "spc port",
+            "tq port",
             &format!("Terminating {} matching port process(es)", filtered.len()),
         );
         for item in &filtered {
@@ -109,7 +109,7 @@ pub async fn handle(
     }
 
     clack_intro(
-        "spc port",
+        "tq port",
         &format!(
             "Local Port Scanner & Process Killer • {} listening port(s)",
             filtered.len()
@@ -393,7 +393,7 @@ fn render_port_list(ports: &[ListeningPort], include_all: bool, format: OutputFo
                 },
             ])
             .with_footer(format!(
-                "Found {} listening port(s){} • Run 'spc port [port]' to select & kill",
+                "Found {} listening port(s){} • Run 'tq port [port]' to select & kill",
                 ports.len(),
                 if include_all {
                     " (all system)"
@@ -429,7 +429,7 @@ fn render_port_list(ports: &[ListeningPort], include_all: bool, format: OutputFo
                 .collect();
 
             let footer = format!(
-                "Found {} active port(s) • Run 'spc port <port> --kill' or 'spc port' to terminate",
+                "Found {} active port(s) • Run 'tq port <port> --kill' or 'tq port' to terminate",
                 ports.len()
             );
             let card = create_tabular_card(

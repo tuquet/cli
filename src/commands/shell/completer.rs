@@ -459,11 +459,11 @@ impl Completer for SpecterCompleter {
                                 }
                             }
                         } else if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = specter_faker::FakerConfig::load();
+                            let faker_cfg = tuquet_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(
-                                        d.as_str(),
+                                        d.as_str().to_string(),
                                         "Configured email domain",
                                         span,
                                     ));
@@ -499,11 +499,11 @@ impl Completer for SpecterCompleter {
                     }
                     "config" => {
                         if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = specter_faker::FakerConfig::load();
+                            let faker_cfg = tuquet_faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(
-                                        d.as_str(),
+                                        d.as_str().to_string(),
                                         "Configured email domain",
                                         span,
                                     ));
@@ -772,8 +772,8 @@ impl Completer for SpecterCompleter {
             ShellScope::Cloud => match cmd.as_str() {
                 "login" => {
                     for (flag, desc) in &[
-                        ("-u", "Specter Cloud API endpoint URL"),
-                        ("--url", "Specter Cloud API endpoint URL"),
+                        ("-u", "Tuquet Cloud API endpoint URL"),
+                        ("--url", "Tuquet Cloud API endpoint URL"),
                         ("-t", "Cloud access / pairing token"),
                         ("--token", "Cloud access / pairing token"),
                         ("-n", "Workstation display name"),
@@ -887,7 +887,7 @@ impl Completer for SpecterCompleter {
                         for (act, desc) in &[
                             (
                                 "push-bridge",
-                                "Push via Specter Bridge SOCKS5 proxy (127.0.0.1:1080)",
+                                "Push via Tuquet Bridge SOCKS5 proxy (127.0.0.1:1080)",
                             ),
                             ("push", "Run git push directly on target repository"),
                             ("pull", "Run git pull --rebase on target repository"),

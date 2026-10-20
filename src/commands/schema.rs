@@ -32,7 +32,7 @@ pub async fn handle(
 
             let fmt = format.resolve();
             if !json_output && !fmt.is_json() {
-                clack_intro("spc schema commands", "CLI Command Manifest Catalog");
+                clack_intro("tq schema commands", "CLI Command Manifest Catalog");
                 show_commands_table(&filtered, pillar.as_deref());
                 clack_outro(&format!(
                     "Listed {} command(s). Use '--json' for machine export.",
@@ -57,7 +57,7 @@ pub async fn handle(
             }
             None => {
                 if is_interactive_tty() && !json_output {
-                    clack_intro("spc schema config", "Microservice JSON Schema Definitions");
+                    clack_intro("tq schema config", "Microservice JSON Schema Definitions");
                     let services = [
                         (
                             "bridge",
@@ -107,7 +107,7 @@ pub async fn handle(
                 println!("{}", pretty);
             } else {
                 clack_intro(
-                    "spc schema mcp",
+                    "tq schema mcp",
                     "Model Context Protocol (MCP) Tool Definitions",
                 );
                 let m = manifest();
@@ -118,7 +118,7 @@ pub async fn handle(
                     .collect();
                 show_commands_table(&mcp_cmds, None);
                 clack_outro(&format!(
-                    "Listed {} MCP-exported tool(s). Pass 'spc schema --json mcp' for raw JSON Schema.",
+                    "Listed {} MCP-exported tool(s). Pass 'tq schema --json mcp' for raw JSON Schema.",
                     mcp_cmds.len()
                 ));
             }
@@ -130,7 +130,7 @@ pub async fn handle(
 
 fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
     clack_intro(
-        "spc schema",
+        "tq schema",
         "CLI Manifest & Microservice JSON Schema Inspector",
     );
 
@@ -210,7 +210,7 @@ fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
         }
         3 => {
             show_config_overview();
-            clack_outro("Pass 'spc schema config <service>' to export raw JSON Schema.");
+            clack_outro("Pass 'tq schema config <service>' to export raw JSON Schema.");
         }
         4 => {
             let mcp_tools = export_mcp_tools();
@@ -226,7 +226,7 @@ fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
 
 fn show_overview() {
     let m = manifest();
-    let root = crate::config::canonical_specter_dir();
+    let root = crate::config::canonical_tuquet_dir();
 
     let mut card = Card::new("SPECTER CLI SCHEMA MANIFEST");
     card.with_badge(badge_online(&format!("v{}", m.version)));
@@ -255,7 +255,7 @@ fn show_overview() {
         );
     }
 
-    card.with_footer("Inspect: 'spc schema commands' | Export: 'spc schema --json'");
+    card.with_footer("Inspect: 'tq schema commands' | Export: 'tq schema --json'");
     card.print();
 }
 
@@ -294,7 +294,7 @@ fn show_commands_table(commands: &[&CommandDef], pillar_filter: Option<&str>) {
 
     for cmd in commands {
         let route_str = format!(
-            "{CYAN}spc {}{RESET}",
+            "{CYAN}tq {}{RESET}",
             cmd.route.join(" "),
             CYAN = colors::CYAN,
             RESET = colors::RESET,
@@ -363,17 +363,17 @@ fn show_config_overview() {
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}spc schema config bridge{RESET}   Output bridge.json schema",
+        "    {CYAN}tq schema config bridge{RESET}   Output bridge.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}spc schema config browser{RESET}  Output browser.json schema",
+        "    {CYAN}tq schema config browser{RESET}  Output browser.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}spc schema config automa{RESET}   Output automa.json schema",
+        "    {CYAN}tq schema config automa{RESET}   Output automa.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));

@@ -1,4 +1,4 @@
-use crate::config::expander::{EnvExpander, canonical_specter_dir};
+use crate::config::expander::{EnvExpander, canonical_tuquet_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -49,7 +49,7 @@ impl Default for SystemConfig {
 
 impl SystemConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join(crate::constants::PILLAR_SYSTEM);
+        let dir = canonical_tuquet_dir().join(crate::constants::PILLAR_SYSTEM);
         let _ = fs::create_dir_all(&dir);
         dir.join(crate::constants::FILE_SYSTEM_JSON)
     }
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_system_config_defaults() {
         let config = SystemConfig::default();
-        assert_eq!(config.cloud_url, "https://cloud.specter.dev");
+        assert_eq!(config.cloud_url, "https://cloud.tuquet.dev");
         assert_eq!(config.update_channel, "stable");
         assert!(config.auto_check_update);
     }

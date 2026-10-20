@@ -100,11 +100,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::ws::ws_handler
     ),
     info(
-        title = "Specter CLI & Core Bridge API",
+        title = "Tuquet CLI & Core Bridge API",
         version = "1.0.0",
-        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Specter Ecosystem.",
+        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Tuquet Ecosystem.",
         contact(
-            name = "Specter Ecosystem",
+            name = "Tuquet Ecosystem",
             url = "https://github.com/tuquet/cli"
         ),
         license(
@@ -187,7 +187,7 @@ pub struct ApiDoc;
 
 async fn root_handler() -> impl IntoResponse {
     axum::Json(serde_json::json!({
-        "service": "specter-cli",
+        "service": "tuquet-cli",
         "version": env!("CARGO_PKG_VERSION"),
         "role": "embedded-bff-gateway",
         "status": "running",
@@ -295,7 +295,7 @@ pub fn create_router(state: crate::AppState) -> Router {
                         || host == "127.0.0.1"
                         || host == "tauri.localhost"
                         || host == "asset.localhost"
-                        || host == "specter.tuquet.com"
+                        || host == "tuquet.tuquet.com"
                         || host == "tuquet.com"
                         || host.ends_with(".tuquet.com")
                         || s_trimmed == "https://automa-studio.vercel.app"
@@ -374,8 +374,8 @@ mod tests {
             "http://tauri.localhost",
             "https://tauri.localhost",
             "http://asset.localhost",
-            "https://specter.tuquet.com",
-            "http://specter.tuquet.com",
+            "https://tuquet.tuquet.com",
+            "http://tuquet.tuquet.com",
             "https://app.tuquet.com",
             "https://admin.tuquet.com",
             "http://admin.tuquet.com",
@@ -437,7 +437,7 @@ mod tests {
             json_result.err()
         );
         let json_str = json_result.unwrap();
-        assert!(json_str.contains("Specter CLI & Core Bridge API"));
+        assert!(json_str.contains("Tuquet CLI & Core Bridge API"));
         assert!(json_str.contains("/api/v1/system/tenants"));
         assert!(json_str.contains("/api/v1/system/cloud/auth/start"));
         assert!(json_str.contains("/api/v1/auth/callback"));

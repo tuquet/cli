@@ -19,7 +19,7 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
         Some(BridgeSubcommands::Status { format }) => {
             let fmt = format.resolve();
             if !fmt.is_json() {
-                clack_intro("spc bridge status", "Multi-VPS Mesh & Workload Topology");
+                clack_intro("tq bridge status", "Multi-VPS Mesh & Workload Topology");
             }
             show_status(fmt).await?;
             if !fmt.is_json() {
@@ -59,7 +59,7 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
 }
 
 async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
-    clack_intro("spc bridge", "Network Bridge & Multi-VPS Mesh Controller");
+    clack_intro("tq bridge", "Network Bridge & Multi-VPS Mesh Controller");
 
     let opts = vec![
         ClackOption::new(
@@ -79,12 +79,12 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Enable a Bridge Server",
-            "Interactively enable a server in ~/.specter/bridge/bridge.json",
+            "Interactively enable a server in ~/.tuquet/bridge/bridge.json",
             "Enable a Bridge Server",
         ),
         ClackOption::new(
             "Disable a Bridge Server",
-            "Interactively disable a server in ~/.specter/bridge/bridge.json",
+            "Interactively disable a server in ~/.tuquet/bridge/bridge.json",
             "Disable a Bridge Server",
         ),
         ClackOption::new(
@@ -94,7 +94,7 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Configure Bridge Settings",
-            "Inspect or edit ~/.specter/bridge/bridge.json",
+            "Inspect or edit ~/.tuquet/bridge/bridge.json",
             "Configure Bridge Settings",
         ),
     ];

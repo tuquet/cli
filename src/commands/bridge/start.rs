@@ -26,7 +26,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         .into());
     }
 
-    clack_intro("spc bridge", "Multi-VPS Mesh & Tunnel Controller");
+    clack_intro("tq bridge", "Multi-VPS Mesh & Tunnel Controller");
 
     // Determine target servers
     let servers_to_start: Vec<(&String, &ServerConfig)> = match (opts.server, opts.tag) {
@@ -60,7 +60,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                 })?;
                 if !srv.is_enabled() {
                     clack_step_warn(format!(
-                        "Server '{}' is disabled in {} (Enable with: spc bridge enable {})",
+                        "Server '{}' is disabled in {} (Enable with: tq bridge enable {})",
                         target,
                         BridgeConfig::config_path().display(),
                         target
@@ -86,7 +86,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
     }
 
     if servers_to_start.is_empty() {
-        clack_step_warn("No enabled servers to start. (Run 'spc bridge enable' to enable one)");
+        clack_step_warn("No enabled servers to start. (Run 'tq bridge enable' to enable one)");
         clack_outro("0 servers activated.");
         return Ok(());
     }
@@ -159,7 +159,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             ));
         } else {
             let current_exe =
-                std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("specter"));
+                std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("tuquet"));
             let mut cmd = std::process::Command::new(current_exe);
             cmd.arg("bridge")
                 .arg("start")
@@ -182,9 +182,9 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             }
 
             if let Ok(child) = cmd.spawn() {
-                let pid_path = BridgeSupervisor::pids_dir().join("specter-http.json");
+                let pid_path = BridgeSupervisor::pids_dir().join("tuquet-http.json");
                 let pids = crate::infrastructure::bridge::supervisor::ServerPids {
-                    server_id: "specter-http".to_string(),
+                    server_id: "tuquet-http".to_string(),
                     cf_pid: Some(child.id()),
                     ssh_pid: None,
                 };

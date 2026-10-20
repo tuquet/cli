@@ -174,7 +174,7 @@ async fn handle_global_config(
     let service_name = match service {
         None => {
             if edit {
-                eprintln!("Please specify a service to edit: specter config <service> --edit");
+                eprintln!("Please specify a service to edit: tq config <service> --edit");
                 eprintln!(
                     "Available services: bridge, faker, browser, automa, runner, cloud, system, inbox"
                 );

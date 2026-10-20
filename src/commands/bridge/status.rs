@@ -239,7 +239,7 @@ pub async fn show_status(
         let mut workload_card = create_network_topology_card(
             "WORKLOAD TOPOLOGY & LISTENERS",
             &endpoints,
-            Some("Start workloads with 'specter bridge start' (add --http for Supabase)"),
+            Some("Start workloads with 'tuquet bridge start' (add --http for Supabase)"),
         );
         workload_card.with_min_width(74);
         workload_card.print();

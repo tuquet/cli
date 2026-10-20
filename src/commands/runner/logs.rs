@@ -10,7 +10,7 @@ pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::er
         card.with_min_width(64);
         card.add_kv("Expected Log File", log_file.display().to_string());
         card.add_line("Daemon has not written any background logs yet.");
-        card.with_footer("Start daemon in background with 'specter runner start -d'");
+        card.with_footer("Start daemon in background with 'tuquet runner start -d'");
         println!();
         card.print();
         println!();

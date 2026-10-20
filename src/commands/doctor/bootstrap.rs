@@ -19,7 +19,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     let root = canonical_ssot_dir();
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 1. Create Canonical SSOT Pillar Directories (~/.specter/)
+    // 1. Create Canonical SSOT Pillar Directories (~/.tuquet/)
     // ─────────────────────────────────────────────────────────────────────────────
     let dirs = [
         root.join("bin"),
@@ -105,21 +105,21 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
             config_val["mcpServers"] = json!({});
         }
 
-        let specter_cmd = if find_executable("spc").is_some() {
-            "spc".to_string()
+        let tuquet_cmd = if find_executable("tq").is_some() {
+            "tq".to_string()
         } else {
             std::env::current_exe()
                 .map(|p| p.display().to_string())
-                .unwrap_or_else(|_| "spc".to_string())
+                .unwrap_or_else(|_| "tq".to_string())
         };
 
         let mcp_def = json!({
-            "command": specter_cmd,
+            "command": tuquet_cmd,
             "args": ["mcp"]
         });
 
-        // Register specter MCP server and remove legacy tuquet if present
-        config_val["mcpServers"]["specter"] = mcp_def;
+        // Register tq MCP server and remove legacy tq if present
+        config_val["mcpServers"]["tuquet"] = mcp_def;
         if let Some(servers) = config_val
             .get_mut("mcpServers")
             .and_then(|v| v.as_object_mut())
@@ -130,7 +130,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
         if let Ok(pretty) = serde_json::to_string_pretty(&config_val) {
             if std::fs::write(&mcp_config_file, pretty).is_ok() {
                 println!(
-                    "  {GREEN}✓{RESET} Registered native specter MCP stdio server in ~/.gemini/config/mcp_config.json",
+                    "  {GREEN}✓{RESET} Registered native tq MCP stdio server in ~/.gemini/config/mcp_config.json",
                     GREEN = colors::GREEN,
                     RESET = colors::RESET,
                 );
@@ -188,7 +188,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     card.add_kv("SQLite Database", "automa.sqlite (Schema initialized)");
     card.add_kv(
         "MCP Agent Protocol",
-        "specter stdio server registered (~/.gemini/config/mcp_config.json)",
+        "tuquet stdio server registered (~/.gemini/config/mcp_config.json)",
     );
     let b_status = crate::core::browser::resolver::get_runtime_status();
     card.add_kv(
@@ -196,11 +196,11 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
         if b_status.installed {
             "Golden LTS v148 (Antidetect Chromium)"
         } else {
-            "Pending download (specter browser install)"
+            "Pending download (tuquet browser install)"
         },
     );
     card.with_footer(
-        "Next: Run 'specter doctor' to inspect dependencies or 'specter status' for dashboard.",
+        "Next: Run 'tuquet doctor' to inspect dependencies or 'tuquet status' for dashboard.",
     );
     card.print();
     println!();

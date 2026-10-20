@@ -76,7 +76,7 @@ pub struct RunnerIdentityResponse {
 pub struct CloudStatusResponse {
     /// Whether cloud telemetry reporting is configured
     pub enabled: bool,
-    /// Connected Specter Cloud URL
+    /// Connected Tuquet Cloud URL
     pub cloud_url: Option<String>,
     /// Whether this machine is enrolled with a device ID
     pub enrolled: bool,
@@ -120,9 +120,9 @@ pub struct CloudSyncResponse {
 
 #[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Request payload to enroll and authenticate runner with Specter Cloud
+/// Request payload to enroll and authenticate runner with Tuquet Cloud
 pub struct CloudLoginRequest {
-    /// Specter Cloud Base URL (e.g. "https://dswhacsoaxgpfnkaxnhz.supabase.co")
+    /// Tuquet Cloud Base URL (e.g. "https://dswhacsoaxgpfnkaxnhz.supabase.co")
     pub cloud_url: Option<String>,
     /// Organization / Tenant enrollment token or user JWT
     pub token: Option<String>,

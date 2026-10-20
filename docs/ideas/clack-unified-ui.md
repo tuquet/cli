@@ -1,7 +1,7 @@
-# Kiến Trúc Unified Clack UI & Dual-Brain Agent Engine (`spc`)
+# Kiến Trúc Unified Clack UI & Dual-Brain Agent Engine (`tq`)
 
 ## 1. Problem Statement
-Làm thế nào để thống nhất toàn bộ 96+ lệnh của `spc` lên một đường ray tương tác `@clack/prompts` (`┌ │ ◆ ◇ └`) chuyên nghiệp kèm cơ chế Zero-Arg Interactive cho con người, đồng thời tự động chuyển sang chế độ siêu nén (Zero-Hang, Token-Compact) khi AI Agent gọi lệnh?
+Làm thế nào để thống nhất toàn bộ 96+ lệnh của `tq` lên một đường ray tương tác `@clack/prompts` (`┌ │ ◆ ◇ └`) chuyên nghiệp kèm cơ chế Zero-Arg Interactive cho con người, đồng thời tự động chuyển sang chế độ siêu nén (Zero-Hang, Token-Compact) khi AI Agent gọi lệnh?
 
 ## 2. Recommended Direction (Kiến Trúc Chốt)
 
@@ -9,7 +9,7 @@ Làm thế nào để thống nhất toàn bộ 96+ lệnh của `spc` lên mộ
 Xây dựng bộ **Clack Primitives hoàn chỉnh** hoạt động trên 1 trục dọc chuẩn (`2 spaces + symbol + 2 spaces`):
 
 ```text
-  ┌  spc bridge  Multi-VPS Mesh & Tunnel Controller
+  ┌  tq bridge  Multi-VPS Mesh & Tunnel Controller
   │
   ◇  Skipped server 'my-pc' (disabled in bridge.json)
   │
@@ -45,15 +45,15 @@ Khi phát hiện môi trường **Non-TTY** (`!stdout.is_terminal()` hoặc `!st
 
 ### C. Lộ Trình Refactor Subsystems & Zero-Arg Interactive
 1. **System & Cloud (`login`, `whoami`, `tenant`, `doctor`, `bootstrap`, `status`, `config`, `upgrade`)**:
-   - Thay thế toàn bộ `prompt_input` / `prompt_password` trong `spc login` bằng `clack_select` + `clack_text` + `clack_password` + `ClackSpinner`.
-   - `spc tenant switch` (không truyền tên) -> tự bật `clack_select` chọn workspace.
+   - Thay thế toàn bộ `prompt_input` / `prompt_password` trong `tq login` bằng `clack_select` + `clack_text` + `clack_password` + `ClackSpinner`.
+   - `tq tenant switch` (không truyền tên) -> tự bật `clack_select` chọn workspace.
 2. **Developer Suite (`dev`, `port`, `code`, `git`, `env`)**:
-   - Nâng cấp `spc port` và `spc git` hỗ trợ `clack_multiselect` (kill nhiều port hoặc thao tác nhiều repo cùng lúc).
+   - Nâng cấp `tq port` và `tq git` hỗ trợ `clack_multiselect` (kill nhiều port hoặc thao tác nhiều repo cùng lúc).
    - Bọc quá trình quét ổ đĩa bằng `ClackSpinner`.
-   - Sửa lỗi `spc env -l` hỏi chọn project khi chạy cờ `-l`: khi truyền `-l` mà không chỉ định project, tự động hiển thị bảng tổng hợp tất cả các project có `.env*` trên máy.
+   - Sửa lỗi `tq env -l` hỏi chọn project khi chạy cờ `-l`: khi truyền `-l` mà không chỉ định project, tự động hiển thị bảng tổng hợp tất cả các project có `.env*` trên máy.
 3. **Trụ Cột Microservice (`bridge`, `browser`, `automa`, `runner`, `faker`, `inbox`)**:
-   - Chuyển đổi log rời rạc của `spc bridge start/stop/enable/disable`, `spc browser launch/stop`, `spc automa run`, `spc runner start/stop`, `spc inbox` sang timeline Clack.
-   - Hỗ trợ **Zero-Arg Interactive**: gõ `spc bridge enable`, `spc bridge disable`, `spc browser launch`, `spc browser stop`, `spc automa run` không tham số sẽ tự liệt kê danh sách sẵn có vào `clack_select`.
+   - Chuyển đổi log rời rạc của `tq bridge start/stop/enable/disable`, `tq browser launch/stop`, `tq automa run`, `tq runner start/stop`, `tq inbox` sang timeline Clack.
+   - Hỗ trợ **Zero-Arg Interactive**: gõ `tq bridge enable`, `tq bridge disable`, `tq browser launch`, `tq browser stop`, `tq automa run` không tham số sẽ tự liệt kê danh sách sẵn có vào `clack_select`.
 
 ## 3. Key Assumptions to Validate
 - [x] Trên Windows PowerShell 5.1 / 7 và Windows Terminal, `ClackSpinner` xóa dòng (`\r\x1b[2K`) sạch sẽ không để lại rác ký tự.
@@ -68,4 +68,4 @@ Khi phát hiện môi trường **Non-TTY** (`!stdout.is_terminal()` hoặc `!st
 ## 5. Not Doing (Và Lý Do Từ Chối)
 - **Không dùng thư viện TUI toàn màn hình (`ratatui` alternate screen) cho CLI commands**: Alternate screen xóa mất lịch sử kết quả trên terminal khi thoát lệnh, làm người dùng không copy-paste được IP/Port/OTP. Inline Clack timeline giữ lại lịch sử sạch đẹp trên màn hình.
 - **Không phá vỡ cấu trúc JSON của `--json` và MCP Server**: Mọi công cụ MCP (`src/commands/mcp/`) và cờ `--json` giữ nguyên 100% schema JSON hiện tại để không làm gãy tích hợp với Tauri / Agent.
-- **Không bắt buộc nhập tương tác khi đã truyền đủ cờ CLI**: Nếu người dùng hoặc script gõ `spc bridge enable my-vps`, lệnh chạy thẳng trong 1 bước mà không dừng lại hỏi xác nhận thừa.
+- **Không bắt buộc nhập tương tác khi đã truyền đủ cờ CLI**: Nếu người dùng hoặc script gõ `tq bridge enable my-vps`, lệnh chạy thẳng trong 1 bước mà không dừng lại hỏi xác nhận thừa.

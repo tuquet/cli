@@ -13,8 +13,8 @@ pub async fn handle_profile_cloud(
         Some(c) => c,
         None => {
             crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
-            eprintln!("Run 'specter login' to authenticate and pair your workstation first.\n");
-            return Err("Workstation not enrolled with Specter Cloud".into());
+            eprintln!("Run 'tuquet login' to authenticate and pair your workstation first.\n");
+            return Err("Workstation not enrolled with Tuquet Cloud".into());
         }
     };
 
@@ -73,7 +73,7 @@ pub async fn handle_profile_cloud(
             );
             header_card.add_kv("Cloud Endpoint", cloud_url);
             header_card.with_footer(
-                "Acquire exclusive lease with: specter browser profile cloud acquire <id>",
+                "Acquire exclusive lease with: tq browser profile cloud acquire <id>",
             );
             header_card.print();
             println!();
@@ -315,7 +315,7 @@ pub async fn handle_profile_cloud(
                 card.add_kv("Session Snapshot", "Restored (.tar.zst + LevelDB intact)");
             }
             card.with_footer(format!(
-                "Launch session with: specter browser launch {}",
+                "Launch session with: tq browser launch {}",
                 profile.id
             ));
             card.print();
@@ -505,11 +505,11 @@ pub async fn handle_profile_push(
     let device_token = creds
         .as_ref()
         .map(|c| c.device_token.as_str())
-        .unwrap_or("specter-local-token");
+        .unwrap_or("tuquet-local-token");
     let device_id = creds
         .as_ref()
         .map(|c| c.device_id.as_str())
-        .unwrap_or("specter-workstation");
+        .unwrap_or("tuquet-workstation");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
@@ -658,11 +658,11 @@ pub async fn handle_profile_pull(
     let device_token = creds
         .as_ref()
         .map(|c| c.device_token.as_str())
-        .unwrap_or("specter-local-token");
+        .unwrap_or("tuquet-local-token");
     let device_id = creds
         .as_ref()
         .map(|c| c.device_id.as_str())
-        .unwrap_or("specter-workstation");
+        .unwrap_or("tuquet-workstation");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
@@ -752,7 +752,7 @@ pub async fn handle_profile_pull(
     );
     card.add_kv("Downloaded Bytes", format!("{} bytes", archive_bytes.len()));
     card.with_footer(format!(
-        "Ready for stealth automation. Launch with: specter browser launch {}",
+        "Ready for stealth automation. Launch with: tq browser launch {}",
         profile.id
     ));
     card.print();

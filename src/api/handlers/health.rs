@@ -3,7 +3,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
-#[schema(example = json!({"status": "ok", "version": "1.0.0", "message": "Specter Daemon is running"}))]
+#[schema(example = json!({"status": "ok", "version": "1.0.0", "message": "Tuquet Daemon is running"}))]
 /// Daemon health check response
 pub struct HealthResponse {
     /// Overall operational status ("ok", "degraded")
@@ -29,7 +29,7 @@ pub async fn health() -> impl IntoResponse {
     let response = HealthResponse {
         status: "ok".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
-        message: "Specter Daemon is running".to_string(),
+        message: "Tuquet Daemon is running".to_string(),
     };
 
     (StatusCode::OK, Json(response)).into_response()

@@ -81,9 +81,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ["COMPONENT", "IDENTITY / TARGET", "ROLE / DETAILS", "STATUS"],
         &system_rows,
         Some(if cloud_creds.is_some() {
-            "Workstation enrolled in Specter Cloud Mesh"
+            "Workstation enrolled in Tuquet Cloud Mesh"
         } else {
-            "Run 'specter login' to authenticate with Specter Cloud"
+            "Run 'tuquet login' to authenticate with Tuquet Cloud"
         }),
         72,
     );
@@ -173,7 +173,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         Some(if daemon_running {
             "Runner daemon active on local endpoint"
         } else {
-            "Start runner daemon with 'specter runner start --port 8765'"
+            "Start runner daemon with 'tuquet runner start --port 8765'"
         }),
         72,
     );
@@ -194,7 +194,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         )
     };
 
-    let profile_dir = crate::config::canonical_specter_dir()
+    let profile_dir = crate::config::canonical_tuquet_dir()
         .join("browser")
         .join("profiles");
     let profile_count = std::fs::read_dir(&profile_dir)
@@ -225,12 +225,12 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
                 .trim_start_matches(['/', '\\'])
                 .replace('\\', "/")
         )
-    } else if browser_status.executable_path.contains(".specter") {
+    } else if browser_status.executable_path.contains(".tuquet") {
         format!(
-            "~/.specter{}",
+            "~/.tuquet{}",
             browser_status
                 .executable_path
-                .split(".specter")
+                .split(".tuquet")
                 .nth(1)
                 .unwrap_or("")
                 .replace('\\', "/")
@@ -261,9 +261,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ["COMPONENT", "VERSION / PATH", "ROLE / DETAILS", "STATUS"],
         &browser_rows,
         Some(if browser_status.installed {
-            "Engine ready. Run 'specter browser list' to manage profiles"
+            "Engine ready. Run 'tuquet browser list' to manage profiles"
         } else {
-            "Install dedicated runtime with 'specter browser install'"
+            "Install dedicated runtime with 'tuquet browser install'"
         }),
         72,
     );
@@ -307,7 +307,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     let mut bridge_card = create_network_topology_card(
         "NETWORK BRIDGE",
         &endpoints,
-        Some("Manage with 'specter bridge status' or 'specter bridge start'"),
+        Some("Manage with 'tuquet bridge status' or 'tuquet bridge start'"),
     );
     if git_active || ssh_active || http_active {
         bridge_card.with_badge(badge_online("CONNECTED"));
@@ -316,7 +316,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     }
 
     let payload = serde_json::json!({
-        "ecosystem": "specter",
+        "ecosystem": "tuquet",
         "cloud": {
             "enrolled": cloud_creds.is_some(),
             "device_id": cloud_creds.as_ref().map(|c| c.device_id.as_str()),
@@ -348,12 +348,12 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     });
 
     respond_with(format, &payload, |_| {
-        crate::ui::prompt::clack_intro("spc status", "Specter Ecosystem Status");
+        crate::ui::prompt::clack_intro("tq status", "Tuquet Ecosystem Status");
         if let Some(info) = crate::infrastructure::updater::get_cached_update()
             && info.has_update
         {
             crate::ui::prompt::clack_step_warn(format!(
-                "Update available: v{} -> v{} (run 'spc upgrade')",
+                "Update available: v{} -> v{} (run 'tq upgrade')",
                 info.current_version, info.latest_version
             ));
         }
@@ -362,6 +362,6 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         automa_card.print();
         browser_card.print();
         bridge_card.print();
-        crate::ui::prompt::clack_outro("Run 'spc doctor' for deep diagnostics.");
+        crate::ui::prompt::clack_outro("Run 'tq doctor' for deep diagnostics.");
     })
 }

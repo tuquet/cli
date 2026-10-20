@@ -3,7 +3,7 @@ use crate::ui::{
     Card, ClackOption, Column, Table, badge_online, clack_cancel, clack_intro, clack_outro,
     clack_select, clack_step_ok, clack_text, is_interactive_tty,
 };
-use specter_faker::{
+use tuquet_faker::{
     generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value,
 };
 use std::fs;
@@ -72,7 +72,7 @@ pub async fn handle(
 
 async fn run_interactive_faker() -> Result<(), Box<dyn std::error::Error>> {
     clack_intro(
-        "spc faker",
+        "tq faker",
         "Synthetic Persona & Identity Generator (CCCD • SSN • My Number)",
     );
 
@@ -315,7 +315,7 @@ async fn run_generate_inner(
         "card" => {
             if !intro_already_shown {
                 clack_intro(
-                    "spc faker",
+                    "tq faker",
                     &format!("Synthetic Persona Generator • {} profile(s)", users.len()),
                 );
             }
@@ -330,7 +330,7 @@ async fn run_generate_inner(
         "table" => {
             if !intro_already_shown {
                 clack_intro(
-                    "spc faker",
+                    "tq faker",
                     &format!("Synthetic Persona Dataset • {} profile(s)", users.len()),
                 );
             }
@@ -416,7 +416,7 @@ async fn run_generate_inner(
             let csv_str = to_csv(users);
             if let Some(ref path) = args.output {
                 if !intro_already_shown {
-                    clack_intro("spc faker", "CSV Dataset Exporter");
+                    clack_intro("tq faker", "CSV Dataset Exporter");
                 }
                 fs::write(path, csv_str.as_bytes())?;
                 clack_step_ok(format!(
@@ -433,7 +433,7 @@ async fn run_generate_inner(
             let json_str = to_json_value(&data, true)?;
             if let Some(ref path) = args.output {
                 if !intro_already_shown {
-                    clack_intro("spc faker", "JSON Dataset Exporter");
+                    clack_intro("tq faker", "JSON Dataset Exporter");
                 }
                 fs::write(path, json_str.as_bytes())?;
                 clack_step_ok(format!(
@@ -462,7 +462,7 @@ fn run_nationalities_inner(
     let list = list_nationality_metadata();
     if table {
         if !intro_already_shown {
-            clack_intro("spc faker", "Supported Nationality Providers & ID Schemas");
+            clack_intro("tq faker", "Supported Nationality Providers & ID Schemas");
         }
         let columns = vec![
             Column {
@@ -537,7 +537,7 @@ fn run_id_inner(
         }
     } else if is_interactive_tty() {
         if !intro_already_shown {
-            clack_intro("spc faker id", "Validated National ID Checksum Generator");
+            clack_intro("tq faker id", "Validated National ID Checksum Generator");
         }
         let mut card = Card::new("SYNTHETIC NATIONAL ID");
         card.with_badge(badge_online("CHECKSUM VALID"));
@@ -568,7 +568,7 @@ pub async fn run_card(
     let users = data["results"].as_array().expect("results is array");
     if let Some(user) = users.first() {
         if !format.is_json() {
-            clack_intro("spc faker card", "Synthetic Identity Card Inspector");
+            clack_intro("tq faker card", "Synthetic Identity Card Inspector");
             render_single_card(user);
             clack_outro("Synthetic persona verified.");
         } else {

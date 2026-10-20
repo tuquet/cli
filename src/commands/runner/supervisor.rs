@@ -20,9 +20,9 @@ pub fn get_log_file_path(data_dir: &str) -> PathBuf {
 }
 
 pub fn is_valid_runner_name(raw_name: &str) -> bool {
-    let name = raw_name.to_lowercase();
-    let base_name = name.trim_end_matches(".exe");
-    base_name == "spc" || base_name == "specter" || base_name == "runner"
+    let name = raw_name.trim().to_lowercase();
+    let base = name.strip_suffix(".exe").unwrap_or(&name);
+    base == "tq"
 }
 
 use crate::ui::{OutputFormat, respond_with};
@@ -140,7 +140,7 @@ pub async fn check_status(
                     Some(crate::ui::badge_offline("OFFLINE")),
                     ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
                     &rows,
-                    Some("Start local daemon with 'specter runner start -d'"),
+                    Some("Start local daemon with 'tuquet runner start -d'"),
                     72,
                 );
                 println!();
@@ -174,8 +174,8 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         if p_u32 == current_pid {
             continue;
         }
-        let name = proc.name().to_string_lossy().to_lowercase();
-        if name.contains("specter") {
+        let name = proc.name().to_string_lossy();
+        if is_valid_runner_name(&name) {
             let cmd = proc
                 .cmd()
                 .iter()
@@ -207,7 +207,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
             card.with_badge(crate::ui::badge_offline("NOT RUNNING"));
             card.with_min_width(64);
             card.add_line("No active runner daemon process found on this machine.");
-            card.with_footer("Start daemon with 'specter runner start -d'");
+            card.with_footer("Start daemon with 'tuquet runner start -d'");
             println!();
             card.print();
             println!();
@@ -234,12 +234,12 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         let raw_name = proc.name().to_string_lossy();
         if !is_valid_runner_name(&raw_name) {
             tracing::warn!(
-                "Stale PID {} detected: process name '{}' does not match specter or runner. Skipping kill.",
+                "Stale PID {} detected: process name '{}' does not match tq. Skipping kill.",
                 pid,
                 raw_name
             );
             eprintln!(
-                "Warning: Stale PID {} detected: process name '{}' does not match specter or runner. Skipping kill.",
+                "Warning: Stale PID {} detected: process name '{}' does not match tq. Skipping kill.",
                 pid, raw_name
             );
             continue;
@@ -284,7 +284,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         card.add_kv("Terminated PID(s)", pids_str);
     }
     card.add_line("Runner worker daemon has been gracefully terminated.");
-    card.with_footer("Start daemon again with 'specter runner start -d'");
+    card.with_footer("Start daemon again with 'tuquet runner start -d'");
     println!();
     card.print();
     println!();
@@ -389,7 +389,7 @@ pub async fn run_server(
             format!("http://{}:{}", config.server_host, config.server_port),
         );
         card.add_kv("Log File", log_file_path.display().to_string());
-        card.with_footer("Stop daemon with 'specter runner stop'");
+        card.with_footer("Stop daemon with 'tuquet runner stop'");
         println!();
         card.print();
         println!();
@@ -407,7 +407,7 @@ pub async fn run_server(
     let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
-    info!("Specter Automa Core Bridge starting in Native Launcher mode...");
+    info!("Tuquet Automa Core Bridge starting in Native Launcher mode...");
     info!("Environment: {}", config.environment);
     info!("Data Directory: {}", config.data_dir);
 

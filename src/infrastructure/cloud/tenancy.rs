@@ -166,7 +166,7 @@ impl TenancyManager {
     ) -> Result<TenantInfo, Box<dyn std::error::Error + Send + Sync>> {
         let mut creds = CredentialStore::load(data_dir)
             .await
-            .ok_or("No active cloud session found on this machine. Run 'specter login' first.")?;
+            .ok_or("No active cloud session found on this machine. Run 'tuquet login' first.")?;
 
         let cloud_url = creds
             .cloud_url
@@ -197,7 +197,7 @@ impl TenancyManager {
             (Some(tok), _) => tok.clone(),
             _ => {
                 return Err(
-                    "No active user session found. Please run 'specter login' to authenticate."
+                    "No active user session found. Please run 'tuquet login' to authenticate."
                         .into(),
                 );
             }

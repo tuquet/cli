@@ -1,4 +1,4 @@
-use crate::config::expander::{EnvExpander, canonical_specter_dir};
+use crate::config::expander::{EnvExpander, canonical_tuquet_dir};
 use crate::constants::endpoints::DEFAULT_HOST;
 use crate::constants::paths::{FILE_INBOX_JSON, FILE_INBOX_SQLITE};
 use crate::constants::pillars::PILLAR_INBOX;
@@ -67,13 +67,13 @@ impl Default for InboxConfig {
 
 impl InboxConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join(PILLAR_INBOX);
+        let dir = canonical_tuquet_dir().join(PILLAR_INBOX);
         let _ = fs::create_dir_all(&dir);
         dir.join(FILE_INBOX_JSON)
     }
 
     pub fn sqlite_path() -> PathBuf {
-        let dir = canonical_specter_dir().join(PILLAR_INBOX);
+        let dir = canonical_tuquet_dir().join(PILLAR_INBOX);
         let _ = fs::create_dir_all(&dir);
         dir.join(FILE_INBOX_SQLITE)
     }

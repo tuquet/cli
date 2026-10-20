@@ -12,7 +12,7 @@ pub fn toggle_server(
     let action_str = if enabled { "enabled" } else { "disabled" };
 
     clack_intro(
-        "spc bridge",
+        "tq bridge",
         if enabled {
             "Enable Bridge Server"
         } else {
@@ -84,7 +84,7 @@ pub fn toggle_server(
 
 pub async fn stop_bridge(server_opt: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let config = BridgeConfig::load()?;
-    clack_intro("spc bridge", "Stop Bridge Tunnels & Daemons");
+    clack_intro("tq bridge", "Stop Bridge Tunnels & Daemons");
 
     if let Some(target) = server_opt {
         if target.eq_ignore_ascii_case("all") {

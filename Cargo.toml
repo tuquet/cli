@@ -1,9 +1,9 @@
 [package]
-name = "specter"
+name = "tuquet"
 version = "1.2.0"
 edition = "2024"
-default-run = "spc"
-description = "Specter - Autonomous Browser Automation & Distributed Mesh Runtime"
+default-run = "tq"
+description = "Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime"
 repository = "https://github.com/tuquet/cli"
 license = "MIT"
 
@@ -12,13 +12,13 @@ name = "automa_core"
 path = "src/lib.rs"
 
 [[bin]]
-name = "spc"
+name = "tq"
 path = "src/main.rs"
 
 [dependencies]
-specter-faker = { package = "faker", path = "../faker" }
-specter-browser = { path = "../browser", features = ["utoipa"] }
-specter-runner = { package = "runner", path = "../runner" }
+tuquet-faker = { package = "faker", path = "../faker" }
+tuquet-browser = { path = "../browser", features = ["utoipa"] }
+tuquet-runner = { package = "runner", path = "../runner" }
 axum = { version = "0.8.9", features = ["ws"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }

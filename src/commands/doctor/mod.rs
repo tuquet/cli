@@ -20,7 +20,7 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
     if fix {
         if !format.is_json() {
             clack_intro(
-                "spc doctor --fix",
+                "tq doctor --fix",
                 "Automatic Remediation & Environment Bootstrap",
             );
         }
@@ -42,13 +42,13 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
         ssh_ready: ssh_found,
         browser_ready: browser_ok,
         missing_actions,
-        ssot_root: crate::config::canonical_specter_dir().display().to_string(),
+        ssot_root: crate::config::canonical_tuquet_dir().display().to_string(),
     };
 
     respond_with(format, &report, |r| {
         if !fix {
             clack_intro(
-                "spc doctor",
+                "tq doctor",
                 "Ecosystem Environment & Dependency Diagnostics",
             );
         }
@@ -58,7 +58,7 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
 
         browser_card.print();
 
-        // 3. Canonical Microservice Storage Pillars (~/.specter/)
+        // 3. Canonical Microservice Storage Pillars (~/.tuquet/)
         let pillar_table = checks::check_storage_pillars();
         clack_step_info("CANONICAL MICROSERVICE STORAGE PILLARS (SSOT)");
         pillar_table.print();

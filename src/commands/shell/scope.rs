@@ -41,7 +41,7 @@ impl ShellScope {
         ("global", "Ecosystem dashboard & universal orchestrator"),
         ("automa", "Browser workflow automation engine"),
         ("runner", "Distributed daemon worker node"),
-        ("cloud", "Specter Cloud (Supabase) authentication"),
+        ("cloud", "Tuquet Cloud (Supabase) authentication"),
         ("browser", "Dedicated isolated Chromium LTS runtime"),
         ("bridge", "Network bridge & multi-VPS proxy mesh"),
         ("faker", "Synthetic persona & CCCD test data generator"),
@@ -60,7 +60,7 @@ impl ShellScope {
         ("clear", "Clear terminal screen"),
         ("cls", "Alias for clear"),
         ("exit", "Return to global scope (or quit)"),
-        ("quit", "Exit Specter shell session"),
+        ("quit", "Exit Tuquet shell session"),
         ("q", "Short alias for quit"),
     ];
 
@@ -82,7 +82,7 @@ impl ShellScope {
                 ),
                 (
                     "git",
-                    "Multi-repository Git status radar & Specter Bridge-aware synchronizer",
+                    "Multi-repository Git status radar & Tuquet Bridge-aware synchronizer",
                 ),
                 (
                     "env",
@@ -104,9 +104,9 @@ impl ShellScope {
                     "whoami",
                     "Check active cloud enrollment identity & device ID",
                 ),
-                ("login", "Authenticate workstation with Specter Cloud"),
+                ("login", "Authenticate workstation with Tuquet Cloud"),
                 ("logout", "Disconnect and remove local cloud credentials"),
-                ("upgrade", "Check and update Specter to latest release"),
+                ("upgrade", "Check and update Tuquet to latest release"),
                 ("update", "Alias for upgrade"),
                 ("automa", "Enter browser automation scope directly"),
                 ("runner", "Enter distributed runner daemon scope directly"),
@@ -162,7 +162,7 @@ impl ShellScope {
                 ),
             ],
             ShellScope::Cloud => &[
-                ("login", "Authenticate and pair device with Specter Cloud"),
+                ("login", "Authenticate and pair device with Tuquet Cloud"),
                 ("logout", "Log out and remove local cloud credentials"),
                 ("whoami", "Check active cloud pairing and enrollment"),
                 (
@@ -231,7 +231,7 @@ impl ShellScope {
                 ("disable", "Disable a server in bridge configuration"),
                 (
                     "check",
-                    "Validate ~/.specter/bridge/bridge.json configuration",
+                    "Validate ~/.tuquet/bridge/bridge.json configuration",
                 ),
                 (
                     "config",

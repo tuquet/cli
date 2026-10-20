@@ -2,7 +2,7 @@ use super::credential_store::{DEFAULT_SUPABASE_ANON_KEY, DeviceCredentials, epoc
 use super::fingerprint::MachineFingerprint;
 use tracing::info;
 
-/// HTTP RPC Client for communicating with Specter Cloud control plane
+/// HTTP RPC Client for communicating with Tuquet Cloud control plane
 pub struct CloudApiClient;
 
 impl CloudApiClient {
@@ -92,7 +92,7 @@ impl CloudApiClient {
             cloud_url.trim_end_matches('/')
         );
         info!(
-            "[CloudReporter] Enrolling workstation with Specter Cloud at: {}",
+            "[CloudReporter] Enrolling workstation with Tuquet Cloud at: {}",
             target_url
         );
 
@@ -113,7 +113,7 @@ impl CloudApiClient {
 
         if !res.status().is_success() {
             let err_text = res.text().await.unwrap_or_default();
-            return Err(format!("Failed to enroll device with Specter Cloud: {}", err_text).into());
+            return Err(format!("Failed to enroll device with Tuquet Cloud: {}", err_text).into());
         }
 
         let body: serde_json::Value = res.json().await?;

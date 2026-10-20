@@ -59,7 +59,7 @@ pub async fn handle(
     } else {
         let interactive_scan = !list && !check && switch_profile.is_none();
         if interactive_scan {
-            clack_intro("spc env", "Environment Inspector & Profile Switcher");
+            clack_intro("tq env", "Environment Inspector & Profile Switcher");
             intro_shown = true;
         }
         let sp = if interactive_scan {
@@ -97,7 +97,7 @@ pub async fn handle(
             return Ok(());
         }
 
-        // Non-interactive multi-project overview when `spc env -l` or `spc env --check` is run without a project arg
+        // Non-interactive multi-project overview when `tq env -l` or `tq env --check` is run without a project arg
         if project.is_none() && (list || check) {
             let reports: Vec<EnvProjectReport> = pool
                 .iter()
@@ -171,7 +171,7 @@ pub async fn handle(
 
     if !intro_shown {
         clack_intro(
-            "spc env",
+            "tq env",
             &format!(
                 "{} • {} keys, {} missing vs template, {} empty",
                 report.project_id,
@@ -420,7 +420,7 @@ pub fn sync_missing_keys_to_dotenv(
     if !content.is_empty() && !content.ends_with('\n') {
         content.push('\n');
     }
-    content.push_str("\n# Synced from .env.example by spc env\n");
+    content.push_str("\n# Synced from .env.example by tq env\n");
     for (k, v) in missing_keys {
         content.push_str(&format!("{}={}\n", k, v));
     }

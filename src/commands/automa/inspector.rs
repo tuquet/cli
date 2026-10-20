@@ -31,13 +31,13 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
 
             // Check Vault
             if resolved.is_none() {
-                let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+                let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
                 let config_vault =
                     PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
                 let candidates = [
-                    specter_vault.join(format!("{}.workflow.json", target)),
-                    specter_vault.join(format!("{}.json", target)),
+                    tuquet_vault.join(format!("{}.workflow.json", target)),
+                    tuquet_vault.join(format!("{}.json", target)),
                     config_vault.join(format!("{}.workflow.json", target)),
                     config_vault.join(format!("{}.json", target)),
                 ];
@@ -241,7 +241,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
     println!("============================================================");
     println!("Status: VALID WORKFLOW");
     println!("Execution command:");
-    println!("  specter automa run \"{}\"", target);
+    println!("  tq automa run \"{}\"", target);
     println!("============================================================");
 
     Ok(())

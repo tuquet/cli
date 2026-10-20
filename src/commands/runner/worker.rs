@@ -16,7 +16,7 @@ pub async fn run_cloud_worker(
         Some(c) => c,
         None => {
             crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
-            eprintln!("Run 'specter runner enroll' to register this device.\n");
+            eprintln!("Run 'tuquet runner enroll' to register this device.\n");
             return Err("Missing cloud device credentials".into());
         }
     };

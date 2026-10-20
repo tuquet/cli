@@ -13,7 +13,7 @@ pub async fn handle_proxy(
                 ("socks5://127.0.0.1:1080".to_string(), 5, true)
             } else {
                 clack_intro(
-                    "spc proxy",
+                    "tq proxy",
                     "Network Proxy Pre-Flight Probe & WebRTC Verifier",
                 );
                 let opts = vec![

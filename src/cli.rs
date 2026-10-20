@@ -28,7 +28,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)
   \x1b[1;32mport\x1b[0m            Scan active local listening TCP ports & terminate processes
   \x1b[1;32mcode\x1b[0m            Find any project across machine & open in VS Code / Antigravity / Explorer
-  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Specter Bridge-aware push/pull
+  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Tuquet Bridge-aware push/pull
   \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
 
 \x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
@@ -37,15 +37,15 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
   \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
   \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
-  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Specter Cloud
-  \x1b[1;32mupgrade\x1b[0m         Check and upgrade Specter CLI to the latest release
+  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Tuquet Cloud
+  \x1b[1;32mupgrade\x1b[0m         Check and upgrade Tuquet CLI to the latest release
   \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
 
 
 \x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
   \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
-  \x1b[1;36mcloud\x1b[0m           Specter Cloud authentication & multi-tenant pairing
+  \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
   \x1b[1;36mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
   \x1b[1;36mbridge\x1b[0m          Network bridge, multi-VPS mesh & proxy manager
@@ -61,23 +61,23 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
 \x1b[1;38;2;56;189;248mExamples:\x1b[0m
-  spc                              Launch interactive SPECTER SHELL (REPL)
-  spc dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
-  spc port                         Scan listening ports & terminate zombie processes
-  spc code                         Find project across machine & open in IDE
-  spc git                          Inspect multi-repo Git radar & push via Specter Bridge
-  spc env                          Validate .env vs .env.example & sync missing keys
-  spc doctor                       Check dependencies and system health
-  spc status                       Check full ecosystem dashboard";
+  tq                              Launch interactive SPECTER SHELL (REPL)
+  tq dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
+  tq port                         Scan listening ports & terminate zombie processes
+  tq code                         Find project across machine & open in IDE
+  tq git                          Inspect multi-repo Git radar & push via Tuquet Bridge
+  tq env                          Validate .env vs .env.example & sync missing keys
+  tq doctor                       Check dependencies and system health
+  tq status                       Check full ecosystem dashboard";
 
-/// Specter - Autonomous Browser Automation & Distributed Mesh Runtime
+/// Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
 #[command(
-    name = "specter",
+    name = "tuquet",
     author = "Tuquet Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "Specter - Autonomous Browser Automation & Distributed Mesh Runtime",
-    long_about = "Specter is an autonomous browser automation & distributed mesh runtime engine.",
+    about = "Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime",
+    long_about = "Tuquet is an autonomous browser automation & distributed mesh runtime engine.",
     styles = get_styles(),
     help_template = MAIN_HELP_TEMPLATE,
 )]
@@ -165,7 +165,7 @@ pub enum Commands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Scan all Git repositories across the machine and synchronize via Specter Bridge
+    /// Scan all Git repositories across the machine and synchronize via Tuquet Bridge
     #[command(name = "git")]
     Git {
         /// Target repository name or path query
@@ -219,7 +219,7 @@ pub enum Commands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Show unified status overview of Specter ecosystem
+    /// Show unified status overview of Tuquet ecosystem
     #[command(name = "status")]
     Status {
         #[command(flatten)]
@@ -245,7 +245,7 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Inspect or edit unified service configurations across Specter microservice pillars
+    /// Inspect or edit unified service configurations across Tuquet microservice pillars
     #[command(name = "config")]
     Config {
         /// Optional target service (bridge, automa, runner, browser, cloud, system, faker, inbox)
@@ -265,7 +265,7 @@ pub enum Commands {
         show: bool,
     },
 
-    /// Show current Specter Cloud identity and enrollment status
+    /// Show current Tuquet Cloud identity and enrollment status
     #[command(name = "whoami")]
     Whoami {
         #[command(flatten)]
@@ -275,7 +275,7 @@ pub enum Commands {
     /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     #[command(name = "login")]
     Login {
-        /// Specter Cloud / Supabase endpoint URL
+        /// Tuquet Cloud / Supabase endpoint URL
         #[arg(short, long)]
         url: Option<String>,
 
@@ -340,7 +340,7 @@ pub enum Commands {
         command: Option<RunnerSubcommands>,
     },
 
-    /// Specter Cloud authentication & multi-tenant pairing
+    /// Tuquet Cloud authentication & multi-tenant pairing
     #[command(name = "cloud")]
     Cloud {
         #[command(subcommand)]
@@ -376,7 +376,7 @@ pub enum Commands {
     #[command(name = "mcp")]
     Mcp,
 
-    /// Check and upgrade Specter CLI to the latest release
+    /// Check and upgrade Tuquet CLI to the latest release
     #[command(name = "upgrade", aliases = ["update"])]
     Upgrade,
 
@@ -480,7 +480,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Enable a server in bridge configuration (~/.specter/bridge/bridge.json)
+    /// Enable a server in bridge configuration (~/.tuquet/bridge/bridge.json)
     #[command(name = "enable")]
     Enable {
         /// Server identifier to enable (e.g. my-vps, may-b; omit to select interactively)
@@ -488,7 +488,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Disable a server in bridge configuration (~/.specter/bridge/bridge.json)
+    /// Disable a server in bridge configuration (~/.tuquet/bridge/bridge.json)
     #[command(name = "disable")]
     Disable {
         /// Server identifier to disable (e.g. my-vps, may-b; omit to select interactively)
@@ -496,7 +496,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Validate ~/.specter/bridge/bridge.json configuration schema, ports, and workloads
+    /// Validate ~/.tuquet/bridge/bridge.json configuration schema, ports, and workloads
     #[command(name = "check")]
     Check,
 
@@ -507,7 +507,7 @@ pub enum BridgeSubcommands {
         #[arg(value_name = "ARGS")]
         args: Vec<String>,
 
-        /// Open ~/.specter/bridge/bridge.json in your default editor
+        /// Open ~/.tuquet/bridge/bridge.json in your default editor
         #[arg(short, long)]
         edit: bool,
 
@@ -651,7 +651,7 @@ pub enum InboxSubcommands {
         limit: usize,
     },
 
-    /// Inspect or edit inbox configuration (~/.specter/inbox/inbox.json)
+    /// Inspect or edit inbox configuration (~/.tuquet/inbox/inbox.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -768,7 +768,7 @@ pub enum FakerSubcommands {
         raw: bool,
     },
 
-    /// Manage synthetic persona configuration (~/.specter/faker/faker.json)
+    /// Manage synthetic persona configuration (~/.tuquet/faker/faker.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -850,7 +850,7 @@ pub enum AutomaSubcommands {
     /// Probe Automa manifest capabilities
     Probe,
 
-    /// Display, inspect, or edit Automa configuration (~/.specter/automa/automa.json)
+    /// Display, inspect, or edit Automa configuration (~/.tuquet/automa/automa.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -967,7 +967,7 @@ pub enum RunnerSubcommands {
         output: PathBuf,
     },
 
-    /// Display, inspect, or edit Runner daemon configuration (~/.specter/automa/runner.json)
+    /// Display, inspect, or edit Runner daemon configuration (~/.tuquet/automa/runner.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -988,7 +988,7 @@ pub enum RunnerSubcommands {
 pub enum CloudSubcommands {
     /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     Login {
-        /// Specter Cloud / Supabase endpoint URL (e.g. https://dswhacsoaxgpfnkaxnhz.supabase.co)
+        /// Tuquet Cloud / Supabase endpoint URL (e.g. https://dswhacsoaxgpfnkaxnhz.supabase.co)
         #[arg(short, long)]
         url: Option<String>,
 
@@ -1028,10 +1028,10 @@ pub enum CloudSubcommands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Log out and disconnect this workstation from Specter Cloud
+    /// Log out and disconnect this workstation from Tuquet Cloud
     Logout,
 
-    /// Show current Specter Cloud authentication and enrollment status
+    /// Show current Tuquet Cloud authentication and enrollment status
     #[command(name = "whoami")]
     Whoami {
         #[command(flatten)]
@@ -1045,7 +1045,7 @@ pub enum CloudSubcommands {
         command: Option<TenantSubcommands>,
     },
 
-    /// Display, inspect, or edit System & Cloud configuration (~/.specter/system/system.json)
+    /// Display, inspect, or edit System & Cloud configuration (~/.tuquet/system/system.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -1257,7 +1257,7 @@ pub enum BrowserCommands {
         command: Option<ProfileCommands>,
     },
 
-    /// Display, inspect, or edit dedicated browser configuration (~/.specter/browser/browser.json)
+    /// Display, inspect, or edit dedicated browser configuration (~/.tuquet/browser/browser.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -1605,7 +1605,7 @@ pub enum WorkflowCommands {
         #[arg(long)]
         db_only: bool,
 
-        /// Only list workflows from Vault directory (~/.specter/automa/workflows)
+        /// Only list workflows from Vault directory (~/.tuquet/automa/workflows)
         #[arg(long)]
         vault_only: bool,
 

@@ -49,7 +49,7 @@ pub async fn launch_browser(
             Err(e) => {
                 crate::ui::Notify::error(&e);
                 eprintln!(
-                    "Run 'specter browser profile list' to view available profiles, or 'profile create <name>'.\n"
+                    "Run 'tuquet browser profile list' to view available profiles, or 'profile create <name>'.\n"
                 );
                 return Err(e.into());
             }
@@ -86,9 +86,9 @@ pub async fn launch_browser(
             card.add_line("");
             card.add_line("Safety Guardrail Triggered:");
             card.add_line("  • Profile is already open and running on this machine.");
-            card.add_line("  • To stop it, run:  specter browser stop");
+            card.add_line("  • To stop it, run:  tq browser stop");
             card.add_line("  • To force multiple instances, launch with '--force'.");
-            card.with_footer("List all running browser profiles with: specter browser ps");
+            card.with_footer("List all running browser profiles with: tq browser ps");
             card.print();
             println!();
             return Ok(());
@@ -114,7 +114,7 @@ pub async fn launch_browser(
                 card.add_line("  • The configured proxy server is offline or unreachable.");
                 card.add_line("  • Launch aborted to prevent session failure or real IP leakage.");
                 card.add_line("  • To bypass this guardrail, launch with '--skip-proxy-check'.");
-                card.with_footer("Test proxy directly with: specter proxy probe <url>");
+                card.with_footer("Test proxy directly with: tq proxy probe <url>");
                 card.print();
                 println!();
                 return Err("Proxy unreachable (pre-flight check failed)".into());
@@ -140,7 +140,7 @@ pub async fn launch_browser(
             "Dedicated Antidetect Chromium runtime not found at: {}",
             exe_path
         ));
-        eprintln!("Run 'specter browser install' to download and set up Golden LTS v148.\n");
+        eprintln!("Run 'tuquet browser install' to download and set up Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 

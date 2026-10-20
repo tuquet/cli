@@ -144,7 +144,7 @@ impl JobCoordinator {
 
         // Native Zero-Extension Execution via CDP
         let session_opt = {
-            let sessions = specter_browser::browser_sessions().read().await;
+            let sessions = tuquet_browser::browser_sessions().read().await;
             sessions.get(browser_id.as_str()).cloned()
         };
 
@@ -302,7 +302,7 @@ impl JobCoordinator {
         state: AppState,
         job_id: JobId,
         browser_id: BrowserId,
-        session: specter_browser::BrowserSession,
+        session: tuquet_browser::BrowserSession,
         workflow_data: serde_json::Value,
         variables: Option<serde_json::Value>,
         cancel_token: CancellationToken,
@@ -314,7 +314,7 @@ impl JobCoordinator {
             job_id
         );
 
-        let graph = match specter_runner::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
+        let graph = match tuquet_runner::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
             Ok(g) => g,
             Err(e) => {
                 tracing::error!("Failed to parse workflow graph for job {}: {}", job_id, e);
@@ -331,7 +331,7 @@ impl JobCoordinator {
         };
 
         let cdp_session =
-            match specter_runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
+            match tuquet_runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
                 Ok(c) => c,
                 Err(e) => {
                     tracing::error!(
@@ -351,14 +351,14 @@ impl JobCoordinator {
                 }
             };
 
-        let mut initial_state = specter_runner::drivers::cdp::ExecutionState::new();
+        let mut initial_state = tuquet_runner::drivers::cdp::ExecutionState::new();
         if let Some(serde_json::Value::Object(map)) = variables {
             for (k, v) in map {
                 initial_state.set_variable(&k, v);
             }
         }
 
-        let executor = specter_runner::drivers::cdp::WorkflowDagExecutor::new(
+        let executor = tuquet_runner::drivers::cdp::WorkflowDagExecutor::new(
             graph,
             std::sync::Arc::new(cdp_session),
         );
@@ -401,15 +401,15 @@ impl JobCoordinator {
         }
 
         if close_browser_on_finish {
-            let mut launchers = specter_browser::browser_launchers().write().await;
+            let mut launchers = tuquet_browser::browser_launchers().write().await;
             if let Some(mut launcher) = launchers.remove(browser_id.as_str()) {
                 let _ = launcher.close().await;
             }
-            let mut sessions = specter_browser::browser_sessions().write().await;
+            let mut sessions = tuquet_browser::browser_sessions().write().await;
             sessions.remove(browser_id.as_str());
-            let mut reg = specter_browser::browser_registry().write().await;
+            let mut reg = tuquet_browser::browser_registry().write().await;
             reg.remove(browser_id.as_str());
-            let mut connected = specter_browser::connected_browsers().write().await;
+            let mut connected = tuquet_browser::connected_browsers().write().await;
             connected.remove(browser_id.as_str());
         }
     }

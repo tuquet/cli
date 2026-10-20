@@ -104,7 +104,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     }
 
-    clack_intro("spc browser", "Specter Antidetect Browser Hub");
+    clack_intro("tq browser", "Tuquet Antidetect Browser Hub");
 
     let options = vec![
         ClackOption::new(

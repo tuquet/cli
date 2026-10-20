@@ -54,7 +54,7 @@ pub async fn handle(
     let interactive_flow = !list && (proj_query.is_none() || script_query.is_none());
 
     if interactive_flow {
-        clack_intro("spc dev", "Universal Project Runner");
+        clack_intro("tq dev", "Universal Project Runner");
     }
 
     let sp = if interactive_flow {
@@ -97,7 +97,7 @@ pub async fn handle(
             if packages.len() == 1 {
                 &packages[0]
             } else {
-                // Build `★ Recent` quick-launch options from ~/.specter/system/dev_history.json
+                // Build `★ Recent` quick-launch options from ~/.tuquet/system/dev_history.json
                 let recent_entries = load_history();
                 let mut recent_shortcuts: Vec<(&DiscoveredPackage, String)> = Vec::new();
                 let mut clack_opts: Vec<ClackOption> = Vec::new();
@@ -330,7 +330,7 @@ fn render_package_list(packages: &[DiscoveredPackage], scan_label: &str, format:
                 },
             ])
             .with_footer(format!(
-                "Scanned {} project(s) ({}) • Run 'spc dev <project> [script]'",
+                "Scanned {} project(s) ({}) • Run 'tq dev <project> [script]'",
                 packages.len(),
                 scan_label
             ));
@@ -373,7 +373,7 @@ fn render_package_list(packages: &[DiscoveredPackage], scan_label: &str, format:
                 .collect();
 
             let footer = format!(
-                "Found {} project(s) • Run 'spc dev <project>' to select & start",
+                "Found {} project(s) • Run 'tq dev <project>' to select & start",
                 packages.len()
             );
             let card = create_tabular_card(

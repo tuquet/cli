@@ -50,7 +50,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return whoami(OutputFormat::Json).await;
     }
 
-    clack_intro("spc cloud", "Specter Cloud & Fleet Identity Hub");
+    clack_intro("tq cloud", "Tuquet Cloud & Fleet Identity Hub");
 
     let options = vec![
         ClackOption::new(
@@ -130,8 +130,8 @@ pub async fn login(
 
     if !format.is_json() && is_tty {
         clack_intro(
-            "spc login",
-            &format!("Specter Cloud Authentication & Fleet Pairing • {cloud_url}"),
+            "tq login",
+            &format!("Tuquet Cloud Authentication & Fleet Pairing • {cloud_url}"),
         );
     }
 
@@ -456,7 +456,7 @@ pub async fn login(
         }
     }
 
-    // 4. Enroll Workstation Device with Specter Cloud Fleet
+    // 4. Enroll Workstation Device with Tuquet Cloud Fleet
     let enrollment_token = resolved_tenant_slug
         .as_deref()
         .or(resolved_tenant_id.as_deref())
@@ -468,7 +468,7 @@ pub async fn login(
 
     let sp = if !format.is_json() {
         Some(ClackSpinner::start(
-            "Pairing workstation with Specter Cloud Fleet...",
+            "Pairing workstation with Tuquet Cloud Fleet...",
         ))
     } else {
         None
@@ -500,7 +500,7 @@ pub async fn login(
         }
     };
 
-    // 5. Update and persist unified session in ~/.specter/system/.identity.json
+    // 5. Update and persist unified session in ~/.tuquet/system/.identity.json
     device_creds.api_key = Some(active_anon_key.clone());
     device_creds.user_id = maybe_user_id.clone();
     device_creds.email = maybe_user_email.clone();
@@ -610,7 +610,7 @@ fn present_login_success(
             "Endpoint",
             device_creds.cloud_url.as_deref().unwrap_or(cloud_url),
         );
-        card.with_footer("Workstation successfully paired with Specter Cloud fleet");
+        card.with_footer("Workstation successfully paired with Tuquet Cloud fleet");
 
         println!();
         card.print();
@@ -627,7 +627,7 @@ fn present_logout(logged_out: bool) {
         card.with_badge(badge_offline("LOGGED OUT"));
         card.with_min_width(64);
         card.add_line("Removed local cloud pairing credentials and session identity.");
-        card.with_footer("Run 'specter login' to authenticate with Specter Cloud");
+        card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
         println!();
         card.print();
         println!();
@@ -728,7 +728,7 @@ fn present_whoami(
                 }
             }
 
-            card.with_footer("Run 'specter tenant list' to view available multi-tenant workspaces");
+            card.with_footer("Run 'tuquet tenant list' to view available multi-tenant workspaces");
             println!();
             card.print();
             println!();
@@ -737,7 +737,7 @@ fn present_whoami(
         let payload = serde_json::json!({
             "enrolled": false,
             "authenticated": false,
-            "message": "Workstation not enrolled with cloud fleet. Run 'specter login' to authenticate."
+            "message": "Workstation not enrolled with cloud fleet. Run 'tuquet login' to authenticate."
         });
 
         respond_with(format, &payload, |_| {
@@ -745,7 +745,7 @@ fn present_whoami(
             card.with_badge(badge_offline("DISCONNECTED"));
             card.with_min_width(64);
             card.add_line("Workstation not enrolled with cloud fleet.");
-            card.with_footer("Run 'specter login' to authenticate with Specter Cloud");
+            card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
             println!();
             card.print();
             println!();

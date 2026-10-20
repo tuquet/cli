@@ -15,7 +15,7 @@ struct WfSummary {
     source: String,
 }
 
-pub async fn execute_specter_workflow_list(args: &Value) -> Result<String, String> {
+pub async fn execute_tuquet_workflow_list(args: &Value) -> Result<String, String> {
     let search = args
         .get("search")
         .and_then(|v| v.as_str())
@@ -46,11 +46,11 @@ pub async fn execute_specter_workflow_list(args: &Value) -> Result<String, Strin
         }
     }
 
-    // 2. Vault Directory ~/.specter/automa/workflows
-    let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+    // 2. Vault Directory ~/.tuquet/automa/workflows
+    let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
-    for vdir in &[specter_vault, config_vault] {
+    for vdir in &[tuquet_vault, config_vault] {
         if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 let path = entry.path();
@@ -136,7 +136,7 @@ pub fn count_workflow_blocks(val: &Value) -> usize {
     }
 }
 
-pub async fn execute_specter_workflow_inspect(args: &Value) -> Result<String, String> {
+pub async fn execute_tuquet_workflow_inspect(args: &Value) -> Result<String, String> {
     let target = args
         .get("workflow")
         .and_then(|v| v.as_str())
@@ -230,12 +230,12 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
     }
 
     // Check Vault
-    let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+    let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
     let candidates = [
-        specter_vault.join(format!("{}.workflow.json", target)),
-        specter_vault.join(format!("{}.json", target)),
+        tuquet_vault.join(format!("{}.workflow.json", target)),
+        tuquet_vault.join(format!("{}.json", target)),
         config_vault.join(format!("{}.workflow.json", target)),
         config_vault.join(format!("{}.json", target)),
     ];
@@ -274,7 +274,7 @@ fn extract_nodes_array(val: &Value) -> Vec<Value> {
     }
 }
 
-pub async fn execute_specter_workflow_run(args: &Value) -> Result<String, String> {
+pub async fn execute_tuquet_workflow_run(args: &Value) -> Result<String, String> {
     let workflow = args
         .get("workflow")
         .and_then(|v| v.as_str())

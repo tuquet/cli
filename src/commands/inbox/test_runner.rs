@@ -149,7 +149,7 @@ pub async fn run_acceptance_test(
 
     // 4. Ingestion & Regex Extraction Test
     let test_recipient = format!(
-        "test_mmo_{}@specter.local",
+        "test_mmo_{}@tuquet.local",
         test_start.elapsed().as_millis()
     );
     let test_code = "839201";
@@ -197,7 +197,7 @@ pub async fn run_acceptance_test(
             message_id: None,
             sender: "security@google.com".to_string(),
             recipient: test_recipient.clone(),
-            domain: "specter.local".to_string(),
+            domain: "tuquet.local".to_string(),
             subject: Some("Your Google verification code is 839201".to_string()),
             body_text: Some("G-839201 is your code".to_string()),
             body_html: None,
@@ -291,7 +291,7 @@ pub async fn run_acceptance_test(
     println!();
 
     if overall_passed {
-        println!(" [RESULT] Specter Inbox is 100% healthy and ready for MMO automation!");
+        println!(" [RESULT] Tuquet Inbox is 100% healthy and ready for MMO automation!");
     } else {
         eprintln!(" [RESULT] One or more checks failed. Please check the logs above.");
         std::process::exit(1);

@@ -17,7 +17,7 @@ pub struct DevHistoryEntry {
 }
 
 pub fn history_file_path() -> PathBuf {
-    crate::config::canonical_specter_dir()
+    crate::config::canonical_tuquet_dir()
         .join(crate::constants::PILLAR_SYSTEM)
         .join("dev_history.json")
 }

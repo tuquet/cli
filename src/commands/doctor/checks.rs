@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::types::DiagnosticItem;
-use crate::config::{AppConfig, canonical_specter_dir};
+use crate::config::{AppConfig, canonical_tuquet_dir};
 use crate::infrastructure::bridge::probe_port;
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::ui::{
@@ -178,8 +178,8 @@ pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
 
 pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
     let browser_status = crate::core::browser::resolver::get_runtime_status();
-    let installed_runtimes = specter_browser::list_installed_runtimes();
-    let active_version = specter_browser::get_active_version();
+    let installed_runtimes = tuquet_browser::list_installed_runtimes();
+    let active_version = tuquet_browser::get_active_version();
 
     let mut browser_card = Card::new("ANTIDETECT BROWSER ENGINE");
     browser_card.with_min_width(68);
@@ -210,7 +210,7 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
                 .join(", ")
         };
         browser_card.add_kv("Installed Versions", installed_desc);
-        let profiles_dir = canonical_specter_dir()
+        let profiles_dir = canonical_tuquet_dir()
             .join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES);
         let profile_count = std::fs::read_dir(&profiles_dir)
@@ -221,13 +221,13 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
             format!("{} profile(s) in {}", profile_count, profiles_dir.display()),
         );
         browser_card
-            .with_footer("Manage with 'specter browser list' or 'specter browser use <version>'");
+            .with_footer("Manage with 'tuquet browser list' or 'tuquet browser use <version>'");
     } else {
         browser_card.with_badge(badge_error("MISSING ENGINE"));
         browser_card.add_line("No Antidetect Chromium runtime installed on this machine.");
-        browser_card.with_footer("Run 'specter browser install 148' to install Golden LTS release");
+        browser_card.with_footer("Run 'tuquet browser install 148' to install Golden LTS release");
         missing_actions.push(
-            "Browser: Run 'specter browser install 148' to install C++ Antidetect Chromium"
+            "Browser: Run 'tuquet browser install 148' to install C++ Antidetect Chromium"
                 .to_string(),
         );
     }
@@ -236,33 +236,33 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
 }
 
 pub fn check_storage_pillars() -> Table {
-    let root = canonical_specter_dir();
+    let root = canonical_tuquet_dir();
     let mut pillar_items = Vec::new();
 
     let pillars = &[
         (
             crate::constants::PILLAR_SYSTEM,
-            "specter/cli (System)",
+            "tuquet/cli (System)",
             "Identity (.identity.json), CLI history, machine ID",
         ),
         (
             crate::constants::PILLAR_AUTOMA,
-            "specter/automa (Web Studio)",
+            "tuquet/automa (Web Studio)",
             "Workflow DAG definitions, SQLite DB (automa.sqlite)",
         ),
         (
             crate::constants::PILLAR_BROWSER,
-            "specter/browser (Sandbox)",
+            "tuquet/browser (Sandbox)",
             "Antidetect Chromium runtimes, sandbox profiles",
         ),
         (
             crate::constants::PILLAR_BRIDGE,
-            "specter/bridge (Mesh)",
+            "tuquet/bridge (Mesh)",
             "Multi-VPS mesh configuration (bridge.json), PID locks",
         ),
         (
             crate::constants::PILLAR_FAKER,
-            "specter/faker (Identity)",
+            "tuquet/faker (Identity)",
             "Synthetic persona schemas, CCCD template data",
         ),
     ];
@@ -353,7 +353,7 @@ pub fn check_network_topology() -> Card {
     create_network_topology_card(
         "NETWORK TOPOLOGY & LISTENERS",
         &endpoints,
-        Some("Tunnels run on demand. Start with 'specter bridge start' or 'specter runner start'"),
+        Some("Tunnels run on demand. Start with 'tuquet bridge start' or 'tuquet runner start'"),
     )
 }
 
@@ -371,7 +371,7 @@ pub fn check_verdict(
             .add_line("All required ecosystem dependencies and runtimes are properly provisioned.");
         verdict_card.add_line("Your workstation is 100% ready for autonomous browser workflows, antidetect spoofing, and bridge meshes.");
         verdict_card.with_footer(
-            "Tip: Run 'specter' to launch interactive shell, or 'specter status' for dashboard.",
+            "Tip: Run 'tuquet' to launch interactive shell, or 'tuquet status' for dashboard.",
         );
     } else {
         verdict_card.with_badge(badge_warn("ACTION REQUIRED"));
@@ -379,7 +379,7 @@ pub fn check_verdict(
         for action in missing_actions {
             verdict_card.add_line(format!("  • {}", action));
         }
-        verdict_card.with_footer("Tip: Run 'specter doctor --fix' or 'specter bootstrap' to auto-remediate missing components.");
+        verdict_card.with_footer("Tip: Run 'tuquet doctor --fix' or 'tuquet bootstrap' to auto-remediate missing components.");
     }
 
     verdict_card

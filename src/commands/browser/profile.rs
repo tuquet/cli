@@ -45,8 +45,8 @@ pub async fn handle_profile(
             }
 
             crate::ui::prompt::clack_intro(
-                "spc browser profile",
-                "Specter Antidetect Browser Profiles",
+                "tq browser profile",
+                "Tuquet Antidetect Browser Profiles",
             );
             let mut header_card = Card::new("ANTIDETECT BROWSER PROFILES");
             header_card.with_badge(badge_online(&format!("{} REGISTERED", profiles.len())));
@@ -56,7 +56,7 @@ pub async fn handle_profile(
                 base_dir.join("profiles").display().to_string(),
             );
             header_card.with_footer(
-                "Run 'specter browser launch <id>' to start or 'profile create <name>' to add",
+                "Run 'tuquet browser launch <id>' to start or 'profile create <name>' to add",
             );
             header_card.print();
 
@@ -66,7 +66,7 @@ pub async fn handle_profile(
                 empty_card.with_min_width(74);
                 empty_card.add_line("No browser profiles found in ~/.tuquet/browser/profiles/.");
                 empty_card.add_line("Create your first profile with:");
-                empty_card.add_line("  specter browser profile create 'My-Profile-1'");
+                empty_card.add_line("  tq browser profile create 'My-Profile-1'");
                 empty_card.print();
                 crate::ui::prompt::clack_outro("0 profiles registered.");
                 return Ok(());
@@ -210,7 +210,7 @@ pub async fn handle_profile(
             );
             card.add_kv("Config File", meta_path.display().to_string());
             card.with_footer(format!(
-                "Launch with: specter browser launch {}",
+                "Launch with: tq browser launch {}",
                 profile.id
             ));
             println!();
@@ -296,7 +296,7 @@ pub async fn handle_profile(
                 profile.get_sandbox_dir(&base_dir).display().to_string(),
             );
             card.with_footer(format!(
-                "Launch with: specter browser launch {}",
+                "Launch with: tq browser launch {}",
                 profile.id
             ));
             println!();
@@ -486,7 +486,7 @@ pub async fn handle_profile(
                 card.add_kv("Verified SHA-256", h);
             }
             card.with_footer(format!(
-                "Launch with: specter browser launch {}",
+                "Launch with: tq browser launch {}",
                 profile.id
             ));
             println!();
@@ -528,7 +528,7 @@ pub async fn handle_profile(
                         card.add_line(
                             "This profile is configured for DIRECT connection (no proxy).",
                         );
-                        card.with_footer("Set proxy with: specter browser profile create <name> --proxy socks5://...");
+                        card.with_footer("Set proxy with: tq browser profile create <name> --proxy socks5://...");
                         card.print();
                         println!();
                     }
@@ -613,8 +613,8 @@ async fn run_interactive_profile(
     };
 
     clack_intro(
-        "spc browser profile",
-        "Specter Antidetect Browser Profile Manager",
+        "tq browser profile",
+        "Tuquet Antidetect Browser Profile Manager",
     );
     let profiles = crate::core::browser::BrowserProfile::list_all(base_dir)?;
     clack_note(

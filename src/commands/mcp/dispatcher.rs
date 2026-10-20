@@ -15,17 +15,17 @@ pub async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> Json
     let arguments = p.get("arguments").cloned().unwrap_or(json!({}));
 
     let call_result = match tool_name {
-        "specter_status" => status::execute_specter_status().await,
-        "specter_workflow_list" => workflow::execute_specter_workflow_list(&arguments).await,
-        "specter_workflow_inspect" => workflow::execute_specter_workflow_inspect(&arguments).await,
-        "specter_workflow_run" => workflow::execute_specter_workflow_run(&arguments).await,
-        "specter_runner_probe" => runner::execute_specter_runner_probe().await,
-        "specter_cloud_whoami" => status::execute_specter_cloud_whoami().await,
-        "specter_browser_status" => status::execute_specter_browser_status().await,
-        "specter_tree" => tree::execute_specter_tree(&arguments).await,
-        "specter_faker_generate" => faker::execute_specter_faker_generate(&arguments).await,
-        "specter_inbox_otp" => inbox::execute_specter_inbox_otp(&arguments).await,
-        "specter_inbox_status" => inbox::execute_specter_inbox_status().await,
+        "tuquet_status" => status::execute_tuquet_status().await,
+        "tuquet_workflow_list" => workflow::execute_tuquet_workflow_list(&arguments).await,
+        "tuquet_workflow_inspect" => workflow::execute_tuquet_workflow_inspect(&arguments).await,
+        "tuquet_workflow_run" => workflow::execute_tuquet_workflow_run(&arguments).await,
+        "tuquet_runner_probe" => runner::execute_tuquet_runner_probe().await,
+        "tuquet_cloud_whoami" => status::execute_tuquet_cloud_whoami().await,
+        "tuquet_browser_status" => status::execute_tuquet_browser_status().await,
+        "tuquet_tree" => tree::execute_tuquet_tree(&arguments).await,
+        "tuquet_faker_generate" => faker::execute_tuquet_faker_generate(&arguments).await,
+        "tuquet_inbox_otp" => inbox::execute_tuquet_inbox_otp(&arguments).await,
+        "tuquet_inbox_status" => inbox::execute_tuquet_inbox_status().await,
         other => {
             return JsonRpcResponse::err(id, -32601, format!("Tool not found: {}", other));
         }

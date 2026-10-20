@@ -28,7 +28,7 @@ impl Prompt for SpecterPrompt {
         };
 
         let line = format!(
-            "{border}╭─{reset} {bold}{cyan}⚡ specter{reset}  {env_badge}  {border}[{reset}{scope_color}{scope_str}{reset}{border}]{reset}\n{border}╰─{reset}"
+            "{border}╭─{reset} {bold}{cyan}⚡ tuquet{reset}  {env_badge}  {border}[{reset}{scope_color}{scope_str}{reset}{border}]{reset}\n{border}╰─{reset}"
         );
         Cow::Owned(line)
     }

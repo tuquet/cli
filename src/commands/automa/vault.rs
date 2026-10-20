@@ -88,7 +88,7 @@ pub async fn import_workflow(
         icon.as_deref(),
     )?;
 
-    // Also copy to Vault ~/.specter/automa/workflows/
+    // Also copy to Vault ~/.tuquet/automa/workflows/
     let vault_dir = crate::config::AutomaConfig::load().resolved_vault_dir();
     let _ = tokio::fs::create_dir_all(&vault_dir).await;
     let vault_file = vault_dir.join(format!("{}.workflow.json", id));
@@ -117,7 +117,7 @@ pub async fn import_workflow(
     crate::ui::Notify::key_val("Database", db_path.display());
     crate::ui::Notify::divider();
     println!(" 💡 Ready to execute:");
-    println!("    specter automa run {} --headless", id);
+    println!("    tq automa run {} --headless", id);
     crate::ui::Notify::divider();
 
     Ok(())
@@ -141,12 +141,12 @@ pub async fn export_workflow(
 
     // 2. Check Vault
     if workflow_json.is_none() {
-        let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
         let candidates = [
-            specter_vault.join(format!("{}.workflow.json", id)),
-            specter_vault.join(format!("{}.json", id)),
+            tuquet_vault.join(format!("{}.workflow.json", id)),
+            tuquet_vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];
@@ -207,12 +207,12 @@ pub async fn delete_workflow(
 
     // 2. Delete from Vault if requested
     if delete_from_vault {
-        let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
         let candidates = [
-            specter_vault.join(format!("{}.workflow.json", id)),
-            specter_vault.join(format!("{}.json", id)),
+            tuquet_vault.join(format!("{}.workflow.json", id)),
+            tuquet_vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];

@@ -201,7 +201,7 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
         }
     }
 
-    println!("Exiting Specter Interactive Shell. Goodbye!");
+    println!("Exiting Tuquet Interactive Shell. Goodbye!");
     Ok(())
 }
 
@@ -221,7 +221,7 @@ async fn handle_command(
         "exit" | "quit" | "q" => {
             if *scope != ShellScope::Global {
                 println!(
-                    "Returning to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope. Type 'exit' again to leave Specter."
+                    "Returning to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope. Type 'exit' again to leave Tuquet."
                 );
                 *scope = ShellScope::Global;
                 return Ok(false);
@@ -401,7 +401,7 @@ pub fn print_scope_help(scope: ShellScope) {
             );
             card.add_kv(
                 "  git [action]",
-                "Multi-repo Git status radar & Specter Bridge synchronizer",
+                "Multi-repo Git status radar & Tuquet Bridge synchronizer",
             );
             card.add_kv(
                 "  env [action]",
@@ -412,11 +412,11 @@ pub fn print_scope_help(scope: ShellScope) {
                 "  doctor",
                 "Diagnose environment dependencies (Scoop, Cloudflared, SSH, Browser)",
             );
-            card.add_kv("  upgrade", "Check and update Specter to latest release");
+            card.add_kv("  upgrade", "Check and update Tuquet to latest release");
             card.add_kv("  whoami", "Inspect cloud enrollment identity & device ID");
             card.add_kv(
                 "  login [token]",
-                "Authenticate workstation with Specter Cloud",
+                "Authenticate workstation with Tuquet Cloud",
             );
             card.add_kv(
                 "  card",
@@ -519,7 +519,7 @@ pub fn print_scope_help(scope: ShellScope) {
             ));
             card.add_kv(
                 "  login [token]",
-                "Authenticate and pair device with Specter Cloud",
+                "Authenticate and pair device with Tuquet Cloud",
             );
             card.add_kv("  logout", "Log out and delete local cloud pairing");
             card.add_kv(
@@ -680,15 +680,15 @@ pub fn print_scope_help(scope: ShellScope) {
             );
             card.add_kv(
                 "  enable <server>",
-                "Enable a server in ~/.specter/bridge/bridge.json",
+                "Enable a server in ~/.tuquet/bridge/bridge.json",
             );
             card.add_kv(
                 "  disable <server>",
-                "Disable a server in ~/.specter/bridge/bridge.json",
+                "Disable a server in ~/.tuquet/bridge/bridge.json",
             );
             card.add_kv(
                 "  check",
-                "Validate ~/.specter/bridge/bridge.json schema, ports, and workloads",
+                "Validate ~/.tuquet/bridge/bridge.json schema, ports, and workloads",
             );
             card.add_kv(
                 "  config [--edit]",

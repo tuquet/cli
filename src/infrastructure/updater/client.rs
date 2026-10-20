@@ -8,7 +8,7 @@ pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest:
     let mut builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(timeout_secs))
         .user_agent(format!(
-            "specter/{} ({}; {})",
+            "tuquet/{} ({}; {})",
             env!("CARGO_PKG_VERSION"),
             std::env::consts::OS,
             std::env::consts::ARCH
@@ -24,7 +24,7 @@ pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest:
             builder = builder.proxy(p);
         }
     } else {
-        // 2. Probe if Specter local SOCKS5 mesh bridge (port 1080) is actively listening
+        // 2. Probe if Tuquet local SOCKS5 mesh bridge (port 1080) is actively listening
         if let Ok(_) = std::net::TcpStream::connect_timeout(
             &std::net::SocketAddr::from(([127, 0, 0, 1], 1080)),
             Duration::from_millis(80),
@@ -52,7 +52,7 @@ pub async fn fetch_bytes_with_fallback(url: &str, timeout_secs: u64) -> Result<V
     // Fallback to OS-native curl (uses Windows Schannel / macOS SecureTransport / system CA store)
     let curl_bin = if cfg!(windows) { "curl.exe" } else { "curl" };
     let ua = format!(
-        "User-Agent: specter/{} ({}; {})",
+        "User-Agent: tuquet/{} ({}; {})",
         env!("CARGO_PKG_VERSION"),
         std::env::consts::OS,
         std::env::consts::ARCH

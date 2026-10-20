@@ -1,5 +1,5 @@
 use serde_json::Value;
-use specter_browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
+use tuquet_browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
 use std::path::Path;
 
 use crate::infrastructure::cloud_reporter::{
@@ -281,7 +281,7 @@ impl CloudFleetOrchestrator {
         variables: Vec<String>,
         timeout_opt: Option<u64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let base_dir = specter_browser::resolve_data_dir();
+        let base_dir = tuquet_browser::resolve_data_dir();
         let app_config = crate::config::AppConfig::load();
 
         println!();
@@ -294,11 +294,11 @@ impl CloudFleetOrchestrator {
             Some(c) => c,
             None => {
                 eprintln!(
-                    "\n{} Workstation not enrolled with Specter Cloud.",
+                    "\n{} Workstation not enrolled with Tuquet Cloud.",
                     badge_error("AUTH ERROR")
                 );
                 eprintln!(
-                    "Run 'specter runner enroll' or login to configure device credentials.\n"
+                    "Run 'tuquet runner enroll' or login to configure device credentials.\n"
                 );
                 return Err("Missing cloud device credentials".into());
             }

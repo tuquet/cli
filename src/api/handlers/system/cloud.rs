@@ -19,7 +19,7 @@ use super::types::{
     get,
     path = "/api/v1/system/cloud/status",
     operation_id = "get_cloud_status",
-    summary = "Get Specter Cloud reporting and device enrollment status",
+    summary = "Get Tuquet Cloud reporting and device enrollment status",
     description = "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
     responses(
         (status = 200, description = "Cloud reporting status retrieved successfully", body = CloudStatusResponse)
@@ -83,8 +83,8 @@ pub async fn get_cloud_status(State(state): State<crate::AppState>) -> impl Into
     post,
     path = "/api/v1/system/cloud/sync",
     operation_id = "trigger_cloud_sync",
-    summary = "Trigger immediate inventory and heartbeat sync to Specter Cloud",
-    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Specter Cloud central hub.",
+    summary = "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
+    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
     responses(
         (status = 200, description = "Sync completed or attempted", body = CloudSyncResponse)
     )
@@ -125,8 +125,8 @@ pub async fn trigger_cloud_sync(State(state): State<crate::AppState>) -> impl In
     post,
     path = "/api/v1/system/cloud/login",
     operation_id = "cloud_login",
-    summary = "Enroll and authenticate this runner with Specter Cloud",
-    description = "Authenticates this workstation runner with Specter Cloud using an enrollment token or JWT and stores credentials locally.",
+    summary = "Enroll and authenticate this runner with Tuquet Cloud",
+    description = "Authenticates this workstation runner with Tuquet Cloud using an enrollment token or JWT and stores credentials locally.",
     request_body = CloudLoginRequest,
     responses(
         (status = 200, description = "Successfully enrolled workstation", body = CloudLoginResponse),
@@ -174,7 +174,7 @@ pub async fn cloud_login(
                         user_email: c.email,
                         name: c.name,
                         message:
-                            "Workstation authenticated and paired successfully with Specter Cloud"
+                            "Workstation authenticated and paired successfully with Tuquet Cloud"
                                 .to_string(),
                     }),
                 )
@@ -223,8 +223,8 @@ pub async fn cloud_login(
     post,
     path = "/api/v1/system/cloud/logout",
     operation_id = "cloud_logout",
-    summary = "Disconnect and unenroll this runner from Specter Cloud",
-    description = "Removes locally stored device credentials, disconnecting this workstation from Specter Cloud.",
+    summary = "Disconnect and unenroll this runner from Tuquet Cloud",
+    description = "Removes locally stored device credentials, disconnecting this workstation from Tuquet Cloud.",
     responses(
         (status = 200, description = "Successfully logged out", body = CloudLogoutResponse)
     )
@@ -237,7 +237,7 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
                 serde_json::json!({
                     "type": "auth_state_changed",
                     "isAuthenticated": false,
-                    "message": "Logged out from Specter Cloud"
+                    "message": "Logged out from Tuquet Cloud"
                 })
                 .to_string(),
             );
@@ -246,7 +246,7 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
                 StatusCode::OK,
                 Json(CloudLogoutResponse {
                     success: true,
-                    message: "Successfully logged out and disconnected from Specter Cloud"
+                    message: "Successfully logged out and disconnected from Tuquet Cloud"
                         .to_string(),
                 }),
             )
@@ -415,7 +415,7 @@ pub async fn desktop_auth_callback(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Specter Desk Connected</title>
+  <title>Tuquet Desk Connected</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc; }
     .card { text-align: center; background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 420px; }
@@ -426,7 +426,7 @@ pub async fn desktop_auth_callback(
 </head>
 <body>
   <div class="card">
-    <h2>Specter Desk Connected!</h2>
+    <h2>Tuquet Desk Connected!</h2>
     <p>Your workstation is now securely paired with Tuquet Admin.</p>
     <div class="hint">You can safely close this browser tab.</div>
   </div>
@@ -445,7 +445,7 @@ pub async fn desktop_auth_callback(
                 r#"<!DOCTYPE html><html><body style="font-family: sans-serif; text-align: center; padding: 3rem;">
                 <h2 style="color: #ef4444;">Xác thực không thành công ({})</h2>
                 <p>{}</p>
-                <p>Vui lòng mở lại Specter Desk và thử lại.</p></body></html>"#,
+                <p>Vui lòng mở lại Tuquet Desk và thử lại.</p></body></html>"#,
                 code, msg
             );
             (code, [("content-type", "text/html; charset=utf-8")], html).into_response()

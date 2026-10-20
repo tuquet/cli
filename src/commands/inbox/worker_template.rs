@@ -12,16 +12,16 @@ pub fn generate_cloudflare_worker_script(opts: &WorkerTemplateOptions) -> String
     let default_sb_key = opts
         .supabase_service_role_key
         .unwrap_or("<YOUR_SERVICE_ROLE_KEY>");
-    let default_secret = opts.webhook_secret.unwrap_or("specter-inbox-shared-secret");
+    let default_secret = opts.webhook_secret.unwrap_or("tuquet-inbox-shared-secret");
     let default_local_webhook = opts.local_webhook_url.unwrap_or("");
 
     format!(
         r#"/**
- * Specter Catch-All Email & OTP Interceptor Worker
+ * Tuquet Catch-All Email & OTP Interceptor Worker
  * Compatible with Cloudflare Email Routing & Workers
  * 
  * Deployment:
- * 1. Create a Cloudflare Worker (e.g. 'specter-inbox-router').
+ * 1. Create a Cloudflare Worker (e.g. 'tuquet-inbox-router').
  * 2. Paste this script into the worker editor.
  * 3. Set Environment Secrets in Cloudflare Worker Settings:
  *    - SUPABASE_URL = "{default_sb_url}"
@@ -29,7 +29,7 @@ pub fn generate_cloudflare_worker_script(opts: &WorkerTemplateOptions) -> String
  *    - WEBHOOK_SECRET = "{default_secret}"
  *    - LOCAL_WEBHOOK_URL = "{default_local_webhook}" (Optional, for direct tunnel)
  * 4. In Cloudflare Dashboard -> Email Routing -> Routing Rules:
- *    - Catch-all rule: Send to Worker -> specter-inbox-router
+ *    - Catch-all rule: Send to Worker -> tuquet-inbox-router
  */
 
 export default {{
@@ -100,7 +100,7 @@ export default {{
         method: "POST",
         headers: {{
           "Content-Type": "application/json",
-          "X-Specter-Secret": secret
+          "X-Tuquet-Secret": secret
         }},
         body: JSON.stringify({{
           id: messageId,

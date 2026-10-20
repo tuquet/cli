@@ -8,12 +8,12 @@ This directory manages UP and DOWN migration files for the local database engine
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. LOCAL CLIENT RUNTIME (specter runner / cli)                               │
+│ 1. LOCAL CLIENT RUNTIME (tuquet runner / cli)                               │
 │    - Technology: SQLite 3 (WAL mode)                                        │
-│    - Storage: ~/.specter/automa/automa.sqlite (SSOT Pillar 2)                │
+│    - Storage: ~/.tuquet/automa/automa.sqlite (SSOT Pillar 2)                │
 │    - Paradigm: Offline-first, single-user embedded high performance         │
 │    - Management: migrations/*.sql                                           │
-│    - 5 Canonical Microservice Pillars (~/.specter/):                         │
+│    - 5 Canonical Microservice Pillars (~/.tuquet/):                         │
 │      ├── system/  : Machine ID, identity, CLI cache, credentials            │
 │      ├── automa/  : automa.sqlite (DB), workflows/, worker state            │
 │      ├── browser/ : Dedicated runtimes/, profiles/, extensions/             │

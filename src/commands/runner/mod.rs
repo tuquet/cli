@@ -63,7 +63,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     }
 
-    clack_intro("spc runner", "Specter Runner Daemon Supervisor");
+    clack_intro("tq runner", "Tuquet Runner Daemon Supervisor");
 
     let options = vec![
         ClackOption::new(
@@ -138,14 +138,21 @@ mod tests {
 
     #[test]
     fn test_is_valid_runner_name() {
-        assert!(is_valid_runner_name("spc"));
-        assert!(is_valid_runner_name("spc.exe"));
-        assert!(is_valid_runner_name("SPC.EXE"));
-        assert!(is_valid_runner_name("specter"));
-        assert!(is_valid_runner_name("specter.exe"));
-        assert!(is_valid_runner_name("SPECTER.EXE"));
-        assert!(is_valid_runner_name("runner"));
-        assert!(is_valid_runner_name("runner.exe"));
+        // Valid runner binary is strictly tq / tq.exe (case-insensitive)
+        assert!(is_valid_runner_name("tq"));
+        assert!(is_valid_runner_name("tq.exe"));
+        assert!(is_valid_runner_name("TQ.EXE"));
+        assert!(is_valid_runner_name("  tq.exe  "));
+
+        // Obsolete legacy names & non-binaries rejected per KISS & YAGNI
+        assert!(!is_valid_runner_name("tuquet"));
+        assert!(!is_valid_runner_name("tuquet.exe"));
+        assert!(!is_valid_runner_name("spc"));
+        assert!(!is_valid_runner_name("SPC.EXE"));
+        assert!(!is_valid_runner_name("specter"));
+        assert!(!is_valid_runner_name("SPECTER.EXE"));
+        assert!(!is_valid_runner_name("runner"));
+        assert!(!is_valid_runner_name("runner.exe"));
 
         // Innocent applications must be rejected
         assert!(!is_valid_runner_name("chrome.exe"));

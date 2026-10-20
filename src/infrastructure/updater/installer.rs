@@ -12,7 +12,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
         ClackSpinner, clack_intro, clack_outro, clack_step_info, clack_step_ok, clack_step_warn,
     };
 
-    clack_intro("spc upgrade", "Specter CLI Self-Updater & Release Manager");
+    clack_intro("tq upgrade", "Tuquet CLI Self-Updater & Release Manager");
     let sp = ClackSpinner::start(format!(
         "Checking for latest release from GitHub ({})...",
         GITHUB_REPO
@@ -43,7 +43,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
 
     if !info.has_update {
         clack_step_ok(format!(
-            "Specter is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
+            "Tuquet is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
             current
         ));
         clack_outro("No upgrade required.");
@@ -58,7 +58,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
     let current_exe = std::env::current_exe()?;
     let exe_lower = current_exe.to_string_lossy().to_lowercase();
     let is_scoop_install =
-        exe_lower.contains("scoop\\apps\\specter") || exe_lower.contains("scoop/apps/specter");
+        exe_lower.contains("scoop\\apps\\tuquet") || exe_lower.contains("scoop/apps/tuquet");
 
     // 1. If installed as a dedicated Scoop app, delegate to scoop update
     if is_scoop_install {
@@ -77,14 +77,14 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
             clack_step_info("Detected Scoop installation. Executing package upgrade...");
 
             if let Ok(output) = tokio::process::Command::new("powershell")
-                .args(["-NoProfile", "-Command", "scoop update specter"])
+                .args(["-NoProfile", "-Command", "scoop update tuquet"])
                 .output()
                 .await
             {
                 let stdout_str = String::from_utf8_lossy(&output.stdout);
                 if output.status.success() && !stdout_str.contains("isn't installed") {
                     clack_step_ok(format!(
-                        "Successfully upgraded Specter to v{} via Scoop!",
+                        "Successfully upgraded Tuquet to v{} via Scoop!",
                         info.latest_version
                     ));
                     clack_outro("Upgrade complete.");
@@ -135,11 +135,11 @@ async fn perform_in_place_self_update(
         other => other,
     };
 
-    let specter_prefix = format!("specter-{}-{}", os, arch);
+    let tuquet_prefix = format!("tuquet-{}-{}", os, arch);
 
     // Find best asset match:
-    // 1. Archive matching OS and Arch (e.g. specter-windows-x64.zip, specter-linux-x64.tar.gz)
-    // 2. Raw binary matching OS (specter.exe, specter)
+    // 1. Archive matching OS and Arch (e.g. tuquet-windows-x64.zip, tuquet-linux-x64.tar.gz)
+    // 2. Raw binary matching OS (tuquet.exe, tuquet)
     let mut selected_asset: Option<(String, String, u64)> = None;
     let mut checksum_asset: Option<(String, String)> = None;
 
@@ -158,15 +158,15 @@ async fn perform_in_place_self_update(
                 checksum_asset = Some((name.to_string(), download_url.to_string()));
             }
 
-            // Match full prefix archive (specter)
-            if name.starts_with(&specter_prefix)
+            // Match full prefix archive (tuquet)
+            if name.starts_with(&tuquet_prefix)
                 && (name.ends_with(".zip") || name.ends_with(".tar.gz"))
             {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
                 break;
             }
             // Match naming with arch and os
-            if name.contains("specter")
+            if name.contains("tuquet")
                 && name.contains(arch)
                 && name.contains(os)
                 && name.ends_with(".zip")
@@ -175,10 +175,10 @@ async fn perform_in_place_self_update(
             }
             // Fallback raw binary
             if selected_asset.is_none()
-                && (name == "spc.exe"
-                    || name == "spc"
-                    || name == "specter.exe"
-                    || name == "specter")
+                && (name == "tq.exe"
+                    || name == "tq"
+                    || name == "tuquet.exe"
+                    || name == "tuquet")
             {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
@@ -246,10 +246,10 @@ async fn perform_in_place_self_update(
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let file_name = file.name().to_string();
-            if file_name.ends_with("spc.exe")
-                || file_name.ends_with("spc")
-                || file_name.ends_with("specter.exe")
-                || file_name.ends_with("specter")
+            if file_name.ends_with("tq.exe")
+                || file_name.ends_with("tq")
+                || file_name.ends_with("tuquet.exe")
+                || file_name.ends_with("tuquet")
             {
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
@@ -257,7 +257,7 @@ async fn perform_in_place_self_update(
                 break;
             }
         }
-        extracted.ok_or("Failed to locate 'spc' executable inside the downloaded ZIP archive")?
+        extracted.ok_or("Failed to locate 'tq' executable inside the downloaded ZIP archive")?
     } else if asset_name.ends_with(".tar.gz") {
         println!(
             "{} Extracting binary from Tarball archive in-memory...",
@@ -271,10 +271,10 @@ async fn perform_in_place_self_update(
         for entry in tar_archive.entries()? {
             let mut entry = entry?;
             let path = entry.path()?.to_string_lossy().to_string();
-            if path.ends_with("spc")
-                || path.ends_with("spc.exe")
-                || path.ends_with("specter")
-                || path.ends_with("specter.exe")
+            if path.ends_with("tq")
+                || path.ends_with("tq.exe")
+                || path.ends_with("tuquet")
+                || path.ends_with("tuquet.exe")
             {
                 let mut buf = Vec::new();
                 entry.read_to_end(&mut buf)?;
@@ -283,15 +283,15 @@ async fn perform_in_place_self_update(
             }
         }
         extracted
-            .ok_or("Failed to locate 'spc' executable inside the downloaded tarball archive")?
+            .ok_or("Failed to locate 'tq' executable inside the downloaded tarball archive")?
     } else {
         // Direct raw binary
         downloaded_bytes.to_vec()
     };
 
-    // Swap executable in-place for `spc` only, and purge any legacy `specter.exe`
+    // Swap executable in-place for `tq` only, and purge any legacy `tuquet.exe`
     println!(
-        "{} Performing atomic in-place binary swap (spc)...",
+        "{} Performing atomic in-place binary swap (tq)...",
         crate::ui::badge_step("SWAP")
     );
 
@@ -303,7 +303,7 @@ async fn perform_in_place_self_update(
 
     atomic_swap_binary(&target_spc, &binary_bytes)?;
 
-    // If the user ran `specter.exe update` from an older install, remove the legacy `specter.exe`
+    // If the user ran `tuquet.exe update` from an older install, remove the legacy `tuquet.exe`
     if current_exe != target_spc {
         let old_legacy = current_exe.with_extension("exe.old");
         let _ = std::fs::rename(current_exe, &old_legacy);
@@ -317,7 +317,7 @@ async fn perform_in_place_self_update(
         }
     }
 
-    let ssot_bin = crate::config::canonical_specter_dir().join("bin");
+    let ssot_bin = crate::config::canonical_tuquet_dir().join("bin");
     if ssot_bin.exists() {
         let candidate = ssot_bin.join(bin_name);
         if candidate != target_spc && candidate.exists() {
@@ -334,7 +334,7 @@ async fn perform_in_place_self_update(
     println!("│  Previous Version   v{:<52} │", info.current_version);
     println!("│  Active Version     v{:<52} │", info.latest_version);
     println!("│  Binary Executable  {:<53} │", target_spc.display());
-    println!("╰─ In-place upgrade applied successfully! Run 'spc doctor' to inspect. ────╯");
+    println!("╰─ In-place upgrade applied successfully! Run 'tq doctor' to inspect. ────╯");
     println!();
 
     Ok(())
@@ -343,22 +343,22 @@ async fn perform_in_place_self_update(
 fn platform_binary_name() -> &'static str {
     #[cfg(windows)]
     {
-        "spc.exe"
+        "tq.exe"
     }
     #[cfg(not(windows))]
     {
-        "spc"
+        "tq"
     }
 }
 
 fn legacy_binary_name() -> &'static str {
     #[cfg(windows)]
     {
-        "specter.exe"
+        "tuquet.exe"
     }
     #[cfg(not(windows))]
     {
-        "specter"
+        "tuquet"
     }
 }
 

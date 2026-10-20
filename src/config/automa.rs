@@ -1,4 +1,4 @@
-use crate::config::expander::{EnvExpander, canonical_specter_dir};
+use crate::config::expander::{EnvExpander, canonical_tuquet_dir};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -53,7 +53,7 @@ impl Default for AutomaConfig {
 
 impl AutomaConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_specter_dir().join(crate::constants::PILLAR_AUTOMA);
+        let dir = canonical_tuquet_dir().join(crate::constants::PILLAR_AUTOMA);
         let _ = fs::create_dir_all(&dir);
         dir.join(crate::constants::FILE_AUTOMA_JSON)
     }
@@ -88,7 +88,7 @@ impl AutomaConfig {
             let expanded = EnvExpander::expand(custom);
             PathBuf::from(expanded)
         } else {
-            canonical_specter_dir().join("automa").join("workflows")
+            canonical_tuquet_dir().join("automa").join("workflows")
         }
     }
 }

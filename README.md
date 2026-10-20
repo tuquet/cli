@@ -1,16 +1,16 @@
 <div align="center">
   <img src="https://tuquet.com/icons/cli.svg" width="76" height="76" alt="CLI Logo" />
-  <h1>Specter Master CLI (`specter`)</h1>
+  <h1>Tuquet Master CLI (`tuquet`)</h1>
   <p><strong>Interactive Scoped Shell, Service Multiplexer & High-Performance Automation Terminal in Rust</strong></p>
 
   <p>
-    <a href="https://docs.tuquet.com/en/specter/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Hub-blue.svg" alt="Documentation Hub" /></a>
+    <a href="https://docs.tuquet.com/en/tuquet/commands/"><img src="https://img.shields.io/badge/Docs-VitePress%20Hub-blue.svg" alt="Documentation Hub" /></a>
     <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-Clap%2FRatatui-orange.svg" alt="Rust" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" /></a>
   </p>
 
   <p>
-    <strong><a href="https://docs.tuquet.com/en/specter/commands/">📖 Đọc toàn bộ tài liệu 96+ lệnh CLI tại Documentation Hub &rarr;</a></strong>
+    <strong><a href="https://docs.tuquet.com/en/tuquet/commands/">📖 Đọc toàn bộ tài liệu 96+ lệnh CLI tại Documentation Hub &rarr;</a></strong>
   </p>
 </div>
 
@@ -18,17 +18,17 @@
 
 ## 📌 Tổng Quan (Overview)
 
-**Specter Master CLI** (`specter`, alias: `spc`) là điểm vào thống nhất (Single Entrypoint) điều phối toàn bộ hệ sinh thái Specter. Viết bằng Rust thuần túy với thời gian khởi động sub-millisecond, Specter CLI cung cấp cả giao diện dòng lệnh truyền thống và một **Interactive Scoped REPL** giúp chuyển đổi linh hoạt giữa các subsystem mà không làm phân mảnh công cụ.
+**Tuquet Master CLI** (`tuquet`, alias: `tq`) là điểm vào thống nhất (Single Entrypoint) điều phối toàn bộ hệ sinh thái Tuquet. Viết bằng Rust thuần túy với thời gian khởi động sub-millisecond, Tuquet CLI cung cấp cả giao diện dòng lệnh truyền thống và một **Interactive Scoped REPL** giúp chuyển đổi linh hoạt giữa các subsystem mà không làm phân mảnh công cụ.
 
 * **96+ Lệnh Chuẩn hóa**: Bao quát toàn diện Developer Productivity Suite và 7 trụ cột microservice (`dev`, `system`, `browser`, `runner`, `automa`, `bridge`, `faker`, `cloud`, `inbox`).
-* **Lưu trữ SSOT**: Tự động giải quyết cấu hình và trạng thái về gốc chuẩn duy nhất `~/.specter/`.
+* **Lưu trữ SSOT**: Tự động giải quyết cấu hình và trạng thái về gốc chuẩn duy nhất `~/.tuquet/`.
 
 ## 📦 Cài Đặt Nhanh (Modern One-Liner Installation)
 
 ### Cách 1: Cài đặt qua Scoop Package Manager (Khuyên dùng - Auto-update & Quản lý Shims):
 ```powershell
 scoop bucket add tuquet https://github.com/tuquet/scoop-bucket
-scoop install specter
+scoop install tuquet
 ```
 
 ### Cách 2: Cài đặt trực tiếp standalone binary không cần package manager:
@@ -46,36 +46,36 @@ curl -fsSL https://raw.githubusercontent.com/tuquet/cli/main/install.sh | sh
 
 ```bash
 # Khởi chạy Interactive Scoped Shell
-spc
-# hoặc: specter
+tq
+# hoặc: tuquet
 
 # Quét toàn máy & chạy script dự án tương tác (Node/Rust/Java/Docker)
-spc dev
+tq dev
 
 # Kiểm tra sức khỏe toàn diện của hệ sinh thái
-spc doctor
+tq doctor
 ```
 
 ## 🌳 Cây Lệnh CLI Thống Nhất (CLI Command Tree)
 
-Dưới đây là sơ đồ cây lệnh phân cấp giúp tra cứu và bao quát nhanh toàn bộ hệ thống lệnh của `spc` (hoặc `specter`):
+Dưới đây là sơ đồ cây lệnh phân cấp giúp tra cứu và bao quát nhanh toàn bộ hệ thống lệnh của `tq` (hoặc `tuquet`):
 
 ```text
-spc (specter)
+tq (tuquet)
 ├── 🛠️ Developer Productivity Suite
 │   ├── dev                       # Quét đa dự án (Node/Rust/Java/Docker) & chạy script tương tác
 │   ├── port [query]              # Quét cổng TCP đang lắng nghe & diệt tiến trình xung đột (-k)
 │   ├── code [project]            # Tìm kiếm dự án toàn máy & mở nhanh trong VS Code / Cursor
-│   ├── git [repo] [action]       # Radar Git đa repo & đồng bộ an toàn qua Specter Bridge
+│   ├── git [repo] [action]       # Radar Git đa repo & đồng bộ an toàn qua Tuquet Bridge
 │   └── env [project]             # So khớp .env vs .env.example, đồng bộ key & chuyển profile
 │
 ├── ⚡ Quick Global Commands
 │   ├── status                    # Dashboard tổng quan Cloud, Runner daemon & Browser
 │   ├── doctor [--fix]            # Kiểm tra phụ thuộc, công cụ hệ thống & trạng thái sức khỏe
-│   ├── bootstrap [--force]       # Onboarding workstation & khởi tạo SSOT (~/.specter/) 1 lệnh
+│   ├── bootstrap [--force]       # Onboarding workstation & khởi tạo SSOT (~/.tuquet/) 1 lệnh
 │   ├── config [service]          # Xem và chỉnh sửa cấu hình các trụ cột microservice
-│   ├── whoami                    # Xem danh tính đăng nhập Specter Cloud & Machine ID
-│   ├── login / logout            # Xác thực operator với Supabase / Specter Cloud
+│   ├── whoami                    # Xem danh tính đăng nhập Tuquet Cloud & Machine ID
+│   ├── login / logout            # Xác thực operator với Supabase / Tuquet Cloud
 │   ├── upgrade                   # Tự động cập nhật binary CLI lên phiên bản mới nhất
 │   └── schema [commands|config]  # Kiểm tra manifest & xuất đặc tả JSON schema chuẩn hóa
 │
@@ -130,7 +130,7 @@ spc (specter)
 
 ## 🏛️ Kiến Trúc Embedded BFF Gateway (`127.0.0.1:8765`)
 
-Bên cạnh vai trò CLI & Scoped REPL Terminal, `specter` (cùng core crate `automa_core`) đóng vai trò là **Embedded Backend for Frontend (BFF) Gateway** duy nhất cho toàn bộ hệ sinh thái Specter:
+Bên cạnh vai trò CLI & Scoped REPL Terminal, `tuquet` (cùng core crate `automa_core`) đóng vai trò là **Embedded Backend for Frontend (BFF) Gateway** duy nhất cho toàn bộ hệ sinh thái Tuquet:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -142,7 +142,7 @@ Bên cạnh vai trò CLI & Scoped REPL Terminal, `specter` (cùng core crate `au
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │          EMBEDDED RUST BFF GATEWAY (127.0.0.1:8765)         │
-│  - In-Process Daemon (Tauri) / Standalone Daemon (`specter`) │
+│  - In-Process Daemon (Tauri) / Standalone Daemon (`tuquet`) │
 │  - Contract-First: OpenAPI v3 (`utoipa`) -> `/swagger-ui/`  │
 │  - Zero Secret Leakage: Quản lý RLS, Session & Token ngầm   │
 └──────────────┬──────────────────────────────┬───────────────┘
@@ -150,19 +150,19 @@ Bên cạnh vai trò CLI & Scoped REPL Terminal, `specter` (cùng core crate `au
                ▼                              ▼
 ┌──────────────────────────────┐ ┌────────────────────────────┐
 │   LOCAL-FIRST STORAGE (SSOT) │ │   CLOUD CONTROL PLANE      │
-│   ~/.specter/automa/         │ │   Supabase Fleet Engine    │
+│   ~/.tuquet/automa/         │ │   Supabase Fleet Engine    │
 │   automa.sqlite (Sub-ms R/W) │ │   (Tenant Auth, Telemetry) │
 └──────────────────────────────┘ └────────────────────────────┘
 ```
 
 ### 1. Invariants Cốt Lõi của BFF Gateway
 - **Cấm Frontend gọi trực tiếp Cloud Supabase**: Desktop frontend, browser extensions và external web tools **tuyệt đối không nhúng `@supabase/supabase-js`** hoặc lưu trữ Supabase service/anon keys. Mọi thao tác truy xuất dữ liệu, cấu hình và kích hoạt tác vụ bắt buộc phải đi qua Rust BFF tại `http://127.0.0.1:8765/api/v1`.
-- **Local-First & Đồng Bộ Ngầm**: Dữ liệu đọc/ghi tức thì vào SQLite cục bộ (`~/.specter/automa/automa.sqlite`) với độ trễ sub-millisecond, đảm bảo ứng dụng hoạt động 100% offline-ready. Tiến trình nền Rust tự động quản lý luồng đồng bộ hai chiều lên Supabase Cloud Control Plane.
+- **Local-First & Đồng Bộ Ngầm**: Dữ liệu đọc/ghi tức thì vào SQLite cục bộ (`~/.tuquet/automa/automa.sqlite`) với độ trễ sub-millisecond, đảm bảo ứng dụng hoạt động 100% offline-ready. Tiến trình nền Rust tự động quản lý luồng đồng bộ hai chiều lên Supabase Cloud Control Plane.
 - **Contract-First qua OpenAPI (`utoipa`)**: Mọi endpoint mới trong `cli/src/api/` bắt buộc được gán macro `#[utoipa::path(...)]`. Đặc tả OpenAPI v3 được xuất tự động tại `http://127.0.0.1:8765/api-docs/openapi.json` và UI tương tác tại `http://127.0.0.1:8765/swagger-ui/`, cho phép frontend tự động sinh type TypeScript chuẩn xác (`orval` / `@hey-api/openapi-ts`).
-- **Bảo Mật & Zero Secret Leakage**: Toàn bộ session tokens, refresh tokens và Tenant RLS được Rust quản lý trong secure local store (`~/.specter/system/`). Frontend không bao giờ tiếp xúc với secret keys.
+- **Bảo Mật & Zero Secret Leakage**: Toàn bộ session tokens, refresh tokens và Tenant RLS được Rust quản lý trong secure local store (`~/.tuquet/system/`). Frontend không bao giờ tiếp xúc với secret keys.
 - **Full CORS cho Tauri & Extensions**: Cổng BFF đã cấu hình CORS cho phép các origin:
   - Tauri Native Desktop: `tauri://*`, `http://tauri.localhost`, `https://tauri.localhost`, `*://asset.localhost`
-  - Web Portal & Admin: `https://admin.tuquet.com`, `https://specter.tuquet.com`, `http://specter.tuquet.com`, `https://*.tuquet.com`, `https://automa-studio.vercel.app`
+  - Web Portal & Admin: `https://admin.tuquet.com`, `https://tuquet.tuquet.com`, `http://tuquet.tuquet.com`, `https://*.tuquet.com`, `https://automa-studio.vercel.app`
   - Browser Extensions: `chrome-extension://*`, `moz-extension://*`
   - Local Dev Servers: `http://localhost:*`, `http://127.0.0.1:*`
 
@@ -170,4 +170,4 @@ Bên cạnh vai trò CLI & Scoped REPL Terminal, `specter` (cùng core crate `au
 
 Toàn bộ danh mục 96+ lệnh CLI, bảng tham số cờ, hướng dẫn tương tác REPL và phím tắt được bảo trì duy nhất tại Documentation Hub:
 
-👉 **[https://docs.tuquet.com/en/specter/commands/](https://docs.tuquet.com/en/specter/commands/)**
+👉 **[https://docs.tuquet.com/en/tuquet/commands/](https://docs.tuquet.com/en/tuquet/commands/)**

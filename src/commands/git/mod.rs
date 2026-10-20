@@ -72,7 +72,7 @@ pub async fn handle(
     let interactive_flow = !list && (repo_query.is_none() || action_query.is_none());
 
     if interactive_flow {
-        clack_intro("spc git", "Multi-Repo Git Radar");
+        clack_intro("tq git", "Multi-Repo Git Radar");
     }
 
     let sp = if interactive_flow {
@@ -200,7 +200,7 @@ pub async fn handle(
     let actions = [
         (
             "push-bridge",
-            "Push via Specter Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
+            "Push via Tuquet Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
         ),
         ("status", "Inspect detailed git status & diff summary"),
         ("pull", "Pull latest changes (git pull --rebase)"),
@@ -255,7 +255,7 @@ async fn execute_git_action(
         "push-bridge" => {
             if !probe_port(1080) {
                 println!(
-                    "  \x1b[36m◆\x1b[0m  Starting Specter Bridge SOCKS5 tunnel (127.0.0.1:1080)..."
+                    "  \x1b[36m◆\x1b[0m  Starting Tuquet Bridge SOCKS5 tunnel (127.0.0.1:1080)..."
                 );
                 start_bridge(BridgeStartOptions {
                     server: None,
@@ -268,7 +268,7 @@ async fn execute_git_action(
             }
 
             clack_outro(&format!(
-                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Specter Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
+                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Tuquet Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
                 BOLD = colors::BOLD,
                 CYAN = colors::CYAN,
                 MUTED = colors::MUTED,
@@ -574,7 +574,7 @@ fn render_git_list(repos: &[DiscoveredGitRepo], scan_label: &str, format: Output
                 },
             ])
             .with_footer(format!(
-                "Scanned {} repository(s) ({}) • Run 'spc git [repo]' for actions",
+                "Scanned {} repository(s) ({}) • Run 'tq git [repo]' for actions",
                 repos.len(),
                 scan_label
             ));
@@ -610,7 +610,7 @@ fn render_git_list(repos: &[DiscoveredGitRepo], scan_label: &str, format: Output
                 .collect();
 
             let footer = format!(
-                "Found {} repo(s) • Run 'spc git' to push via Bridge or inspect",
+                "Found {} repo(s) • Run 'tq git' to push via Bridge or inspect",
                 repos.len()
             );
             let card = create_tabular_card(

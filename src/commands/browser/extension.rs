@@ -39,14 +39,14 @@ pub async fn handle_ext(
 
             card.add_line("");
             card.add_line("Management Commands:");
-            card.add_line("  specter browser ext catalog          Browse downloadable extensions");
-            card.add_line("  specter browser ext install <id>     Install extension from catalog");
-            card.add_line("  specter browser ext add <path>       Register custom local extension");
-            card.add_line("  specter browser ext enable <id>      Enable extension for sessions");
-            card.add_line("  specter browser ext disable <id>     Disable extension");
-            card.add_line("  specter browser ext remove <id>      Unregister custom extension");
-            card.add_line("  specter browser ext info <id>        View extension details");
-            card.add_line("  specter browser ext launch           Launch browser with extensions");
+            card.add_line("  tq browser ext catalog          Browse downloadable extensions");
+            card.add_line("  tq browser ext install <id>     Install extension from catalog");
+            card.add_line("  tq browser ext add <path>       Register custom local extension");
+            card.add_line("  tq browser ext enable <id>      Enable extension for sessions");
+            card.add_line("  tq browser ext disable <id>     Disable extension");
+            card.add_line("  tq browser ext remove <id>      Unregister custom extension");
+            card.add_line("  tq browser ext info <id>        View extension details");
+            card.add_line("  tq browser ext launch           Launch browser with extensions");
             card.with_footer("Registry SSOT: ~/.tuquet/browser/extensions/registry.json");
 
             println!();
@@ -100,7 +100,7 @@ pub async fn handle_ext(
 
             card.add_line("");
             card.add_line("Installation:");
-            card.add_line("  specter browser ext install <id>     Download and install extension");
+            card.add_line("  tq browser ext install <id>     Download and install extension");
             card.with_footer("Catalog Source: scoop catalog (GitHub / Local)");
 
             println!();
@@ -130,7 +130,7 @@ pub async fn handle_ext(
                     card.with_min_width(64);
                     card.add_kv("Target ID", id);
                     card.add_kv("Error", format!("{}", e));
-                    card.with_footer("Run 'specter browser ext catalog' to see available packages");
+                    card.with_footer("Run 'tuquet browser ext catalog' to see available packages");
                     println!();
                     card.print();
                     println!();
@@ -178,7 +178,7 @@ pub async fn handle_ext(
                 card.with_badge(badge_online("REMOVED"));
                 card.with_min_width(64);
                 card.add_kv("Removed ID", id);
-                card.add_line("Extension unregistered from local Specter registry.");
+                card.add_line("Extension unregistered from local Tuquet registry.");
                 println!();
                 card.print();
                 println!();
@@ -293,7 +293,7 @@ pub async fn handle_ext(
                 card.with_min_width(64);
                 card.add_kv("ID", id);
                 card.add_line(
-                    "Extension not found in local registry. Run 'specter browser ext list'.",
+                    "Extension not found in local registry. Run 'tuquet browser ext list'.",
                 );
                 println!();
                 card.print();

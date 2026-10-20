@@ -7,7 +7,7 @@ pub use super::cloud::{
     DeviceCredentials, MachineFingerprint,
 };
 
-/// Facade coordinator for Specter Cloud communication, local identity, and background telemetry
+/// Facade coordinator for Tuquet Cloud communication, local identity, and background telemetry
 pub struct CloudReporter;
 
 impl CloudReporter {
@@ -102,7 +102,7 @@ impl CloudReporter {
                     device_id: "".to_string(),
                     browsers_synced: 0,
                     heartbeat_sent: false,
-                    message: "Specter Cloud URL not configured (standalone mode)".to_string(),
+                    message: "Tuquet Cloud URL not configured (standalone mode)".to_string(),
                 });
             }
         };
@@ -177,7 +177,7 @@ impl CloudReporter {
         let browsers_synced = match report_res {
             Ok(res) if res.status().is_success() => {
                 info!(
-                    "[CloudReporter] Synced {} local browser profiles to Specter Cloud",
+                    "[CloudReporter] Synced {} local browser profiles to Tuquet Cloud",
                     browsers_count
                 );
                 browsers_count
@@ -245,7 +245,7 @@ impl CloudReporter {
             browsers_synced,
             heartbeat_sent,
             message: format!(
-                "Successfully synced {} browsers and heartbeat to Specter Cloud",
+                "Successfully synced {} browsers and heartbeat to Tuquet Cloud",
                 browsers_synced
             ),
         })

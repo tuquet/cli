@@ -72,10 +72,10 @@ pub async fn list_workflows(
 
     // 2. Fetch from Vault if not db_only
     if !db_only {
-        let specter_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
-        let vault_dirs = [specter_vault, config_vault];
+        let vault_dirs = [tuquet_vault, config_vault];
         for vdir in &vault_dirs {
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {
@@ -225,11 +225,11 @@ pub async fn list_workflows(
         }
         if let Some(first) = workflows.first() {
             table = table.with_footer(format!(
-                "Run workflow with: specter automa run {} --headless",
+                "Run workflow with: tq automa run {} --headless",
                 first.id
             ));
         } else {
-            table = table.with_footer("Import a workflow with: specter automa workflow import <file.json> --id <workflow_id>");
+            table = table.with_footer("Import a workflow with: tq automa workflow import <file.json> --id <workflow_id>");
         }
         table.print();
         println!();

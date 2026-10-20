@@ -1,17 +1,17 @@
-# Specter CLI: Kế hoạch & Hướng dẫn Kiểm thử Nghiệm thu Toàn diện (A - Z)
+# Tuquet CLI: Kế hoạch & Hướng dẫn Kiểm thử Nghiệm thu Toàn diện (A - Z)
 
 > **Tài liệu nghiệm thu hệ thống (System Acceptance Testing - UAT Runbook)**  
 > **Áp dụng cho:** Máy trạm mới (Clean Workstation Environment)  
-> **Phiên bản CLI:** `v1.0.0` | **Kiến trúc:** Single Source of Truth (`~/.specter/`)
+> **Phiên bản CLI:** `v1.0.0` | **Kiến trúc:** Single Source of Truth (`~/.tuquet/`)
 
 ---
 
 ## 1. Mục Tiêu & Nguyên Tắc Nghiệm Thu
 
-Tài liệu này cung cấp quy trình kiểm thử nghiệm thu từng bước từ **A đến Z** trên một máy trạm hoàn toàn mới, nhằm xác minh và chứng minh tính đầy đủ, độc lập, an toàn và hiệu năng cao của bộ công cụ **Specter CLI**.
+Tài liệu này cung cấp quy trình kiểm thử nghiệm thu từng bước từ **A đến Z** trên một máy trạm hoàn toàn mới, nhằm xác minh và chứng minh tính đầy đủ, độc lập, an toàn và hiệu năng cao của bộ công cụ **Tuquet CLI**.
 
 ### 1.1. Chuẩn Kiến Trúc 5 Trụ Cột (5 Microservice Pillars)
-Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục gốc duy nhất `~/.specter/`, tuyệt đối không phân mảnh hay xả file rác ra hệ thống:
+Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục gốc duy nhất `~/.tuquet/`, tuyệt đối không phân mảnh hay xả file rác ra hệ thống:
 1. `system/`: Danh tính phần cứng (`.machine_id`, `.identity.json`), lịch sử CLI, token xác thực.
 2. `automa/`: Định nghĩa kịch bản (`workflows/`), cơ sở dữ liệu SQLite (`automa.sqlite`), worker state.
 3. `browser/`: Nhân Chromium chuyên dụng (`runtimes/`), hồ sơ ảo (`profiles/`), tiện ích (`extensions/`).
@@ -29,14 +29,14 @@ Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục 
 
 | Giai đoạn | Nhóm tính năng | Lệnh kiểm thử chính | Tiêu chí đạt (Pass Criteria) |
 |---|---|---|---|
-| **Pillar 1** | Cài đặt & Khởi tạo Môi trường | `specter doctor`, `specter status` | Môi trường sạch, cấu trúc `~/.specter/` tự sinh đúng 5 domain |
-| **Pillar 2** | Nhận diện & Xác thực Đám mây | `specter runner enroll`, `specter cloud whoami` | Máy nhận diện được hardware GUID và liên kết Supabase Tenant |
-| **Pillar 3** | Cầu nối Mạng & Proxy Mesh | `specter bridge start`, `specter proxy probe` | Tunnel SOCKS5 `127.0.0.1:1080` mở, kiểm tra Egress IP thành công |
-| **Pillar 4** | Trình duyệt C++ & Quản lý Hồ sơ | `specter browser install`, `specter browser profile pack` | Nhân Chromium C++ cài đặt, nén delta session `.tar.zst` < 1KB |
-| **Pillar 5** | Kiểm định Vân tay Stealth Trực quan | `specter browser verify` | Vượt Cloudflare Turnstile, vẽ quỹ đạo Bézier chuột tự nhiên |
-| **Pillar 6** | Tự động hóa Động cơ kép | `specter automa run <wf.json>` | Chạy workflow headless/headful, hỗ trợ Extension mode & CDP |
-| **Pillar 7** | Điều phối Cloud Fleet Mesh | `specter runner worker --cloud-profile` | Thuê độc quyền (Acquire) -> Giải nén delta -> Chạy -> Trả lease (Release) |
-| **Pillar 8** | Dữ liệu Giả & Tiện ích Agent | `specter faker card`, `specter mcp` | Sinh thẻ tín dụng hợp lệ Luhn, sẵn sàng cho Agentic AI qua MCP |
+| **Pillar 1** | Cài đặt & Khởi tạo Môi trường | `tuquet doctor`, `tuquet status` | Môi trường sạch, cấu trúc `~/.tuquet/` tự sinh đúng 5 domain |
+| **Pillar 2** | Nhận diện & Xác thực Đám mây | `tuquet runner enroll`, `tuquet cloud whoami` | Máy nhận diện được hardware GUID và liên kết Supabase Tenant |
+| **Pillar 3** | Cầu nối Mạng & Proxy Mesh | `tuquet bridge start`, `tuquet proxy probe` | Tunnel SOCKS5 `127.0.0.1:1080` mở, kiểm tra Egress IP thành công |
+| **Pillar 4** | Trình duyệt C++ & Quản lý Hồ sơ | `tuquet browser install`, `tuquet browser profile pack` | Nhân Chromium C++ cài đặt, nén delta session `.tar.zst` < 1KB |
+| **Pillar 5** | Kiểm định Vân tay Stealth Trực quan | `tuquet browser verify` | Vượt Cloudflare Turnstile, vẽ quỹ đạo Bézier chuột tự nhiên |
+| **Pillar 6** | Tự động hóa Động cơ kép | `tuquet automa run <wf.json>` | Chạy workflow headless/headful, hỗ trợ Extension mode & CDP |
+| **Pillar 7** | Điều phối Cloud Fleet Mesh | `tuquet runner worker --cloud-profile` | Thuê độc quyền (Acquire) -> Giải nén delta -> Chạy -> Trả lease (Release) |
+| **Pillar 8** | Dữ liệu Giả & Tiện ích Agent | `tuquet faker card`, `tuquet mcp` | Sinh thẻ tín dụng hợp lệ Luhn, sẵn sàng cho Agentic AI qua MCP |
 
 ---
 
@@ -44,35 +44,35 @@ Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục 
 
 ### Giai đoạn 1: Cài đặt & Khởi tạo Hệ thống (Zero-Touch Provisioning)
 
-#### Bước 1.1: Cài đặt Specter CLI qua One-Liner Web Installer (Khuyên dùng)
+#### Bước 1.1: Cài đặt Tuquet CLI qua One-Liner Web Installer (Khuyên dùng)
 ```powershell
 # Cài đặt trực tiếp standalone binary không cần package manager
 powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
 
 # Kiểm tra phiên bản thực thi
-specter --version
+tuquet --version
 ```
-- **Kỳ vọng:** Xuất ra `specter 1.0.0` (hoặc mới nhất).
+- **Kỳ vọng:** Xuất ra `tuquet 1.0.0` (hoặc mới nhất).
 - **Mã lỗi:** Exit Code `0`.
 
 #### Bước 1.2: Chạy Bác sĩ Hệ thống (System Doctor)
 ```powershell
-specter doctor
+tuquet doctor
 ```
 - **Kỳ vọng:** Hiển thị bảng chẩn đoán hệ thống:
   - Hệ điều hành & Kiến trúc: Windows x86_64
   - Runtimes & Dependencies: Scoop, Git, PowerShell
-  - Thư mục dữ liệu chuẩn: `~/.specter/`
+  - Thư mục dữ liệu chuẩn: `~/.tuquet/`
   - Đánh giá tổng thể: `● ALL CHECKS PASSED`
 
 #### Bước 1.3: Khởi tạo Cấu trúc Dữ liệu Chuẩn (SSOT)
 ```powershell
-specter status
+tuquet status
 ```
-- **Kỳ vọng:** CLI tự động tạo 5 thư mục rễ (`system`, `automa`, `browser`, `bridge`, `faker`) dưới `~/.specter/`.
+- **Kỳ vọng:** CLI tự động tạo 5 thư mục rễ (`system`, `automa`, `browser`, `bridge`, `faker`) dưới `~/.tuquet/`.
 - **Kiểm tra vật lý:**
 ```powershell
-Get-ChildItem -Path "$env:USERPROFILE\.specter"
+Get-ChildItem -Path "$env:USERPROFILE\.tuquet"
 ```
 
 ---
@@ -81,23 +81,23 @@ Get-ChildItem -Path "$env:USERPROFILE\.specter"
 
 #### Bước 2.1: Kiểm tra Vân tay Phần cứng & Khả năng của Nút
 ```powershell
-specter runner probe
+tuquet runner probe
 ```
 - **Kỳ vọng:** Trả về JSON Manifest khai báo engine `chromium-extension-worker`, hỗ trợ profile sandbox, workflow graph, và CDP bridge.
 
-#### Bước 2.2: Đăng ký Thiết bị vào Specter Cloud (Zero-Touch Enrollment)
+#### Bước 2.2: Đăng ký Thiết bị vào Tuquet Cloud (Zero-Touch Enrollment)
 ```powershell
-specter runner enroll --env dev
+tuquet runner enroll --env dev
 ```
-*(Hoặc dùng token đăng ký do quản trị viên cấp: `specter runner enroll --token <TENANT_ENROLLMENT_TOKEN>`)*
+*(Hoặc dùng token đăng ký do quản trị viên cấp: `tuquet runner enroll --token <TENANT_ENROLLMENT_TOKEN>`)*
 - **Kỳ vọng:**
   - Sinh mã máy độc bản: SHA-256 (`fp_xxxxxxxxxxxx`) dựa trên bo mạch/CPU.
-  - Tạo file lưu trữ danh tính: `~/.specter/system/.identity.json`.
+  - Tạo file lưu trữ danh tính: `~/.tuquet/system/.identity.json`.
   - Hiển thị thẻ UI: `WORKSTATION ENROLLED` kèm `Device ID` và `Tenant ID`.
 
 #### Bước 2.3: Kiểm tra Xác thực Danh tính
 ```powershell
-specter cloud whoami
+tuquet cloud whoami
 ```
 - **Kỳ vọng:** Hiển thị thông tin nút máy trạm đã kết nối thành công với Supabase Cloud.
 
@@ -109,10 +109,10 @@ specter cloud whoami
 Kiểm tra khả năng phân giải và phát hiện rò rỉ STUN trước khi khởi chạy:
 ```powershell
 # Kiểm tra proxy SOCKS5 nội bộ
-specter proxy probe socks5://127.0.0.1:1080
+tuquet proxy probe socks5://127.0.0.1:1080
 
 # Hoặc kiểm tra proxy HTTP công cộng/thử nghiệm
-specter proxy probe http://198.51.100.1:8080 --timeout 3
+tuquet proxy probe http://198.51.100.1:8080 --timeout 3
 ```
 - **Kỳ vọng khi Proxy Online:**
   - Thẻ `NETWORK PROXY PRE-FLIGHT PROBE` hiển thị `● OPERATIONAL`.
@@ -124,10 +124,10 @@ specter proxy probe http://198.51.100.1:8080 --timeout 3
 #### Bước 3.2: Quản lý Đường truyền Bridge Mesh
 ```powershell
 # Kiểm tra trạng thái các tunnel
-specter bridge status
+tuquet bridge status
 
 # (Tùy chọn) Bật tunnel tới VPS dự phòng
-specter bridge start
+tuquet bridge start
 ```
 
 ---
@@ -136,21 +136,21 @@ specter bridge start
 
 #### Bước 4.1: Tải & Cài đặt Nhân Chromium C++ Tinh chỉnh
 ```powershell
-specter browser install
+tuquet browser install
 ```
-- **Kỳ vọng:** Tải bản Chromium C++ chuyên dụng (hỗ trợ C++ native spoofing) vào `~/.specter/browser/runtimes/chromium/`.
+- **Kỳ vọng:** Tải bản Chromium C++ chuyên dụng (hỗ trợ C++ native spoofing) vào `~/.tuquet/browser/runtimes/chromium/`.
 
 #### Bước 4.2: Tạo Hồ Sơ Trình Duyệt Ẩn Danh Cục Bộ
 ```powershell
-specter browser profile create --name "Shopee-Seller-VN" --os windows --cores 8 --ram 16 --timezone "Asia/Ho_Chi_Minh" --locale "vi-VN"
+tuquet browser profile create --name "Shopee-Seller-VN" --os windows --cores 8 --ram 16 --timezone "Asia/Ho_Chi_Minh" --locale "vi-VN"
 ```
 - **Kỳ vọng:**
   - Sinh PRNG seed phần cứng duy nhất (Deterministic Hardware).
-  - Lưu hồ sơ cấu hình vào `~/.specter/browser/profiles/<profile_id>/profile.json`.
+  - Lưu hồ sơ cấu hình vào `~/.tuquet/browser/profiles/<profile_id>/profile.json`.
 
 #### Bước 4.3: Đóng Gói Hồ Sơ Delta Snapshot (`.tar.zst`)
 ```powershell
-specter browser profile pack Shopee-Seller-VN
+tuquet browser profile pack Shopee-Seller-VN
 ```
 - **Kỳ vọng:**
   - Tự động lọc bỏ các file rác/cache không cần thiết (GPUCache, Code Cache, Crashpad).
@@ -159,7 +159,7 @@ specter browser profile pack Shopee-Seller-VN
 
 #### Bước 4.4: Kiểm Tra Khôi Phục Hồ Sơ Từ Snapshot (Unpack)
 ```powershell
-specter browser profile unpack Shopee-Seller-VN
+tuquet browser profile unpack Shopee-Seller-VN
 ```
 - **Kỳ vọng:** Xác thực SHA-256 thành công và giải nén nguyên vẹn các bảng cookie LevelDB.
 
@@ -170,7 +170,7 @@ specter browser profile unpack Shopee-Seller-VN
 #### Bước 5.1: Chạy Thử Nghiệm Tương Tác Chống Phát Hiện Bot
 Lệnh này mở trình duyệt trực tiếp, điều khiển chuột theo đường cong Bézier vật lý và tự động giải thử thách Cloudflare Turnstile:
 ```powershell
-specter browser verify --url "https://turnstile.zerocdn.com"
+tuquet browser verify --url "https://turnstile.zerocdn.com"
 ```
 *(Nếu muốn chạy kiểm tra ngầm không bật giao diện: thêm `--headless`)*
 - **Kỳ vọng:**
@@ -185,14 +185,14 @@ specter browser verify --url "https://turnstile.zerocdn.com"
 
 #### Bước 6.1: Khám Phá Thư Viện Kịch Bản (Workflow Vault)
 ```powershell
-specter automa workflow list
+tuquet automa workflow list
 ```
-- **Kỳ vọng:** Liệt kê các workflow có sẵn trong SQLite và Vault `~/.specter/workflows/`.
+- **Kỳ vọng:** Liệt kê các workflow có sẵn trong SQLite và Vault `~/.tuquet/workflows/`.
 
 #### Bước 6.2: Thực Thi Kịch Bản Mẫu Cục Bộ (Extension Worker Mode)
 Chạy workflow tìm kiếm tự động với tham số truyền vào:
 ```powershell
-specter automa run fixtures/google_search.workflow.json -p keyword="Specter Stealth Engine" --headless
+tuquet automa run fixtures/google_search.workflow.json -p keyword="Tuquet Stealth Engine" --headless
 ```
 - **Kỳ vọng:**
   - Khởi tạo bridge socket nội bộ ngẫu nhiên.
@@ -208,7 +208,7 @@ specter automa run fixtures/google_search.workflow.json -p keyword="Specter Stea
 
 #### Bước 7.1: Tra cứu Đội ngũ Trình duyệt Đám mây (Fleet Inventory)
 ```powershell
-specter browser profile cloud list
+tuquet browser profile cloud list
 ```
 - **Kỳ vọng:**
   - Kết nối Supabase qua Smart Proxy Auto-detect (cổng 1080/8118 nếu có).
@@ -216,7 +216,7 @@ specter browser profile cloud list
 
 #### Bước 7.2: Thuê Độc Quyền Hồ Sơ Đám Mây (Distributed Acquire)
 ```powershell
-specter browser profile cloud acquire c0000000-0000-0000-0000-000000000001
+tuquet browser profile cloud acquire c0000000-0000-0000-0000-000000000001
 ```
 - **Kỳ vọng:**
   - Khóa hàng cấp cơ sở dữ liệu (`FOR UPDATE`) gán cho thiết bị hiện tại.
@@ -226,7 +226,7 @@ specter browser profile cloud acquire c0000000-0000-0000-0000-000000000001
 
 #### Bước 7.3: Giải Phóng Hồ Sơ & Đẩy Delta Lên Đám Mây (Release & Sync)
 ```powershell
-specter browser profile cloud release c0000000-0000-0000-0000-000000000001
+tuquet browser profile cloud release c0000000-0000-0000-0000-000000000001
 ```
 - **Kỳ vọng:**
   - Tự động nén delta LevelDB của profile thành file `.tar.zst`.
@@ -236,7 +236,7 @@ specter browser profile cloud release c0000000-0000-0000-0000-000000000001
 #### Bước 7.4: Chạy Toàn Bộ Chu Trình Tự Động Khép Kín (Autonomous 6-Step Run)
 Thực thi trực tiếp một workflow trên một Cloud Profile chỉ bằng một lệnh duy nhất:
 ```powershell
-specter automa run fixtures/google_search.workflow.json --cloud-profile FB-Ad-Spender-01 --headless
+tuquet automa run fixtures/google_search.workflow.json --cloud-profile FB-Ad-Spender-01 --headless
 ```
 - **Kỳ vọng:** CLI tự động thực hiện hoàn hảo **6 bước tự động**:
   1. `[+] 1/6`: Xác thực danh tính nút máy trạm.
@@ -250,7 +250,7 @@ specter automa run fixtures/google_search.workflow.json --cloud-profile FB-Ad-Sp
 #### Bước 7.5: Chạy Nút Worker Tự Động Giám Sát Fleet (Cloud Runner Worker)
 ```powershell
 # Chạy 1 vòng lặp thăm dò sức khỏe toàn bộ Fleet
-specter runner worker --once
+tuquet runner worker --once
 ```
 - **Kỳ vọng:** Hiển thị thẻ `AUTONOMOUS CLOUD FLEET WORKER`, báo cáo tổng số profile `IDLE` và `RUNNING` trong Tenant Pool.
 
@@ -260,20 +260,20 @@ specter runner worker --once
 
 #### Bước 8.1: Sinh Thẻ Tín Dụng Giả Lập Chuẩn Thuật Toán Luhn
 ```powershell
-specter faker card --nat US
-specter faker card --nat VN
+tuquet faker card --nat US
+tuquet faker card --nat VN
 ```
 - **Kỳ vọng:** Xuất ra thẻ Visa/MasterCard ngẫu nhiên, ngày hết hạn tương lai, CVV, và vượt qua thuật toán kiểm tra Luhn checksum.
 
 #### Bước 8.2: Sinh Nhân Thân Người Dùng Đầy Đủ
 ```powershell
-specter faker generate --count 1 --nat VN
+tuquet faker generate --count 1 --nat VN
 ```
 - **Kỳ vọng:** Sinh thông tin hoàn chỉnh gồm Họ tên tiếng Việt, Địa chỉ, Số điện thoại, Email, và Avatar URL.
 
 #### Bước 8.3: Vỏ Tương Tác Toàn Năng (Interactive Shell)
 ```powershell
-specter shell
+tuquet shell
 ```
 - **Kỳ vọng:**
   - Khởi động giao diện dòng lệnh tương tác với prompt màu sắc.
@@ -287,17 +287,17 @@ specter shell
 
 Người thực hiện kiểm thử đánh dấu `[x]` vào các hạng mục sau khi hoàn thành kiểm thử trên máy mới:
 
-- [ ] **1. Môi trường & SSOT**: Thư mục `~/.specter/` tự động hình thành đủ 5 domain, không sinh file rác ngoài rễ.
-- [ ] **2. Nhận diện Máy trạm**: Lệnh `specter runner enroll` và `specter cloud whoami` liên kết chuẩn xác với Supabase.
-- [ ] **3. An toàn Proxy**: `specter proxy probe` phát hiện chính xác proxy sống/chết và bảo vệ WebRTC STUN.
+- [ ] **1. Môi trường & SSOT**: Thư mục `~/.tuquet/` tự động hình thành đủ 5 domain, không sinh file rác ngoài rễ.
+- [ ] **2. Nhận diện Máy trạm**: Lệnh `tuquet runner enroll` và `tuquet cloud whoami` liên kết chuẩn xác với Supabase.
+- [ ] **3. An toàn Proxy**: `tuquet proxy probe` phát hiện chính xác proxy sống/chết và bảo vệ WebRTC STUN.
 - [ ] **4. Trình duyệt Stealth C++**: Nhân Chromium được cài đặt độc lập, cấu hình phần cứng deterministic hoạt động ổn định.
 - [ ] **5. Đóng gói Hồ sơ Delta**: Nén `.tar.zst` loại bỏ cache, kích thước tối ưu (< 1 KB cho profile mới), SHA-256 bảo toàn.
-- [ ] **6. Vượt Rào Turnstile**: `specter browser verify` di chuyển chuột Bézier tự nhiên, vượt qua thử thách bot.
-- [ ] **7. Tự động hóa Kịch bản**: `specter automa run` điều phối luồng công việc mượt mà trên Extension worker và CDP.
+- [ ] **6. Vượt Rào Turnstile**: `tuquet browser verify` di chuyển chuột Bézier tự nhiên, vượt qua thử thách bot.
+- [ ] **7. Tự động hóa Kịch bản**: `tuquet automa run` điều phối luồng công việc mượt mà trên Extension worker và CDP.
 - [ ] **8. Phân tán Đám mây (Fleet Mesh)**: Quản lý 13 hồ sơ Cloud qua `acquire` / `release` với Distributed Row Lock hoàn toàn tin cậy.
-- [ ] **9. Pipeline 6 bước Khép kín**: Lệnh `specter automa run --cloud-profile` tự động hóa 100% từ khâu nhận lock đến trả lock.
-- [ ] **10. Tiện ích Phụ trợ**: `specter faker`, `specter shell` và `specter doctor` hoạt động trơn tru, trải nghiệm nhất quán.
+- [ ] **9. Pipeline 6 bước Khép kín**: Lệnh `tuquet automa run --cloud-profile` tự động hóa 100% từ khâu nhận lock đến trả lock.
+- [ ] **10. Tiện ích Phụ trợ**: `tuquet faker`, `tuquet shell` và `tuquet doctor` hoạt động trơn tru, trải nghiệm nhất quán.
 
 ---
 
-> **Kết luận:** Bộ công cụ **Specter CLI** đáp ứng đầy đủ tất cả các tiêu chí về Kiến trúc, Bảo mật, Tự động hóa và Năng lực phân tán đa thiết bị, sẵn sàng đưa vào vận hành sản xuất thương mại.
+> **Kết luận:** Bộ công cụ **Tuquet CLI** đáp ứng đầy đủ tất cả các tiêu chí về Kiến trúc, Bảo mật, Tự động hóa và Năng lực phân tán đa thiết bị, sẵn sàng đưa vào vận hành sản xuất thương mại.

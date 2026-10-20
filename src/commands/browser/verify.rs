@@ -40,13 +40,13 @@ pub async fn verify_stealth_presentation(
             "Dedicated Antidetect Chromium binary not found at: {}",
             exe_path
         ));
-        eprintln!("Run 'specter browser install' to provision Golden LTS v148.\n");
+        eprintln!("Run 'tuquet browser install' to provision Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 
     // 2. Create isolated ephemeral sandbox directory (Zero collision guarantee)
     let temp_profile =
-        std::env::temp_dir().join(format!("specter_verify_{}", uuid::Uuid::new_v4()));
+        std::env::temp_dir().join(format!("tuquet_verify_{}", uuid::Uuid::new_v4()));
     tokio::fs::create_dir_all(&temp_profile).await?;
 
     println!("[1/4] Spawning Antidetect Chromium with dynamic ephemeral port...");
@@ -69,7 +69,7 @@ pub async fn verify_stealth_presentation(
         cmd.arg("--headless=new");
     }
 
-    // Check optional Specter Bridge proxy (port 1080)
+    // Check optional Tuquet Bridge proxy (port 1080)
     if std::net::TcpListener::bind("127.0.0.1:1080").is_err() {
         println!("      • Proxy Route:   SOCKS5 Bridge Active (127.0.0.1:1080)");
         cmd.arg("--proxy-server=socks5://127.0.0.1:1080")
@@ -89,7 +89,7 @@ pub async fn verify_stealth_presentation(
 
     // 3. Attach native CDP Driver
     println!("\n[2/4] Connecting Native Pure Rust CDP Session...");
-    let session = match specter_runner::CdpSession::connect_auto(None, Some(&temp_profile)).await {
+    let session = match tuquet_runner::CdpSession::connect_auto(None, Some(&temp_profile)).await {
         Ok(s) => s,
         Err(e) => {
             let _ = child.kill();
@@ -101,13 +101,13 @@ pub async fn verify_stealth_presentation(
     println!("      ✅ CDP Session Attached! Isolated World execution initialized.");
 
     // Visual pointer helper function
-    async fn inject_visual_pointer(s: &specter_runner::CdpSession) {
+    async fn inject_visual_pointer(s: &tuquet_runner::CdpSession) {
         let _ = s
             .evaluate(
                 r#"(() => {
-            if (document.getElementById('specter-visual-pointer')) return;
+            if (document.getElementById('tuquet-visual-pointer')) return;
             const dot = document.createElement('div');
-            dot.id = 'specter-visual-pointer';
+            dot.id = 'tuquet-visual-pointer';
             dot.style.position = 'fixed';
             dot.style.width = '18px';
             dot.style.height = '18px';

@@ -61,7 +61,7 @@ pub fn canonical_ssot_dir() -> std::path::PathBuf {
 }
 
 /// Canonical root directory for Tuquet (~/.tuquet/)
-pub fn canonical_specter_dir() -> std::path::PathBuf {
+pub fn canonical_tuquet_dir() -> std::path::PathBuf {
     canonical_ssot_dir()
 }
 
@@ -91,7 +91,7 @@ mod tests {
         let dir = canonical_ssot_dir();
         assert!(
             dir.to_string_lossy().contains(".tuquet")
-                || dir.to_string_lossy().contains(".specter")
+                || dir.to_string_lossy().contains(".tuquet")
         );
     }
 }

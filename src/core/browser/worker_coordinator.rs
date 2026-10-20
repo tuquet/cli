@@ -1,5 +1,5 @@
-pub use specter_browser::coordinator::*;
-use specter_browser::{BrowserManager, BrowserManagerOptions, browser_registry};
+pub use tuquet_browser::coordinator::*;
+use tuquet_browser::{BrowserManager, BrowserManagerOptions, browser_registry};
 
 pub async fn ensure_browser_worker(
     browser_id: &str,
@@ -34,7 +34,7 @@ pub async fn ensure_browser_worker(
             if name_lower.contains("chrome")
                 || name_lower.contains("chromium")
                 || name_lower.contains("msedge")
-                || name_lower.contains("specter")
+                || name_lower.contains("tuquet")
             {
                 tracing::info!(
                     "Terminating stale browser process PID {} ({})",
@@ -61,7 +61,7 @@ pub async fn ensure_browser_worker(
                 }
             } else {
                 tracing::warn!(
-                    "Stale PID {} detected for browser {}, but process name '{}' does not match browser/specter. Skipping kill.",
+                    "Stale PID {} detected for browser {}, but process name '{}' does not match browser/tuquet. Skipping kill.",
                     _pid,
                     browser_id,
                     raw_name
