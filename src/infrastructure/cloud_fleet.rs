@@ -298,7 +298,7 @@ impl CloudFleetOrchestrator {
                     badge_error("AUTH ERROR")
                 );
                 eprintln!(
-                    "Run 'tuquet runner enroll' or login to configure device credentials.\n"
+                    "Run 'tq runner enroll' or login to configure device credentials.\n"
                 );
                 return Err("Missing cloud device credentials".into());
             }
@@ -418,7 +418,7 @@ impl CloudFleetOrchestrator {
         }
         card.add_kv(
             "Delta Storage",
-            format!("~/.tuquet/browser/profiles/{}.tar.zst", lease.profile.id),
+            format!("~/.tq/browser/profiles/{}.tar.zst", lease.profile.id),
         );
         card.add_kv(
             "Compressed Size",

@@ -46,7 +46,7 @@ pub async fn execute_workflow_list(args: &Value) -> Result<String, String> {
         }
     }
 
-    // 2. Vault Directory ~/.tuquet/automa/workflows
+    // 2. Vault Directory ~/.tq/automa/workflows
     let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 

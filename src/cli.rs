@@ -480,7 +480,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Enable a server in bridge configuration (~/.tuquet/bridge/bridge.json)
+    /// Enable a server in bridge configuration (~/.tq/bridge/bridge.json)
     #[command(name = "enable")]
     Enable {
         /// Server identifier to enable (e.g. my-vps, may-b; omit to select interactively)
@@ -488,7 +488,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Disable a server in bridge configuration (~/.tuquet/bridge/bridge.json)
+    /// Disable a server in bridge configuration (~/.tq/bridge/bridge.json)
     #[command(name = "disable")]
     Disable {
         /// Server identifier to disable (e.g. my-vps, may-b; omit to select interactively)
@@ -496,7 +496,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Validate ~/.tuquet/bridge/bridge.json configuration schema, ports, and workloads
+    /// Validate ~/.tq/bridge/bridge.json configuration schema, ports, and workloads
     #[command(name = "check")]
     Check,
 
@@ -507,7 +507,7 @@ pub enum BridgeSubcommands {
         #[arg(value_name = "ARGS")]
         args: Vec<String>,
 
-        /// Open ~/.tuquet/bridge/bridge.json in your default editor
+        /// Open ~/.tq/bridge/bridge.json in your default editor
         #[arg(short, long)]
         edit: bool,
 
@@ -651,7 +651,7 @@ pub enum InboxSubcommands {
         limit: usize,
     },
 
-    /// Inspect or edit inbox configuration (~/.tuquet/inbox/inbox.json)
+    /// Inspect or edit inbox configuration (~/.tq/inbox/inbox.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -768,7 +768,7 @@ pub enum FakerSubcommands {
         raw: bool,
     },
 
-    /// Manage synthetic persona configuration (~/.tuquet/faker/faker.json)
+    /// Manage synthetic persona configuration (~/.tq/faker/faker.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -850,7 +850,7 @@ pub enum AutomaSubcommands {
     /// Probe Automa manifest capabilities
     Probe,
 
-    /// Display, inspect, or edit Automa configuration (~/.tuquet/automa/automa.json)
+    /// Display, inspect, or edit Automa configuration (~/.tq/automa/automa.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -967,7 +967,7 @@ pub enum RunnerSubcommands {
         output: PathBuf,
     },
 
-    /// Display, inspect, or edit Runner daemon configuration (~/.tuquet/automa/runner.json)
+    /// Display, inspect, or edit Runner daemon configuration (~/.tq/automa/runner.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -1045,7 +1045,7 @@ pub enum CloudSubcommands {
         command: Option<TenantSubcommands>,
     },
 
-    /// Display, inspect, or edit System & Cloud configuration (~/.tuquet/system/system.json)
+    /// Display, inspect, or edit System & Cloud configuration (~/.tq/system/system.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -1257,7 +1257,7 @@ pub enum BrowserCommands {
         command: Option<ProfileCommands>,
     },
 
-    /// Display, inspect, or edit dedicated browser configuration (~/.tuquet/browser/browser.json)
+    /// Display, inspect, or edit dedicated browser configuration (~/.tq/browser/browser.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -1605,7 +1605,7 @@ pub enum WorkflowCommands {
         #[arg(long)]
         db_only: bool,
 
-        /// Only list workflows from Vault directory (~/.tuquet/automa/workflows)
+        /// Only list workflows from Vault directory (~/.tq/automa/workflows)
         #[arg(long)]
         vault_only: bool,
 

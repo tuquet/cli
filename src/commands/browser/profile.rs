@@ -56,7 +56,7 @@ pub async fn handle_profile(
                 base_dir.join("profiles").display().to_string(),
             );
             header_card.with_footer(
-                "Run 'tuquet browser launch <id>' to start or 'profile create <name>' to add",
+                "Run 'tq browser launch <id>' to start or 'profile create <name>' to add",
             );
             header_card.print();
 
@@ -64,7 +64,7 @@ pub async fn handle_profile(
                 let mut empty_card = Card::new("NO PROFILES FOUND");
                 empty_card.with_badge(badge_warn("EMPTY"));
                 empty_card.with_min_width(74);
-                empty_card.add_line("No browser profiles found in ~/.tuquet/browser/profiles/.");
+                empty_card.add_line("No browser profiles found in ~/.tq/browser/profiles/.");
                 empty_card.add_line("Create your first profile with:");
                 empty_card.add_line("  tq browser profile create 'My-Profile-1'");
                 empty_card.print();

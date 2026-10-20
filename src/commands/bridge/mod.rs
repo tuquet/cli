@@ -79,12 +79,12 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Enable a Bridge Server",
-            "Interactively enable a server in ~/.tuquet/bridge/bridge.json",
+            "Interactively enable a server in ~/.tq/bridge/bridge.json",
             "Enable a Bridge Server",
         ),
         ClackOption::new(
             "Disable a Bridge Server",
-            "Interactively disable a server in ~/.tuquet/bridge/bridge.json",
+            "Interactively disable a server in ~/.tq/bridge/bridge.json",
             "Disable a Bridge Server",
         ),
         ClackOption::new(
@@ -94,7 +94,7 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Configure Bridge Settings",
-            "Inspect or edit ~/.tuquet/bridge/bridge.json",
+            "Inspect or edit ~/.tq/bridge/bridge.json",
             "Configure Bridge Settings",
         ),
     ];

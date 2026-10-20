@@ -11,7 +11,7 @@ pub async fn handle_ps(format: OutputFormat) -> Result<(), Box<dyn std::error::E
         header_card.with_min_width(74);
         header_card.add_kv("Session SSOT", base_dir.join("pids").display().to_string());
         header_card.with_footer(
-            "Run 'tuquet browser stop <id>' to terminate or 'tuquet browser launch <id>' to open",
+            "Run 'tq browser stop <id>' to terminate or 'tq browser launch <id>' to open",
         );
         header_card.print();
         println!();

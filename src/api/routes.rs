@@ -295,9 +295,9 @@ pub fn create_router(state: crate::AppState) -> Router {
                         || host == "127.0.0.1"
                         || host == "tauri.localhost"
                         || host == "asset.localhost"
-                        || host == "tuquet.tuquet.com"
+                        || host == "tuquet.tq.com"
                         || host == "tuquet.com"
-                        || host.ends_with(".tuquet.com")
+                        || host.ends_with(".tq.com")
                         || s_trimmed == "https://automa-studio.vercel.app"
                         || s_trimmed == "https://tuquet.github.io"
                 } else {
@@ -374,11 +374,11 @@ mod tests {
             "http://tauri.localhost",
             "https://tauri.localhost",
             "http://asset.localhost",
-            "https://tuquet.tuquet.com",
-            "http://tuquet.tuquet.com",
-            "https://app.tuquet.com",
-            "https://admin.tuquet.com",
-            "http://admin.tuquet.com",
+            "https://tuquet.tq.com",
+            "http://tuquet.tq.com",
+            "https://app.tq.com",
+            "https://admin.tq.com",
+            "http://admin.tq.com",
             "http://localhost:5173",
             "http://127.0.0.1:8765",
             "chrome-extension://abcdefghijklmnop",

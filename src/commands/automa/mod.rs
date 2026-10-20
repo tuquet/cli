@@ -87,7 +87,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
     let options = vec![
         ClackOption::new(
             "List Workflows",
-            "Browse all workflows in SQLite & ~/.tuquet/automa/workflows/",
+            "Browse all workflows in SQLite & ~/.tq/automa/workflows/",
             "list",
         ),
         ClackOption::new(

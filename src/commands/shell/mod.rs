@@ -680,15 +680,15 @@ pub fn print_scope_help(scope: ShellScope) {
             );
             card.add_kv(
                 "  enable <server>",
-                "Enable a server in ~/.tuquet/bridge/bridge.json",
+                "Enable a server in ~/.tq/bridge/bridge.json",
             );
             card.add_kv(
                 "  disable <server>",
-                "Disable a server in ~/.tuquet/bridge/bridge.json",
+                "Disable a server in ~/.tq/bridge/bridge.json",
             );
             card.add_kv(
                 "  check",
-                "Validate ~/.tuquet/bridge/bridge.json schema, ports, and workloads",
+                "Validate ~/.tq/bridge/bridge.json schema, ports, and workloads",
             );
             card.add_kv(
                 "  config [--edit]",

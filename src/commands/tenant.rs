@@ -55,7 +55,7 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
         Some(c) => c,
         None => {
             return Err(
-                "No active cloud session found on this machine. Run 'tuquet login' first.".into(),
+                "No active cloud session found on this machine. Run 'tq login' first.".into(),
             );
         }
     };
@@ -93,7 +93,7 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
                     );
                 });
             }
-            return Err("Workstation is not logged in. Run 'tuquet login' first.".into());
+            return Err("Workstation is not logged in. Run 'tq login' first.".into());
         }
     };
 
@@ -292,14 +292,14 @@ pub async fn show_current_tenant(format: OutputFormat) -> Result<(), Box<dyn std
         None => {
             let out = serde_json::json!({
                 "authenticated": false,
-                "message": "No active cloud session found on this machine. Run 'tuquet login' to authenticate."
+                "message": "No active cloud session found on this machine. Run 'tq login' to authenticate."
             });
             return respond_with(format, &out, |_| {
                 let mut card = Card::new("WORKSPACE");
                 card.with_badge(badge_offline("NOT AUTHENTICATED"));
                 card.with_min_width(64);
                 card.add_line("No active cloud session found on this machine.");
-                card.with_footer("Run 'tuquet login' to authenticate with Cloud");
+                card.with_footer("Run 'tq login' to authenticate with Cloud");
                 println!();
                 card.print();
                 println!();
@@ -341,7 +341,7 @@ pub async fn show_current_tenant(format: OutputFormat) -> Result<(), Box<dyn std
             card.add_kv("Logged In As", email);
         }
         card.add_kv("Runner Device", &creds.name);
-        card.with_footer("Run 'tuquet tenant list' to view all available workspaces");
+        card.with_footer("Run 'tq tenant list' to view all available workspaces");
         println!();
         card.print();
         println!();

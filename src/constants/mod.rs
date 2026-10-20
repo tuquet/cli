@@ -50,8 +50,8 @@ pub mod pillars {
 }
 
 pub mod envs {
-    pub const ENV_TUQUET_HOME: &str = "TUQUET_HOME";
-    pub const ENV_SPECTER_HOME: &str = "SPECTER_HOME";
+    pub const ENV_HOME: &str = "HOME";
+    pub const HOME: &str = "SPECTER_HOME";
     pub const ENV_SPECTER_ENV: &str = "SPECTER_ENV";
     pub const ENV_SPECTER_CLOUD_URL: &str = "SPECTER_CLOUD_URL";
     pub const ENV_SPECTER_API_KEY: &str = "SPECTER_API_KEY";
@@ -78,16 +78,16 @@ pub mod envs {
 
 pub mod endpoints {
     pub const DEFAULT_HOST: &str = "127.0.0.1";
-    pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tuquet.dev";
+    pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tq.dev";
     pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
     pub const DEFAULT_AUTOMA_STUDIO_URL: &str = "https://automa-studio.vercel.app";
-    pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/tuquet";
+    pub const DEFAULT_DOCS_URL: &str = "https://docs.tq.com/en/tuquet";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
     pub const GITHUB_REPO: &str = "tuquet/cli";
 }
 
 pub mod paths {
-    pub const DEFAULT_SSOT_ROOT_DIR: &str = ".tuquet";
+    pub const DEFAULT_SSOT_ROOT_DIR: &str = ".tq";
 
     pub const FILE_AUTOMA_SQLITE: &str = "automa.sqlite";
     pub const FILE_BRIDGE_JSON: &str = "bridge.json";

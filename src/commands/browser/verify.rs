@@ -40,7 +40,7 @@ pub async fn verify_stealth_presentation(
             "Dedicated Antidetect Chromium binary not found at: {}",
             exe_path
         ));
-        eprintln!("Run 'tuquet browser install' to provision Golden LTS v148.\n");
+        eprintln!("Run 'tq browser install' to provision Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 

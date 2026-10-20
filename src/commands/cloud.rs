@@ -500,7 +500,7 @@ pub async fn login(
         }
     };
 
-    // 5. Update and persist unified session in ~/.tuquet/system/.identity.json
+    // 5. Update and persist unified session in ~/.tq/system/.identity.json
     device_creds.api_key = Some(active_anon_key.clone());
     device_creds.user_id = maybe_user_id.clone();
     device_creds.email = maybe_user_email.clone();
@@ -627,7 +627,7 @@ fn present_logout(logged_out: bool) {
         card.with_badge(badge_offline("LOGGED OUT"));
         card.with_min_width(64);
         card.add_line("Removed local cloud pairing credentials and session identity.");
-        card.with_footer("Run 'tuquet login' to authenticate with Cloud");
+        card.with_footer("Run 'tq login' to authenticate with Cloud");
         println!();
         card.print();
         println!();
@@ -728,7 +728,7 @@ fn present_whoami(
                 }
             }
 
-            card.with_footer("Run 'tuquet tenant list' to view available multi-tenant workspaces");
+            card.with_footer("Run 'tq tenant list' to view available multi-tenant workspaces");
             println!();
             card.print();
             println!();
@@ -737,7 +737,7 @@ fn present_whoami(
         let payload = serde_json::json!({
             "enrolled": false,
             "authenticated": false,
-            "message": "Workstation not enrolled with cloud fleet. Run 'tuquet login' to authenticate."
+            "message": "Workstation not enrolled with cloud fleet. Run 'tq login' to authenticate."
         });
 
         respond_with(format, &payload, |_| {
@@ -745,7 +745,7 @@ fn present_whoami(
             card.with_badge(badge_offline("DISCONNECTED"));
             card.with_min_width(64);
             card.add_line("Workstation not enrolled with cloud fleet.");
-            card.with_footer("Run 'tuquet login' to authenticate with Cloud");
+            card.with_footer("Run 'tq login' to authenticate with Cloud");
             println!();
             card.print();
             println!();

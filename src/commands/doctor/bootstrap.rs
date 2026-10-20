@@ -19,7 +19,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     let root = canonical_ssot_dir();
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 1. Create Canonical SSOT Pillar Directories (~/.tuquet/)
+    // 1. Create Canonical SSOT Pillar Directories (~/.tq/)
     // ─────────────────────────────────────────────────────────────────────────────
     let dirs = [
         root.join("bin"),
@@ -188,7 +188,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     card.add_kv("SQLite Database", "automa.sqlite (Schema initialized)");
     card.add_kv(
         "MCP Agent Protocol",
-        "tuquet stdio server registered (~/.gemini/config/mcp_config.json)",
+        "tq stdio server registered (~/.gemini/config/mcp_config.json)",
     );
     let b_status = crate::core::browser::resolver::get_runtime_status();
     card.add_kv(
@@ -196,11 +196,11 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
         if b_status.installed {
             "Golden LTS v148 (Antidetect Chromium)"
         } else {
-            "Pending download (tuquet browser install)"
+            "Pending download (tq browser install)"
         },
     );
     card.with_footer(
-        "Next: Run 'tuquet doctor' to inspect dependencies or 'tuquet status' for dashboard.",
+        "Next: Run 'tq doctor' to inspect dependencies or 'tq status' for dashboard.",
     );
     card.print();
     println!();

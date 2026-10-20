@@ -231,7 +231,7 @@ impl ShellScope {
                 ("disable", "Disable a server in bridge configuration"),
                 (
                     "check",
-                    "Validate ~/.tuquet/bridge/bridge.json configuration",
+                    "Validate ~/.tq/bridge/bridge.json configuration",
                 ),
                 (
                     "config",

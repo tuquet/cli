@@ -44,7 +44,7 @@ pub fn render_update_banner(current: &str, latest: &str) -> String {
 
     format!(
 "  {amber}╭──────────────────────────────────────────────────────────────────────────╮{reset}
-  {amber}│{reset}  🔔 {bold}{white}Update available:{reset} {muted}v{current}{reset} → {cyan}v{latest}{reset}  {muted}(Run 'tuquet upgrade' or 'scoop update'){reset} {amber}│{reset}
+  {amber}│{reset}  🔔 {bold}{white}Update available:{reset} {muted}v{current}{reset} → {cyan}v{latest}{reset}  {muted}(Run 'tq upgrade' or 'scoop update'){reset} {amber}│{reset}
   {amber}╰──────────────────────────────────────────────────────────────────────────╯{reset}"
     )
 }

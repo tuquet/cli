@@ -140,7 +140,7 @@ pub async fn check_status(
                     Some(crate::ui::badge_offline("OFFLINE")),
                     ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
                     &rows,
-                    Some("Start local daemon with 'tuquet runner start -d'"),
+                    Some("Start local daemon with 'tq runner start -d'"),
                     72,
                 );
                 println!();
@@ -207,7 +207,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
             card.with_badge(crate::ui::badge_offline("NOT RUNNING"));
             card.with_min_width(64);
             card.add_line("No active runner daemon process found on this machine.");
-            card.with_footer("Start daemon with 'tuquet runner start -d'");
+            card.with_footer("Start daemon with 'tq runner start -d'");
             println!();
             card.print();
             println!();
@@ -284,7 +284,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         card.add_kv("Terminated PID(s)", pids_str);
     }
     card.add_line("Runner worker daemon has been gracefully terminated.");
-    card.with_footer("Start daemon again with 'tuquet runner start -d'");
+    card.with_footer("Start daemon again with 'tq runner start -d'");
     println!();
     card.print();
     println!();
@@ -389,7 +389,7 @@ pub async fn run_server(
             format!("http://{}:{}", config.server_host, config.server_port),
         );
         card.add_kv("Log File", log_file_path.display().to_string());
-        card.with_footer("Stop daemon with 'tuquet runner stop'");
+        card.with_footer("Stop daemon with 'tq runner stop'");
         println!();
         card.print();
         println!();

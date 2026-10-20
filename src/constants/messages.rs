@@ -36,6 +36,6 @@ pub const MSG_BROWSER_CLEANUP_OK: &str = "All browser child processes cleanly te
 
 /// Storage & Workflow messages
 pub const MSG_DB_INITIALIZED: &str = "Automa SQLite database initialized successfully.";
-pub const MSG_PILLARS_INITIALIZED: &str = "Canonical storage pillars initialized under ~/.tuquet/";
+pub const MSG_PILLARS_INITIALIZED: &str = "Canonical storage pillars initialized under ~/.tq/";
 pub const MSG_WORKFLOW_EXPORTED: &str = "Workflow exported successfully.";
 pub const MSG_WORKFLOW_NOT_FOUND: &str = "Workflow file or ID not found in database or vault.";

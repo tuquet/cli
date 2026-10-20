@@ -129,7 +129,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Installed Chromium Runtimes",
-            "List downloaded Chromium versions in ~/.tuquet/browser/runtimes/",
+            "List downloaded Chromium versions in ~/.tq/browser/runtimes/",
             "list",
         ),
     ];

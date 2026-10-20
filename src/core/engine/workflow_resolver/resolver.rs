@@ -128,7 +128,7 @@ impl WorkflowResolver {
         }
 
         Err(WorkflowResolveError::NotFound(format!(
-            "Workflow '{}' not found in database or vault (~/.tuquet/automa/workflows/). Use 'tuquet automa workflow list' to view available workflows.",
+            "Workflow '{}' not found in database or vault (~/.tq/automa/workflows/). Use 'tq automa workflow list' to view available workflows.",
             wf_id
         )))
     }

@@ -460,7 +460,7 @@ pub async fn handle_start(
 
     if let Some(existing_pid) = read_pid() {
         println!(
-            "⚠️ Inbox daemon is already running (PID: {}). Use 'tuquet inbox stop' to stop it.",
+            "⚠️ Inbox daemon is already running (PID: {}). Use 'tq inbox stop' to stop it.",
             existing_pid
         );
         return Ok(());
@@ -568,7 +568,7 @@ pub async fn handle_status(
         } else {
             card.add_kv(
                 "Daemon Status",
-                "Not running (Start with 'tuquet inbox start')",
+                "Not running (Start with 'tq inbox start')",
             );
         }
 
@@ -596,7 +596,7 @@ pub async fn handle_status(
         } else {
             card.add_kv(
                 "Cloud Sync",
-                "Standalone / Local-only (Pair with 'tuquet login')",
+                "Standalone / Local-only (Pair with 'tq login')",
             );
         }
 
@@ -644,7 +644,7 @@ pub async fn handle_sync(limit: usize) -> Result<(), Box<dyn std::error::Error>>
     let cloud = InboxCloudClient::new(&config);
 
     if !cloud.is_configured() {
-        return Err("Supabase cloud not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tuquet/inbox/inbox.json".into());
+        return Err("Supabase cloud not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tq/inbox/inbox.json".into());
     }
 
     println!("🔄 Pulling latest emails and OTPs from Supabase Cloud...");

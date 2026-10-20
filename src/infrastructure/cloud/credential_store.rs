@@ -92,7 +92,7 @@ pub struct CloudStatusInfo {
     pub last_sync_at: Option<String>,
 }
 
-/// Local persistence store for Cloud identity in ~/.tuquet/system/.identity.json
+/// Local persistence store for Cloud identity in ~/.tq/system/.identity.json
 pub struct CredentialStore;
 
 impl CredentialStore {

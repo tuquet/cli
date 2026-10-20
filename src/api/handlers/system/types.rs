@@ -181,7 +181,7 @@ pub struct CloudLogoutResponse {
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!({
-    "authUrl": "https://admin.tuquet.com/auth/desktop?state=xyz&port=8765&machine_name=DESKTOP-1",
+    "authUrl": "https://admin.tq.com/auth/desktop?state=xyz&port=8765&machine_name=DESKTOP-1",
     "state": "xyz",
     "port": 8765
 }))]

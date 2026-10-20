@@ -114,7 +114,7 @@ impl ConfigRegistry {
         }
 
         card.with_footer(
-            "Tip: 'tuquet <service> config' for raw path or '--edit' to open in editor",
+            "Tip: 'tq <service> config' for raw path or '--edit' to open in editor",
         );
         card.print();
         println!();
@@ -265,7 +265,7 @@ mod tests {
         for entry in list {
             assert!(
                 entry.path.to_string_lossy().contains(crate::constants::DEFAULT_SSOT_ROOT_DIR)
-                    || entry.path.to_string_lossy().contains(".tuquet")
+                    || entry.path.to_string_lossy().contains(".tq")
             );
         }
     }

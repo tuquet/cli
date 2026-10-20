@@ -97,7 +97,7 @@ pub async fn handle(
             if packages.len() == 1 {
                 &packages[0]
             } else {
-                // Build `★ Recent` quick-launch options from ~/.tuquet/system/dev_history.json
+                // Build `★ Recent` quick-launch options from ~/.tq/system/dev_history.json
                 let recent_entries = load_history();
                 let mut recent_shortcuts: Vec<(&DiscoveredPackage, String)> = Vec::new();
                 let mut clack_opts: Vec<ClackOption> = Vec::new();

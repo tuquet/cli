@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_system_config_defaults() {
         let config = SystemConfig::default();
-        assert_eq!(config.cloud_url, "https://cloud.tuquet.dev");
+        assert_eq!(config.cloud_url, "https://cloud.tq.dev");
         assert_eq!(config.update_channel, "stable");
         assert!(config.auto_check_update);
     }

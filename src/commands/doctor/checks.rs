@@ -221,13 +221,13 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
             format!("{} profile(s) in {}", profile_count, profiles_dir.display()),
         );
         browser_card
-            .with_footer("Manage with 'tuquet browser list' or 'tuquet browser use <version>'");
+            .with_footer("Manage with 'tq browser list' or 'tq browser use <version>'");
     } else {
         browser_card.with_badge(badge_error("MISSING ENGINE"));
         browser_card.add_line("No Antidetect Chromium runtime installed on this machine.");
-        browser_card.with_footer("Run 'tuquet browser install 148' to install Golden LTS release");
+        browser_card.with_footer("Run 'tq browser install 148' to install Golden LTS release");
         missing_actions.push(
-            "Browser: Run 'tuquet browser install 148' to install C++ Antidetect Chromium"
+            "Browser: Run 'tq browser install 148' to install C++ Antidetect Chromium"
                 .to_string(),
         );
     }
@@ -353,7 +353,7 @@ pub fn check_network_topology() -> Card {
     create_network_topology_card(
         "NETWORK TOPOLOGY & LISTENERS",
         &endpoints,
-        Some("Tunnels run on demand. Start with 'tuquet bridge start' or 'tuquet runner start'"),
+        Some("Tunnels run on demand. Start with 'tq bridge start' or 'tq runner start'"),
     )
 }
 
@@ -371,7 +371,7 @@ pub fn check_verdict(
             .add_line("All required ecosystem dependencies and runtimes are properly provisioned.");
         verdict_card.add_line("Your workstation is 100% ready for autonomous browser workflows, antidetect spoofing, and bridge meshes.");
         verdict_card.with_footer(
-            "Tip: Run 'tuquet' to launch interactive shell, or 'tuquet status' for dashboard.",
+            "Tip: Run 'tuquet' to launch interactive shell, or 'tq status' for dashboard.",
         );
     } else {
         verdict_card.with_badge(badge_warn("ACTION REQUIRED"));
@@ -379,7 +379,7 @@ pub fn check_verdict(
         for action in missing_actions {
             verdict_card.add_line(format!("  • {}", action));
         }
-        verdict_card.with_footer("Tip: Run 'tuquet doctor --fix' or 'tuquet bootstrap' to auto-remediate missing components.");
+        verdict_card.with_footer("Tip: Run 'tq doctor --fix' or 'tq bootstrap' to auto-remediate missing components.");
     }
 
     verdict_card

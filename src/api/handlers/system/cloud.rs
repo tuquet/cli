@@ -281,7 +281,7 @@ pub async fn start_desktop_auth(State(_state): State<crate::AppState>) -> impl I
         .unwrap_or_else(|_| "Local-Workstation".to_string());
     let port = 8765;
     let auth_url = format!(
-        "https://admin.tuquet.com/auth/desktop?client_id=desktop&state={}&port={}&machine_name={}",
+        "https://admin.tq.com/auth/desktop?client_id=desktop&state={}&port={}&machine_name={}",
         nonce, port, hostname
     );
 

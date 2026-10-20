@@ -203,7 +203,7 @@ fn test_runtime_manifest_queries() {
     let schema_cmd = find_by_route(&["schema", "commands"]);
     assert!(
         schema_cmd.is_some(),
-        "Expected 'tuquet schema commands' to resolve via find_by_route"
+        "Expected 'tq schema commands' to resolve via find_by_route"
     );
     assert_eq!(schema_cmd.unwrap().id, "tuquet.schema.commands");
 }

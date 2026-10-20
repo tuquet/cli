@@ -53,7 +53,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ),
         TabularRow::new(
             "SSOT Storage",
-            "~/.tuquet",
+            "~/.tq",
             "Microservices Root",
             badge_online("READY"),
         ),
@@ -83,7 +83,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         Some(if cloud_creds.is_some() {
             "Workstation enrolled in Cloud Mesh"
         } else {
-            "Run 'tuquet login' to authenticate with Cloud"
+            "Run 'tq login' to authenticate with Cloud"
         }),
         72,
     );
@@ -173,7 +173,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         Some(if daemon_running {
             "Runner daemon active on local endpoint"
         } else {
-            "Start runner daemon with 'tuquet runner start --port 8765'"
+            "Start runner daemon with 'tq runner start --port 8765'"
         }),
         72,
     );
@@ -225,12 +225,12 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
                 .trim_start_matches(['/', '\\'])
                 .replace('\\', "/")
         )
-    } else if browser_status.executable_path.contains(".tuquet") {
+    } else if browser_status.executable_path.contains(".tq") {
         format!(
-            "~/.tuquet{}",
+            "~/.tq{}",
             browser_status
                 .executable_path
-                .split(".tuquet")
+                .split(".tq")
                 .nth(1)
                 .unwrap_or("")
                 .replace('\\', "/")
@@ -261,9 +261,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ["COMPONENT", "VERSION / PATH", "ROLE / DETAILS", "STATUS"],
         &browser_rows,
         Some(if browser_status.installed {
-            "Engine ready. Run 'tuquet browser list' to manage profiles"
+            "Engine ready. Run 'tq browser list' to manage profiles"
         } else {
-            "Install dedicated runtime with 'tuquet browser install'"
+            "Install dedicated runtime with 'tq browser install'"
         }),
         72,
     );
@@ -307,7 +307,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     let mut bridge_card = create_network_topology_card(
         "NETWORK BRIDGE",
         &endpoints,
-        Some("Manage with 'tuquet bridge status' or 'tuquet bridge start'"),
+        Some("Manage with 'tq bridge status' or 'tq bridge start'"),
     );
     if git_active || ssh_active || http_active {
         bridge_card.with_badge(badge_online("CONNECTED"));

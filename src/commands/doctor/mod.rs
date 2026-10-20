@@ -58,7 +58,7 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
 
         browser_card.print();
 
-        // 3. Canonical Microservice Storage Pillars (~/.tuquet/)
+        // 3. Canonical Microservice Storage Pillars (~/.tq/)
         let pillar_table = checks::check_storage_pillars();
         clack_step_info("CANONICAL MICROSERVICE STORAGE PILLARS (SSOT)");
         pillar_table.print();

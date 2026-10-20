@@ -47,7 +47,7 @@ pub async fn handle_ext(
             card.add_line("  tq browser ext remove <id>      Unregister custom extension");
             card.add_line("  tq browser ext info <id>        View extension details");
             card.add_line("  tq browser ext launch           Launch browser with extensions");
-            card.with_footer("Registry SSOT: ~/.tuquet/browser/extensions/registry.json");
+            card.with_footer("Registry SSOT: ~/.tq/browser/extensions/registry.json");
 
             println!();
             card.print();
@@ -130,7 +130,7 @@ pub async fn handle_ext(
                     card.with_min_width(64);
                     card.add_kv("Target ID", id);
                     card.add_kv("Error", format!("{}", e));
-                    card.with_footer("Run 'tuquet browser ext catalog' to see available packages");
+                    card.with_footer("Run 'tq browser ext catalog' to see available packages");
                     println!();
                     card.print();
                     println!();
@@ -293,7 +293,7 @@ pub async fn handle_ext(
                 card.with_min_width(64);
                 card.add_kv("ID", id);
                 card.add_line(
-                    "Extension not found in local registry. Run 'tuquet browser ext list'.",
+                    "Extension not found in local registry. Run 'tq browser ext list'.",
                 );
                 println!();
                 card.print();

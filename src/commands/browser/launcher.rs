@@ -49,7 +49,7 @@ pub async fn launch_browser(
             Err(e) => {
                 crate::ui::Notify::error(&e);
                 eprintln!(
-                    "Run 'tuquet browser profile list' to view available profiles, or 'profile create <name>'.\n"
+                    "Run 'tq browser profile list' to view available profiles, or 'profile create <name>'.\n"
                 );
                 return Err(e.into());
             }
@@ -140,7 +140,7 @@ pub async fn launch_browser(
             "Dedicated Antidetect Chromium runtime not found at: {}",
             exe_path
         ));
-        eprintln!("Run 'tuquet browser install' to download and set up Golden LTS v148.\n");
+        eprintln!("Run 'tq browser install' to download and set up Golden LTS v148.\n");
         return Err("Missing browser binary".into());
     }
 

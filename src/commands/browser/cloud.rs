@@ -13,7 +13,7 @@ pub async fn handle_profile_cloud(
         Some(c) => c,
         None => {
             crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
-            eprintln!("Run 'tuquet login' to authenticate and pair your workstation first.\n");
+            eprintln!("Run 'tq login' to authenticate and pair your workstation first.\n");
             return Err("Workstation not enrolled with Cloud".into());
         }
     };
@@ -427,7 +427,7 @@ pub async fn handle_profile_cloud(
             );
             card.add_kv(
                 "Delta Archive",
-                format!("~/.tuquet/browser/{}", canonical_rel_storage),
+                format!("~/.tq/browser/{}", canonical_rel_storage),
             );
             card.add_kv(
                 "Compressed Size",

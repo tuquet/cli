@@ -45,10 +45,10 @@ impl EnvExpander {
 
 pub use crate::constants::DEFAULT_SSOT_ROOT_DIR as DEFAULT_SSOT_DIR_NAME;
 
-/// Resolves the canonical SSOT root directory (~/.tuquet/ or $TUQUET_HOME)
+/// Resolves the canonical SSOT root directory (~/.tq/ or $HOME)
 pub fn canonical_ssot_dir() -> std::path::PathBuf {
-    if let Ok(dir) = std::env::var(crate::constants::ENV_TUQUET_HOME)
-        .or_else(|_| std::env::var(crate::constants::ENV_SPECTER_HOME)) {
+    if let Ok(dir) = std::env::var(crate::constants::ENV_HOME)
+        .or_else(|_| std::env::var(crate::constants::HOME)) {
         if !dir.trim().is_empty() {
             return std::path::PathBuf::from(dir);
         }
@@ -60,7 +60,7 @@ pub fn canonical_ssot_dir() -> std::path::PathBuf {
     std::path::PathBuf::from(home).join(crate::constants::DEFAULT_SSOT_ROOT_DIR)
 }
 
-/// Canonical root directory for (~/.tuquet/)
+/// Canonical root directory for (~/.tq/)
 pub fn canonical_dir() -> std::path::PathBuf {
     canonical_ssot_dir()
 }
@@ -90,8 +90,8 @@ mod tests {
     fn test_canonical_ssot_dir() {
         let dir = canonical_ssot_dir();
         assert!(
-            dir.to_string_lossy().contains(".tuquet")
-                || dir.to_string_lossy().contains(".tuquet")
+            dir.to_string_lossy().contains(".tq")
+                || dir.to_string_lossy().contains(".tq")
         );
     }
 }

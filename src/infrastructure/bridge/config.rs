@@ -140,12 +140,12 @@ impl ServerSelector {
 }
 
 impl BridgeConfig {
-    /// Canonical root path for SSOT storage (~/.tuquet/)
+    /// Canonical root path for SSOT storage (~/.tq/)
     pub fn canonical_dir() -> PathBuf {
         crate::config::canonical_ssot_dir()
     }
 
-    /// Single Canonical config path: ~/.tuquet/bridge/bridge.json (SSOT)
+    /// Single Canonical config path: ~/.tq/bridge/bridge.json (SSOT)
     pub fn config_path() -> PathBuf {
         crate::config::canonical_ssot_dir()
             .join(crate::constants::PILLAR_BRIDGE)
@@ -166,7 +166,7 @@ impl BridgeConfig {
         Ok(Self::default_config())
     }
 
-    /// Save configuration back to canonical file ~/.tuquet/bridge/bridge.json
+    /// Save configuration back to canonical file ~/.tq/bridge/bridge.json
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let path = Self::config_path();
         if let Some(parent) = path.parent() {

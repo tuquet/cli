@@ -13,7 +13,7 @@ pub enum CloudError {
     #[error("Reqwest HTTP error: {0}")]
     Http(#[from] reqwest::Error),
     #[error(
-        "Supabase cloud not configured (set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tuquet/inbox/inbox.json)"
+        "Supabase cloud not configured (set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tq/inbox/inbox.json)"
     )]
     NotConfigured,
     #[error("Local storage error: {0}")]
@@ -70,7 +70,7 @@ impl InboxCloudClient {
             .build()
             .unwrap_or_else(|_| reqwest::Client::new());
 
-        // 1. Auto-discover from SSOT identity file (~/.tuquet/system/.identity.json)
+        // 1. Auto-discover from SSOT identity file (~/.tq/system/.identity.json)
         let identity_path = crate::config::canonical_dir()
             .join("system")
             .join(".identity.json");

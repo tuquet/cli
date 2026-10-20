@@ -88,7 +88,7 @@ pub async fn import_workflow(
         icon.as_deref(),
     )?;
 
-    // Also copy to Vault ~/.tuquet/automa/workflows/
+    // Also copy to Vault ~/.tq/automa/workflows/
     let vault_dir = crate::config::AutomaConfig::load().resolved_vault_dir();
     let _ = tokio::fs::create_dir_all(&vault_dir).await;
     let vault_file = vault_dir.join(format!("{}.workflow.json", id));
