@@ -50,8 +50,8 @@ pub mod pillars {
 }
 
 pub mod envs {
-    pub const ENV_HOME: &str = "HOME";
-    pub const HOME: &str = "SPECTER_HOME";
+    pub const ENV_TQ_HOME: &str = "TQ_HOME";
+    pub const ENV_SPECTER_HOME: &str = "SPECTER_HOME";
     pub const ENV_SPECTER_ENV: &str = "SPECTER_ENV";
     pub const ENV_SPECTER_CLOUD_URL: &str = "SPECTER_CLOUD_URL";
     pub const ENV_SPECTER_API_KEY: &str = "SPECTER_API_KEY";
