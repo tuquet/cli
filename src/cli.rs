@@ -226,6 +226,10 @@ pub enum Commands {
         format: crate::ui::FormatArgs,
     },
 
+    /// Launch full-screen interactive Terminal User Interface (Mission Control Dashboard)
+    #[command(name = "tui", aliases = ["top", "dashboard"])]
+    Tui,
+
     /// Check system dependencies, required tools & environment health
     #[command(name = "doctor")]
     Doctor {

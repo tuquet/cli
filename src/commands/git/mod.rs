@@ -557,6 +557,22 @@ fn walk_for_git_dirs(current: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 }
 
 fn inspect_git_repo(dir: &Path, id: String) -> Option<DiscoveredGitRepo> {
+    // Filter requirement: Only scan git repositories that have at least one remote configured
+    let remote_output = Command::new("git")
+        .args(["-C", &dir.to_string_lossy(), "remote"])
+        .output()
+        .ok()?;
+
+    if !remote_output.status.success() {
+        return None;
+    }
+
+    let remotes = String::from_utf8_lossy(&remote_output.stdout);
+    if remotes.trim().is_empty() {
+        // Skip local git folders with no remote configured
+        return None;
+    }
+
     let output = Command::new("git")
         .args([
             "-C",
@@ -573,7 +589,16 @@ fn inspect_git_repo(dir: &Path, id: String) -> Option<DiscoveredGitRepo> {
     }
 
     let text = String::from_utf8_lossy(&output.stdout);
-    Some(parse_git_status_porcelain(&text, id, dir.to_path_buf()))
+    let repo = parse_git_status_porcelain(&text, id, dir.to_path_buf());
+
+    // Skip fresh uninitialized repo with no commits and only untracked files
+    if repo.branch == "HEAD" || text.contains("No commits yet") {
+        if repo.modified == 0 && repo.staged == 0 && repo.ahead == 0 && repo.behind == 0 {
+            return None;
+        }
+    }
+
+    Some(repo)
 }
 
 pub fn parse_git_status_porcelain(text: &str, id: String, dir: PathBuf) -> DiscoveredGitRepo {

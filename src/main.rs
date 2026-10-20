@@ -69,6 +69,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Status { format }) => {
             commands::status::show_dashboard(format.resolve()).await
         }
+        Some(Commands::Tui) => {
+            commands::tui::run().await
+        }
         Some(Commands::Doctor { fix, format }) => {
             commands::doctor::run(fix, format.resolve()).await
         }

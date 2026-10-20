@@ -16,3 +16,4 @@ pub mod schema;
 pub mod shell;
 pub mod status;
 pub mod tenant;
+pub mod tui;
