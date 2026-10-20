@@ -1,6 +1,6 @@
 [package]
 name = "tuquet"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2024"
 default-run = "tq"
 description = "- Autonomous Browser Automation & Distributed Mesh Runtime"

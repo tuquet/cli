@@ -9,7 +9,8 @@ use crate::commands::dev::scanner::{
 use crate::infrastructure::bridge::probe_port;
 use crate::ui::{
     ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
-    badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
+    badge_warn, clack_cancel, clack_intro, clack_multiselect, clack_outro, clack_select, colors,
+    create_tabular_card,
 };
 
 const MAX_GIT_SCAN_DEPTH: usize = 6;
@@ -125,10 +126,10 @@ pub async fn handle(
         return Ok(());
     }
 
-    let target_repo: &DiscoveredGitRepo = match repo_query {
+    let target_repos: Vec<&DiscoveredGitRepo> = match repo_query {
         None => {
             if repos.len() == 1 {
-                &repos[0]
+                vec![&repos[0]]
             } else {
                 let clack_opts: Vec<ClackOption> = repos
                     .iter()
@@ -141,10 +142,24 @@ pub async fn handle(
                     })
                     .collect();
 
-                match clack_select("Select a Git repository", &clack_opts, 0, 10)? {
-                    Some(idx) => &repos[idx],
-                    None => {
-                        clack_cancel("Operation cancelled.");
+                let initial_selected: Vec<usize> = repos
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, r)| r.needs_attention())
+                    .map(|(i, _)| i)
+                    .collect();
+
+                match clack_multiselect(
+                    "Select Git repositories (Space to toggle, Ctrl+A all, Enter to confirm)",
+                    &clack_opts,
+                    &initial_selected,
+                    12,
+                )? {
+                    Some(indices) if !indices.is_empty() => {
+                        indices.into_iter().map(|idx| &repos[idx]).collect()
+                    }
+                    _ => {
+                        clack_cancel("No repositories selected.");
                         return Ok(());
                     }
                 }
@@ -170,7 +185,7 @@ pub async fn handle(
                     );
                     println!("  \x1b[90m│\x1b[0m");
                 }
-                matched[0]
+                vec![matched[0]]
             } else {
                 let clack_opts: Vec<ClackOption> = matched
                     .iter()
@@ -181,15 +196,28 @@ pub async fn handle(
                         ClackOption::new(label, hint, summary)
                     })
                     .collect();
-                match clack_select(
-                    &format!("Multiple repositories match '{}'. Select repository", q),
+
+                let initial_selected: Vec<usize> = matched
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, r)| r.needs_attention())
+                    .map(|(i, _)| i)
+                    .collect();
+
+                match clack_multiselect(
+                    &format!(
+                        "Repositories matching '{}' (Space to toggle, Ctrl+A all, Enter to confirm)",
+                        q
+                    ),
                     &clack_opts,
-                    0,
+                    &initial_selected,
                     10,
                 )? {
-                    Some(idx) => matched[idx],
-                    None => {
-                        clack_cancel("Operation cancelled.");
+                    Some(indices) if !indices.is_empty() => {
+                        indices.into_iter().map(|idx| matched[idx]).collect()
+                    }
+                    _ => {
+                        clack_cancel("No repositories selected.");
                         return Ok(());
                     }
                 }
@@ -223,18 +251,19 @@ pub async fn handle(
             let act_opts: Vec<ClackOption> = actions
                 .iter()
                 .map(|(id, desc)| {
-                    ClackOption::new(*id, *desc, format!("{} ({})", id, target_repo.id))
+                    ClackOption::new(*id, *desc, format!("{} ({} repos)", id, target_repos.len()))
                 })
                 .collect();
-            match clack_select(
-                &format!(
+            let prompt_title = if target_repos.len() == 1 {
+                format!(
                     "Select action for {} [{}]",
-                    target_repo.id, target_repo.branch
-                ),
-                &act_opts,
-                0,
-                6,
-            )? {
+                    target_repos[0].id, target_repos[0].branch
+                )
+            } else {
+                format!("Select action for {} selected repositories", target_repos.len())
+            };
+
+            match clack_select(&prompt_title, &act_opts, 0, 6)? {
                 Some(idx) => actions[idx].0,
                 None => {
                     clack_cancel("Operation cancelled.");
@@ -244,90 +273,164 @@ pub async fn handle(
         }
     };
 
-    execute_git_action(target_repo, selected_action).await
+    if selected_action == "push-bridge" && !probe_port(1080) {
+        println!("  \x1b[36m◆\x1b[0m  Starting Bridge SOCKS5 tunnel (127.0.0.1:1080)...");
+        start_bridge(BridgeStartOptions {
+            server: None,
+            tag: Some("git"),
+            http: false,
+            ssh: false,
+            foreground: false,
+        })
+        .await?;
+    }
+
+    let is_batch = target_repos.len() > 1;
+    let mut failed: Vec<(&str, String)> = Vec::new();
+    let mut success_count = 0usize;
+
+    for (i, repo) in target_repos.iter().enumerate() {
+        if is_batch {
+            println!();
+            println!(
+                "  \x1b[36m◆\x1b[0m [{}/{}] \x1b[1m{}\x1b[0m [{}] — \x1b[90m{}\x1b[0m",
+                i + 1,
+                target_repos.len(),
+                repo.id,
+                repo.branch,
+                repo.dir.display()
+            );
+        }
+
+        match execute_git_action_single(repo, selected_action, is_batch).await {
+            Ok(_) => success_count += 1,
+            Err(e) => {
+                eprintln!("  \x1b[31m✖\x1b[0m  Failed on {}: {}", repo.id, e);
+                failed.push((&repo.id, e.to_string()));
+            }
+        }
+    }
+
+    if is_batch {
+        println!();
+        if failed.is_empty() {
+            clack_outro(&format!(
+                "Successfully executed '{}' across all {} repositories.",
+                selected_action,
+                target_repos.len()
+            ));
+        } else {
+            clack_outro(&format!(
+                "Executed '{}' on {}/{} repositories ({} failed: {}).",
+                selected_action,
+                success_count,
+                target_repos.len(),
+                failed.len(),
+                failed.iter().map(|(id, _)| *id).collect::<Vec<_>>().join(", ")
+            ));
+        }
+    }
+
+    Ok(())
 }
 
-async fn execute_git_action(
+async fn execute_git_action_single(
     repo: &DiscoveredGitRepo,
     action: &str,
+    is_batch: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match action {
         "push-bridge" => {
-            if !probe_port(1080) {
+            if !is_batch {
+                clack_outro(&format!(
+                    "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
+                    BOLD = colors::BOLD,
+                    CYAN = colors::CYAN,
+                    MUTED = colors::MUTED,
+                    RESET = colors::RESET,
+                    id = repo.id,
+                    branch = repo.branch,
+                ));
+            } else {
                 println!(
-                    "  \x1b[36m◆\x1b[0m  Starting Bridge SOCKS5 tunnel (127.0.0.1:1080)..."
+                    "    \x1b[90m└─ Pushing via Bridge (socks5://127.0.0.1:1080)...\x1b[0m"
                 );
-                start_bridge(BridgeStartOptions {
-                    server: None,
-                    tag: Some("git"),
-                    http: false,
-                    ssh: false,
-                    foreground: false,
-                })
-                .await?;
             }
-
-            clack_outro(&format!(
-                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                MUTED = colors::MUTED,
-                RESET = colors::RESET,
-                id = repo.id,
-                branch = repo.branch,
-            ));
 
             run_git_subprocess(&repo.dir, &["push"], true)?;
         }
         "push" => {
             let use_bridge = probe_port(1080);
-            clack_outro(&format!(
-                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}]{proxy}",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                RESET = colors::RESET,
-                id = repo.id,
-                branch = repo.branch,
-                proxy = if use_bridge {
-                    " (via Bridge :1080)"
-                } else {
-                    ""
-                }
-            ));
+            if !is_batch {
+                clack_outro(&format!(
+                    "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}]{proxy}",
+                    BOLD = colors::BOLD,
+                    CYAN = colors::CYAN,
+                    RESET = colors::RESET,
+                    id = repo.id,
+                    branch = repo.branch,
+                    proxy = if use_bridge {
+                        " (via Bridge :1080)"
+                    } else {
+                        ""
+                    }
+                ));
+            } else {
+                println!(
+                    "    \x1b[90m└─ Pushing {proxy}...\x1b[0m",
+                    proxy = if use_bridge {
+                        "(via Bridge :1080)"
+                    } else {
+                        ""
+                    }
+                );
+            }
             run_git_subprocess(&repo.dir, &["push"], use_bridge)?;
         }
         "pull" => {
             let use_bridge = probe_port(1080);
-            clack_outro(&format!(
-                "Pulling {BOLD}{CYAN}{id}{RESET} [{branch}] (--rebase)",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                RESET = colors::RESET,
-                id = repo.id,
-                branch = repo.branch,
-            ));
+            if !is_batch {
+                clack_outro(&format!(
+                    "Pulling {BOLD}{CYAN}{id}{RESET} [{branch}] (--rebase)",
+                    BOLD = colors::BOLD,
+                    CYAN = colors::CYAN,
+                    RESET = colors::RESET,
+                    id = repo.id,
+                    branch = repo.branch,
+                ));
+            } else {
+                println!("    \x1b[90m└─ Pulling (--rebase)...\x1b[0m");
+            }
             run_git_subprocess(&repo.dir, &["pull", "--rebase"], use_bridge)?;
         }
         "stash" => {
-            clack_outro(&format!(
-                "Stashing working tree in {BOLD}{CYAN}{id}{RESET}",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                RESET = colors::RESET,
-                id = repo.id,
-            ));
+            if !is_batch {
+                clack_outro(&format!(
+                    "Stashing working tree in {BOLD}{CYAN}{id}{RESET}",
+                    BOLD = colors::BOLD,
+                    CYAN = colors::CYAN,
+                    RESET = colors::RESET,
+                    id = repo.id,
+                ));
+            } else {
+                println!("    \x1b[90m└─ Stashing working tree...\x1b[0m");
+            }
             run_git_subprocess(&repo.dir, &["stash", "push", "-u"], false)?;
         }
         _ => {
-            clack_outro(&format!(
-                "Inspecting status of {BOLD}{CYAN}{id}{RESET} {MUTED}({dir}){RESET}",
-                BOLD = colors::BOLD,
-                CYAN = colors::CYAN,
-                MUTED = colors::MUTED,
-                RESET = colors::RESET,
-                id = repo.id,
-                dir = repo.dir.display(),
-            ));
+            if !is_batch {
+                clack_outro(&format!(
+                    "Inspecting status of {BOLD}{CYAN}{id}{RESET} {MUTED}({dir}){RESET}",
+                    BOLD = colors::BOLD,
+                    CYAN = colors::CYAN,
+                    MUTED = colors::MUTED,
+                    RESET = colors::RESET,
+                    id = repo.id,
+                    dir = repo.dir.display(),
+                ));
+            } else {
+                println!("    \x1b[90m└─ Status & diff summary:\x1b[0m");
+            }
             run_git_subprocess(&repo.dir, &["status", "-sb"], false)?;
             println!();
             run_git_subprocess(&repo.dir, &["diff", "--stat"], false)?;
