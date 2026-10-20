@@ -103,7 +103,7 @@ impl ConfigRegistry {
 
     pub fn render_overview_card() {
         println!();
-        let mut card = Card::new("SPECTER ECOSYSTEM CONFIGURATION REGISTRY");
+        let mut card = Card::new("TQ CONFIGURATION REGISTRY");
         card.with_badge(badge_online("SSOT READY"));
         card.with_min_width(74);
 

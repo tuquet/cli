@@ -228,11 +228,11 @@ fn cached_machine_packages(
     pkgs
 }
 
-pub struct SpecterCompleter {
+pub struct TqCompleter {
     pub scope: ShellScope,
 }
 
-impl Completer for SpecterCompleter {
+impl Completer for TqCompleter {
     fn complete(&mut self, line: &str, pos: usize) -> CompletionResult {
         let prefix = if pos <= line.len() {
             &line[..pos]
@@ -1147,7 +1147,7 @@ mod tests {
 
     #[test]
     fn test_completer_bridge_start_and_multiword() {
-        let mut completer = SpecterCompleter {
+        let mut completer = TqCompleter {
             scope: ShellScope::Bridge,
         };
 
@@ -1194,7 +1194,7 @@ mod tests {
 
     #[test]
     fn test_completer_faker_flags_and_values() {
-        let mut completer = SpecterCompleter {
+        let mut completer = TqCompleter {
             scope: ShellScope::Faker,
         };
 
@@ -1212,7 +1212,7 @@ mod tests {
 
     #[test]
     fn test_completer_global_delegation_and_case_insensitive() {
-        let mut completer = SpecterCompleter {
+        let mut completer = TqCompleter {
             scope: ShellScope::Global,
         };
 

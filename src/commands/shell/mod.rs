@@ -15,9 +15,9 @@ pub mod highlighter;
 pub mod prompt;
 pub mod scope;
 
-pub use completer::SpecterCompleter;
-pub use highlighter::SpecterHighlighter;
-pub use prompt::SpecterPrompt;
+pub use completer::TqCompleter;
+pub use highlighter::TqHighlighter;
+pub use prompt::TqPrompt;
 pub use scope::ShellScope;
 
 pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
@@ -157,12 +157,12 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
         .with_hinter(hinter);
 
     loop {
-        let prompt = SpecterPrompt {
+        let prompt = TqPrompt {
             scope,
             cloud_env: cloud_env_badge.clone(),
         };
-        let completer = Box::new(SpecterCompleter { scope });
-        let highlighter = Box::new(SpecterHighlighter { scope });
+        let completer = Box::new(TqCompleter { scope });
+        let highlighter = Box::new(TqHighlighter { scope });
 
         line_editor = line_editor
             .with_completer(completer)
@@ -221,7 +221,7 @@ async fn handle_command(
         "exit" | "quit" | "q" => {
             if *scope != ShellScope::Global {
                 println!(
-                    "Returning to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope. Type 'exit' again to leave Tuquet."
+                    "Returning to \x1b[1;38;2;56;189;248mGlobal\x1b[0m scope. Type 'exit' again to leave TQ Shell."
                 );
                 *scope = ShellScope::Global;
                 return Ok(false);
@@ -359,7 +359,7 @@ async fn handle_command(
 pub fn print_scope_help(scope: ShellScope) {
     match scope {
         ShellScope::Global => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("GLOBAL SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -438,7 +438,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Automa => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("AUTOMA SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -477,7 +477,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Runner => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("RUNNER SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -509,7 +509,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Cloud => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("CLOUD SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -538,7 +538,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Browser => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("BROWSER SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -621,7 +621,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Faker => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("FAKER SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(
@@ -658,7 +658,7 @@ pub fn print_scope_help(scope: ShellScope) {
             println!();
         }
         ShellScope::Bridge => {
-            let mut card = Card::new("SPECTER SHELL");
+            let mut card = Card::new("TQ SHELL");
             card.with_badge(badge_online("BRIDGE SCOPE"));
             card.with_min_width(68);
             card.add_line(format!(

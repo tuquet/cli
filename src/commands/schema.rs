@@ -228,7 +228,7 @@ fn show_overview() {
     let m = manifest();
     let root = crate::config::canonical_dir();
 
-    let mut card = Card::new("SPECTER CLI SCHEMA MANIFEST");
+    let mut card = Card::new("TQ CLI SCHEMA MANIFEST");
     card.with_badge(badge_online(&format!("v{}", m.version)));
     card.with_min_width(70);
 

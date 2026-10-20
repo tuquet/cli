@@ -54,14 +54,14 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;35mmcp\x1b[0m             Run Model Context Protocol (MCP) stdio server for AI agents
 
 \x1b[1;38;2;56;189;248mInteractive:\x1b[0m
-  \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session (SPECTER SHELL)
+  \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session (TQ SHELL)
 
 \x1b[1;38;2;56;189;248mOptions:\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
   \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
 \x1b[1;38;2;56;189;248mExamples:\x1b[0m
-  tq                              Launch interactive SPECTER SHELL (REPL)
+  tq                              Launch interactive TQ SHELL (Interactive REPL)
   tq dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
   tq port                         Scan listening ports & terminate zombie processes
   tq code                         Find project across machine & open in IDE

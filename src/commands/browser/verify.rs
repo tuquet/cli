@@ -5,7 +5,7 @@ pub async fn verify_stealth_presentation(
     headless: bool,
     timeout_secs: u64,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut header_card = Card::new("SPECTER BROWSER STEALTH VERIFICATION");
+    let mut header_card = Card::new("BROWSER STEALTH VERIFICATION");
     header_card.with_badge(badge_online("LIVE PRESENTATION"));
     header_card.with_min_width(74);
     header_card.add_kv(
@@ -214,7 +214,7 @@ pub async fn verify_stealth_presentation(
 
     // 6. Presentation Scorecard
     println!();
-    let mut card = Card::new("SPECTER STEALTH VERIFICATION SCORECARD");
+    let mut card = Card::new("STEALTH VERIFICATION SCORECARD");
     card.with_badge(badge_online("ALL PASS"));
     card.with_min_width(74);
     card.add_kv(

@@ -581,7 +581,7 @@ fn present_login_success(
     });
 
     respond_with(format, &payload, |_| {
-        let mut card = Card::new("SPECTER CLOUD");
+        let mut card = Card::new("TQ CLOUD");
         card.with_badge(badge_online(badge_status));
         card.with_min_width(68);
 

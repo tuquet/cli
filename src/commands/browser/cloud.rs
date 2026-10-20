@@ -64,7 +64,7 @@ pub async fn handle_profile_cloud(
             }
 
             println!();
-            let mut header_card = Card::new("SPECTER CLOUD BROWSER FLEET");
+            let mut header_card = Card::new("CLOUD BROWSER FLEET");
             header_card.with_badge(badge_online(&format!("{} FLEET PROFILES", browsers.len())));
             header_card.with_min_width(74);
             header_card.add_kv(
@@ -616,7 +616,7 @@ pub async fn handle_profile_push(
     }
 
     println!();
-    let mut card = Card::new("SPECTER PROFILE PUSHED (CLOUDFLARE R2)");
+    let mut card = Card::new("PROFILE PUSHED (CLOUDFLARE R2)");
     card.with_badge(badge_online("R2 SYNCED"));
     card.with_min_width(74);
     card.add_kv("Profile ID", &profile.id);
@@ -741,7 +741,7 @@ pub async fn handle_profile_pull(
     }
 
     println!();
-    let mut card = Card::new("SPECTER PROFILE PULLED (CLOUDFLARE R2)");
+    let mut card = Card::new("PROFILE PULLED (CLOUDFLARE R2)");
     card.with_badge(badge_online("RESTORED"));
     card.with_min_width(74);
     card.add_kv("Profile ID", &profile.id);

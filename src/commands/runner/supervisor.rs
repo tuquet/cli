@@ -499,7 +499,7 @@ pub async fn run_server(
     info!("Server listening on http://{}", listener.local_addr()?);
     let panic_log_path = PathBuf::from(&config.data_dir).join("panic.log");
     std::panic::set_hook(Box::new(move |info| {
-        let msg = format!("[SPECTER-PANIC] {:?}\n", info);
+        let msg = format!("[TQ-PANIC] {:?}\n", info);
         eprintln!("{}", msg);
         let _ = std::fs::write(&panic_log_path, &msg);
     }));

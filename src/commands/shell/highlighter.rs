@@ -3,11 +3,11 @@ use reedline::{Highlighter, StyledText};
 
 use super::scope::ShellScope;
 
-pub struct SpecterHighlighter {
+pub struct TqHighlighter {
     pub scope: ShellScope,
 }
 
-impl Highlighter for SpecterHighlighter {
+impl Highlighter for TqHighlighter {
     fn highlight(&self, line: &str, _cursor: usize) -> StyledText {
         let mut styled = StyledText::new();
         if line.is_empty() {
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_valid_and_invalid_first_words() {
-        let hl = SpecterHighlighter {
+        let hl = TqHighlighter {
             scope: ShellScope::Bridge,
         };
 
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_use_scope_arguments() {
-        let hl = SpecterHighlighter {
+        let hl = TqHighlighter {
             scope: ShellScope::Bridge,
         };
 
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn test_highlighter_prefix_redundancy() {
-        let hl = SpecterHighlighter {
+        let hl = TqHighlighter {
             scope: ShellScope::Bridge,
         };
 

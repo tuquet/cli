@@ -213,7 +213,7 @@ pub async fn handle_otp(
                 println!("{}", otp.otp_code);
             } else if format.is_card() {
                 println!();
-                let mut card = Card::new("SPECTER INBOX - OTP INTERCEPTOR");
+                let mut card = Card::new("TQ INBOX - OTP INTERCEPTOR");
                 card.with_badge(badge_online("OTP RECEIVED"));
                 card.add_kv("Recipient", &otp.recipient);
                 card.add_kv("OTP Code", format!("🔑 {}", otp.otp_code));
@@ -301,7 +301,7 @@ pub async fn handle_link(
                 println!("{}", link.url);
             } else if format.is_card() {
                 println!();
-                let mut card = Card::new("SPECTER INBOX - VERIFICATION LINK");
+                let mut card = Card::new("TQ INBOX - VERIFICATION LINK");
                 card.with_badge(badge_online("LINK EXTRACTED"));
                 card.add_kv("Recipient", &link.recipient);
                 card.add_kv("Link Type", &link.link_type);
@@ -552,7 +552,7 @@ pub async fn handle_status(
 
     respond_with(format, &payload, |_| {
         println!();
-        let mut card = Card::new("SPECTER INBOX CATCH-ALL & OTP SUBSYSTEM");
+        let mut card = Card::new("TQ INBOX CATCH-ALL & OTP SUBSYSTEM");
         if is_running {
             card.with_badge(badge_online("DAEMON ONLINE"));
         } else {

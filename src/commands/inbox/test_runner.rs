@@ -271,7 +271,7 @@ pub async fn run_acceptance_test(
 
     // Terminal Card UI Output
     println!();
-    let mut card = Card::new("SPECTER INBOX - ZERO-CONFIG ACCEPTANCE TEST");
+    let mut card = Card::new("TQ INBOX - ZERO-CONFIG ACCEPTANCE TEST");
     if overall_passed {
         card.with_badge(badge_online("ALL CHECKS PASSED"));
     } else {

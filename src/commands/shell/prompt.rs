@@ -4,12 +4,12 @@ use std::borrow::Cow;
 use super::scope::ShellScope;
 use crate::ui::colors;
 
-pub struct SpecterPrompt {
+pub struct TqPrompt {
     pub scope: ShellScope,
     pub cloud_env: String,
 }
 
-impl Prompt for SpecterPrompt {
+impl Prompt for TqPrompt {
     fn render_prompt_left(&self) -> Cow<'_, str> {
         let border = colors::BORDER;
         let cyan = colors::CYAN;

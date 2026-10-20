@@ -8,7 +8,7 @@ use crate::ui::{Card, badge_online, colors};
 pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!(
-        "  {BOLD}{CYAN}SPECTER BOOTSTRAP{RESET} {MUTED}— Ecosystem Environment & Microservice Provisioning{RESET}",
+        "  {BOLD}{CYAN}TQ BOOTSTRAP{RESET} {MUTED}— Ecosystem Environment & Microservice Provisioning{RESET}",
         BOLD = colors::BOLD,
         CYAN = colors::CYAN,
         RESET = colors::RESET,
