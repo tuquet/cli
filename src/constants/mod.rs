@@ -81,7 +81,7 @@ pub mod endpoints {
     pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tq.dev";
     pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
     pub const DEFAULT_AUTOMA_STUDIO_URL: &str = "https://automa-studio.vercel.app";
-    pub const DEFAULT_DOCS_URL: &str = "https://docs.tq.com/en/tuquet";
+    pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/cli";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
     pub const GITHUB_REPO: &str = "tuquet/cli";
 }
