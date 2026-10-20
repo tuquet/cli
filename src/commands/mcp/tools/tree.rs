@@ -1,7 +1,7 @@
 use serde_json::Value;
 use std::path::Path;
 
-pub async fn execute_tuquet_tree(args: &Value) -> Result<String, String> {
+pub async fn execute_tree(args: &Value) -> Result<String, String> {
     let target_path_str = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
     let max_depth = args
         .get("depth")

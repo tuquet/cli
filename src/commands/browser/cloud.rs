@@ -14,7 +14,7 @@ pub async fn handle_profile_cloud(
         None => {
             crate::ui::Notify::error(crate::constants::MSG_NOT_ENROLLED);
             eprintln!("Run 'tuquet login' to authenticate and pair your workstation first.\n");
-            return Err("Workstation not enrolled with Tuquet Cloud".into());
+            return Err("Workstation not enrolled with Cloud".into());
         }
     };
 
@@ -505,11 +505,11 @@ pub async fn handle_profile_push(
     let device_token = creds
         .as_ref()
         .map(|c| c.device_token.as_str())
-        .unwrap_or("tuquet-local-token");
+        .unwrap_or("local-token");
     let device_id = creds
         .as_ref()
         .map(|c| c.device_id.as_str())
-        .unwrap_or("tuquet-workstation");
+        .unwrap_or("workstation");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
@@ -658,11 +658,11 @@ pub async fn handle_profile_pull(
     let device_token = creds
         .as_ref()
         .map(|c| c.device_token.as_str())
-        .unwrap_or("tuquet-local-token");
+        .unwrap_or("local-token");
     let device_id = creds
         .as_ref()
         .map(|c| c.device_id.as_str())
-        .unwrap_or("tuquet-workstation");
+        .unwrap_or("workstation");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 

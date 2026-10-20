@@ -46,7 +46,7 @@ pub async fn handle_profile(
 
             crate::ui::prompt::clack_intro(
                 "tq browser profile",
-                "Tuquet Antidetect Browser Profiles",
+                "Antidetect Browser Profiles",
             );
             let mut header_card = Card::new("ANTIDETECT BROWSER PROFILES");
             header_card.with_badge(badge_online(&format!("{} REGISTERED", profiles.len())));
@@ -614,7 +614,7 @@ async fn run_interactive_profile(
 
     clack_intro(
         "tq browser profile",
-        "Tuquet Antidetect Browser Profile Manager",
+        "Antidetect Browser Profile Manager",
     );
     let profiles = crate::core::browser::BrowserProfile::list_all(base_dir)?;
     clack_note(

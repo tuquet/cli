@@ -76,7 +76,7 @@ pub struct RunnerIdentityResponse {
 pub struct CloudStatusResponse {
     /// Whether cloud telemetry reporting is configured
     pub enabled: bool,
-    /// Connected Tuquet Cloud URL
+    /// Connected Cloud URL
     pub cloud_url: Option<String>,
     /// Whether this machine is enrolled with a device ID
     pub enrolled: bool,
@@ -120,9 +120,9 @@ pub struct CloudSyncResponse {
 
 #[derive(Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Request payload to enroll and authenticate runner with Tuquet Cloud
+/// Request payload to enroll and authenticate runner with Cloud
 pub struct CloudLoginRequest {
-    /// Tuquet Cloud Base URL (e.g. "https://dswhacsoaxgpfnkaxnhz.supabase.co")
+    /// Cloud Base URL (e.g. "https://dswhacsoaxgpfnkaxnhz.supabase.co")
     pub cloud_url: Option<String>,
     /// Organization / Tenant enrollment token or user JWT
     pub token: Option<String>,
@@ -187,7 +187,7 @@ pub struct CloudLogoutResponse {
 }))]
 /// Response descriptor containing Desktop SSO authorization URL
 pub struct DesktopAuthStartResponse {
-    /// Generated authorization URL on Tuquet Admin
+    /// Generated authorization URL on Admin
     pub auth_url: String,
     /// CSRF state token
     pub state: String,

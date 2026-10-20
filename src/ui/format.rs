@@ -24,7 +24,7 @@ impl OutputFormat {
     }
 }
 
-/// Common CLI arguments for output formatting across Tuquet commands
+/// Common CLI arguments for output formatting across commands
 #[derive(Args, Debug, Clone)]
 pub struct FormatArgs {
     /// Output format: auto, json, table, or card (default: auto)

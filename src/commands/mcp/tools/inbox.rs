@@ -4,7 +4,7 @@ use crate::commands::inbox::storage::InboxStorage;
 use crate::config::inbox::InboxConfig;
 use serde_json::{Value, json};
 
-pub async fn execute_tuquet_inbox_otp(args: &Value) -> Result<String, String> {
+pub async fn execute_inbox_otp(args: &Value) -> Result<String, String> {
     let recipient = args
         .get("recipient")
         .and_then(|v| v.as_str())
@@ -47,7 +47,7 @@ pub async fn execute_tuquet_inbox_otp(args: &Value) -> Result<String, String> {
     }
 }
 
-pub async fn execute_tuquet_inbox_status() -> Result<String, String> {
+pub async fn execute_inbox_status() -> Result<String, String> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())
         .map_err(|e| format!("Failed to open local storage: {}", e))?;

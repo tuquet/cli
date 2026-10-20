@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Storage Variables, Credentials, Tables & Backup
+### Automa Runner - Storage Variables, Credentials, Tables & Backup
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 

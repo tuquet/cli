@@ -81,9 +81,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ["COMPONENT", "IDENTITY / TARGET", "ROLE / DETAILS", "STATUS"],
         &system_rows,
         Some(if cloud_creds.is_some() {
-            "Workstation enrolled in Tuquet Cloud Mesh"
+            "Workstation enrolled in Cloud Mesh"
         } else {
-            "Run 'tuquet login' to authenticate with Tuquet Cloud"
+            "Run 'tuquet login' to authenticate with Cloud"
         }),
         72,
     );
@@ -194,7 +194,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         )
     };
 
-    let profile_dir = crate::config::canonical_tuquet_dir()
+    let profile_dir = crate::config::canonical_dir()
         .join("browser")
         .join("profiles");
     let profile_count = std::fs::read_dir(&profile_dir)
@@ -348,7 +348,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     });
 
     respond_with(format, &payload, |_| {
-        crate::ui::prompt::clack_intro("tq status", "Tuquet Ecosystem Status");
+        crate::ui::prompt::clack_intro("tq status", "Ecosystem Status");
         if let Some(info) = crate::infrastructure::updater::get_cached_update()
             && info.has_update
         {

@@ -8,7 +8,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 pub use protocol::{JsonRpcError, JsonRpcRequest, JsonRpcResponse};
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    eprintln!("[tuquet-mcp] Starting Tuquet MCP Server (JSON-RPC 2.0 stdio)...");
+    eprintln!("[mcp] Starting MCP Server (JSON-RPC 2.0 stdio)...");
 
     let stdin = tokio::io::stdin();
     let mut reader = BufReader::new(stdin).lines();
@@ -46,7 +46,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             "resources/list" => registry::handle_resources_list(id),
             "prompts/list" => registry::handle_prompts_list(id),
             other => {
-                eprintln!("[tuquet-mcp] Unknown method requested: {}", other);
+                eprintln!("[mcp] Unknown method requested: {}", other);
                 JsonRpcResponse::err(id, -32601, format!("Method not found: {}", other))
             }
         };
@@ -57,6 +57,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         stdout.flush().await?;
     }
 
-    eprintln!("[tuquet-mcp] Stdio stream closed, exiting.");
+    eprintln!("[mcp] Stdio stream closed, exiting.");
     Ok(())
 }

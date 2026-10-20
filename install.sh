@@ -1,6 +1,6 @@
 #!/bin/sh
 # ==============================================================================
-# Tuquet CLI - Modern Universal Web Installer (macOS & Linux)
+# CLI - Modern Universal Web Installer (macOS & Linux)
 # ==============================================================================
 # Usage (Clean/Blank Machine):
 #   curl -fsSL https://raw.githubusercontent.com/tuquet/cli/main/install.sh | sh
@@ -44,7 +44,7 @@ printf "${CYAN} ___/ / /_/ /  __/ /__/ /_/  __/ /     ${BOLD}v1.0.0${RESET}\n"
 printf "${CYAN}/____/ .___/\___/\___/\__/\___/_/      ${RESET}\n"
 printf "${CYAN}    /_/                                ${RESET}\n"
 printf "\n"
-printf "  ${BOLD}Tuquet Unified Zero-Dependency Installer (Unix)${RESET}\n"
+printf "  ${BOLD}Unified Zero-Dependency Installer (Unix)${RESET}\n"
 printf "  ${GRAY}Autonomous Browser Automation & Distributed Mesh Runtime${RESET}\n\n"
 
 # 1. Detect Operating System and Architecture
@@ -59,7 +59,7 @@ case "$OS" in
         PLATFORM="linux"
         ;;
     *)
-        write_error "Unsupported operating system: $OS. Tuquet supports macOS, Linux, and Windows."
+        write_error "Unsupported operating system: $OS. supports macOS, Linux, and Windows."
         exit 1
         ;;
 esac
@@ -72,12 +72,12 @@ case "$ARCH" in
         TARGET_ARCH="arm64"
         ;;
     *)
-        write_error "Unsupported CPU architecture: $ARCH. Tuquet supports x86_64 and arm64."
+        write_error "Unsupported CPU architecture: $ARCH. supports x86_64 and arm64."
         exit 1
         ;;
 esac
 
-RELEASE_NAME="tuquet-${PLATFORM}-${TARGET_ARCH}"
+RELEASE_NAME="${PLATFORM}-${TARGET_ARCH}"
 write_step "Detected environment: ${BOLD}${PLATFORM} (${TARGET_ARCH})${RESET}"
 
 # 2. Determine Canonical SSOT Paths
@@ -176,8 +176,8 @@ CONFIGURED_ANY=0
 for PROFILE in $SHELL_PROFILES; do
     if [ -f "$PROFILE" ]; then
         if ! grep -q "\.tuquet/bin" "$PROFILE" 2>/dev/null && ! grep -q "\.tuquet/bin" "$PROFILE" 2>/dev/null; then
-            printf "\n# Tuquet CLI\n%s\n" "${PATH_LINE}" >> "$PROFILE"
-            write_success "Added Tuquet to PATH in ${PROFILE}"
+            printf "\n# CLI\n%s\n" "${PATH_LINE}" >> "$PROFILE"
+            write_success "Added to PATH in ${PROFILE}"
             CONFIGURED_ANY=1
         fi
     fi

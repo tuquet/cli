@@ -42,7 +42,7 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
         ssh_ready: ssh_found,
         browser_ready: browser_ok,
         missing_actions,
-        ssot_root: crate::config::canonical_tuquet_dir().display().to_string(),
+        ssot_root: crate::config::canonical_dir().display().to_string(),
     };
 
     respond_with(format, &report, |r| {

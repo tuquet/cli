@@ -72,10 +72,10 @@ pub async fn list_workflows(
 
     // 2. Fetch from Vault if not db_only
     if !db_only {
-        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
-        let vault_dirs = [tuquet_vault, config_vault];
+        let vault_dirs = [vault, config_vault];
         for vdir in &vault_dirs {
             if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
                 while let Ok(Some(entry)) = entries.next_entry().await {

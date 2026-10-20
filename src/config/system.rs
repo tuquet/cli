@@ -1,4 +1,4 @@
-use crate::config::expander::{EnvExpander, canonical_tuquet_dir};
+use crate::config::expander::{EnvExpander, canonical_dir};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -49,7 +49,7 @@ impl Default for SystemConfig {
 
 impl SystemConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_tuquet_dir().join(crate::constants::PILLAR_SYSTEM);
+        let dir = canonical_dir().join(crate::constants::PILLAR_SYSTEM);
         let _ = fs::create_dir_all(&dir);
         dir.join(crate::constants::FILE_SYSTEM_JSON)
     }

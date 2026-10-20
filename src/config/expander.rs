@@ -60,8 +60,8 @@ pub fn canonical_ssot_dir() -> std::path::PathBuf {
     std::path::PathBuf::from(home).join(crate::constants::DEFAULT_SSOT_ROOT_DIR)
 }
 
-/// Canonical root directory for Tuquet (~/.tuquet/)
-pub fn canonical_tuquet_dir() -> std::path::PathBuf {
+/// Canonical root directory for (~/.tuquet/)
+pub fn canonical_dir() -> std::path::PathBuf {
     canonical_ssot_dir()
 }
 

@@ -88,7 +88,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return handle_status(crate::ui::OutputFormat::Json).await;
     }
 
-    clack_intro("tq inbox", "Tuquet Verification Inbox & OTP Engine");
+    clack_intro("tq inbox", "Verification Inbox & OTP Engine");
 
     let options = vec![
         ClackOption::new(
@@ -460,7 +460,7 @@ pub async fn handle_start(
 
     if let Some(existing_pid) = read_pid() {
         println!(
-            "⚠️ Tuquet Inbox daemon is already running (PID: {}). Use 'tuquet inbox stop' to stop it.",
+            "⚠️ Inbox daemon is already running (PID: {}). Use 'tuquet inbox stop' to stop it.",
             existing_pid
         );
         return Ok(());
@@ -488,7 +488,7 @@ pub async fn handle_start(
 
         let child = cmd.spawn()?;
         println!(
-            "{} Tuquet Inbox daemon started in background (PID: {}).",
+            "{} Inbox daemon started in background (PID: {}).",
             badge_online("STARTED"),
             child.id()
         );
@@ -501,7 +501,7 @@ pub async fn handle_start(
 
 pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(pid) = read_pid() {
-        println!("Stopping Tuquet Inbox daemon (PID: {})...", pid);
+        println!("Stopping Inbox daemon (PID: {})...", pid);
         #[cfg(windows)]
         {
             let _ = std::process::Command::new("taskkill")
@@ -517,7 +517,7 @@ pub async fn handle_stop() -> Result<(), Box<dyn std::error::Error>> {
         remove_pid();
         println!("{} Inbox daemon stopped.", badge_offline("STOPPED"));
     } else {
-        println!("Tuquet Inbox daemon is not currently running.");
+        println!("Inbox daemon is not currently running.");
     }
     Ok(())
 }

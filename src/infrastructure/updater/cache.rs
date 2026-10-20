@@ -5,7 +5,7 @@ use super::client::check_and_save_latest_version;
 use super::types::{CACHE_TTL_SECS, UpdateInfo};
 
 pub fn get_cache_file_path() -> PathBuf {
-    crate::config::canonical_tuquet_dir()
+    crate::config::canonical_dir()
         .join("system")
         .join("update_check.json")
 }
@@ -28,7 +28,7 @@ pub fn cleanup_stale_update_files() {
     {
         dirs_to_clean.push(parent.to_path_buf());
     }
-    dirs_to_clean.push(crate::config::canonical_tuquet_dir().join("bin"));
+    dirs_to_clean.push(crate::config::canonical_dir().join("bin"));
 
     for dir in dirs_to_clean {
         for stale in &[

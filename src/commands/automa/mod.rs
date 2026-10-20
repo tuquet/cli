@@ -82,7 +82,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return list_workflows(None, false, false, crate::ui::OutputFormat::Json).await;
     }
 
-    clack_intro("tq automa", "Tuquet Automa Workflow Engine");
+    clack_intro("tq automa", "Automa Workflow Engine");
 
     let options = vec![
         ClackOption::new(

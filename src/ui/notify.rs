@@ -1,4 +1,4 @@
-//! Unified Notification & Log Dispatcher for Tuquet CLI
+//! Unified Notification & Log Dispatcher for CLI
 //! Uses `@clack/prompts` visual grammar (`◇`, `◆`, `▲`, `■`, `┌`, `│`, `└`) on TTY
 //! and single-line token-compact output on Non-TTY (AI Agent / CI pipes).
 

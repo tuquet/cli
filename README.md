@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://tuquet.com/icons/cli.svg" width="76" height="76" alt="CLI Logo" />
-  <h1>Tuquet Master CLI (`tuquet`)</h1>
+  <h1>Master CLI (`tuquet`)</h1>
   <p><strong>Interactive Scoped Shell, Service Multiplexer & High-Performance Automation Terminal in Rust</strong></p>
 
   <p>
@@ -18,7 +18,7 @@
 
 ## 📌 Tổng Quan (Overview)
 
-**Tuquet Master CLI** (`tuquet`, alias: `tq`) là điểm vào thống nhất (Single Entrypoint) điều phối toàn bộ hệ sinh thái Tuquet. Viết bằng Rust thuần túy với thời gian khởi động sub-millisecond, Tuquet CLI cung cấp cả giao diện dòng lệnh truyền thống và một **Interactive Scoped REPL** giúp chuyển đổi linh hoạt giữa các subsystem mà không làm phân mảnh công cụ.
+**Master CLI** (`tuquet`, alias: `tq`) là điểm vào thống nhất (Single Entrypoint) điều phối toàn bộ hệ sinh thái Tuquet. Viết bằng Rust thuần túy với thời gian khởi động sub-millisecond, CLI cung cấp cả giao diện dòng lệnh truyền thống và một **Interactive Scoped REPL** giúp chuyển đổi linh hoạt giữa các subsystem mà không làm phân mảnh công cụ.
 
 * **96+ Lệnh Chuẩn hóa**: Bao quát toàn diện Developer Productivity Suite và 7 trụ cột microservice (`dev`, `system`, `browser`, `runner`, `automa`, `bridge`, `faker`, `cloud`, `inbox`).
 * **Lưu trữ SSOT**: Tự động giải quyết cấu hình và trạng thái về gốc chuẩn duy nhất `~/.tuquet/`.
@@ -66,7 +66,7 @@ tq (tuquet)
 │   ├── dev                       # Quét đa dự án (Node/Rust/Java/Docker) & chạy script tương tác
 │   ├── port [query]              # Quét cổng TCP đang lắng nghe & diệt tiến trình xung đột (-k)
 │   ├── code [project]            # Tìm kiếm dự án toàn máy & mở nhanh trong VS Code / Cursor
-│   ├── git [repo] [action]       # Radar Git đa repo & đồng bộ an toàn qua Tuquet Bridge
+│   ├── git [repo] [action]       # Radar Git đa repo & đồng bộ an toàn qua Bridge
 │   └── env [project]             # So khớp .env vs .env.example, đồng bộ key & chuyển profile
 │
 ├── ⚡ Quick Global Commands
@@ -74,8 +74,8 @@ tq (tuquet)
 │   ├── doctor [--fix]            # Kiểm tra phụ thuộc, công cụ hệ thống & trạng thái sức khỏe
 │   ├── bootstrap [--force]       # Onboarding workstation & khởi tạo SSOT (~/.tuquet/) 1 lệnh
 │   ├── config [service]          # Xem và chỉnh sửa cấu hình các trụ cột microservice
-│   ├── whoami                    # Xem danh tính đăng nhập Tuquet Cloud & Machine ID
-│   ├── login / logout            # Xác thực operator với Supabase / Tuquet Cloud
+│   ├── whoami                    # Xem danh tính đăng nhập Cloud & Machine ID
+│   ├── login / logout            # Xác thực operator với Supabase / Cloud
 │   ├── upgrade                   # Tự động cập nhật binary CLI lên phiên bản mới nhất
 │   └── schema [commands|config]  # Kiểm tra manifest & xuất đặc tả JSON schema chuẩn hóa
 │
@@ -135,7 +135,7 @@ Bên cạnh vai trò CLI & Scoped REPL Terminal, `tuquet` (cùng core crate `aut
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      CLIENT LAYER                           │
-│  Tauri Desktop App  │  Browser Extensions  │  Tuquet Studio │
+│  Tauri Desktop App  │  Browser Extensions  │  Studio │
 │  (tauri.localhost)  │ (chrome-extension://)│  (*.tuquet.com)│
 └──────────────────────────────┬──────────────────────────────┘
                                │ HTTP / WebSocket / SSE (Full CORS)

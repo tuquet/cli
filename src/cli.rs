@@ -28,7 +28,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)
   \x1b[1;32mport\x1b[0m            Scan active local listening TCP ports & terminate processes
   \x1b[1;32mcode\x1b[0m            Find any project across machine & open in VS Code / Antigravity / Explorer
-  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Tuquet Bridge-aware push/pull
+  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
   \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
 
 \x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
@@ -37,15 +37,15 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
   \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
   \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
-  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Tuquet Cloud
-  \x1b[1;32mupgrade\x1b[0m         Check and upgrade Tuquet CLI to the latest release
+  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Cloud
+  \x1b[1;32mupgrade\x1b[0m         Check and upgrade CLI to the latest release
   \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
 
 
 \x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
   \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
-  \x1b[1;36mcloud\x1b[0m           Tuquet Cloud authentication & multi-tenant pairing
+  \x1b[1;36mcloud\x1b[0m           Cloud authentication & multi-tenant pairing
   \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
   \x1b[1;36mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
   \x1b[1;36mbridge\x1b[0m          Network bridge, multi-VPS mesh & proxy manager
@@ -65,19 +65,19 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   tq dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
   tq port                         Scan listening ports & terminate zombie processes
   tq code                         Find project across machine & open in IDE
-  tq git                          Inspect multi-repo Git radar & push via Tuquet Bridge
+  tq git                          Inspect multi-repo Git radar & push via Bridge
   tq env                          Validate .env vs .env.example & sync missing keys
   tq doctor                       Check dependencies and system health
   tq status                       Check full ecosystem dashboard";
 
-/// Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime
+/// - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
 #[command(
     name = "tuquet",
-    author = "Tuquet Ecosystem <tuquet@users.noreply.github.com>",
+    author = "Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime",
-    long_about = "Tuquet is an autonomous browser automation & distributed mesh runtime engine.",
+    about = "- Autonomous Browser Automation & Distributed Mesh Runtime",
+    long_about = "is an autonomous browser automation & distributed mesh runtime engine.",
     styles = get_styles(),
     help_template = MAIN_HELP_TEMPLATE,
 )]
@@ -165,7 +165,7 @@ pub enum Commands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Scan all Git repositories across the machine and synchronize via Tuquet Bridge
+    /// Scan all Git repositories across the machine and synchronize via Bridge
     #[command(name = "git")]
     Git {
         /// Target repository name or path query
@@ -219,7 +219,7 @@ pub enum Commands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Show unified status overview of Tuquet ecosystem
+    /// Show unified status overview of ecosystem
     #[command(name = "status")]
     Status {
         #[command(flatten)]
@@ -245,7 +245,7 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Inspect or edit unified service configurations across Tuquet microservice pillars
+    /// Inspect or edit unified service configurations across microservice pillars
     #[command(name = "config")]
     Config {
         /// Optional target service (bridge, automa, runner, browser, cloud, system, faker, inbox)
@@ -265,7 +265,7 @@ pub enum Commands {
         show: bool,
     },
 
-    /// Show current Tuquet Cloud identity and enrollment status
+    /// Show current Cloud identity and enrollment status
     #[command(name = "whoami")]
     Whoami {
         #[command(flatten)]
@@ -275,7 +275,7 @@ pub enum Commands {
     /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     #[command(name = "login")]
     Login {
-        /// Tuquet Cloud / Supabase endpoint URL
+        /// Cloud / Supabase endpoint URL
         #[arg(short, long)]
         url: Option<String>,
 
@@ -340,7 +340,7 @@ pub enum Commands {
         command: Option<RunnerSubcommands>,
     },
 
-    /// Tuquet Cloud authentication & multi-tenant pairing
+    /// Cloud authentication & multi-tenant pairing
     #[command(name = "cloud")]
     Cloud {
         #[command(subcommand)]
@@ -376,7 +376,7 @@ pub enum Commands {
     #[command(name = "mcp")]
     Mcp,
 
-    /// Check and upgrade Tuquet CLI to the latest release
+    /// Check and upgrade CLI to the latest release
     #[command(name = "upgrade", aliases = ["update"])]
     Upgrade,
 
@@ -988,7 +988,7 @@ pub enum RunnerSubcommands {
 pub enum CloudSubcommands {
     /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
     Login {
-        /// Tuquet Cloud / Supabase endpoint URL (e.g. https://dswhacsoaxgpfnkaxnhz.supabase.co)
+        /// Cloud / Supabase endpoint URL (e.g. https://dswhacsoaxgpfnkaxnhz.supabase.co)
         #[arg(short, long)]
         url: Option<String>,
 
@@ -1028,10 +1028,10 @@ pub enum CloudSubcommands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Log out and disconnect this workstation from Tuquet Cloud
+    /// Log out and disconnect this workstation from Cloud
     Logout,
 
-    /// Show current Tuquet Cloud authentication and enrollment status
+    /// Show current Cloud authentication and enrollment status
     #[command(name = "whoami")]
     Whoami {
         #[command(flatten)]

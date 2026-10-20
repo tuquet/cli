@@ -3,7 +3,7 @@ use serde_json::json;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
 
-pub async fn execute_tuquet_status() -> Result<String, String> {
+pub async fn execute_status() -> Result<String, String> {
     let config = AppConfig::load();
 
     // 1. Cloud
@@ -65,7 +65,7 @@ pub async fn execute_tuquet_status() -> Result<String, String> {
     Ok(serde_json::to_string_pretty(&result).unwrap_or_default())
 }
 
-pub async fn execute_tuquet_cloud_whoami() -> Result<String, String> {
+pub async fn execute_cloud_whoami() -> Result<String, String> {
     let config = AppConfig::load();
     let cloud_creds = CloudReporter::whoami(&config.data_dir).await;
 
@@ -82,13 +82,13 @@ pub async fn execute_tuquet_cloud_whoami() -> Result<String, String> {
     } else {
         let res = json!({
             "enrolled": false,
-            "message": "Workstation is not paired with Tuquet Cloud. Use 'tuquet login' to connect."
+            "message": "Workstation is not paired with Cloud. Use 'tuquet login' to connect."
         });
         Ok(serde_json::to_string_pretty(&res).unwrap_or_default())
     }
 }
 
-pub async fn execute_tuquet_browser_status() -> Result<String, String> {
+pub async fn execute_browser_status() -> Result<String, String> {
     let browser_status = crate::core::browser::resolver::get_runtime_status();
     let res = json!({
         "installed": browser_status.installed,

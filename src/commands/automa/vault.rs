@@ -141,12 +141,12 @@ pub async fn export_workflow(
 
     // 2. Check Vault
     if workflow_json.is_none() {
-        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
         let candidates = [
-            tuquet_vault.join(format!("{}.workflow.json", id)),
-            tuquet_vault.join(format!("{}.json", id)),
+            vault.join(format!("{}.workflow.json", id)),
+            vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];
@@ -207,12 +207,12 @@ pub async fn delete_workflow(
 
     // 2. Delete from Vault if requested
     if delete_from_vault {
-        let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+        let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
         let config_vault = PathBuf::from(&config.data_dir).join("workflows");
 
         let candidates = [
-            tuquet_vault.join(format!("{}.workflow.json", id)),
-            tuquet_vault.join(format!("{}.json", id)),
+            vault.join(format!("{}.workflow.json", id)),
+            vault.join(format!("{}.json", id)),
             config_vault.join(format!("{}.workflow.json", id)),
             config_vault.join(format!("{}.json", id)),
         ];

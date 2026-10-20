@@ -5,7 +5,7 @@ use crate::config::runner::RunnerConfig;
 use crate::config::system::SystemConfig;
 use crate::infrastructure::bridge::BridgeConfig;
 use crate::ui::{Card, badge_online};
-use tuquet_faker::config::FakerConfig;
+use faker::config::FakerConfig;
 use std::path::PathBuf;
 
 pub struct PillarConfigEntry {
@@ -135,7 +135,7 @@ impl ConfigRegistry {
                     .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_FAKER) => {
-                serde_json::to_value(tuquet_faker::config::FakerConfig::default())
+                serde_json::to_value(faker::config::FakerConfig::default())
                     .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_BROWSER) => {
@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn test_ensure_schema_field_injection() {
-        let temp_dir = std::env::temp_dir().join(format!("tuquet_test_{}", uuid::Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("test_{}", uuid::Uuid::new_v4()));
         let _ = std::fs::create_dir_all(&temp_dir);
         let test_file = temp_dir.join("faker.json");
 

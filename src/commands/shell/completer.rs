@@ -459,7 +459,7 @@ impl Completer for SpecterCompleter {
                                 }
                             }
                         } else if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = tuquet_faker::FakerConfig::load();
+                            let faker_cfg = faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(
@@ -499,7 +499,7 @@ impl Completer for SpecterCompleter {
                     }
                     "config" => {
                         if matches!(last_word, "-d" | "--domain") {
-                            let faker_cfg = tuquet_faker::FakerConfig::load();
+                            let faker_cfg = faker::FakerConfig::load();
                             for d in &faker_cfg.email_domains {
                                 if matches_filter(d, current_word) {
                                     suggestions.push(make_suggestion(
@@ -772,8 +772,8 @@ impl Completer for SpecterCompleter {
             ShellScope::Cloud => match cmd.as_str() {
                 "login" => {
                     for (flag, desc) in &[
-                        ("-u", "Tuquet Cloud API endpoint URL"),
-                        ("--url", "Tuquet Cloud API endpoint URL"),
+                        ("-u", "Cloud API endpoint URL"),
+                        ("--url", "Cloud API endpoint URL"),
                         ("-t", "Cloud access / pairing token"),
                         ("--token", "Cloud access / pairing token"),
                         ("-n", "Workstation display name"),
@@ -887,7 +887,7 @@ impl Completer for SpecterCompleter {
                         for (act, desc) in &[
                             (
                                 "push-bridge",
-                                "Push via Tuquet Bridge SOCKS5 proxy (127.0.0.1:1080)",
+                                "Push via Bridge SOCKS5 proxy (127.0.0.1:1080)",
                             ),
                             ("push", "Run git push directly on target repository"),
                             ("pull", "Run git pull --rebase on target repository"),

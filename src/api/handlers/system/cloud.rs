@@ -19,7 +19,7 @@ use super::types::{
     get,
     path = "/api/v1/system/cloud/status",
     operation_id = "get_cloud_status",
-    summary = "Get Tuquet Cloud reporting and device enrollment status",
+    summary = "Get Cloud reporting and device enrollment status",
     description = "Returns current enrollment credentials, hardware fingerprint, cloud endpoint URL, and last synchronization state.",
     responses(
         (status = 200, description = "Cloud reporting status retrieved successfully", body = CloudStatusResponse)
@@ -83,8 +83,8 @@ pub async fn get_cloud_status(State(state): State<crate::AppState>) -> impl Into
     post,
     path = "/api/v1/system/cloud/sync",
     operation_id = "trigger_cloud_sync",
-    summary = "Trigger immediate inventory and heartbeat sync to Tuquet Cloud",
-    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Tuquet Cloud central hub.",
+    summary = "Trigger immediate inventory and heartbeat sync to Cloud",
+    description = "Forces an immediate snapshot of local SQLite browser profiles and system telemetry to be sent to Cloud central hub.",
     responses(
         (status = 200, description = "Sync completed or attempted", body = CloudSyncResponse)
     )
@@ -125,8 +125,8 @@ pub async fn trigger_cloud_sync(State(state): State<crate::AppState>) -> impl In
     post,
     path = "/api/v1/system/cloud/login",
     operation_id = "cloud_login",
-    summary = "Enroll and authenticate this runner with Tuquet Cloud",
-    description = "Authenticates this workstation runner with Tuquet Cloud using an enrollment token or JWT and stores credentials locally.",
+    summary = "Enroll and authenticate this runner with Cloud",
+    description = "Authenticates this workstation runner with Cloud using an enrollment token or JWT and stores credentials locally.",
     request_body = CloudLoginRequest,
     responses(
         (status = 200, description = "Successfully enrolled workstation", body = CloudLoginResponse),
@@ -174,7 +174,7 @@ pub async fn cloud_login(
                         user_email: c.email,
                         name: c.name,
                         message:
-                            "Workstation authenticated and paired successfully with Tuquet Cloud"
+                            "Workstation authenticated and paired successfully with Cloud"
                                 .to_string(),
                     }),
                 )
@@ -223,8 +223,8 @@ pub async fn cloud_login(
     post,
     path = "/api/v1/system/cloud/logout",
     operation_id = "cloud_logout",
-    summary = "Disconnect and unenroll this runner from Tuquet Cloud",
-    description = "Removes locally stored device credentials, disconnecting this workstation from Tuquet Cloud.",
+    summary = "Disconnect and unenroll this runner from Cloud",
+    description = "Removes locally stored device credentials, disconnecting this workstation from Cloud.",
     responses(
         (status = 200, description = "Successfully logged out", body = CloudLogoutResponse)
     )
@@ -237,7 +237,7 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
                 serde_json::json!({
                     "type": "auth_state_changed",
                     "isAuthenticated": false,
-                    "message": "Logged out from Tuquet Cloud"
+                    "message": "Logged out from Cloud"
                 })
                 .to_string(),
             );
@@ -246,7 +246,7 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
                 StatusCode::OK,
                 Json(CloudLogoutResponse {
                     success: true,
-                    message: "Successfully logged out and disconnected from Tuquet Cloud"
+                    message: "Successfully logged out and disconnected from Cloud"
                         .to_string(),
                 }),
             )
@@ -268,8 +268,8 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
     post,
     path = "/api/v1/system/cloud/auth/start",
     operation_id = "start_desktop_auth",
-    summary = "Initiate Desktop SSO authorization flow via Tuquet Admin",
-    description = "Generates authorization URL for Tuquet Admin portal with local loopback configuration.",
+    summary = "Initiate Desktop SSO authorization flow via Admin",
+    description = "Generates authorization URL for Admin portal with local loopback configuration.",
     responses(
         (status = 200, description = "Desktop auth URL generated successfully", body = DesktopAuthStartResponse)
     )
@@ -281,7 +281,7 @@ pub async fn start_desktop_auth(State(_state): State<crate::AppState>) -> impl I
         .unwrap_or_else(|_| "Local-Workstation".to_string());
     let port = 8765;
     let auth_url = format!(
-        "https://admin.tuquet.com/auth/desktop?client_id=tuquet-desktop&state={}&port={}&machine_name={}",
+        "https://admin.tuquet.com/auth/desktop?client_id=desktop&state={}&port={}&machine_name={}",
         nonce, port, hostname
     );
 
@@ -371,7 +371,7 @@ async fn process_desktop_auth_payload(
                         "isAuthenticated": true,
                         "userEmail": user.email,
                         "tenantId": tenant_id,
-                        "message": "Authenticated with Tuquet Admin successfully"
+                        "message": "Authenticated with Admin successfully"
                     })
                     .to_string(),
                 );
@@ -396,8 +396,8 @@ async fn process_desktop_auth_payload(
     get,
     path = "/api/v1/auth/callback",
     operation_id = "desktop_auth_callback",
-    summary = "Handle loopback authorization callback from Tuquet Admin (GET redirect)",
-    description = "Receives delegated session token from Tuquet Admin consent screen via URL redirect, saves to local keystore, and renders success page.",
+    summary = "Handle loopback authorization callback from Admin (GET redirect)",
+    description = "Receives delegated session token from Admin consent screen via URL redirect, saves to local keystore, and renders success page.",
     params(
         DesktopAuthCallbackParams
     ),
@@ -415,7 +415,7 @@ pub async fn desktop_auth_callback(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Tuquet Desk Connected</title>
+  <title>Desk Connected</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc; }
     .card { text-align: center; background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); max-width: 420px; }
@@ -426,8 +426,8 @@ pub async fn desktop_auth_callback(
 </head>
 <body>
   <div class="card">
-    <h2>Tuquet Desk Connected!</h2>
-    <p>Your workstation is now securely paired with Tuquet Admin.</p>
+    <h2>Desk Connected!</h2>
+    <p>Your workstation is now securely paired with Admin.</p>
     <div class="hint">You can safely close this browser tab.</div>
   </div>
   <script>setTimeout(() => window.close(), 1500);</script>
@@ -445,7 +445,7 @@ pub async fn desktop_auth_callback(
                 r#"<!DOCTYPE html><html><body style="font-family: sans-serif; text-align: center; padding: 3rem;">
                 <h2 style="color: #ef4444;">Xác thực không thành công ({})</h2>
                 <p>{}</p>
-                <p>Vui lòng mở lại Tuquet Desk và thử lại.</p></body></html>"#,
+                <p>Vui lòng mở lại Desk và thử lại.</p></body></html>"#,
                 code, msg
             );
             (code, [("content-type", "text/html; charset=utf-8")], html).into_response()
@@ -458,7 +458,7 @@ pub async fn desktop_auth_callback(
     post,
     path = "/api/v1/auth/callback",
     operation_id = "desktop_auth_callback_post",
-    summary = "Handle loopback authorization callback from Tuquet Admin (POST JSON body)",
+    summary = "Handle loopback authorization callback from Admin (POST JSON body)",
     description = "Securely receives delegated session token in JSON body to prevent token exposure in URLs and browser history.",
     request_body = DesktopAuthCallbackParams,
     responses(
@@ -476,7 +476,7 @@ pub async fn desktop_auth_callback_post(
             StatusCode::OK,
             Json(DesktopAuthCallbackResponse {
                 success: true,
-                message: "Workstation paired successfully with Tuquet Admin".to_string(),
+                message: "Workstation paired successfully with Admin".to_string(),
                 user_email,
                 tenant_id,
             }),

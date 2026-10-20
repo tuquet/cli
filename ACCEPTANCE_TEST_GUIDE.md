@@ -1,4 +1,4 @@
-# Tuquet CLI: Kế hoạch & Hướng dẫn Kiểm thử Nghiệm thu Toàn diện (A - Z)
+# CLI: Kế hoạch & Hướng dẫn Kiểm thử Nghiệm thu Toàn diện (A - Z)
 
 > **Tài liệu nghiệm thu hệ thống (System Acceptance Testing - UAT Runbook)**  
 > **Áp dụng cho:** Máy trạm mới (Clean Workstation Environment)  
@@ -8,7 +8,7 @@
 
 ## 1. Mục Tiêu & Nguyên Tắc Nghiệm Thu
 
-Tài liệu này cung cấp quy trình kiểm thử nghiệm thu từng bước từ **A đến Z** trên một máy trạm hoàn toàn mới, nhằm xác minh và chứng minh tính đầy đủ, độc lập, an toàn và hiệu năng cao của bộ công cụ **Tuquet CLI**.
+Tài liệu này cung cấp quy trình kiểm thử nghiệm thu từng bước từ **A đến Z** trên một máy trạm hoàn toàn mới, nhằm xác minh và chứng minh tính đầy đủ, độc lập, an toàn và hiệu năng cao của bộ công cụ **CLI**.
 
 ### 1.1. Chuẩn Kiến Trúc 5 Trụ Cột (5 Microservice Pillars)
 Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục gốc duy nhất `~/.tuquet/`, tuyệt đối không phân mảnh hay xả file rác ra hệ thống:
@@ -44,7 +44,7 @@ Toàn bộ dữ liệu vận hành phải tự động quy tụ về thư mục 
 
 ### Giai đoạn 1: Cài đặt & Khởi tạo Hệ thống (Zero-Touch Provisioning)
 
-#### Bước 1.1: Cài đặt Tuquet CLI qua One-Liner Web Installer (Khuyên dùng)
+#### Bước 1.1: Cài đặt CLI qua One-Liner Web Installer (Khuyên dùng)
 ```powershell
 # Cài đặt trực tiếp standalone binary không cần package manager
 powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
@@ -85,7 +85,7 @@ tuquet runner probe
 ```
 - **Kỳ vọng:** Trả về JSON Manifest khai báo engine `chromium-extension-worker`, hỗ trợ profile sandbox, workflow graph, và CDP bridge.
 
-#### Bước 2.2: Đăng ký Thiết bị vào Tuquet Cloud (Zero-Touch Enrollment)
+#### Bước 2.2: Đăng ký Thiết bị vào Cloud (Zero-Touch Enrollment)
 ```powershell
 tuquet runner enroll --env dev
 ```
@@ -177,7 +177,7 @@ tuquet browser verify --url "https://turnstile.zerocdn.com"
   - Cửa sổ trình duyệt xuất hiện con trỏ chuột màu cam/đỏ (Visual Cursor Overlay).
   - Chuột di chuyển mượt mà, có gia tốc và giảm tốc tự nhiên (Bézier physics).
   - Turnstile Challenge được kích hoạt và vượt qua mà không bị nhận diện là automation/webdriver (`navigator.webdriver === false`).
-  - Terminal in thẻ `SPECTER BROWSER STEALTH VERIFICATION: LIVE PRESENTATION`.
+  - Terminal in thẻ `TUQUET BROWSER STEALTH VERIFICATION: LIVE PRESENTATION`.
 
 ---
 
@@ -192,7 +192,7 @@ tuquet automa workflow list
 #### Bước 6.2: Thực Thi Kịch Bản Mẫu Cục Bộ (Extension Worker Mode)
 Chạy workflow tìm kiếm tự động với tham số truyền vào:
 ```powershell
-tuquet automa run fixtures/google_search.workflow.json -p keyword="Tuquet Stealth Engine" --headless
+tuquet automa run fixtures/google_search.workflow.json -p keyword="Stealth Engine" --headless
 ```
 - **Kỳ vọng:**
   - Khởi tạo bridge socket nội bộ ngẫu nhiên.
@@ -300,4 +300,4 @@ Người thực hiện kiểm thử đánh dấu `[x]` vào các hạng mục sa
 
 ---
 
-> **Kết luận:** Bộ công cụ **Tuquet CLI** đáp ứng đầy đủ tất cả các tiêu chí về Kiến trúc, Bảo mật, Tự động hóa và Năng lực phân tán đa thiết bị, sẵn sàng đưa vào vận hành sản xuất thương mại.
+> **Kết luận:** Bộ công cụ **CLI** đáp ứng đầy đủ tất cả các tiêu chí về Kiến trúc, Bảo mật, Tự động hóa và Năng lực phân tán đa thiết bị, sẵn sàng đưa vào vận hành sản xuất thương mại.

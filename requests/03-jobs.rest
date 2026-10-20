@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Job Execution & Real-Time Monitoring
+### Automa Runner - Job Execution & Real-Time Monitoring
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 

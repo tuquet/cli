@@ -31,13 +31,13 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
 
             // Check Vault
             if resolved.is_none() {
-                let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+                let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
                 let config_vault =
                     PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
 
                 let candidates = [
-                    tuquet_vault.join(format!("{}.workflow.json", target)),
-                    tuquet_vault.join(format!("{}.json", target)),
+                    vault.join(format!("{}.workflow.json", target)),
+                    vault.join(format!("{}.json", target)),
                     config_vault.join(format!("{}.workflow.json", target)),
                     config_vault.join(format!("{}.json", target)),
                 ];

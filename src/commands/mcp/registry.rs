@@ -12,7 +12,7 @@ pub fn handle_initialize(id: Option<Value>) -> JsonRpcResponse {
                 }
             },
             "serverInfo": {
-                "name": "tuquet-mcp",
+                "name": "mcp",
                 "version": env!("CARGO_PKG_VERSION")
             }
         }),
@@ -34,8 +34,8 @@ pub fn handle_prompts_list(id: Option<Value>) -> JsonRpcResponse {
 pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
     let tools = json!([
         {
-            "name": "tuquet_status",
-            "description": "Inspect unified status across Tuquet subsystems: Cloud enrollment identity, local Runner daemon health, and isolated Chromium runtime.",
+            "name": "status",
+            "description": "Inspect unified status across subsystems: Cloud enrollment identity, local Runner daemon health, and isolated Chromium runtime.",
             "inputSchema": {
                 "type": "object",
                 "properties": {},
@@ -43,7 +43,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_list",
+            "name": "workflow_list",
             "description": "List all browser automation workflows stored in the local SQLite database and file vault (~/.tuquet/automa/workflows). Supports optional search filter.",
             "inputSchema": {
                 "type": "object",
@@ -56,7 +56,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_inspect",
+            "name": "workflow_inspect",
             "description": "Inspect the structure of a workflow (blocks sequence, triggers, variables, parameters, node connections) by file path or stored workflow ID.",
             "inputSchema": {
                 "type": "object",
@@ -70,7 +70,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_workflow_run",
+            "name": "workflow_run",
             "description": "Execute a browser automation workflow (by file path or stored ID) in headless or visible browser with optional variables and timeout.",
             "inputSchema": {
                 "type": "object",
@@ -101,7 +101,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_runner_probe",
+            "name": "runner_probe",
             "description": "Probe local host hardware specs (CPU cores, memory), display capabilities, and runner automation driver capabilities.",
             "inputSchema": {
                 "type": "object",
@@ -109,15 +109,15 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_cloud_whoami",
-            "description": "Get current Tuquet Cloud workstation pairing identity, device ID, tenant, and endpoint configuration.",
+            "name": "cloud_whoami",
+            "description": "Get current Cloud workstation pairing identity, device ID, tenant, and endpoint configuration.",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
             }
         },
         {
-            "name": "tuquet_browser_status",
+            "name": "browser_status",
             "description": "Check the status, version, executable path, and disk usage of the dedicated isolated Chromium runtime.",
             "inputSchema": {
                 "type": "object",
@@ -125,7 +125,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_tree",
+            "name": "tree",
             "description": "Scan directory structure recursively up to a specified depth, ignoring build artifacts (.git, node_modules, target, dist, build, cache) and returning a clean visual tree.",
             "inputSchema": {
                 "type": "object",
@@ -146,7 +146,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_faker_generate",
+            "name": "faker_generate",
             "description": "Generate synthetic persona and identity test data with legally compliant Vietnamese Citizen Identity numbers (CCCD), cohesive hierarchical addresses, enterprise credentials, and demographic distributions.",
             "inputSchema": {
                 "type": "object",
@@ -183,7 +183,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_inbox_otp",
+            "name": "inbox_otp",
             "description": "Retrieve or wait for latest OTP verification code for an email address from Catch-All inbox with automatic consumption.",
             "inputSchema": {
                 "type": "object",
@@ -205,7 +205,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "tuquet_inbox_status",
+            "name": "inbox_status",
             "description": "Inspect Catch-All inbox subsystem health, local webhook daemon status, cached email counts, and cloud sync status.",
             "inputSchema": {
                 "type": "object",

@@ -291,7 +291,7 @@ pub async fn run_acceptance_test(
     println!();
 
     if overall_passed {
-        println!(" [RESULT] Tuquet Inbox is 100% healthy and ready for MMO automation!");
+        println!(" [RESULT] Inbox is 100% healthy and ready for MMO automation!");
     } else {
         eprintln!(" [RESULT] One or more checks failed. Please check the logs above.");
         std::process::exit(1);

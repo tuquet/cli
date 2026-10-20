@@ -1,5 +1,5 @@
 # ==============================================================================
-# Tuquet CLI - Modern One-Liner Web Installer (Windows x64)
+# CLI - Modern One-Liner Web Installer (Windows x64)
 # ==============================================================================
 # Usage (Clean/Blank Machine):
 #   powershell -c "irm https://raw.githubusercontent.com/tuquet/cli/main/install.ps1 | iex"
@@ -33,7 +33,7 @@ Write-Host " ___/ / /_/ /  __/ /__/ /_/  __/ /     v1.0.0" -ForegroundColor Cyan
 Write-Host "/____/ .___/\___/\___/\__/\___/_/      " -ForegroundColor Cyan
 Write-Host "    /_/                                " -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Tuquet Unified Zero-Dependency Installer" -ForegroundColor White
+Write-Host "  Unified Zero-Dependency Installer" -ForegroundColor White
 Write-Host "  Autonomous Browser Automation & Distributed Mesh Runtime" -ForegroundColor Gray
 Write-Host ""
 
@@ -104,13 +104,13 @@ if (-not $FoundLocal) {
 
     $ReleaseBase = "https://github.com/tuquet/cli/releases/latest/download"
     $ZipUrls += @(
-        "$ReleaseBase/tuquet-windows-x64.zip"
+        "$ReleaseBase/windows-x64.zip"
     )
     $ExeUrl = "$ReleaseBase/tuquet.exe"
 
     # Try downloading and extracting release ZIP asset
-    $TempZip = Join-Path $env:TEMP "tuquet_dl_$([guid]::NewGuid().ToString('N')).zip"
-    $TempDir = Join-Path $env:TEMP "tuquet_ext_$([guid]::NewGuid().ToString('N'))"
+    $TempZip = Join-Path $env:TEMP "dl_$([guid]::NewGuid().ToString('N')).zip"
+    $TempDir = Join-Path $env:TEMP "ext_$([guid]::NewGuid().ToString('N'))"
 
     foreach ($ZipUrl in $ZipUrls) {
         try {

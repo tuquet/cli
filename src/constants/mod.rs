@@ -1,8 +1,8 @@
-//! Enterprise Constants for Tuquet CLI Ecosystem
+//! Enterprise Constants for CLI Ecosystem
 //! Single Source of Truth (SSOT) Architecture
 
 pub mod ports {
-    /// Default port for Tuquet Automa / Runner HTTP and WebSocket API server
+    /// Default port for Automa / Runner HTTP and WebSocket API server
     pub const DEFAULT_RUNNER_PORT: u16 = 8765;
     /// Default SOCKS5 proxy port
     pub const DEFAULT_SOCKS5_PORT: u16 = 1080;
@@ -14,16 +14,16 @@ pub mod ports {
     pub const DEFAULT_SSH_TUNNEL_PORT: u16 = 2222;
     /// Default port for local Docker Supabase stack
     pub const DEFAULT_LOCAL_DOCKER_SUPABASE_PORT: u16 = 54321;
-    /// Default port for Tuquet Inbox webhook listener daemon
+    /// Default port for Inbox webhook listener daemon
     pub const DEFAULT_INBOX_PORT: u16 = 9123;
 }
 
 pub mod protocols {
     /// Protocol identifier for Automa workflow engine v1
     pub const PROTOCOL_AUTOMA_V1: &str = "tuquet.automa.v1";
-    /// Protocol identifier for Tuquet dedicated browser runtime v1
+    /// Protocol identifier for dedicated browser runtime v1
     pub const PROTOCOL_BROWSER_V1: &str = "tuquet.browser.v1";
-    /// Protocol identifier for Tuquet distributed execution agent v1
+    /// Protocol identifier for distributed execution agent v1
     pub const PROTOCOL_AGENT_V1: &str = "tuquet.agent.v1";
 }
 

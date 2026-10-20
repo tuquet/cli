@@ -1,6 +1,6 @@
-# Tuquet CLI — Master Cheat Sheet & Scope Manual
+# CLI — Master Cheat Sheet & Scope Manual
 
-> **Unified Developer CLI & Interactive Scoped Shell for the Tuquet Ecosystem**  
+> **Unified Developer CLI & Interactive Scoped Shell for the Ecosystem**  
 > Single Source of Truth (SSOT): `~/.tuquet/`
 
 ---
@@ -8,9 +8,9 @@
 ## ⚡ Canonical Command Reference (SSOT)
 
 > [!IMPORTANT]
-> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in the **[Tuquet Documentation Portal](https://docs.tuquet.com/en/tuquet/commands/)** and **[Tuquet Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
-> - In AI Agent terminals (Antigravity, Claude Code, Cursor), invoke: **`/tuquet-help`**
-> - In web browser: View the [**Tuquet Master CLI Reference**](https://docs.tuquet.com/en/tuquet/commands/) & [**`tuquet-help` Skill Card**](https://github.com/tuquet/skills/blob/main/skills/tuquet-help/SKILL.md)
+> **Single Source of Truth**: All living operational commands, command flags, workload recipes, and automated runbooks are maintained centrally in the **[Documentation Portal](https://docs.tuquet.com/en/tuquet/commands/)** and **[Skills (`tuquet/skills`)](https://github.com/tuquet/skills)**.
+> - In AI Agent terminals (Antigravity, Claude Code, Cursor), invoke: **`/help`**
+> - In web browser: View the [**Master CLI Reference**](https://docs.tuquet.com/en/tuquet/commands/) & [**`help` Skill Card**](https://github.com/tuquet/skills/blob/main/skills/help/SKILL.md)
 
 ---
 
@@ -39,17 +39,17 @@ tuquet <scope>              # Direct jump to target scope (e.g., tuquet bridge)
 
 ## 🗺️ Master Scopes & Dedicated Skills Directory
 
-Each interactive scope maps 1-to-1 with a specialized, atomic **Tuquet Skill**:
+Each interactive scope maps 1-to-1 with a specialized, atomic **Skill**:
 
 | Scope | Prompt Indicator | Subsystem Role | Dedicated AI Agent Skill |
 | :--- | :--- | :--- | :--- |
 | **`global`** | `[global]` (Cyan) | Platform health, updates, MCP server | [`/tuquet`](https://github.com/tuquet/skills/blob/main/skills/tuquet/SKILL.md) |
-| **`bridge`** | `[bridge]` (Magenta) | Multi-VPS mesh, Cloudflare tunnels, SOCKS5 & HTTP 8118 | [`/tuquet-bridge`](https://github.com/tuquet/skills/blob/main/skills/tuquet-bridge/SKILL.md) |
-| **`browser`** | `[browser]` (Blue) | Isolated Chromium LTS runtime, profile sandboxes | [`/tuquet-browser`](https://github.com/tuquet/skills/blob/main/skills/tuquet-browser/SKILL.md) |
-| **`automa`** | `[automa]` (Amber) | Visual workflow execution, CDP engine, local SQLite | [`/tuquet-automa`](https://github.com/tuquet/skills/blob/main/skills/tuquet-automa/SKILL.md) |
-| **`runner`** | `[runner]` (Green) | Background supervisor daemon (port 8765), auto-cleanup | [`/tuquet-runner`](https://github.com/tuquet/skills/blob/main/skills/tuquet-runner/SKILL.md) |
-| **`cloud`** | `[cloud]` (Purple) | Supabase device enrollment, tenant pairing & DB push | [`/tuquet-cloud`](https://github.com/tuquet/skills/blob/main/skills/tuquet-cloud/SKILL.md) |
-| **`faker`** | `[faker]` (Cyan) | Synthetic persona generator (CCCD, addresses, emails) | [`/tuquet-faker`](https://github.com/tuquet/skills/blob/main/skills/tuquet-faker/SKILL.md) |
+| **`bridge`** | `[bridge]` (Magenta) | Multi-VPS mesh, Cloudflare tunnels, SOCKS5 & HTTP 8118 | [`/bridge`](https://github.com/tuquet/skills/blob/main/skills/bridge/SKILL.md) |
+| **`browser`** | `[browser]` (Blue) | Isolated Chromium LTS runtime, profile sandboxes | [`/browser`](https://github.com/tuquet/skills/blob/main/skills/browser/SKILL.md) |
+| **`automa`** | `[automa]` (Amber) | Visual workflow execution, CDP engine, local SQLite | [`/automa`](https://github.com/tuquet/skills/blob/main/skills/automa/SKILL.md) |
+| **`runner`** | `[runner]` (Green) | Background supervisor daemon (port 8765), auto-cleanup | [`/runner`](https://github.com/tuquet/skills/blob/main/skills/runner/SKILL.md) |
+| **`cloud`** | `[cloud]` (Purple) | Supabase device enrollment, tenant pairing & DB push | [`/cloud`](https://github.com/tuquet/skills/blob/main/skills/cloud/SKILL.md) |
+| **`faker`** | `[faker]` (Cyan) | Synthetic persona generator (CCCD, addresses, emails) | [`/faker`](https://github.com/tuquet/skills/blob/main/skills/faker/SKILL.md) |
 
 ---
 

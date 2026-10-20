@@ -1,4 +1,4 @@
-### Tuquet Automa Runner - Workflow Storage & Static Linting
+### Automa Runner - Workflow Storage & Static Linting
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 
@@ -128,7 +128,7 @@ Content-Type: {{contentType}}
     "headless": false,
     "closeBrowserOnFinish": false,
     "variables": {
-      "searchQuery": "Tuquet Automa Runner execution by workflowId"
+      "searchQuery": "Automa Runner execution by workflowId"
     }
   }
 }

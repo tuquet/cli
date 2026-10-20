@@ -946,7 +946,7 @@ mod tests {
 
     fn make_temp_test_dir(suffix: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "tuquet_dev_scan_test_{}_{}",
+            "dev_scan_test_{}_{}",
             std::process::id(),
             suffix
         ));

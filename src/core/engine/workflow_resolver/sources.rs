@@ -122,10 +122,10 @@ pub async fn find_in_database(
 }
 
 pub async fn find_in_vaults(wf_id: &str, data_dir: &str) -> Option<ResolvedWorkflow> {
-    let tuquet_vault = crate::config::AutomaConfig::load().resolved_vault_dir();
+    let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
     let local_vault = PathBuf::from(data_dir).join("workflows");
 
-    let mut vault_dirs = vec![tuquet_vault];
+    let mut vault_dirs = vec![vault];
     if !vault_dirs.contains(&local_vault) {
         vault_dirs.push(local_vault);
     }

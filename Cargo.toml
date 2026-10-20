@@ -3,7 +3,7 @@ name = "tuquet"
 version = "1.2.0"
 edition = "2024"
 default-run = "tq"
-description = "Tuquet - Autonomous Browser Automation & Distributed Mesh Runtime"
+description = "- Autonomous Browser Automation & Distributed Mesh Runtime"
 repository = "https://github.com/tuquet/cli"
 license = "MIT"
 
@@ -16,9 +16,9 @@ name = "tq"
 path = "src/main.rs"
 
 [dependencies]
-tuquet-faker = { package = "faker", path = "../faker" }
-tuquet-browser = { path = "../browser", features = ["utoipa"] }
-tuquet-runner = { package = "runner", path = "../runner" }
+faker = { path = "../faker" }
+browser = { path = "../browser", features = ["utoipa"] }
+runner = { path = "../runner" }
 axum = { version = "0.8.9", features = ["ws"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }

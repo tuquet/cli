@@ -226,7 +226,7 @@ fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
 
 fn show_overview() {
     let m = manifest();
-    let root = crate::config::canonical_tuquet_dir();
+    let root = crate::config::canonical_dir();
 
     let mut card = Card::new("SPECTER CLI SCHEMA MANIFEST");
     card.with_badge(badge_online(&format!("v{}", m.version)));

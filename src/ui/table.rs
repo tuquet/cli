@@ -247,7 +247,7 @@ impl NetworkEndpoint {
     }
 }
 
-/// Helper to build standard workstation endpoints for Tuquet services
+/// Helper to build standard workstation endpoints for services
 pub fn default_workstation_endpoints(
     socks5_port: u16,
     socks5_active: bool,

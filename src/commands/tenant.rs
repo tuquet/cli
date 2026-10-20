@@ -299,7 +299,7 @@ pub async fn show_current_tenant(format: OutputFormat) -> Result<(), Box<dyn std
                 card.with_badge(badge_offline("NOT AUTHENTICATED"));
                 card.with_min_width(64);
                 card.add_line("No active cloud session found on this machine.");
-                card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
+                card.with_footer("Run 'tuquet login' to authenticate with Cloud");
                 println!();
                 card.print();
                 println!();

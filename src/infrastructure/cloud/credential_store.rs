@@ -92,12 +92,12 @@ pub struct CloudStatusInfo {
     pub last_sync_at: Option<String>,
 }
 
-/// Local persistence store for Tuquet Cloud identity in ~/.tuquet/system/.identity.json
+/// Local persistence store for Cloud identity in ~/.tuquet/system/.identity.json
 pub struct CredentialStore;
 
 impl CredentialStore {
     pub fn get_path(_data_dir: &str) -> PathBuf {
-        crate::config::canonical_tuquet_dir()
+        crate::config::canonical_dir()
             .join("system")
             .join(".identity.json")
     }

@@ -229,6 +229,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "browser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "command-group",
+ "futures",
+ "hex",
+ "ignore",
+ "libc",
+ "lzma-rs",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sysinfo",
+ "tar",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "zip 0.6.6",
+ "zstd 0.14.0",
+]
+
+[[package]]
 name = "bstr"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2685,6 +2709,7 @@ dependencies = [
  "aes",
  "axum",
  "base64",
+ "browser",
  "cbc",
  "chrono",
  "clap",
@@ -2716,36 +2741,11 @@ dependencies = [
  "tower-http 0.7.0",
  "tracing",
  "tracing-subscriber",
- "tuquet-browser",
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
  "winres",
  "zip 0.6.6",
-]
-
-[[package]]
-name = "tuquet-browser"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "command-group",
- "futures",
- "hex",
- "ignore",
- "libc",
- "lzma-rs",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "sysinfo",
- "tar",
- "tokio",
- "tracing",
- "utoipa",
- "zip 0.6.6",
- "zstd 0.14.0",
 ]
 
 [[package]]

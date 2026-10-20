@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tuquet.com/schema/cli.manifest.schema.json",
   "title": "SpecterCliManifest",
-  "description": "Declarative JSON Schema definition for Tuquet CLI commands, pillars, and capabilities (VS Code Contributes pattern).",
+  "description": "Declarative JSON Schema definition for CLI commands, pillars, and capabilities (VS Code Contributes pattern).",
   "type": "object",
   "required": ["$schema", "name", "version", "description", "pillars", "commands"],
   "properties": {

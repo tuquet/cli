@@ -105,7 +105,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
             config_val["mcpServers"] = json!({});
         }
 
-        let tuquet_cmd = if find_executable("tq").is_some() {
+        let cmd = if find_executable("tq").is_some() {
             "tq".to_string()
         } else {
             std::env::current_exe()
@@ -114,7 +114,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
         };
 
         let mcp_def = json!({
-            "command": tuquet_cmd,
+            "command": cmd,
             "args": ["mcp"]
         });
 

@@ -407,7 +407,7 @@ pub async fn run_server(
     let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
-    info!("Tuquet Automa Core Bridge starting in Native Launcher mode...");
+    info!("Automa Core Bridge starting in Native Launcher mode...");
     info!("Environment: {}", config.environment);
     info!("Data Directory: {}", config.data_dir);
 

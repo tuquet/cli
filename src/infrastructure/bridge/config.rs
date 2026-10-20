@@ -140,7 +140,7 @@ impl ServerSelector {
 }
 
 impl BridgeConfig {
-    /// Canonical root path for Tuquet SSOT storage (~/.tuquet/)
+    /// Canonical root path for SSOT storage (~/.tuquet/)
     pub fn canonical_dir() -> PathBuf {
         crate::config::canonical_ssot_dir()
     }

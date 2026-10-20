@@ -100,11 +100,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::ws::ws_handler
     ),
     info(
-        title = "Tuquet CLI & Core Bridge API",
+        title = "CLI & Core Bridge API",
         version = "1.0.0",
-        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Tuquet Ecosystem.",
+        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Ecosystem.",
         contact(
-            name = "Tuquet Ecosystem",
+            name = "Ecosystem",
             url = "https://github.com/tuquet/cli"
         ),
         license(
@@ -187,7 +187,7 @@ pub struct ApiDoc;
 
 async fn root_handler() -> impl IntoResponse {
     axum::Json(serde_json::json!({
-        "service": "tuquet-cli",
+        "service": "cli",
         "version": env!("CARGO_PKG_VERSION"),
         "role": "embedded-bff-gateway",
         "status": "running",
@@ -437,7 +437,7 @@ mod tests {
             json_result.err()
         );
         let json_str = json_result.unwrap();
-        assert!(json_str.contains("Tuquet CLI & Core Bridge API"));
+        assert!(json_str.contains("CLI & Core Bridge API"));
         assert!(json_str.contains("/api/v1/system/tenants"));
         assert!(json_str.contains("/api/v1/system/cloud/auth/start"));
         assert!(json_str.contains("/api/v1/auth/callback"));

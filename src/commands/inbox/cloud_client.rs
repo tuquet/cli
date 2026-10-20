@@ -71,7 +71,7 @@ impl InboxCloudClient {
             .unwrap_or_else(|_| reqwest::Client::new());
 
         // 1. Auto-discover from SSOT identity file (~/.tuquet/system/.identity.json)
-        let identity_path = crate::config::canonical_tuquet_dir()
+        let identity_path = crate::config::canonical_dir()
             .join("system")
             .join(".identity.json");
         let (discovered_url, discovered_key, discovered_dev_id, discovered_tenant_id) =

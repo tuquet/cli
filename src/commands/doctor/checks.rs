@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::types::DiagnosticItem;
-use crate::config::{AppConfig, canonical_tuquet_dir};
+use crate::config::{AppConfig, canonical_dir};
 use crate::infrastructure::bridge::probe_port;
 use crate::infrastructure::bridge::tools::find_executable;
 use crate::ui::{
@@ -178,8 +178,8 @@ pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
 
 pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
     let browser_status = crate::core::browser::resolver::get_runtime_status();
-    let installed_runtimes = tuquet_browser::list_installed_runtimes();
-    let active_version = tuquet_browser::get_active_version();
+    let installed_runtimes = browser::list_installed_runtimes();
+    let active_version = browser::get_active_version();
 
     let mut browser_card = Card::new("ANTIDETECT BROWSER ENGINE");
     browser_card.with_min_width(68);
@@ -210,7 +210,7 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
                 .join(", ")
         };
         browser_card.add_kv("Installed Versions", installed_desc);
-        let profiles_dir = canonical_tuquet_dir()
+        let profiles_dir = canonical_dir()
             .join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES);
         let profile_count = std::fs::read_dir(&profiles_dir)
@@ -236,7 +236,7 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
 }
 
 pub fn check_storage_pillars() -> Table {
-    let root = canonical_tuquet_dir();
+    let root = canonical_dir();
     let mut pillar_items = Vec::new();
 
     let pillars = &[

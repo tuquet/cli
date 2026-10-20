@@ -201,7 +201,7 @@ pub async fn run(initial_service: Option<&str>) -> Result<(), Box<dyn std::error
         }
     }
 
-    println!("Exiting Tuquet Interactive Shell. Goodbye!");
+    println!("Exiting Interactive Shell. Goodbye!");
     Ok(())
 }
 
@@ -401,7 +401,7 @@ pub fn print_scope_help(scope: ShellScope) {
             );
             card.add_kv(
                 "  git [action]",
-                "Multi-repo Git status radar & Tuquet Bridge synchronizer",
+                "Multi-repo Git status radar & Bridge synchronizer",
             );
             card.add_kv(
                 "  env [action]",
@@ -412,11 +412,11 @@ pub fn print_scope_help(scope: ShellScope) {
                 "  doctor",
                 "Diagnose environment dependencies (Scoop, Cloudflared, SSH, Browser)",
             );
-            card.add_kv("  upgrade", "Check and update Tuquet to latest release");
+            card.add_kv("  upgrade", "Check and update to latest release");
             card.add_kv("  whoami", "Inspect cloud enrollment identity & device ID");
             card.add_kv(
                 "  login [token]",
-                "Authenticate workstation with Tuquet Cloud",
+                "Authenticate workstation with Cloud",
             );
             card.add_kv(
                 "  card",
@@ -519,7 +519,7 @@ pub fn print_scope_help(scope: ShellScope) {
             ));
             card.add_kv(
                 "  login [token]",
-                "Authenticate and pair device with Tuquet Cloud",
+                "Authenticate and pair device with Cloud",
             );
             card.add_kv("  logout", "Log out and delete local cloud pairing");
             card.add_kv(

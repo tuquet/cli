@@ -1,5 +1,5 @@
-pub use tuquet_browser::coordinator::*;
-use tuquet_browser::{BrowserManager, BrowserManagerOptions, browser_registry};
+pub use browser::coordinator::*;
+use browser::{BrowserManager, BrowserManagerOptions, browser_registry};
 
 pub async fn ensure_browser_worker(
     browser_id: &str,

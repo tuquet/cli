@@ -1,4 +1,4 @@
-//! Unified Response Dispatcher & Helpers for Tuquet CLI
+//! Unified Response Dispatcher & Helpers for CLI
 //! Standardizes JSON serialization, TTY presentation, and action envelopes.
 
 use crate::ui::OutputFormat;

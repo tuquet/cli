@@ -182,9 +182,9 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             }
 
             if let Ok(child) = cmd.spawn() {
-                let pid_path = BridgeSupervisor::pids_dir().join("tuquet-http.json");
+                let pid_path = BridgeSupervisor::pids_dir().join("http.json");
                 let pids = crate::infrastructure::bridge::supervisor::ServerPids {
-                    server_id: "tuquet-http".to_string(),
+                    server_id: "http".to_string(),
                     cf_pid: Some(child.id()),
                     ssh_pid: None,
                 };

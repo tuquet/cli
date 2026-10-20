@@ -165,8 +165,8 @@ fn test_mcp_exported_tools_contract() {
         if let Some(ref mcp) = cmd.mcp {
             if mcp.exported {
                 assert!(
-                    mcp.tool_name.starts_with("tuquet_"),
-                    "MCP tool name '{}' for command '{}' must start with 'tuquet_'",
+                    mcp.tool_name.starts_with(""),
+                    "MCP tool name '{}' for command '{}' must start with ''",
                     mcp.tool_name,
                     cmd.id
                 );

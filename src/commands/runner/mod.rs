@@ -63,7 +63,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     }
 
-    clack_intro("tq runner", "Tuquet Runner Daemon Supervisor");
+    clack_intro("tq runner", "Runner Daemon Supervisor");
 
     let options = vec![
         ClackOption::new(

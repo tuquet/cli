@@ -12,7 +12,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
         ClackSpinner, clack_intro, clack_outro, clack_step_info, clack_step_ok, clack_step_warn,
     };
 
-    clack_intro("tq upgrade", "Tuquet CLI Self-Updater & Release Manager");
+    clack_intro("tq upgrade", "CLI Self-Updater & Release Manager");
     let sp = ClackSpinner::start(format!(
         "Checking for latest release from GitHub ({})...",
         GITHUB_REPO
@@ -43,7 +43,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
 
     if !info.has_update {
         clack_step_ok(format!(
-            "Tuquet is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
+            "is already up to date! (Current: \x1b[1;32mv{}\x1b[0m)",
             current
         ));
         clack_outro("No upgrade required.");
@@ -84,7 +84,7 @@ pub async fn run_upgrade() -> Result<(), Box<dyn std::error::Error>> {
                 let stdout_str = String::from_utf8_lossy(&output.stdout);
                 if output.status.success() && !stdout_str.contains("isn't installed") {
                     clack_step_ok(format!(
-                        "Successfully upgraded Tuquet to v{} via Scoop!",
+                        "Successfully upgraded to v{} via Scoop!",
                         info.latest_version
                     ));
                     clack_outro("Upgrade complete.");
@@ -135,10 +135,10 @@ async fn perform_in_place_self_update(
         other => other,
     };
 
-    let tuquet_prefix = format!("tuquet-{}-{}", os, arch);
+    let prefix = format!("{}-{}", os, arch);
 
     // Find best asset match:
-    // 1. Archive matching OS and Arch (e.g. tuquet-windows-x64.zip, tuquet-linux-x64.tar.gz)
+    // 1. Archive matching OS and Arch (e.g. windows-x64.zip, linux-x64.tar.gz)
     // 2. Raw binary matching OS (tuquet.exe, tuquet)
     let mut selected_asset: Option<(String, String, u64)> = None;
     let mut checksum_asset: Option<(String, String)> = None;
@@ -159,7 +159,7 @@ async fn perform_in_place_self_update(
             }
 
             // Match full prefix archive (tuquet)
-            if name.starts_with(&tuquet_prefix)
+            if name.starts_with(&prefix)
                 && (name.ends_with(".zip") || name.ends_with(".tar.gz"))
             {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
@@ -317,7 +317,7 @@ async fn perform_in_place_self_update(
         }
     }
 
-    let ssot_bin = crate::config::canonical_tuquet_dir().join("bin");
+    let ssot_bin = crate::config::canonical_dir().join("bin");
     if ssot_bin.exists() {
         let candidate = ssot_bin.join(bin_name);
         if candidate != target_spc && candidate.exists() {

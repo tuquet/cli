@@ -239,7 +239,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
         BrowserCommands::Status { format } => {
             let status = crate::core::browser::resolver::get_runtime_status();
             let active_ver = crate::core::browser::resolver::get_active_version();
-            let profile_dir = crate::config::canonical_tuquet_dir()
+            let profile_dir = crate::config::canonical_dir()
                 .join("browser")
                 .join("profiles");
             let profile_count = std::fs::read_dir(&profile_dir)

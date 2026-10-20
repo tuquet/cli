@@ -50,7 +50,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return whoami(OutputFormat::Json).await;
     }
 
-    clack_intro("tq cloud", "Tuquet Cloud & Fleet Identity Hub");
+    clack_intro("tq cloud", "Cloud & Fleet Identity Hub");
 
     let options = vec![
         ClackOption::new(
@@ -131,7 +131,7 @@ pub async fn login(
     if !format.is_json() && is_tty {
         clack_intro(
             "tq login",
-            &format!("Tuquet Cloud Authentication & Fleet Pairing • {cloud_url}"),
+            &format!("Cloud Authentication & Fleet Pairing • {cloud_url}"),
         );
     }
 
@@ -456,7 +456,7 @@ pub async fn login(
         }
     }
 
-    // 4. Enroll Workstation Device with Tuquet Cloud Fleet
+    // 4. Enroll Workstation Device with Cloud Fleet
     let enrollment_token = resolved_tenant_slug
         .as_deref()
         .or(resolved_tenant_id.as_deref())
@@ -468,7 +468,7 @@ pub async fn login(
 
     let sp = if !format.is_json() {
         Some(ClackSpinner::start(
-            "Pairing workstation with Tuquet Cloud Fleet...",
+            "Pairing workstation with Cloud Fleet...",
         ))
     } else {
         None
@@ -610,7 +610,7 @@ fn present_login_success(
             "Endpoint",
             device_creds.cloud_url.as_deref().unwrap_or(cloud_url),
         );
-        card.with_footer("Workstation successfully paired with Tuquet Cloud fleet");
+        card.with_footer("Workstation successfully paired with Cloud fleet");
 
         println!();
         card.print();
@@ -627,7 +627,7 @@ fn present_logout(logged_out: bool) {
         card.with_badge(badge_offline("LOGGED OUT"));
         card.with_min_width(64);
         card.add_line("Removed local cloud pairing credentials and session identity.");
-        card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
+        card.with_footer("Run 'tuquet login' to authenticate with Cloud");
         println!();
         card.print();
         println!();
@@ -745,7 +745,7 @@ fn present_whoami(
             card.with_badge(badge_offline("DISCONNECTED"));
             card.with_min_width(64);
             card.add_line("Workstation not enrolled with cloud fleet.");
-            card.with_footer("Run 'tuquet login' to authenticate with Tuquet Cloud");
+            card.with_footer("Run 'tuquet login' to authenticate with Cloud");
             println!();
             card.print();
             println!();

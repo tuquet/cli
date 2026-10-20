@@ -178,7 +178,7 @@ pub async fn handle_ext(
                 card.with_badge(badge_online("REMOVED"));
                 card.with_min_width(64);
                 card.add_kv("Removed ID", id);
-                card.add_line("Extension unregistered from local Tuquet registry.");
+                card.add_line("Extension unregistered from local registry.");
                 println!();
                 card.print();
                 println!();

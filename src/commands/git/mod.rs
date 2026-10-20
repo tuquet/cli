@@ -200,7 +200,7 @@ pub async fn handle(
     let actions = [
         (
             "push-bridge",
-            "Push via Tuquet Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
+            "Push via Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
         ),
         ("status", "Inspect detailed git status & diff summary"),
         ("pull", "Pull latest changes (git pull --rebase)"),
@@ -255,7 +255,7 @@ async fn execute_git_action(
         "push-bridge" => {
             if !probe_port(1080) {
                 println!(
-                    "  \x1b[36m◆\x1b[0m  Starting Tuquet Bridge SOCKS5 tunnel (127.0.0.1:1080)..."
+                    "  \x1b[36m◆\x1b[0m  Starting Bridge SOCKS5 tunnel (127.0.0.1:1080)..."
                 );
                 start_bridge(BridgeStartOptions {
                     server: None,
@@ -268,7 +268,7 @@ async fn execute_git_action(
             }
 
             clack_outro(&format!(
-                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Tuquet Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
+                "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
                 BOLD = colors::BOLD,
                 CYAN = colors::CYAN,
                 MUTED = colors::MUTED,

@@ -1,6 +1,6 @@
 use serde_json::json;
 
-pub async fn execute_tuquet_runner_probe() -> Result<String, String> {
+pub async fn execute_runner_probe() -> Result<String, String> {
     let manifest = json!({
         "protocol": "tuquet.automa.v1",
         "name": "runner",

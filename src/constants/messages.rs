@@ -1,8 +1,8 @@
-//! Standard Message Catalog for Tuquet CLI Ecosystem
+//! Standard Message Catalog for CLI Ecosystem
 //! Single Source of Truth for system feedback, errors, and lifecycle events.
 
 /// Daemon & Server lifecycle messages
-pub const MSG_SERVER_STARTING: &str = "Starting Tuquet API & Runner Daemon...";
+pub const MSG_SERVER_STARTING: &str = "Starting API & Runner Daemon...";
 pub const MSG_SERVER_STOPPING: &str = "Stopping existing runner daemon...";
 pub const MSG_SERVER_STOPPED: &str = "Runner worker daemon has been gracefully terminated.";
 pub const MSG_SERVER_RESTARTING: &str = "Restarting runner daemon...";
@@ -18,9 +18,9 @@ pub const MSG_JOB_FAILED: &str = "Job execution failed.";
 pub const MSG_JOB_CANCELLED: &str = "Job execution cancelled by signal.";
 
 /// Cloud enrollment & authentication messages
-pub const MSG_ENROLLMENT_SUCCESS: &str = "Workstation successfully enrolled with Tuquet Cloud!";
+pub const MSG_ENROLLMENT_SUCCESS: &str = "Workstation successfully enrolled with Cloud!";
 pub const MSG_ENROLLMENT_FAILED: &str = "Cloud device enrollment failed.";
-pub const MSG_NOT_ENROLLED: &str = "Workstation not enrolled with Tuquet Cloud.";
+pub const MSG_NOT_ENROLLED: &str = "Workstation not enrolled with Cloud.";
 pub const MSG_IDENTITY_PURGED: &str = "Local device identity purged.";
 pub const MSG_REVOCATION_DETECTED: &str =
     "Cloud device identity revocation detected! Initiating self-healing...";
