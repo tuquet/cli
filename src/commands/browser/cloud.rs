@@ -350,8 +350,9 @@ pub async fn handle_profile_cloud(
 
             // Pack profile into .tar.zst delta
             let report = profile.pack(&base_dir, None)?;
+            let tenant_id = creds.tenant_id.as_deref().unwrap_or("default");
             let cloud_target_id = profile.cloud_id.as_deref().unwrap_or(&id);
-            let canonical_rel_storage = format!("profiles/{}.tar.zst", profile.id);
+            let canonical_rel_storage = format!("{}/{}.tar.zst", tenant_id, cloud_target_id);
 
             let rpc_url = format!(
                 "{}/rest/v1/rpc/release_browser",
@@ -488,6 +489,20 @@ pub async fn handle_profile_push(
         }
     };
 
+    // Ensure deterministic UUID for cloud synchronization
+    let profile_uuid = match &profile.cloud_id {
+        Some(cid) if uuid::Uuid::parse_str(cid).is_ok() => cid.clone(),
+        _ => {
+            if uuid::Uuid::parse_str(&profile.id).is_ok() {
+                profile.id.clone()
+            } else {
+                uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, profile.id.as_bytes()).to_string()
+            }
+        }
+    };
+    profile.cloud_id = Some(profile_uuid.clone());
+    let _ = profile.save(&base_dir);
+
     // 2. Pack profile into delta archive (.tar.zst) with cache sanitization
     let report = profile.pack(&base_dir, None)?;
 
@@ -522,8 +537,8 @@ pub async fn handle_profile_push(
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
-    // Storage object path: {tenant_id}/{profile_id}.tar.zst (tenant_id in front)
-    let storage_rel_path = format!("{}/{}.tar.zst", tenant_id, profile.id);
+    // Storage object path: {tenant_id}/{profile_uuid}.tar.zst (pure UUID storage key)
+    let storage_rel_path = format!("{}/{}.tar.zst", tenant_id, profile_uuid);
 
     // 4. Stream upload archive directly to Supabase Storage: bucket 'browser-profiles'
     let file_bytes = std::fs::read(&report.archive_path)?;
@@ -559,17 +574,6 @@ pub async fn handle_profile_push(
     }
 
     // 5. Upsert metadata & integrity hash into browsers.profiles via RPC
-    let profile_uuid = match &profile.cloud_id {
-        Some(cid) if uuid::Uuid::parse_str(cid).is_ok() => cid.clone(),
-        _ => {
-            if uuid::Uuid::parse_str(&profile.id).is_ok() {
-                profile.id.clone()
-            } else {
-                uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, profile.id.as_bytes()).to_string()
-            }
-        }
-    };
-
     let rpc_endpoint = format!("{}/rest/v1/rpc/upsert_browser_profile", cloud_url.trim_end_matches('/'));
     let rpc_res = client
         .post(&rpc_endpoint)
@@ -628,6 +632,7 @@ pub async fn handle_profile_push(
             serde_json::to_string_pretty(&serde_json::json!({
                 "success": true,
                 "profile_id": profile.id,
+                "cloud_uuid": profile_uuid,
                 "name": profile.name,
                 "tenant_id": tenant_id,
                 "storage_path": storage_rel_path,
@@ -643,7 +648,8 @@ pub async fn handle_profile_push(
     let mut card = Card::new("BROWSER PROFILE SYNCED TO CLOUD");
     card.with_badge(badge_online("SUPABASE SYNCED"));
     card.with_min_width(74);
-    card.add_kv("Profile ID", &profile.id);
+    card.add_kv("Local Profile ID (Alias)", &profile.id);
+    card.add_kv("Cloud Profile UUID", &profile_uuid);
     card.add_kv("Profile Name", &profile.name);
     card.add_kv("Tenant Workspace", tenant_id);
     card.add_kv("Storage Path", format!("browser-profiles/{}", storage_rel_path));
@@ -728,12 +734,13 @@ pub async fn handle_profile_pull(
     let matched_profile = profiles.into_iter().find(|p| {
         p.get("id").and_then(|v| v.as_str()) == Some(id)
             || p.get("name").and_then(|v| v.as_str()).map(|n| n.eq_ignore_ascii_case(id)).unwrap_or(false)
+            || p.get("metadata").and_then(|m| m.get("local_id")).and_then(|v| v.as_str()) == Some(id)
     });
 
     let profile_data = match matched_profile {
         Some(p) => p,
         None => {
-            let err = format!("No cloud profile found matching ID or name '{}'", id);
+            let err = format!("No cloud profile found matching ID, alias, or name '{}'", id);
             if json {
                 println!("{}", serde_json::json!({ "success": false, "error": err }));
             } else {
@@ -782,11 +789,16 @@ pub async fn handle_profile_pull(
     std::fs::write(&target_archive, &archive_bytes)?;
 
     // 3. Unpack into local profile directory and verify SHA-256
-    let profile = crate::core::browser::BrowserProfile::unpack_archive(
+    let mut profile = crate::core::browser::BrowserProfile::unpack_archive(
         &target_archive,
         &base_dir,
         expected_hash,
     )?;
+    let _ = std::fs::remove_file(&target_archive);
+
+    profile.cloud_id = Some(cloud_profile_id.to_string());
+    profile.storage_path = Some(storage_path.clone());
+    let _ = profile.save(&base_dir);
 
     if json {
         println!(
@@ -794,6 +806,7 @@ pub async fn handle_profile_pull(
             serde_json::to_string_pretty(&serde_json::json!({
                 "success": true,
                 "profile_id": profile.id,
+                "cloud_uuid": cloud_profile_id,
                 "name": profile.name,
                 "sandbox_dir": profile.get_sandbox_dir(&base_dir).display().to_string(),
                 "downloaded_bytes": archive_bytes.len(),
@@ -807,7 +820,8 @@ pub async fn handle_profile_pull(
     let mut card = Card::new("BROWSER PROFILE PULLED FROM CLOUD");
     card.with_badge(badge_online("RESTORED"));
     card.with_min_width(74);
-    card.add_kv("Profile ID", &profile.id);
+    card.add_kv("Local Profile ID (Alias)", &profile.id);
+    card.add_kv("Cloud Profile UUID", cloud_profile_id);
     card.add_kv("Profile Name", &profile.name);
     card.add_kv("Remote Key", &storage_path);
     card.add_kv("Downloaded Size", format!("{} bytes", archive_bytes.len()));
