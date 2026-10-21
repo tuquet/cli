@@ -39,13 +39,13 @@ impl TuiView {
         crossterm::queue!(stdout, ResetColor)?;
         write!(stdout, "\r\n")?;
 
-        // 2. Navigation Tabs
+        // 2. Navigation Tabs (Flat SSOT matching --help)
         crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         let tabs = [
-            ActiveTab::Overview,
-            ActiveTab::Bridge,
+            ActiveTab::Workflow,
             ActiveTab::Browser,
-            ActiveTab::Automa,
+            ActiveTab::Bridge,
+            ActiveTab::Auth,
         ];
         write!(stdout, " ")?;
         for tab in tabs {
@@ -73,10 +73,10 @@ impl TuiView {
 
         // 3. Main Content Views according to ActiveTab
         let rendered_rows = match state.active_tab {
-            ActiveTab::Overview => Self::render_overview(state, width, &mut stdout)?,
-            ActiveTab::Bridge => Self::render_bridge_details(state, width, &mut stdout)?,
+            ActiveTab::Workflow => Self::render_workflow_details(state, width, &mut stdout)?,
             ActiveTab::Browser => Self::render_browser_details(state, width, &mut stdout)?,
-            ActiveTab::Automa => Self::render_automa_details(state, width, &mut stdout)?,
+            ActiveTab::Bridge => Self::render_bridge_details(state, width, &mut stdout)?,
+            ActiveTab::Auth => Self::render_auth_details(state, width, &mut stdout)?,
         };
 
         // Fill remaining height with blank box rows down to footer
@@ -119,68 +119,21 @@ impl TuiView {
         Ok(())
     }
 
-    fn render_overview(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
-        // Row 1: Network Bridge & Browser Fleet
-        let b_socks = if state.bridge.socks5_online { "[ONLINE]" } else { "[STANDBY]" };
-        let b_http = if state.bridge.http_online { "[ONLINE]" } else { "[OFFLINE]" };
-        let b_ssh = if state.bridge.ssh_online { "[ONLINE]" } else { "[STANDBY]" };
-
-        let br_status = if state.browser.installed { "[READY]" } else { "[MISSING]" };
-
-        Self::print_kv_split(
-            stdout,
-            width,
-            "● NETWORK BRIDGE (SOCKS5/HTTP)",
-            "● BROWSER FLEET RUNTIME",
-            &format!("  SOCKS5 Proxy (1080): {}", b_socks),
-            &format!("  Chromium V8  : {}", state.browser.version),
-            &format!("  HTTP Proxy   (8118): {}", b_http),
-            &format!("  Status       : {}", br_status),
-            &format!("  SSH Tunnel   (2222): {}", b_ssh),
-            &format!("  Active PIDs  : {} running", state.browser.running_pids_count),
-            &format!("  Default Node : {}", state.bridge.default_server),
-            &format!("  Sandboxes    : {} profiles", state.browser.profile_count),
-        )?;
-
-        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-        write!(stdout, "├{}┤\r\n", "─".repeat(width.saturating_sub(2)))?;
-
-        // Row 2: Runner/Automa & Cloud Mesh
-        let rn_status = if state.runner.daemon_online { "[READY]" } else { "[OFFLINE]" };
-        let cl_status = if state.cloud.enrolled { "[ENROLLED]" } else { "[STANDBY]" };
-
-        Self::print_kv_split(
-            stdout,
-            width,
-            "● RUNNER RPC & WORKFLOW DAG",
-            "● CLOUD MESH & IDENTITY",
-            &format!("  Runner RPC   : 127.0.0.1:{}", state.runner.port),
-            &format!("  Host Name    : {}", state.cloud.host_name),
-            &format!("  Daemon State : {}", rn_status),
-            &format!("  Tenant Scope : {}", state.cloud.tenant_name),
-            &format!("  SQLite Vault : {}", state.runner.db_size_str),
-            &format!("  Cloud Node   : {}", state.cloud.cloud_url),
-            &format!("  Stored Flows : {} flows", state.runner.workflow_count),
-            &format!("  Identity     : {}", cl_status),
-        )?;
-
-        Ok(11)
-    }
-
-    fn render_bridge_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_workflow_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
         let mut count = 0;
-        Self::print_box_line(stdout, width, "[BRIDGE MESH TOPOLOGY & ENDPOINTS]")?;
+        Self::print_box_line(stdout, width, "● WORKFLOW AUTOMATION & EXECUTION ENGINE")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
             &format!(
-                "- SOCKS5 Dynamic Proxy  : 127.0.0.1:{} -> {}",
-                state.bridge.socks5_port,
-                if state.bridge.socks5_online {
-                    "ONLINE (Operational)"
+                "  Daemon State        : {}",
+                if state.runner.daemon_online {
+                    "[RUNNING] (Online)"
                 } else {
-                    "OFFLINE"
+                    "[STOPPED] (Offline)"
                 }
             ),
         )?;
@@ -188,59 +141,85 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            &format!(
-                "- Embedded HTTP Adapter : 127.0.0.1:{} -> {}",
-                state.bridge.http_port,
-                if state.bridge.http_online {
-                    "ONLINE (Active)"
-                } else {
-                    "OFFLINE"
-                }
-            ),
+            &format!("  Runner RPC Endpoint : http://127.0.0.1:{}", state.runner.port),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  SQLite State Store  : {}", state.runner.db_size_str),
         )?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
             &format!(
-                "- Cloudflare Access SSH : 127.0.0.1:{} -> {}",
-                state.bridge.ssh_port,
-                if state.bridge.ssh_online {
-                    "ONLINE (Tunnel Up)"
-                } else {
-                    "OFFLINE"
-                }
+                "  Vault Workflows     : {} workflow definitions",
+                state.runner.workflow_count
             ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  Execution Mode      : Zero-port Extension Stealth / CDP DevTools",
         )?;
         count += 1;
         Self::print_box_line(stdout, width, "")?;
         count += 1;
-        Self::print_box_line(stdout, width, "Press 'b' to trigger bridge start/stop daemon.")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "─ COMMANDS & SHORTCUTS ────────────────────────────────────────────────────────",
+        )?;
+        count += 1;
+        Self::print_box_line(stdout, width, "  • 'r' / 'R'         : Refresh live runner & workflow state")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "  • tq workflow run   : Execute automation workflow directly")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "  • tq workflow list  : List all workflows stored in SQLite vault")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "  • tq runner start   : Start background runner daemon worker")?;
         count += 1;
         Ok(count)
     }
 
     fn render_browser_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
         let mut count = 0;
-        Self::print_box_line(stdout, width, "[STEALTH CHROMIUM RUNTIME & PROFILES]")?;
+        Self::print_box_line(stdout, width, "● BROWSER RUNTIME & ANTI-DETECT FLEET")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
-            &format!("- Version       : {}", state.browser.version),
+            &format!(
+                "  Runtime Status      : {}",
+                if state.browser.installed {
+                    "[READY] (Installed)"
+                } else {
+                    "[MISSING] (Run 'tq browser install')"
+                }
+            ),
         )?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
-            &format!("- Executable    : {}", state.browser.executable_path),
+            &format!("  Chromium V8 Version : {}", state.browser.version),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  Binary Executable   : {}", state.browser.executable_path),
         )?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
             &format!(
-                "- Total Profiles: {} sandboxed environments",
+                "  Sandboxed Profiles  : {} isolated profile(s)",
                 state.browser.profile_count
             ),
         )?;
@@ -249,9 +228,15 @@ impl TuiView {
             stdout,
             width,
             &format!(
-                "- Active Sessions: {} instance(s) running",
+                "  Active Processes    : {} running instance(s)",
                 state.browser.running_pids_count
             ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  Stealth Evasion     : C++ Native Fingerprint Masking Active",
         )?;
         count += 1;
         Self::print_box_line(stdout, width, "")?;
@@ -259,31 +244,46 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            "Press 'k' to terminate all active browser processes.",
+            "─ COMMANDS & SHORTCUTS ────────────────────────────────────────────────────────",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • 'k' / 'K'         : Terminate all active browser processes",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq browser launch : Launch isolated browser sandbox profile",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq browser list   : Inspect registered browser profiles and PIDs",
         )?;
         count += 1;
         Ok(count)
     }
 
-    fn render_automa_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_bridge_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
         let mut count = 0;
-        Self::print_box_line(stdout, width, "[WORKSTATION RUNNER & WORKFLOW DAG ENGINE]")?;
+        Self::print_box_line(stdout, width, "● NETWORK BRIDGE & MULTI-VPS MESH")?;
         count += 1;
-        Self::print_box_line(
-            stdout,
-            width,
-            &format!("- Daemon RPC Endpoint : http://127.0.0.1:{}", state.runner.port),
-        )?;
+        Self::print_box_line(stdout, width, "")?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
             &format!(
-                "- Daemon State        : {}",
-                if state.runner.daemon_online {
-                    "RUNNING"
+                "  SOCKS5 Dynamic Proxy  : 127.0.0.1:{} -> {}",
+                state.bridge.socks5_port,
+                if state.bridge.socks5_online {
+                    "[ONLINE] (Operational)"
                 } else {
-                    "STOPPED"
+                    "[OFFLINE] (Standby)"
                 }
             ),
         )?;
@@ -291,15 +291,43 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            &format!("- SQLite State Store  : {}", state.runner.db_size_str),
+            &format!(
+                "  Embedded HTTP Adapter : 127.0.0.1:{} -> {}",
+                state.bridge.http_port,
+                if state.bridge.http_online {
+                    "[ONLINE] (Active)"
+                } else {
+                    "[OFFLINE] (Standby)"
+                }
+            ),
         )?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
             &format!(
-                "- Vault Workflows     : {} workflow definitions",
-                state.runner.workflow_count
+                "  Cloudflare Tunnel SSH : 127.0.0.1:{} -> {}",
+                state.bridge.ssh_port,
+                if state.bridge.ssh_online {
+                    "[ONLINE] (Tunnel Up)"
+                } else {
+                    "[OFFLINE] (Tunnel Down)"
+                }
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  Default Egress Node   : {}", state.bridge.default_server),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "  Active Mesh Nodes     : {}/{} server(s) online",
+                state.bridge.active_servers, state.bridge.total_servers
             ),
         )?;
         count += 1;
@@ -308,7 +336,103 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            "Run 'tq workflow list' or 'tq runner start' to manage workers.",
+            "─ COMMANDS & SHORTCUTS ────────────────────────────────────────────────────────",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • 'b' / 'B'         : Start / Stop Specter Bridge tunnel daemons",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq bridge status  : Inspect multi-VPS mesh topology and latency",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq git <repo> push-bridge : Route git push operations through mesh",
+        )?;
+        count += 1;
+        Ok(count)
+    }
+
+    fn render_auth_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+        let mut count = 0;
+        Self::print_box_line(stdout, width, "● CLOUD AUTHENTICATION & MULTI-TENANT IDENTITY")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "  Enrollment Status   : {}",
+                if state.cloud.enrolled {
+                    "[ENROLLED] (Paired)"
+                } else {
+                    "[STANDBY] (Unpaired / Local)"
+                }
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  Workstation Host    : {}", state.cloud.host_name),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  Active Tenant Scope : {}", state.cloud.tenant_name),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("  Cloud Endpoint URL  : {}", state.cloud.cloud_url),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  Security Protocol   : Ed25519 Device Keypair & JWT Session",
+        )?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "─ COMMANDS & SHORTCUTS ────────────────────────────────────────────────────────",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq auth login     : Authenticate operator account and pair workstation",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq auth whoami    : Check active enrollment status and token claims",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq auth tenant    : Switch or list accessible multi-tenant workspaces",
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq auth logout    : Revoke local token and disconnect workstation",
         )?;
         count += 1;
         Ok(count)
@@ -327,47 +451,6 @@ impl TuiView {
 
         crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         write!(stdout, "│ {} │\r\n", padded)?;
-        Ok(())
-    }
-
-    fn print_kv_split(
-        stdout: &mut io::Stdout,
-        width: usize,
-        h1: &str,
-        h2: &str,
-        r1_a: &str,
-        r1_b: &str,
-        r2_a: &str,
-        r2_b: &str,
-        r3_a: &str,
-        r3_b: &str,
-        r4_a: &str,
-        r4_b: &str,
-    ) -> io::Result<()> {
-        let total_avail = width.saturating_sub(7); // "│ " + col1 + " │ " + col2 + " │"
-        let col_w1 = total_avail / 2;
-        let col_w2 = total_avail.saturating_sub(col_w1);
-
-        let pad = |s: &str, w: usize| {
-            let count = s.chars().count();
-            if count < w {
-                format!("{}{}", s, " ".repeat(w - count))
-            } else if w > 0 {
-                s.chars().take(w).collect::<String>()
-            } else {
-                String::new()
-            }
-        };
-
-        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-        crossterm::queue!(stdout, SetForegroundColor(Color::Cyan))?;
-        write!(stdout, "│ {} │ {} │\r\n", pad(h1, col_w1), pad(h2, col_w2))?;
-        crossterm::queue!(stdout, ResetColor)?;
-
-        for (a, b) in [(r1_a, r1_b), (r2_a, r2_b), (r3_a, r3_b), (r4_a, r4_b)] {
-            crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-            write!(stdout, "│ {} │ {} │\r\n", pad(a, col_w1), pad(b, col_w2))?;
-        }
         Ok(())
     }
 }

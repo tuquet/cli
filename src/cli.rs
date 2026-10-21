@@ -33,7 +33,6 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[1;38;2;56;189;248mSYSTEM & TELEMETRY\x1b[0m
   \x1b[1;35mtui\x1b[0m             Launch Mission Control full-screen interactive dashboard
   \x1b[1;35msetup\x1b[0m           Interactive guided workstation onboarding wizard
-  \x1b[1;35mdoctor\x1b[0m          Verify environment health & system dependencies
 
 \x1b[1;38;2;56;189;248mFLAGS\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Show help for command
@@ -202,7 +201,7 @@ pub enum Commands {
     Tui,
 
     /// Check system dependencies, required tools & environment health
-    #[command(name = "doctor")]
+    #[command(name = "doctor", hide = true)]
     Doctor {
         /// Attempt automatic fix / installation of missing dependencies where supported
         #[arg(long)]

@@ -3,37 +3,37 @@ use std::time::Instant;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActiveTab {
-    Overview,
-    Bridge,
+    Workflow,
     Browser,
-    Automa,
+    Bridge,
+    Auth,
 }
 
 impl ActiveTab {
     pub fn next(self) -> Self {
         match self {
-            Self::Overview => Self::Bridge,
-            Self::Bridge => Self::Browser,
-            Self::Browser => Self::Automa,
-            Self::Automa => Self::Overview,
+            Self::Workflow => Self::Browser,
+            Self::Browser => Self::Bridge,
+            Self::Bridge => Self::Auth,
+            Self::Auth => Self::Workflow,
         }
     }
 
     pub fn prev(self) -> Self {
         match self {
-            Self::Overview => Self::Automa,
-            Self::Bridge => Self::Overview,
-            Self::Browser => Self::Bridge,
-            Self::Automa => Self::Browser,
+            Self::Workflow => Self::Auth,
+            Self::Browser => Self::Workflow,
+            Self::Bridge => Self::Browser,
+            Self::Auth => Self::Bridge,
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Self::Overview => "[1] OVERVIEW",
-            Self::Bridge => "[2] BRIDGE MESH",
-            Self::Browser => "[3] BROWSER FLEET",
-            Self::Automa => "[4] RUNNER & WORKFLOW",
+            Self::Workflow => "[1] WORKFLOW",
+            Self::Browser => "[2] BROWSER",
+            Self::Bridge => "[3] BRIDGE",
+            Self::Auth => "[4] AUTH",
         }
     }
 }
@@ -143,7 +143,7 @@ pub struct TuiState {
 impl Default for TuiState {
     fn default() -> Self {
         Self {
-            active_tab: ActiveTab::Overview,
+            active_tab: ActiveTab::Workflow,
             bridge: BridgeState::default(),
             browser: BrowserState::default(),
             runner: RunnerState::default(),

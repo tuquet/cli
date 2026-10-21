@@ -63,10 +63,10 @@ async fn run_loop(
                             KeyCode::BackTab | KeyCode::Left => {
                                 state.active_tab = state.active_tab.prev();
                             }
-                            KeyCode::Char('1') => state.active_tab = state::ActiveTab::Overview,
-                            KeyCode::Char('2') => state.active_tab = state::ActiveTab::Bridge,
-                            KeyCode::Char('3') => state.active_tab = state::ActiveTab::Browser,
-                            KeyCode::Char('4') => state.active_tab = state::ActiveTab::Automa,
+                            KeyCode::Char('1') => state.active_tab = state::ActiveTab::Workflow,
+                            KeyCode::Char('2') => state.active_tab = state::ActiveTab::Browser,
+                            KeyCode::Char('3') => state.active_tab = state::ActiveTab::Bridge,
+                            KeyCode::Char('4') => state.active_tab = state::ActiveTab::Auth,
                             KeyCode::Char('r') | KeyCode::Char('R') => {
                                 state.status_message = "Refreshing state...".to_string();
                                 state.refresh().await;
