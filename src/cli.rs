@@ -16,13 +16,13 @@ pub fn get_styles() -> Styles {
 pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[38;2;56;189;248m   _____  ____   ______  ______ ______  ______  ____  \x1b[0m
 \x1b[38;2;96;165;250m  / ___/ / __ \\ / ____/ / ____//_  __/ / ____/ / __ \\ \x1b[0m
-\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.2.0\x1b[0m
+\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.2.1\x1b[0m
 \x1b[38;2;168;85;247m ___/ /  / ____// /___  / /___  / /    / /___  / _, _/\x1b[0m
 \x1b[38;2;192;132;252m/____/   /_/    /_____/ \\____/  /_/    /_____/ /_/ |_|\x1b[0m
 
   Autonomous Browser Automation & Distributed Mesh Runtime
 
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mspc\x1b[0m [COMMAND] [OPTIONS]
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m [COMMAND] [OPTIONS]
 
 \x1b[1;38;2;56;189;248mDeveloper Suite:\x1b[0m
   \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)
@@ -54,6 +54,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;35mmcp\x1b[0m             Run Model Context Protocol (MCP) stdio server for AI agents
 
 \x1b[1;38;2;56;189;248mInteractive:\x1b[0m
+  \x1b[1;35mtui\x1b[0m             Launch Mission Control terminal dashboard (interactive TUI)
   \x1b[1;35mshell\x1b[0m           Launch interactive scoped shell session (TQ SHELL)
 
 \x1b[1;38;2;56;189;248mOptions:\x1b[0m
@@ -62,6 +63,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mExamples:\x1b[0m
   tq                              Launch interactive TQ SHELL (Interactive REPL)
+  tq tui                          Launch Mission Control terminal dashboard
   tq dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
   tq port                         Scan listening ports & terminate zombie processes
   tq code                         Find project across machine & open in IDE
