@@ -13,21 +13,23 @@ impl TuiView {
         let mut stdout = io::stdout();
         let (cols, rows) = terminal::size().unwrap_or((80, 24));
         let width = cols as usize;
+        let total_rows = rows as usize;
 
         // Position cursor at top-left
         crossterm::queue!(stdout, cursor::MoveTo(0, 0))?;
 
         // 1. Header Bar
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         let title = format!(" [tq tui] TUQUET MISSION CONTROL v{} ", env!("CARGO_PKG_VERSION"));
         let tick_indicator = if state.tick_count % 2 == 0 { "● LIVE" } else { "○ LIVE" };
         let top_right = format!(" [{} 1s] [q: Quit] ", tick_indicator);
-        
+
         crossterm::queue!(
             stdout,
             SetBackgroundColor(Color::DarkGrey),
             SetForegroundColor(Color::White)
         )?;
-        
+
         let header_fill = if width > title.len() + top_right.len() {
             width - title.len() - top_right.len()
         } else {
@@ -38,6 +40,7 @@ impl TuiView {
         write!(stdout, "\r\n")?;
 
         // 2. Navigation Tabs
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         let tabs = [
             ActiveTab::Overview,
             ActiveTab::Bridge,
@@ -63,26 +66,43 @@ impl TuiView {
         }
         write!(stdout, "\r\n")?;
 
-        // Separator line
+        // Top separator border
         let sep_width = width.saturating_sub(2);
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         write!(stdout, "┌{}┐\r\n", "─".repeat(sep_width))?;
 
         // 3. Main Content Views according to ActiveTab
-        match state.active_tab {
+        let rendered_rows = match state.active_tab {
             ActiveTab::Overview => Self::render_overview(state, width, &mut stdout)?,
             ActiveTab::Bridge => Self::render_bridge_details(state, width, &mut stdout)?,
             ActiveTab::Browser => Self::render_browser_details(state, width, &mut stdout)?,
             ActiveTab::Automa => Self::render_automa_details(state, width, &mut stdout)?,
+        };
+
+        // Fill remaining height with blank box rows down to footer
+        let footer_box_row = total_rows.saturating_sub(2);
+        let current_row = 3 + rendered_rows;
+        if current_row < footer_box_row {
+            let empty_inner = " ".repeat(sep_width);
+            for _ in current_row..footer_box_row {
+                crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+                write!(stdout, "│{}│\r\n", empty_inner)?;
+            }
         }
 
-        // Fill remaining height with blank rows if terminal is tall
         // 4. Status & Hotkey Footer
-        crossterm::queue!(stdout, cursor::MoveTo(0, rows.saturating_sub(2)))?;
-        write!(stdout, "└{}┘\r\n", "─".repeat(sep_width))?;
-
-        // Status bar line
         crossterm::queue!(
             stdout,
+            cursor::MoveTo(0, footer_box_row as u16),
+            terminal::Clear(terminal::ClearType::UntilNewLine)
+        )?;
+        write!(stdout, "└{}┘\r\n", "─".repeat(sep_width))?;
+
+        let status_row = total_rows.saturating_sub(1) as u16;
+        crossterm::queue!(
+            stdout,
+            cursor::MoveTo(0, status_row),
+            terminal::Clear(terminal::ClearType::UntilNewLine),
             SetBackgroundColor(Color::Rgb { r: 24, g: 24, b: 27 }),
             SetForegroundColor(Color::Yellow)
         )?;
@@ -99,9 +119,7 @@ impl TuiView {
         Ok(())
     }
 
-    fn render_overview(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<()> {
-        let col_width = (width.saturating_sub(6)) / 2;
-
+    fn render_overview(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
         // Row 1: Network Bridge & Browser Fleet
         let b_socks = if state.bridge.socks5_online { "[ONLINE]" } else { "[STANDBY]" };
         let b_http = if state.bridge.http_online { "[ONLINE]" } else { "[OFFLINE]" };
@@ -111,7 +129,7 @@ impl TuiView {
 
         Self::print_kv_split(
             stdout,
-            col_width,
+            width,
             "● NETWORK BRIDGE (SOCKS5/HTTP)",
             "● BROWSER FLEET RUNTIME",
             &format!("  SOCKS5 Proxy (1080): {}", b_socks),
@@ -124,6 +142,7 @@ impl TuiView {
             &format!("  Sandboxes    : {} profiles", state.browser.profile_count),
         )?;
 
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         write!(stdout, "├{}┤\r\n", "─".repeat(width.saturating_sub(2)))?;
 
         // Row 2: Runner/Automa & Cloud Mesh
@@ -132,8 +151,8 @@ impl TuiView {
 
         Self::print_kv_split(
             stdout,
-            col_width,
-            "● RUNNER RPC & AUTOMA DAG",
+            width,
+            "● RUNNER RPC & WORKFLOW DAG",
             "● CLOUD MESH & IDENTITY",
             &format!("  Runner RPC   : 127.0.0.1:{}", state.runner.port),
             &format!("  Host Name    : {}", state.cloud.host_name),
@@ -145,53 +164,175 @@ impl TuiView {
             &format!("  Identity     : {}", cl_status),
         )?;
 
-        Ok(())
+        Ok(11)
     }
 
-    fn render_bridge_details(state: &TuiState, _width: usize, stdout: &mut io::Stdout) -> io::Result<()> {
-        write!(stdout, "│  [BRIDGE MESH TOPOLOGY & ENDPOINTS]\r\n")?;
-        write!(stdout, "│  - SOCKS5 Dynamic Proxy  : 127.0.0.1:{} -> {}\r\n", 
-            state.bridge.socks5_port, 
-            if state.bridge.socks5_online { "ONLINE (Operational)" } else { "OFFLINE" }
+    fn render_bridge_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+        let mut count = 0;
+        Self::print_box_line(stdout, width, "[BRIDGE MESH TOPOLOGY & ENDPOINTS]")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- SOCKS5 Dynamic Proxy  : 127.0.0.1:{} -> {}",
+                state.bridge.socks5_port,
+                if state.bridge.socks5_online {
+                    "ONLINE (Operational)"
+                } else {
+                    "OFFLINE"
+                }
+            ),
         )?;
-        write!(stdout, "│  - Embedded HTTP Adapter : 127.0.0.1:{} -> {}\r\n", 
-            state.bridge.http_port, 
-            if state.bridge.http_online { "ONLINE (Active)" } else { "OFFLINE" }
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Embedded HTTP Adapter : 127.0.0.1:{} -> {}",
+                state.bridge.http_port,
+                if state.bridge.http_online {
+                    "ONLINE (Active)"
+                } else {
+                    "OFFLINE"
+                }
+            ),
         )?;
-        write!(stdout, "│  - Cloudflare Access SSH : 127.0.0.1:{} -> {}\r\n", 
-            state.bridge.ssh_port, 
-            if state.bridge.ssh_online { "ONLINE (Tunnel Up)" } else { "OFFLINE" }
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Cloudflare Access SSH : 127.0.0.1:{} -> {}",
+                state.bridge.ssh_port,
+                if state.bridge.ssh_online {
+                    "ONLINE (Tunnel Up)"
+                } else {
+                    "OFFLINE"
+                }
+            ),
         )?;
-        write!(stdout, "│\r\n")?;
-        write!(stdout, "│  Press 'b' to trigger bridge start/stop daemon.\r\n")?;
-        Ok(())
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
+        count += 1;
+        Self::print_box_line(stdout, width, "Press 'b' to trigger bridge start/stop daemon.")?;
+        count += 1;
+        Ok(count)
     }
 
-    fn render_browser_details(state: &TuiState, _width: usize, stdout: &mut io::Stdout) -> io::Result<()> {
-        write!(stdout, "│  [STEALTH CHROMIUM RUNTIME & PROFILES]\r\n")?;
-        write!(stdout, "│  - Version       : {}\r\n", state.browser.version)?;
-        write!(stdout, "│  - Executable    : {}\r\n", state.browser.executable_path)?;
-        write!(stdout, "│  - Total Profiles: {} sandboxed environments\r\n", state.browser.profile_count)?;
-        write!(stdout, "│  - Active Sessions: {} instance(s) running\r\n", state.browser.running_pids_count)?;
-        write!(stdout, "│\r\n")?;
-        write!(stdout, "│  Press 'k' to terminate all active browser processes.\r\n")?;
-        Ok(())
+    fn render_browser_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+        let mut count = 0;
+        Self::print_box_line(stdout, width, "[STEALTH CHROMIUM RUNTIME & PROFILES]")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("- Version       : {}", state.browser.version),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("- Executable    : {}", state.browser.executable_path),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Total Profiles: {} sandboxed environments",
+                state.browser.profile_count
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Active Sessions: {} instance(s) running",
+                state.browser.running_pids_count
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "Press 'k' to terminate all active browser processes.",
+        )?;
+        count += 1;
+        Ok(count)
     }
 
-    fn render_automa_details(state: &TuiState, _width: usize, stdout: &mut io::Stdout) -> io::Result<()> {
-        write!(stdout, "│  [WORKSTATION RUNNER & AUTOMA DAG ENGINE]\r\n")?;
-        write!(stdout, "│  - Daemon RPC Endpoint : http://127.0.0.1:{}\r\n", state.runner.port)?;
-        write!(stdout, "│  - Daemon State        : {}\r\n", if state.runner.daemon_online { "RUNNING" } else { "STOPPED" })?;
-        write!(stdout, "│  - SQLite State Store  : {}\r\n", state.runner.db_size_str)?;
-        write!(stdout, "│  - Vault Workflows     : {} workflow definitions\r\n", state.runner.workflow_count)?;
-        write!(stdout, "│\r\n")?;
-        write!(stdout, "│  Run 'tq automa list' or 'tq runner start' to manage workers.\r\n")?;
+    fn render_automa_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+        let mut count = 0;
+        Self::print_box_line(stdout, width, "[WORKSTATION RUNNER & WORKFLOW DAG ENGINE]")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("- Daemon RPC Endpoint : http://127.0.0.1:{}", state.runner.port),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Daemon State        : {}",
+                if state.runner.daemon_online {
+                    "RUNNING"
+                } else {
+                    "STOPPED"
+                }
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!("- SQLite State Store  : {}", state.runner.db_size_str),
+        )?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            &format!(
+                "- Vault Workflows     : {} workflow definitions",
+                state.runner.workflow_count
+            ),
+        )?;
+        count += 1;
+        Self::print_box_line(stdout, width, "")?;
+        count += 1;
+        Self::print_box_line(
+            stdout,
+            width,
+            "Run 'tq workflow list' or 'tq runner start' to manage workers.",
+        )?;
+        count += 1;
+        Ok(count)
+    }
+
+    fn print_box_line(stdout: &mut io::Stdout, width: usize, content: &str) -> io::Result<()> {
+        let inner_width = width.saturating_sub(4); // 2 chars for "│ " + 2 chars for " │"
+        let content_len = content.chars().count();
+        let padded = if content_len < inner_width {
+            format!("{}{}", content, " ".repeat(inner_width - content_len))
+        } else if inner_width > 0 {
+            content.chars().take(inner_width).collect::<String>()
+        } else {
+            String::new()
+        };
+
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+        write!(stdout, "│ {} │\r\n", padded)?;
         Ok(())
     }
 
     fn print_kv_split(
         stdout: &mut io::Stdout,
-        col_w: usize,
+        width: usize,
         h1: &str,
         h2: &str,
         r1_a: &str,
@@ -203,22 +344,30 @@ impl TuiView {
         r4_a: &str,
         r4_b: &str,
     ) -> io::Result<()> {
+        let total_avail = width.saturating_sub(7); // "│ " + col1 + " │ " + col2 + " │"
+        let col_w1 = total_avail / 2;
+        let col_w2 = total_avail.saturating_sub(col_w1);
+
         let pad = |s: &str, w: usize| {
-            if s.len() < w {
-                format!("{}{}", s, " ".repeat(w - s.len()))
+            let count = s.chars().count();
+            if count < w {
+                format!("{}{}", s, " ".repeat(w - count))
+            } else if w > 0 {
+                s.chars().take(w).collect::<String>()
             } else {
-                s[..w].to_string()
+                String::new()
             }
         };
 
+        crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         crossterm::queue!(stdout, SetForegroundColor(Color::Cyan))?;
-        write!(stdout, "│ {} │ {} │\r\n", pad(h1, col_w), pad(h2, col_w))?;
+        write!(stdout, "│ {} │ {} │\r\n", pad(h1, col_w1), pad(h2, col_w2))?;
         crossterm::queue!(stdout, ResetColor)?;
 
-        write!(stdout, "│ {} │ {} │\r\n", pad(r1_a, col_w), pad(r1_b, col_w))?;
-        write!(stdout, "│ {} │ {} │\r\n", pad(r2_a, col_w), pad(r2_b, col_w))?;
-        write!(stdout, "│ {} │ {} │\r\n", pad(r3_a, col_w), pad(r3_b, col_w))?;
-        write!(stdout, "│ {} │ {} │\r\n", pad(r4_a, col_w), pad(r4_b, col_w))?;
+        for (a, b) in [(r1_a, r1_b), (r2_a, r2_b), (r3_a, r3_b), (r4_a, r4_b)] {
+            crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+            write!(stdout, "│ {} │ {} │\r\n", pad(a, col_w1), pad(b, col_w2))?;
+        }
         Ok(())
     }
 }

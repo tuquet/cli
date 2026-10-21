@@ -50,35 +50,45 @@ async fn run_loop(
             .unwrap_or_else(|| Duration::from_millis(0));
 
         if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => break,
-                        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
-                        KeyCode::Tab | KeyCode::Right => {
-                            state.active_tab = state.active_tab.next();
+            match event::read()? {
+                Event::Key(key) => {
+                    if key.kind == KeyEventKind::Press {
+                        let old_tab = state.active_tab;
+                        match key.code {
+                            KeyCode::Char('q') | KeyCode::Esc => break,
+                            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                            KeyCode::Tab | KeyCode::Right => {
+                                state.active_tab = state.active_tab.next();
+                            }
+                            KeyCode::BackTab | KeyCode::Left => {
+                                state.active_tab = state.active_tab.prev();
+                            }
+                            KeyCode::Char('1') => state.active_tab = state::ActiveTab::Overview,
+                            KeyCode::Char('2') => state.active_tab = state::ActiveTab::Bridge,
+                            KeyCode::Char('3') => state.active_tab = state::ActiveTab::Browser,
+                            KeyCode::Char('4') => state.active_tab = state::ActiveTab::Automa,
+                            KeyCode::Char('r') | KeyCode::Char('R') => {
+                                state.status_message = "Refreshing state...".to_string();
+                                state.refresh().await;
+                                state.status_message = "Refreshed live state.".to_string();
+                            }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                actions::toggle_bridge(state).await;
+                            }
+                            KeyCode::Char('k') | KeyCode::Char('K') => {
+                                actions::kill_browsers(state).await;
+                            }
+                            _ => {}
                         }
-                        KeyCode::BackTab | KeyCode::Left => {
-                            state.active_tab = state.active_tab.prev();
+                        if state.active_tab != old_tab {
+                            let _ = execute!(stdout(), terminal::Clear(terminal::ClearType::All));
                         }
-                        KeyCode::Char('1') => state.active_tab = state::ActiveTab::Overview,
-                        KeyCode::Char('2') => state.active_tab = state::ActiveTab::Bridge,
-                        KeyCode::Char('3') => state.active_tab = state::ActiveTab::Browser,
-                        KeyCode::Char('4') => state.active_tab = state::ActiveTab::Automa,
-                        KeyCode::Char('r') | KeyCode::Char('R') => {
-                            state.status_message = "Refreshing state...".to_string();
-                            state.refresh().await;
-                            state.status_message = "Refreshed live state.".to_string();
-                        }
-                        KeyCode::Char('b') | KeyCode::Char('B') => {
-                            actions::toggle_bridge(state).await;
-                        }
-                        KeyCode::Char('k') | KeyCode::Char('K') => {
-                            actions::kill_browsers(state).await;
-                        }
-                        _ => {}
                     }
                 }
+                Event::Resize(_, _) => {
+                    let _ = execute!(stdout(), terminal::Clear(terminal::ClearType::All));
+                }
+                _ => {}
             }
         }
 

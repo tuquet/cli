@@ -33,7 +33,7 @@ impl ActiveTab {
             Self::Overview => "[1] OVERVIEW",
             Self::Bridge => "[2] BRIDGE MESH",
             Self::Browser => "[3] BROWSER FLEET",
-            Self::Automa => "[4] RUNNER & AUTOMA",
+            Self::Automa => "[4] RUNNER & WORKFLOW",
         }
     }
 }
