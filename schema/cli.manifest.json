@@ -240,21 +240,13 @@
       "description": "Export the AI Agent Model Context Protocol (MCP) tool schemas generated from this manifest."
     },
     {
-      "id": "tuquet.shell",
+      "id": "tuquet.tui",
       "route": [
-        "shell"
+        "tui"
       ],
       "pillar": "system",
-      "title": "Interactive REPL Shell",
-      "description": "Launch interactive scoped terminal shell session with auto-completion and hotkeys.",
-      "arguments": [
-        {
-          "name": "service",
-          "type": "string",
-          "required": false,
-          "description": "Optional service domain to scope REPL into (automa, browser, bridge, faker)."
-        }
-      ]
+      "title": "Mission Control Terminal Dashboard",
+      "description": "Launch full-screen interactive Terminal User Interface dashboard."
     },
     {
       "id": "tuquet.status",

@@ -141,12 +141,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(cmd) => commands::inbox::handle(cmd).await,
             None => commands::inbox::handle_interactive().await,
         },
-        Some(Commands::Shell { service }) => commands::shell::run(service.as_deref()).await,
         Some(Commands::Mcp) => commands::mcp::run().await,
         Some(Commands::Schema { command, json }) => commands::schema::handle(command, json).await,
         None => {
             if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
-                commands::shell::run(None).await
+                commands::tui::run().await
             } else {
                 let mut cmd = Cli::command();
                 let _ = cmd.print_help();
