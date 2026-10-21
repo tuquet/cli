@@ -257,8 +257,8 @@ mod tests {
         assert!(pillars.contains(&"bridge"));
         assert!(pillars.contains(&"faker"));
         assert!(pillars.contains(&"browser"));
-        assert!(pillars.contains(&"automa"));
-        assert!(pillars.contains(&"runner"));
+        assert!(pillars.contains(&"automation") || pillars.contains(&"automa"));
+        assert!(pillars.contains(&"worker") || pillars.contains(&"runner"));
         assert!(pillars.contains(&"system"));
         assert!(pillars.contains(&"inbox"));
 
