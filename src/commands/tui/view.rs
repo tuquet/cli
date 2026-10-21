@@ -21,7 +21,7 @@ impl TuiView {
         // 1. Header Bar
         crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         let title = format!(" [tq tui] TUQUET MISSION CONTROL v{} ", env!("CARGO_PKG_VERSION"));
-        let tick_indicator = if state.tick_count % 2 == 0 { "● LIVE" } else { "○ LIVE" };
+        let tick_indicator = if state.tick_count.is_multiple_of(2) { "● LIVE" } else { "○ LIVE" };
         let top_right = format!(" [{} 1s] [q: Quit] ", tick_indicator);
 
         crossterm::queue!(

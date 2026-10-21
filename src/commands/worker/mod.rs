@@ -1,6 +1,7 @@
 pub mod logs;
 pub mod supervisor;
 pub mod tools;
+#[allow(clippy::module_inception)]
 pub mod worker;
 
 pub use logs::show_logs;
