@@ -15,8 +15,7 @@ pub fn run(verbose: bool) -> Result<CoreResult, Box<dyn std::error::Error>> {
     let dirs = [
         root.join("bin"),
         root.join(crate::constants::PILLAR_SYSTEM),
-        root.join(crate::constants::PILLAR_AUTOMA)
-            .join(crate::constants::DIR_WORKFLOWS),
+        root.join(crate::constants::PILLAR_AUTOMA),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES),
         root.join(crate::constants::PILLAR_BROWSER)

@@ -32,7 +32,7 @@ pub mod pillars {
     pub const PILLAR_FAKER: &str = "faker";
     pub const PILLAR_BROWSER: &str = "browser";
     pub const PILLAR_AUTOMA: &str = "automa";
-    pub const PILLAR_RUNNER: &str = "runner";
+    pub const PILLAR_WORKER: &str = "worker";
     pub const PILLAR_CLOUD: &str = "cloud";
     pub const PILLAR_SYSTEM: &str = "system";
     pub const PILLAR_INBOX: &str = "inbox";
@@ -42,7 +42,7 @@ pub mod pillars {
         PILLAR_FAKER,
         PILLAR_BROWSER,
         PILLAR_AUTOMA,
-        PILLAR_RUNNER,
+        PILLAR_WORKER,
         PILLAR_CLOUD,
         PILLAR_SYSTEM,
         PILLAR_INBOX,
@@ -89,19 +89,20 @@ pub mod endpoints {
 pub mod paths {
     pub const DEFAULT_SSOT_ROOT_DIR: &str = ".tq";
 
-    pub const FILE_AUTOMA_SQLITE: &str = "automa.sqlite";
+    pub const FILE_AUTOMATION_SQLITE: &str = "automation.sqlite";
+    pub const FILE_AUTOMA_SQLITE: &str = FILE_AUTOMATION_SQLITE;
     pub const FILE_BRIDGE_JSON: &str = "bridge.json";
     pub const FILE_FAKER_JSON: &str = "faker.json";
     pub const FILE_BROWSER_JSON: &str = "browser.json";
     pub const FILE_AUTOMA_JSON: &str = "automa.json";
-    pub const FILE_RUNNER_JSON: &str = "runner.json";
+    pub const FILE_WORKER_JSON: &str = "worker.json";
     pub const FILE_SYSTEM_JSON: &str = "system.json";
     pub const FILE_INBOX_JSON: &str = "inbox.json";
     pub const FILE_INBOX_SQLITE: &str = "inbox.sqlite";
     pub const FILE_IDENTITY_JSON: &str = ".identity.json";
     pub const FILE_ENVIRONMENTS_JSON: &str = "environments.json";
-    pub const FILE_RUNNER_PID: &str = "runner.pid";
-    pub const FILE_RUNNER_LOG: &str = "runner.log";
+    pub const FILE_WORKER_PID: &str = "worker.pid";
+    pub const FILE_WORKER_LOG: &str = "worker.log";
 
     pub const DIR_RUNTIMES: &str = "runtimes";
     pub const DIR_PROFILES: &str = "profiles";
@@ -110,7 +111,6 @@ pub mod paths {
     pub const DIR_PIDS: &str = "pids";
     pub const DIR_LOGS: &str = "logs";
     pub const DIR_CONFIG: &str = "config";
-    pub const DIR_WORKFLOWS: &str = "workflows";
     pub const DIR_SYSTEM: &str = "system";
 }
 

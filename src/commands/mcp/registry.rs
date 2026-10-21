@@ -44,7 +44,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
         },
         {
             "name": "workflow_list",
-            "description": "List all browser automation workflows stored in the local SQLite database and file vault (~/.tq/automa/workflows). Supports optional search filter.",
+            "description": "List all browser automation workflows stored in the local SQLite database. Supports optional search filter.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -101,8 +101,8 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
             }
         },
         {
-            "name": "runner_probe",
-            "description": "Probe local host hardware specs (CPU cores, memory), display capabilities, and runner automation driver capabilities.",
+            "name": "worker_probe",
+            "description": "Probe local host hardware specs (CPU cores, memory), display capabilities, and worker automation driver capabilities.",
             "inputSchema": {
                 "type": "object",
                 "properties": {}

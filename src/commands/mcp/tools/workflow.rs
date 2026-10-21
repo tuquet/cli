@@ -23,16 +23,14 @@ pub async fn execute_workflow_list(args: &Value) -> Result<String, String> {
     let config = AppConfig::load();
 
     let mut workflows: Vec<WfSummary> = Vec::new();
-    let mut seen_ids = std::collections::HashSet::new();
 
-    // 1. SQLite Database
-    let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+    // Fetch strictly from SQLite Database
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
         && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref())
     {
         for wf in list {
-            seen_ids.insert(wf.id.clone());
             let parsed: Option<Value> = serde_json::from_str(&wf.data).ok();
             let blocks_count = parsed.as_ref().map(count_workflow_blocks).unwrap_or(0);
             workflows.push(WfSummary {
@@ -43,74 +41,6 @@ pub async fn execute_workflow_list(args: &Value) -> Result<String, String> {
                 blocks_count,
                 source: "Database".to_string(),
             });
-        }
-    }
-
-    // 2. Vault Directory ~/.tq/automa/workflows
-    let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-    let config_vault = PathBuf::from(&config.data_dir).join("workflows");
-
-    for vdir in &[vault, config_vault] {
-        if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
-            while let Ok(Some(entry)) = entries.next_entry().await {
-                let path = entry.path();
-                if path.is_file()
-                    && path.extension().map(|e| e == "json").unwrap_or(false)
-                    && let Ok(content) = tokio::fs::read_to_string(&path).await
-                    && let Ok(val) = serde_json::from_str::<Value>(&content)
-                {
-                    let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("wf");
-                    let id = val
-                        .get("id")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| stem.trim_end_matches(".workflow").to_string());
-                    let name = val
-                        .get("name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| id.clone());
-                    let desc = val
-                        .get("description")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-
-                    if let Some(ref q) = search {
-                        let q_lower = q.to_lowercase();
-                        if !id.to_lowercase().contains(&q_lower)
-                            && !name.to_lowercase().contains(&q_lower)
-                            && !desc.to_lowercase().contains(&q_lower)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if seen_ids.contains(&id) {
-                        if let Some(item) = workflows.iter_mut().find(|w| w.id == id) {
-                            item.source = "Database+Vault".to_string();
-                        }
-                        continue;
-                    }
-
-                    seen_ids.insert(id.clone());
-                    let version = val
-                        .get("version")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("1.0.0")
-                        .to_string();
-                    let blocks_count = count_workflow_blocks(&val);
-
-                    workflows.push(WfSummary {
-                        id,
-                        name,
-                        description: desc,
-                        version,
-                        blocks_count,
-                        source: "Vault".to_string(),
-                    });
-                }
-            }
         }
     }
 
@@ -221,7 +151,7 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
     let config = AppConfig::load();
 
     // Check DB
-    let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
         && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
@@ -229,28 +159,8 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
         return Ok((wf.data, format!("Database (ID: {})", wf.id)));
     }
 
-    // Check Vault
-    let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-    let config_vault = PathBuf::from(&config.data_dir).join("workflows");
-
-    let candidates = [
-        vault.join(format!("{}.workflow.json", target)),
-        vault.join(format!("{}.json", target)),
-        config_vault.join(format!("{}.workflow.json", target)),
-        config_vault.join(format!("{}.json", target)),
-    ];
-
-    for c in &candidates {
-        if c.exists()
-            && c.is_file()
-            && let Ok(text) = tokio::fs::read_to_string(c).await
-        {
-            return Ok((text, format!("Vault: {}", c.display())));
-        }
-    }
-
     Err(format!(
-        "Workflow '{}' not found in file system, database, or vault.",
+        "Workflow '{}' not found in database.",
         target
     ))
 }

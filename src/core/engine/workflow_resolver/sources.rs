@@ -107,7 +107,7 @@ pub async fn find_in_database(
 
     // Step 2: Check persistent SQLite database
     let persistent_config = crate::config::AppConfig::load();
-    let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join("automa.sqlite");
+    let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if persistent_db_path.exists()
         && let Ok(pdb) = AutomaDb::new(&persistent_db_path)
     {
@@ -116,58 +116,6 @@ pub async fn find_in_database(
             .get_workflow_by_id_or_name(wf_id)
             .ok()
             .flatten();
-    }
-
-    None
-}
-
-pub async fn find_in_vaults(wf_id: &str, data_dir: &str) -> Option<ResolvedWorkflow> {
-    let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-    let local_vault = PathBuf::from(data_dir).join("workflows");
-
-    let mut vault_dirs = vec![vault];
-    if !vault_dirs.contains(&local_vault) {
-        vault_dirs.push(local_vault);
-    }
-
-    let mut candidates = Vec::new();
-    for vdir in &vault_dirs {
-        candidates.push(vdir.join(format!("{}.workflow.json", wf_id)));
-        candidates.push(vdir.join(format!("{}.json", wf_id)));
-        candidates.push(vdir.join(wf_id));
-    }
-    candidates.push(PathBuf::from(data_dir).join(format!("{}.workflow.json", wf_id)));
-    candidates.push(PathBuf::from(data_dir).join(format!("{}.json", wf_id)));
-    candidates.push(PathBuf::from(wf_id));
-
-    for c in &candidates {
-        if c.exists() && c.is_file() {
-            if let Ok(res) = read_and_validate_file(c).await {
-                return Some(res);
-            }
-        }
-    }
-
-    // Case-insensitive / slug search in vaults
-    let target_lower = wf_id.to_lowercase();
-    for vdir in &vault_dirs {
-        if let Ok(mut entries) = tokio::fs::read_dir(vdir).await {
-            while let Ok(Some(entry)) = entries.next_entry().await {
-                let path = entry.path();
-                if path.is_file()
-                    && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
-                {
-                    let stem_clean = stem.trim_end_matches(".workflow");
-                    if stem_clean.eq_ignore_ascii_case(&target_lower)
-                        || stem.eq_ignore_ascii_case(&target_lower)
-                    {
-                        if let Ok(res) = read_and_validate_file(&path).await {
-                            return Some(res);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     None

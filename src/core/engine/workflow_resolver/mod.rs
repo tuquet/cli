@@ -158,20 +158,30 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resolve_vault_file_via_id() {
+    async fn test_resolve_db_file_via_id() {
         let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
         let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
-        let vault_dir = temp_dir.join("workflows");
-        let _ = tokio::fs::create_dir_all(&vault_dir).await;
+        let _ = tokio::fs::create_dir_all(&temp_dir).await;
 
-        // Place a workflow file inside vault_dir
-        let vault_file = vault_dir.join("daily_checkin.workflow.json");
-        let file_content = r#"{"name":"Daily Checkin Flow","nodes":[]}"#;
-        tokio::fs::write(&vault_file, file_content).await.unwrap();
+        // Create workflow inside database
+        {
+            let guard = db.lock().await;
+            guard
+                .workflows()
+                .create_workflow(
+                    "daily_checkin",
+                    "Daily Checkin Flow",
+                    None,
+                    r#"{"name":"Daily Checkin Flow","nodes":[]}"#,
+                    Some("1.0.0"),
+                    None,
+                )
+                .unwrap();
+        }
 
         // Resolve by ID "daily_checkin"
         let res = WorkflowResolver::resolve(
-            "job_vault",
+            "job_db",
             &temp_dir.to_string_lossy(),
             None,
             Some("daily_checkin"),

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use super::sources::{
-    find_in_database, find_in_vaults, read_and_validate_file, resolve_by_path, resolve_inline_data,
+    find_in_database, read_and_validate_file, resolve_by_path, resolve_inline_data,
 };
 use super::types::{ResolvedWorkflow, WorkflowResolveError};
 use super::validator::{sanitize_workflow_data, validate_workflow_structure};
@@ -114,12 +114,7 @@ impl WorkflowResolver {
             });
         }
 
-        // Step 3 & 4: Vault resolution
-        if let Some(resolved) = find_in_vaults(wf_id, data_dir).await {
-            return Ok(resolved);
-        }
-
-        // Step 5: Check fallback path if provided
+        // Step 3: Check fallback path if provided
         if let Some(wp) = fallback_path
             && let Ok(canon) = tokio::fs::canonicalize(wp).await
             && canon.is_file()
@@ -128,7 +123,7 @@ impl WorkflowResolver {
         }
 
         Err(WorkflowResolveError::NotFound(format!(
-            "Workflow '{}' not found in database or vault (~/.tq/automa/workflows/). Use 'tq automa workflow list' to view available workflows.",
+            "Workflow '{}' not found in database. Use 'tq automation workflow list' to view available workflows.",
             wf_id
         )))
     }

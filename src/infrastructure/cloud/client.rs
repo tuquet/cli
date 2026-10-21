@@ -82,7 +82,7 @@ impl CloudApiClient {
             "p_os_info": os_info,
             "p_cpu_cores": cpu_cores,
             "p_ram_mb": ram_mb,
-            "p_capabilities": ["chromium", "automa", "gui", "worker", "runner"],
+            "p_capabilities": ["chromium", "automa", "gui", "worker"],
             "p_metadata": metadata,
             "p_enrollment_token": enrollment_token
         });

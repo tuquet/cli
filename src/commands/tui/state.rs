@@ -240,26 +240,22 @@ impl TuiState {
             _ => false,
         };
 
-        let vault_dir = crate::config::AutomaConfig::load().resolved_vault_dir();
-        let workflow_count = std::fs::read_dir(&vault_dir)
-            .map(|entries| {
-                entries
-                    .flatten()
-                    .filter(|e| e.path().extension().is_some_and(|ext| ext == "json"))
-                    .count()
-            })
-            .unwrap_or(0);
-
         let db_path = std::path::PathBuf::from(&config.data_dir)
-            .join(crate::constants::FILE_AUTOMA_SQLITE);
-        let db_size_str = if db_path.exists() {
-            if let Ok(meta) = std::fs::metadata(&db_path) {
+            .join(crate::constants::FILE_AUTOMATION_SQLITE);
+        let (db_size_str, workflow_count) = if db_path.exists() {
+            let size_str = if let Ok(meta) = std::fs::metadata(&db_path) {
                 format!("{:.2} KB", meta.len() as f64 / 1024.0)
             } else {
                 "Present".to_string()
-            }
+            };
+            let count = if let Ok(db) = crate::infrastructure::db::AutomaDb::new(&db_path) {
+                db.workflows().get_workflows(None, None, None).map(|w| w.len()).unwrap_or(0)
+            } else {
+                0
+            };
+            (size_str, count)
         } else {
-            "Not initialized".to_string()
+            ("Not initialized".to_string(), 0)
         };
 
         self.runner = RunnerState {

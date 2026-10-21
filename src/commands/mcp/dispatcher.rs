@@ -19,7 +19,7 @@ pub async fn handle_tools_call(id: Option<Value>, params: Option<Value>) -> Json
         "workflow_list" => workflow::execute_workflow_list(&arguments).await,
         "workflow_inspect" => workflow::execute_workflow_inspect(&arguments).await,
         "workflow_run" => workflow::execute_workflow_run(&arguments).await,
-        "runner_probe" => runner::execute_runner_probe().await,
+        "worker_probe" => runner::execute_runner_probe().await,
         "cloud_whoami" => status::execute_cloud_whoami().await,
         "browser_status" => status::execute_browser_status().await,
         "tree" => tree::execute_tree(&arguments).await,

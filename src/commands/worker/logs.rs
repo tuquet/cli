@@ -5,12 +5,12 @@ pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::er
     let config = AppConfig::load();
     let log_file = get_log_file_path(&config.data_dir);
     if !log_file.exists() {
-        let mut card = crate::ui::Card::new("RUNNER");
+        let mut card = crate::ui::Card::new("WORKER");
         card.with_badge(crate::ui::badge_warn("NO LOGS FOUND"));
         card.with_min_width(64);
         card.add_kv("Expected Log File", log_file.display().to_string());
         card.add_line("Daemon has not written any background logs yet.");
-        card.with_footer("Start daemon in background with 'tq runner start -d'");
+        card.with_footer("Start daemon in background with 'tq worker start -d'");
         println!();
         card.print();
         println!();
@@ -21,7 +21,7 @@ pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::er
     let all_lines: Vec<&str> = content.lines().collect();
     let start_idx = all_lines.len().saturating_sub(lines);
 
-    println!("\x1b[1;36m╭─ RUNNER LOGS ({}) ─\x1b[0m", log_file.display());
+    println!("\x1b[1;36m╭─ WORKER LOGS ({}) ─\x1b[0m", log_file.display());
     for line in &all_lines[start_idx..] {
         println!("│ {}", line);
     }

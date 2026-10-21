@@ -154,7 +154,7 @@ impl TuiView {
             stdout,
             width,
             &format!(
-                "  Vault Workflows     : {} workflow definitions",
+                "  Database Workflows  : {} workflow definitions",
                 state.runner.workflow_count
             ),
         )?;
@@ -175,11 +175,11 @@ impl TuiView {
         count += 1;
         Self::print_box_line(stdout, width, "  • 'r' / 'R'         : Refresh live runner & workflow state")?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq workflow run   : Execute automation workflow directly")?;
+        Self::print_box_line(stdout, width, "  • tq automation run : Execute automation workflow directly")?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq workflow list  : List all workflows stored in SQLite vault")?;
+        Self::print_box_line(stdout, width, "  • tq automation list: List all workflows stored in local database")?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq runner start   : Start background runner daemon worker")?;
+        Self::print_box_line(stdout, width, "  • tq worker start   : Start background worker daemon")?;
         count += 1;
         Ok(count)
     }

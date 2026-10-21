@@ -247,8 +247,8 @@ pub fn check_storage_pillars() -> Table {
         ),
         (
             crate::constants::PILLAR_AUTOMA,
-            "tuquet/automa (Web Studio)",
-            "Workflow DAG definitions, SQLite DB (automa.sqlite)",
+            "tuquet/automation",
+            "Workflow definitions, SQLite DB (automation.sqlite)",
         ),
         (
             crate::constants::PILLAR_BROWSER,

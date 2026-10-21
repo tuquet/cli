@@ -15,13 +15,13 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                 format!("File: {}", target_path.display()),
             )
         } else {
-            // Try resolving from DB or Vault
+            // Resolve workflow definition from SQLite database (automation.sqlite)
             let config = AppConfig::load();
             let mut resolved = None;
 
             // Check SQLite DB
             let db_path =
-                PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
+                PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
             if db_path.exists()
                 && let Ok(db) = AutomaDb::new(&db_path)
                 && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
@@ -29,35 +29,11 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                 resolved = Some((wf.data, format!("Database (ID: {})", wf.id)));
             }
 
-            // Check Vault
-            if resolved.is_none() {
-                let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-                let config_vault =
-                    PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
-
-                let candidates = [
-                    vault.join(format!("{}.workflow.json", target)),
-                    vault.join(format!("{}.json", target)),
-                    config_vault.join(format!("{}.workflow.json", target)),
-                    config_vault.join(format!("{}.json", target)),
-                ];
-
-                for c in &candidates {
-                    if c.exists()
-                        && c.is_file()
-                        && let Ok(text) = std::fs::read_to_string(c)
-                    {
-                        resolved = Some((text, format!("Vault File: {}", c.display())));
-                        break;
-                    }
-                }
-            }
-
             match resolved {
                 Some(r) => r,
                 None => {
                     return Err(format!(
-                        "Workflow file or ID '{}' not found in file system, database, or vault.",
+                        "Workflow file or ID '{}' not found in database.",
                         target
                     )
                     .into());

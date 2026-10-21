@@ -6,8 +6,6 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutomaConfig {
-    #[serde(default)]
-    pub vault_dir: Option<String>,
     #[serde(default = "default_timeout")]
     pub default_timeout_secs: u64,
     #[serde(default = "default_browser")]
@@ -40,7 +38,6 @@ impl Default for AutomaConfig {
         let mut variables = HashMap::new();
         variables.insert("BASE_URL".to_string(), "https://example.com".to_string());
         Self {
-            vault_dir: None,
             default_timeout_secs: default_timeout(),
             default_browser: default_browser(),
             default_headless: false,
@@ -82,15 +79,6 @@ impl AutomaConfig {
         fs::write(path, json_str)?;
         Ok(())
     }
-
-    pub fn resolved_vault_dir(&self) -> PathBuf {
-        if let Some(ref custom) = self.vault_dir {
-            let expanded = EnvExpander::expand(custom);
-            PathBuf::from(expanded)
-        } else {
-            canonical_dir().join("automa").join("workflows")
-        }
-    }
 }
 
 #[cfg(test)]
@@ -103,11 +91,5 @@ mod tests {
         assert_eq!(config.default_timeout_secs, 300);
         assert_eq!(config.studio_port, 8765);
         assert!(config.auto_backup);
-        assert!(
-            config
-                .resolved_vault_dir()
-                .to_string_lossy()
-                .contains("automa")
-        );
     }
 }

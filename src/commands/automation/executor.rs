@@ -19,11 +19,7 @@ pub async fn run_workflow(
         .map(std::time::Duration::from_secs)
         .unwrap_or(std::time::Duration::from_secs(300));
     let mut config = AppConfig::load();
-    let data_dir = std::env::temp_dir().join(format!("automa_run_{}", uuid::Uuid::new_v4()));
-    let _ = std::fs::create_dir_all(&data_dir);
-    config.data_dir = data_dir.to_string_lossy().to_string();
-
-    let db_path = data_dir.join("automa_run.sqlite");
+    let db_path = std::path::PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
@@ -172,17 +168,6 @@ pub async fn run_workflow(
 
     // Explicitly drop state to release SQLite file handles
     drop(state);
-
-    #[cfg(target_os = "windows")]
-    tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
-
-    // Cleanup ephemeral data directory with retry
-    for _ in 0..5 {
-        if std::fs::remove_dir_all(&data_dir).is_ok() {
-            break;
-        }
-        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
-    }
 
     match execution_result {
         Ok(_) => {

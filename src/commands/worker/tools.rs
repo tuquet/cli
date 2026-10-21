@@ -3,7 +3,7 @@ use std::path::Path;
 pub fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
     let manifest = serde_json::json!({
         "protocol": crate::constants::PROTOCOL_AUTOMA_V1,
-        "name": "runner",
+        "name": "worker",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",
         "status": "ready",
@@ -14,7 +14,7 @@ pub fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
             "headless",
             "automation:workflow_graph"
         ],
-        "plugin_type": "runner_driver"
+        "plugin_type": "worker_driver"
     });
     println!("{}", serde_json::to_string(&manifest)?);
     Ok(())

@@ -24,8 +24,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     let dirs = [
         root.join("bin"),
         root.join(crate::constants::PILLAR_SYSTEM),
-        root.join(crate::constants::PILLAR_AUTOMA)
-            .join(crate::constants::DIR_WORKFLOWS),
+        root.join(crate::constants::PILLAR_AUTOMA),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES),
         root.join(crate::constants::PILLAR_BROWSER)
@@ -185,7 +184,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     card.with_badge(badge_online("READY"));
     card.with_min_width(68);
     card.add_kv("SSOT Root", root.display().to_string());
-    card.add_kv("SQLite Database", "automa.sqlite (Schema initialized)");
+    card.add_kv("SQLite Database", "automation.sqlite (Schema initialized)");
     card.add_kv(
         "MCP Agent Protocol",
         "tq stdio server registered (~/.gemini/config/mcp_config.json)",

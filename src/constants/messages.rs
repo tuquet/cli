@@ -2,14 +2,14 @@
 //! Single Source of Truth for system feedback, errors, and lifecycle events.
 
 /// Daemon & Server lifecycle messages
-pub const MSG_SERVER_STARTING: &str = "Starting API & Runner Daemon...";
-pub const MSG_SERVER_STOPPING: &str = "Stopping existing runner daemon...";
-pub const MSG_SERVER_STOPPED: &str = "Runner worker daemon has been gracefully terminated.";
-pub const MSG_SERVER_RESTARTING: &str = "Restarting runner daemon...";
+pub const MSG_SERVER_STARTING: &str = "Starting API & Worker Daemon...";
+pub const MSG_SERVER_STOPPING: &str = "Stopping existing worker daemon...";
+pub const MSG_SERVER_STOPPED: &str = "Worker daemon has been gracefully terminated.";
+pub const MSG_SERVER_RESTARTING: &str = "Restarting worker daemon...";
 pub const MSG_SHUTDOWN_SIGNAL: &str =
     "Received termination signal (Ctrl+C). Initiating graceful shutdown...";
-pub const MSG_SHUTDOWN_CLEAN: &str = "Runner worker daemon exited cleanly.";
-pub const MSG_DAEMON_NO_PROCESS: &str = "No active runner daemon process found on this machine.";
+pub const MSG_SHUTDOWN_CLEAN: &str = "Worker daemon exited cleanly.";
+pub const MSG_DAEMON_NO_PROCESS: &str = "No active worker daemon process found on this machine.";
 
 /// Job execution messages
 pub const MSG_JOB_RUNNING: &str = "Executing job specification...";
@@ -38,4 +38,4 @@ pub const MSG_BROWSER_CLEANUP_OK: &str = "All browser child processes cleanly te
 pub const MSG_DB_INITIALIZED: &str = "Automa SQLite database initialized successfully.";
 pub const MSG_PILLARS_INITIALIZED: &str = "Canonical storage pillars initialized under ~/.tq/";
 pub const MSG_WORKFLOW_EXPORTED: &str = "Workflow exported successfully.";
-pub const MSG_WORKFLOW_NOT_FOUND: &str = "Workflow file or ID not found in database or vault.";
+pub const MSG_WORKFLOW_NOT_FOUND: &str = "Workflow ID not found in database.";

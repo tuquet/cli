@@ -10,16 +10,16 @@ use crate::config::AppConfig;
 use crate::infrastructure::db::AutomaDb;
 
 pub fn get_pid_file_path(data_dir: &str) -> PathBuf {
-    Path::new(data_dir).join(crate::constants::FILE_RUNNER_PID)
+    Path::new(data_dir).join(crate::constants::FILE_WORKER_PID)
 }
 
 pub fn get_log_file_path(data_dir: &str) -> PathBuf {
     Path::new(data_dir)
         .join(crate::constants::DIR_LOGS)
-        .join(crate::constants::FILE_RUNNER_LOG)
+        .join(crate::constants::FILE_WORKER_LOG)
 }
 
-pub fn is_valid_runner_name(raw_name: &str) -> bool {
+pub fn is_valid_worker_name(raw_name: &str) -> bool {
     let name = raw_name.trim().to_lowercase();
     let base = name.strip_suffix(".exe").unwrap_or(&name);
     base == "tq"
@@ -102,11 +102,11 @@ pub async fn check_status(
                     ),
                 ];
                 let card = crate::ui::create_tabular_card(
-                    "RUNNER WORKER ENGINE",
+                    "WORKER ENGINE",
                     Some(crate::ui::badge_error(&format!("HTTP {}", res.status()))),
                     ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
                     &rows,
-                    Some("Server responded with error status. Inspect runner logs."),
+                    Some("Server responded with error status. Inspect worker logs."),
                     72,
                 );
                 println!();
@@ -136,11 +136,11 @@ pub async fn check_status(
                     ),
                 ];
                 let card = crate::ui::create_tabular_card(
-                    "RUNNER WORKER ENGINE",
+                    "WORKER ENGINE",
                     Some(crate::ui::badge_offline("OFFLINE")),
                     ["COMPONENT", "ENDPOINT / ROUTE", "ROLE / DETAILS", "STATUS"],
                     &rows,
-                    Some("Start local daemon with 'tq runner start -d'"),
+                    Some("Start local daemon with 'tq worker start -d'"),
                     72,
                 );
                 println!();
@@ -175,14 +175,14 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
             continue;
         }
         let name = proc.name().to_string_lossy();
-        if is_valid_runner_name(&name) {
+        if is_valid_worker_name(&name) {
             let cmd = proc
                 .cmd()
                 .iter()
                 .map(|s| s.to_string_lossy())
                 .collect::<Vec<_>>()
                 .join(" ");
-            if cmd.contains("runner") && cmd.contains("start") && !found_pids.contains(&p_u32) {
+            if (cmd.contains("worker") || cmd.contains("tuquet")) && cmd.contains("start") && !found_pids.contains(&p_u32) {
                 found_pids.push(p_u32);
             }
         }
@@ -232,7 +232,7 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
         };
 
         let raw_name = proc.name().to_string_lossy();
-        if !is_valid_runner_name(&raw_name) {
+        if !is_valid_worker_name(&raw_name) {
             tracing::warn!(
                 "Stale PID {} detected: process name '{}' does not match tq. Skipping kill.",
                 pid,
@@ -328,7 +328,7 @@ pub async fn run_server(
             let _ = std::fs::create_dir_all(parent);
         }
         let exe = std::env::current_exe()?;
-        let mut args = vec!["runner".to_string(), "start".to_string()];
+        let mut args = vec!["worker".to_string(), "start".to_string()];
         if cloud {
             args.push("-c".to_string());
         }
@@ -374,11 +374,11 @@ pub async fn run_server(
 
         tokio::time::sleep(std::time::Duration::from_millis(600)).await;
 
-        let mut card = crate::ui::Card::new("RUNNER");
+        let mut card = crate::ui::Card::new("WORKER");
         card.with_badge(crate::ui::badge_online("STARTED (DETACHED)"));
         card.with_min_width(64);
         let mode_desc = if cloud {
-            "Background Cloud Fleet Mesh Worker (Detached)"
+            "Background Cloud Worker (Detached)"
         } else {
             "Background Daemon (Detached)"
         };
@@ -389,7 +389,7 @@ pub async fn run_server(
             format!("http://{}:{}", config.server_host, config.server_port),
         );
         card.add_kv("Log File", log_file_path.display().to_string());
-        card.with_footer("Stop daemon with 'tq runner stop'");
+        card.with_footer("Stop daemon with 'tq worker stop'");
         println!();
         card.print();
         println!();
@@ -417,7 +417,7 @@ pub async fn run_server(
     let pid_file_path = get_pid_file_path(&config.data_dir);
     let _ = std::fs::write(&pid_file_path, pid.to_string());
 
-    let db_path = Path::new(&config.data_dir).join("automa.sqlite");
+    let db_path = Path::new(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
 
     let (tx, _) = tokio::sync::broadcast::channel(10000);

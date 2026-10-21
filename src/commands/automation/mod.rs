@@ -3,14 +3,14 @@ pub mod executor;
 pub mod inspector;
 pub mod studio;
 pub mod table;
-pub mod vault;
+pub mod store;
 
 pub use config::manage_config;
 pub use executor::run_workflow;
 pub use inspector::inspect_workflow;
 pub use studio::open_studio;
 pub use table::list_workflows;
-pub use vault::{delete_workflow, export_workflow, import_workflow};
+pub use store::{delete_workflow, export_workflow, import_workflow};
 
 use crate::cli::{AutomaSubcommands, WorkflowCommands};
 
@@ -66,12 +66,9 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
             }
         }
         AutomaSubcommands::Workflow { command } => match command {
-            WorkflowCommands::List {
-                search,
-                db_only,
-                vault_only,
-                format,
-            } => list_workflows(search, db_only, vault_only, format.resolve()).await,
+            WorkflowCommands::List { search, format } => {
+                list_workflows(search, format.resolve()).await
+            }
             WorkflowCommands::Import {
                 file,
                 id,
@@ -80,7 +77,7 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
             } => import_workflow(file, id, name, description).await,
             WorkflowCommands::Export { id, output } => export_workflow(id, output).await,
             WorkflowCommands::Info { id } => inspect_workflow(&id),
-            WorkflowCommands::Delete { id, vault } => delete_workflow(id, vault).await,
+            WorkflowCommands::Delete { id } => delete_workflow(id).await,
         },
         AutomaSubcommands::Inspect { workflow } => inspect_workflow(&workflow),
         AutomaSubcommands::Studio => open_studio(),
@@ -93,7 +90,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
     use crate::ui::prompt::{ClackOption, clack_cancel, clack_intro, clack_select, clack_text};
 
     if !crate::ui::is_interactive_tty() {
-        return list_workflows(None, false, false, crate::ui::OutputFormat::Json).await;
+        return list_workflows(None, crate::ui::OutputFormat::Json).await;
     }
 
     clack_intro("tq automa", "Automa Workflow Engine");
@@ -101,7 +98,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
     let options = vec![
         ClackOption::new(
             "List Workflows",
-            "Browse all workflows in SQLite & ~/.tq/automa/workflows/",
+            "Browse all workflows in SQLite database",
             "list",
         ),
         ClackOption::new(
@@ -132,7 +129,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     match idx {
-        0 => list_workflows(None, false, false, crate::ui::OutputFormat::Card).await,
+        0 => list_workflows(None, crate::ui::OutputFormat::Card).await,
         1 => {
             let Some(wf) = clack_text("Workflow name or ID:", None, None)? else {
                 clack_cancel("Cancelled.");

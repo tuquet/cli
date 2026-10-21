@@ -1,5 +1,6 @@
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
+use crate::infrastructure::db::AutomaDb;
 use crate::ui::{
     OutputFormat, TabularRow, badge_offline, badge_online, badge_warn,
     create_network_topology_card, create_tabular_card, default_workstation_endpoints, respond_with,
@@ -105,25 +106,21 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         _ => false,
     };
 
-    let vault_dir = crate::config::AutomaConfig::load().resolved_vault_dir();
-    let workflow_count = std::fs::read_dir(&vault_dir)
-        .map(|entries| {
-            entries
-                .flatten()
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "json"))
-                .count()
-        })
-        .unwrap_or(0);
-
-    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
-    let db_size_str = if db_path.exists() {
-        if let Ok(meta) = std::fs::metadata(&db_path) {
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
+    let (db_size_str, workflow_count) = if db_path.exists() {
+        let size_str = if let Ok(meta) = std::fs::metadata(&db_path) {
             format!("{:.2} KB", meta.len() as f64 / 1024.0)
         } else {
             "Present".to_string()
-        }
+        };
+        let count = if let Ok(db) = AutomaDb::new(&db_path) {
+            db.workflows().get_workflows(None, None, None).map(|w| w.len()).unwrap_or(0)
+        } else {
+            0
+        };
+        (size_str, count)
     } else {
-        "Not initialized".to_string()
+        ("Not initialized".to_string(), 0)
     };
 
     let daemon_status = if daemon_running {
@@ -140,7 +137,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ),
         TabularRow::new(
             "SQLite State",
-            format!("automa.sqlite ({})", db_size_str),
+            format!("{} ({})", crate::constants::FILE_AUTOMATION_SQLITE, db_size_str),
             "Workflow & Job DB",
             if db_path.exists() {
                 badge_online("READY")
@@ -149,10 +146,14 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
             },
         ),
         TabularRow::new(
-            "Vault DAGs",
+            "Workflows",
             format!("{} workflow(s)", workflow_count),
-            "JSON Workflow Vault",
-            badge_online("READY"),
+            "SQLite Stored Workflows",
+            if db_path.exists() {
+                badge_online("READY")
+            } else {
+                badge_offline("STANDBY")
+            },
         ),
     ];
 

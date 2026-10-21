@@ -76,7 +76,7 @@ pub async fn import_workflow(
     let config = AppConfig::load();
     let db_dir = PathBuf::from(&config.data_dir);
     tokio::fs::create_dir_all(&db_dir).await?;
-    let db_path = db_dir.join("automa.sqlite");
+    let db_path = db_dir.join(crate::constants::FILE_AUTOMATION_SQLITE);
 
     let db = AutomaDb::new(&db_path)?;
     db.workflows().create_workflow(
@@ -87,12 +87,6 @@ pub async fn import_workflow(
         Some(&version),
         icon.as_deref(),
     )?;
-
-    // Also copy to Vault ~/.tq/automa/workflows/
-    let vault_dir = crate::config::AutomaConfig::load().resolved_vault_dir();
-    let _ = tokio::fs::create_dir_all(&vault_dir).await;
-    let vault_file = vault_dir.join(format!("{}.workflow.json", id));
-    tokio::fs::write(&vault_file, &serialized).await?;
 
     let block_count = val
         .get("nodes")
@@ -113,11 +107,10 @@ pub async fn import_workflow(
         crate::ui::Notify::key_val("Description", d);
     }
     crate::ui::Notify::key_val("Blocks", block_count);
-    crate::ui::Notify::key_val("Vault File", vault_file.display());
     crate::ui::Notify::key_val("Database", db_path.display());
     crate::ui::Notify::divider();
     println!(" 💡 Ready to execute:");
-    println!("    tq automa run {} --headless", id);
+    println!("    tq automation run {} --headless", id);
     crate::ui::Notify::divider();
 
     Ok(())
@@ -130,8 +123,8 @@ pub async fn export_workflow(
     let config = AppConfig::load();
     let mut workflow_json: Option<String> = None;
 
-    // 1. Check persistent SQLite DB
-    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMA_SQLITE);
+    // Check persistent SQLite DB
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
         && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id)
@@ -139,33 +132,10 @@ pub async fn export_workflow(
         workflow_json = Some(wf.data);
     }
 
-    // 2. Check Vault
-    if workflow_json.is_none() {
-        let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-        let config_vault = PathBuf::from(&config.data_dir).join(crate::constants::DIR_WORKFLOWS);
-
-        let candidates = [
-            vault.join(format!("{}.workflow.json", id)),
-            vault.join(format!("{}.json", id)),
-            config_vault.join(format!("{}.workflow.json", id)),
-            config_vault.join(format!("{}.json", id)),
-        ];
-
-        for c in &candidates {
-            if c.exists()
-                && c.is_file()
-                && let Ok(content) = tokio::fs::read_to_string(c).await
-            {
-                workflow_json = Some(content);
-                break;
-            }
-        }
-    }
-
     let raw_data = match workflow_json {
         Some(d) => d,
         None => {
-            return Err(format!("Workflow '{}' not found in database or vault.", id).into());
+            return Err(format!("Workflow '{}' not found in database.", id).into());
         }
     };
 
@@ -190,14 +160,12 @@ pub async fn export_workflow(
 
 pub async fn delete_workflow(
     id: String,
-    delete_from_vault: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = AppConfig::load();
     let mut deleted_db = false;
-    let mut deleted_vault = false;
 
-    // 1. Delete from SQLite DB
-    let db_path = PathBuf::from(&config.data_dir).join("automa.sqlite");
+    // Delete from SQLite DB
+    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
         && let Ok(db) = AutomaDb::new(&db_path)
         && let Ok(res) = db.workflows().delete_workflow(&id)
@@ -205,33 +173,14 @@ pub async fn delete_workflow(
         deleted_db = res;
     }
 
-    // 2. Delete from Vault if requested
-    if delete_from_vault {
-        let vault = crate::config::AutomaConfig::load().resolved_vault_dir();
-        let config_vault = PathBuf::from(&config.data_dir).join("workflows");
-
-        let candidates = [
-            vault.join(format!("{}.workflow.json", id)),
-            vault.join(format!("{}.json", id)),
-            config_vault.join(format!("{}.workflow.json", id)),
-            config_vault.join(format!("{}.json", id)),
-        ];
-
-        for c in &candidates {
-            if c.exists() && c.is_file() && tokio::fs::remove_file(c).await.is_ok() {
-                deleted_vault = true;
-            }
-        }
-    }
-
-    if deleted_db || deleted_vault {
+    if deleted_db {
         crate::ui::Notify::success(format!(
-            "Workflow '{}' deleted successfully (Database: {}, Vault: {}).",
-            id, deleted_db, deleted_vault
+            "Workflow '{}' deleted successfully from database.",
+            id
         ));
     } else {
         crate::ui::Notify::warn(format!(
-            "Workflow '{}' was not found in database or vault.",
+            "Workflow '{}' was not found in database.",
             id
         ));
     }

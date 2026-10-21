@@ -23,7 +23,7 @@ pub async fn execute_status() -> Result<String, String> {
         })
     };
 
-    // 2. Runner Daemon
+    // 2. Worker Daemon
     let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| config.server_port.to_string());
     let daemon_url = format!("http://{}:{}", host, port);
@@ -34,13 +34,13 @@ pub async fn execute_status() -> Result<String, String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    let runner_online = match client.get(&health_url).send().await {
+    let worker_online = match client.get(&health_url).send().await {
         Ok(res) => res.status().is_success(),
         Err(_) => false,
     };
 
-    let runner_info = json!({
-        "online": runner_online,
+    let worker_info = json!({
+        "online": worker_online,
         "endpoint": daemon_url,
         "port": port
     });
@@ -58,7 +58,7 @@ pub async fn execute_status() -> Result<String, String> {
     let result = json!({
         "ecosystem": "tuquet",
         "cloud": cloud_info,
-        "runner": runner_info,
+        "worker": worker_info,
         "browser": browser_info
     });
 

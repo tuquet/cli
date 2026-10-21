@@ -298,7 +298,7 @@ impl CloudFleetOrchestrator {
                     badge_error("AUTH ERROR")
                 );
                 eprintln!(
-                    "Run 'tq runner enroll' or login to configure device credentials.\n"
+                    "Run 'tq worker enroll' or login to configure device credentials.\n"
                 );
                 return Err("Missing cloud device credentials".into());
             }

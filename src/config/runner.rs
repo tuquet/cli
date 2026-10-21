@@ -53,9 +53,9 @@ impl Default for RunnerConfig {
 
 impl RunnerConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_dir().join(crate::constants::PILLAR_AUTOMA);
+        let dir = canonical_dir().join(crate::constants::PILLAR_WORKER);
         let _ = fs::create_dir_all(&dir);
-        dir.join(crate::constants::FILE_RUNNER_JSON)
+        dir.join(crate::constants::FILE_WORKER_JSON)
     }
 
     pub fn load() -> Self {

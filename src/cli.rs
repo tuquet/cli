@@ -69,7 +69,6 @@ pub enum Commands {
     Mcp,
 }
 
-pub type WorkerSubcommands = RunnerSubcommands;
 pub type AutomationSubcommands = AutomaSubcommands;
 pub type GatewaySubcommands = BridgeSubcommands;
 
@@ -509,7 +508,7 @@ pub enum AutomaSubcommands {
         safe: bool,
     },
 
-    /// Manage stored workflows in local database and vault
+    /// Manage stored workflows in local SQLite database
     #[command(name = "workflow")]
     Workflow {
         #[command(subcommand)]
@@ -547,7 +546,7 @@ pub enum AutomaSubcommands {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum RunnerSubcommands {
+pub enum WorkerSubcommands {
     /// Start the runner daemon and cloud worker
     #[command(name = "start")]
     Start {
@@ -1273,26 +1272,18 @@ pub enum ExtCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum WorkflowCommands {
-    /// List all workflows saved in database and vault
+    /// List all workflows saved in the local database
     #[command(name = "list")]
     List {
         /// Filter workflows by keyword (name, ID, or description)
         #[arg(short, long)]
         search: Option<String>,
 
-        /// Only list workflows from SQLite database
-        #[arg(long)]
-        db_only: bool,
-
-        /// Only list workflows from Vault directory (~/.tq/automa/workflows)
-        #[arg(long)]
-        vault_only: bool,
-
         #[command(flatten)]
         format: crate::ui::FormatArgs,
     },
 
-    /// Import a workflow file (.json) into SQLite database and vault
+    /// Import a workflow file (.json) into the local database
     #[command(name = "import")]
     Import {
         /// Path to workflow JSON file (.workflow.json or .json)
@@ -1312,7 +1303,7 @@ pub enum WorkflowCommands {
         description: Option<String>,
     },
 
-    /// Export a workflow from database or vault to a JSON file
+    /// Export a workflow from the database to a JSON file
     Export {
         /// Workflow ID or Name to export
         #[arg(value_name = "WORKFLOW_ID")]
@@ -1331,16 +1322,12 @@ pub enum WorkflowCommands {
         id: String,
     },
 
-    /// Delete a workflow from database and vault
+    /// Delete a workflow from the database
     #[command(name = "delete")]
     Delete {
         /// Workflow ID to delete
         #[arg(value_name = "WORKFLOW_ID")]
         id: String,
-
-        /// Also delete from vault directory if present
-        #[arg(long, default_value_t = true)]
-        vault: bool,
     },
 }
 

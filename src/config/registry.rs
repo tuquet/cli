@@ -55,7 +55,7 @@ impl ConfigRegistry {
                 path: automa_path,
             },
             PillarConfigEntry {
-                pillar: crate::constants::PILLAR_RUNNER,
+                pillar: crate::constants::PILLAR_WORKER,
                 title: "Distributed Worker Daemon & Host Node",
                 exists: runner_path.exists(),
                 path: runner_path,
@@ -81,7 +81,7 @@ impl ConfigRegistry {
             "faker" | "user" | "persona" => Some(crate::constants::PILLAR_FAKER),
             "browser" | "chromium" | "chrome" => Some(crate::constants::PILLAR_BROWSER),
             "automa" | "workflow" => Some(crate::constants::PILLAR_AUTOMA),
-            "runner" | "worker" | "daemon" => Some(crate::constants::PILLAR_RUNNER),
+            "runner" | "worker" | "daemon" => Some(crate::constants::PILLAR_WORKER),
             "cloud" | "system" => Some(crate::constants::PILLAR_SYSTEM),
             "inbox" | "mail" | "otp" => Some(crate::constants::PILLAR_INBOX),
             _ => None,
@@ -94,7 +94,7 @@ impl ConfigRegistry {
             Some(crate::constants::PILLAR_FAKER) => Some(FakerConfig::config_path()),
             Some(crate::constants::PILLAR_BROWSER) => Some(BrowserConfig::config_path()),
             Some(crate::constants::PILLAR_AUTOMA) => Some(AutomaConfig::config_path()),
-            Some(crate::constants::PILLAR_RUNNER) => Some(RunnerConfig::config_path()),
+            Some(crate::constants::PILLAR_WORKER) => Some(RunnerConfig::config_path()),
             Some(crate::constants::PILLAR_SYSTEM) => Some(SystemConfig::config_path()),
             Some(crate::constants::PILLAR_INBOX) => Some(InboxConfig::config_path()),
             _ => None,
@@ -144,7 +144,7 @@ impl ConfigRegistry {
             Some(crate::constants::PILLAR_AUTOMA) => {
                 serde_json::to_value(crate::config::AutomaConfig::default()).unwrap_or_default()
             }
-            Some(crate::constants::PILLAR_RUNNER) => {
+            Some(crate::constants::PILLAR_WORKER) => {
                 serde_json::to_value(crate::config::RunnerConfig::default()).unwrap_or_default()
             }
             Some(crate::constants::PILLAR_SYSTEM) => {
