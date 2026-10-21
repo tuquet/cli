@@ -459,20 +459,20 @@ pub async fn handle_profile_cloud(
 
 pub async fn handle_profile_push(
     id: &str,
-    storage_url_opt: Option<&str>,
+    _storage_url_opt: Option<&str>,
     json: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let app_config = crate::config::AppConfig::load();
     let base_dir = crate::core::browser::resolve_data_dir();
 
-    // Load local profile
-    let profile = match crate::core::browser::BrowserProfile::load(id, &base_dir) {
+    // 1. Load local profile
+    let mut profile = match crate::core::browser::BrowserProfile::load(id, &base_dir) {
         Ok(p) => p,
         Err(_) => {
             let all = crate::core::browser::BrowserProfile::list_all(&base_dir)?;
             match all
                 .into_iter()
-                .find(|p| p.cloud_id.as_deref() == Some(id) || p.name == id)
+                .find(|p| p.cloud_id.as_deref() == Some(id) || p.name.eq_ignore_ascii_case(id))
             {
                 Some(p) => p,
                 None => {
@@ -488,76 +488,56 @@ pub async fn handle_profile_push(
         }
     };
 
-    // Pack profile into archive (.tar.zst) with cache sanitization
+    // 2. Pack profile into delta archive (.tar.zst) with cache sanitization
     let report = profile.pack(&base_dir, None)?;
 
-    // Resolve Storage Hub URL
-    let storage_base_url = storage_url_opt
-        .map(|s| s.to_string())
-        .or_else(|| std::env::var("SPECTER_STORAGE_URL").ok())
-        .unwrap_or_else(|| "http://127.0.0.1:8080".to_string());
-    let storage_base = storage_base_url.trim_end_matches('/');
-
-    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+    // 3. Load cloud credentials
+    let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
         &app_config.data_dir,
     )
-    .await;
-    let device_token = creds
-        .as_ref()
-        .map(|c| c.device_token.as_str())
-        .unwrap_or("local-token");
-    let device_id = creds
-        .as_ref()
-        .map(|c| c.device_id.as_str())
-        .unwrap_or("workstation");
+    .await
+    {
+        Some(c) => c,
+        None => {
+            let err = "Workstation not enrolled with Cloud fleet. Run 'tq auth login' first.";
+            if json {
+                println!("{}", serde_json::json!({ "success": false, "error": err }));
+            } else {
+                crate::ui::Notify::error(err);
+                eprintln!("Run 'tq auth login' to authenticate with your workspace.\n");
+            }
+            return Err(err.into());
+        }
+    };
+
+    let cloud_url = creds
+        .cloud_url
+        .as_deref()
+        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
+    let anon_key = creds
+        .api_key
+        .as_deref()
+        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let tenant_id = creds.tenant_id.as_deref().unwrap_or("default");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
-    // 1. Request presigned upload URL from Storage Hub
-    let presigned_endpoint = format!("{}/api/profiles/upload-url", storage_base);
-    let presigned_res = client
-        .post(&presigned_endpoint)
-        .header("X-Device-Token", device_token)
-        .header("X-Device-Id", device_id)
-        .header("X-Tenant-Id", "default")
-        .json(&serde_json::json!({
-            "profile_id": profile.id,
-            "name": profile.name,
-            "zip_size": report.compressed_bytes
-        }))
-        .send()
-        .await?;
+    // Storage object path: {tenant_id}/{profile_id}.tar.zst (tenant_id in front)
+    let storage_rel_path = format!("{}/{}.tar.zst", tenant_id, profile.id);
 
-    if !presigned_res.status().is_success() {
-        let err_body = presigned_res.text().await.unwrap_or_default();
-        let err_msg = format!(
-            "Failed to request Presigned URL from Storage Hub: {}",
-            err_body
-        );
-        if json {
-            println!(
-                "{}",
-                serde_json::json!({ "success": false, "error": err_msg })
-            );
-        } else {
-            crate::ui::Notify::error(&err_msg);
-        }
-        return Err(err_msg.into());
-    }
-
-    let presigned_json: serde_json::Value = presigned_res.json().await?;
-    let upload_url = presigned_json["upload_url"]
-        .as_str()
-        .ok_or("Missing upload_url in response")?;
-    let storage_path = presigned_json["storage_path"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
-
-    // 2. Stream upload archive directly to Cloudflare R2
+    // 4. Stream upload archive directly to Supabase Storage: bucket 'browser-profiles'
     let file_bytes = std::fs::read(&report.archive_path)?;
+    let storage_upload_endpoint = format!(
+        "{}/storage/v1/object/browser-profiles/{}",
+        cloud_url.trim_end_matches('/'),
+        storage_rel_path
+    );
+
     let put_res = client
-        .put(upload_url)
+        .post(&storage_upload_endpoint)
+        .header("apikey", anon_key)
+        .header("Authorization", format!("Bearer {}", anon_key))
+        .header("x-upsert", "true")
         .header("Content-Type", "application/octet-stream")
         .body(file_bytes)
         .send()
@@ -565,39 +545,69 @@ pub async fn handle_profile_push(
 
     if !put_res.status().is_success() {
         let err_status = put_res.status();
+        let err_body = put_res.text().await.unwrap_or_default();
         let err_msg = format!(
-            "R2 direct upload failed with status {}: {:?}",
-            err_status,
-            put_res.text().await.ok()
+            "Supabase Storage upload failed with status {}: {}",
+            err_status, err_body
         );
         if json {
-            println!(
-                "{}",
-                serde_json::json!({ "success": false, "error": err_msg })
-            );
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
         } else {
             crate::ui::Notify::error(&err_msg);
         }
         return Err(err_msg.into());
     }
 
-    // 3. Complete profile registration in Storage Hub D1
-    let complete_endpoint = format!("{}/api/profiles/complete", storage_base);
-    let _ = client
-        .post(&complete_endpoint)
-        .header("X-Device-Token", device_token)
-        .header("X-Device-Id", device_id)
-        .header("X-Tenant-Id", "default")
+    // 5. Upsert metadata & integrity hash into browsers.profiles via RPC
+    let rpc_endpoint = format!("{}/rest/v1/rpc/upsert_browser_profile", cloud_url.trim_end_matches('/'));
+    let rpc_res = client
+        .post(&rpc_endpoint)
+        .header("apikey", anon_key)
+        .header("Authorization", format!("Bearer {}", anon_key))
+        .header("Content-Type", "application/json")
         .json(&serde_json::json!({
-            "profile_id": profile.id,
-            "name": profile.name,
-            "storage_path": storage_path,
-            "zip_size": report.compressed_bytes,
-            "checksum_sha256": report.sha256_hash,
-            "status": "idle"
+            "p_profile_id": profile.id,
+            "p_device_id": creds.device_id,
+            "p_device_token": creds.device_token,
+            "p_name": profile.name,
+            "p_fingerprint_seed": profile.fingerprint_seed,
+            "p_screen_width": profile.screen_width.unwrap_or(1920),
+            "p_screen_height": profile.screen_height.unwrap_or(1080),
+            "p_device_pixel_ratio": profile.device_pixel_ratio.unwrap_or(1.0),
+            "p_os_platform": profile.os_platform.as_deref().unwrap_or("windows"),
+            "p_cpu_cores": profile.hardware_concurrency.unwrap_or(8),
+            "p_ram_gb": profile.device_memory_gb.unwrap_or(16),
+            "p_proxy": profile.proxy,
+            "p_timezone": profile.timezone,
+            "p_locale": profile.lang,
+            "p_storage_path": storage_rel_path,
+            "p_storage_size_bytes": report.compressed_bytes,
+            "p_storage_hash": report.sha256_hash,
+            "p_cookies_count": profile.cookies_count.unwrap_or(0),
+            "p_metadata": {
+                "file_count": report.file_count,
+                "compression_ratio": report.compression_ratio
+            }
         }))
         .send()
-        .await;
+        .await?;
+
+    if !rpc_res.status().is_success() {
+        let err_body = rpc_res.text().await.unwrap_or_default();
+        let err_msg = format!("Failed to record profile in Cloud Database: {}", err_body);
+        if json {
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+        } else {
+            crate::ui::Notify::error(&err_msg);
+        }
+        return Err(err_msg.into());
+    }
+
+    // Save remote metadata locally
+    profile.storage_path = Some(storage_rel_path.clone());
+    profile.storage_hash = Some(report.sha256_hash.clone());
+    profile.storage_size_bytes = Some(report.compressed_bytes);
+    let _ = profile.save(&base_dir);
 
     if json {
         println!(
@@ -606,9 +616,10 @@ pub async fn handle_profile_push(
                 "success": true,
                 "profile_id": profile.id,
                 "name": profile.name,
-                "storage_path": storage_path,
+                "tenant_id": tenant_id,
+                "storage_path": storage_rel_path,
+                "storage_hash": report.sha256_hash,
                 "compressed_bytes": report.compressed_bytes,
-                "sha256": report.sha256_hash,
                 "compression_ratio": report.compression_ratio,
             }))?
         );
@@ -616,12 +627,13 @@ pub async fn handle_profile_push(
     }
 
     println!();
-    let mut card = Card::new("PROFILE PUSHED (CLOUDFLARE R2)");
-    card.with_badge(badge_online("R2 SYNCED"));
+    let mut card = Card::new("BROWSER PROFILE SYNCED TO CLOUD");
+    card.with_badge(badge_online("SUPABASE SYNCED"));
     card.with_min_width(74);
     card.add_kv("Profile ID", &profile.id);
     card.add_kv("Profile Name", &profile.name);
-    card.add_kv("Remote Key", &storage_path);
+    card.add_kv("Tenant Workspace", tenant_id);
+    card.add_kv("Storage Path", format!("browser-profiles/{}", storage_rel_path));
     card.add_kv(
         "Archive Size",
         format!(
@@ -630,7 +642,7 @@ pub async fn handle_profile_push(
         ),
     );
     card.add_kv("SHA-256 Digest", &report.sha256_hash);
-    card.with_footer("Profile snapshot uploaded directly to R2 object storage with 0đ egress.");
+    card.with_footer("Profile metadata & session archive safely synchronized to Supabase Cloud.");
     card.print();
     println!();
 
@@ -639,78 +651,113 @@ pub async fn handle_profile_push(
 
 pub async fn handle_profile_pull(
     id: &str,
-    storage_url_opt: Option<&str>,
+    _storage_url_opt: Option<&str>,
     json: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let app_config = crate::config::AppConfig::load();
     let base_dir = crate::core::browser::resolve_data_dir();
 
-    let storage_base_url = storage_url_opt
-        .map(|s| s.to_string())
-        .or_else(|| std::env::var("SPECTER_STORAGE_URL").ok())
-        .unwrap_or_else(|| "http://127.0.0.1:8080".to_string());
-    let storage_base = storage_base_url.trim_end_matches('/');
-
-    let creds = crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
+    let creds = match crate::infrastructure::cloud_reporter::CloudReporter::load_credentials(
         &app_config.data_dir,
     )
-    .await;
-    let device_token = creds
-        .as_ref()
-        .map(|c| c.device_token.as_str())
-        .unwrap_or("local-token");
-    let device_id = creds
-        .as_ref()
-        .map(|c| c.device_id.as_str())
-        .unwrap_or("workstation");
+    .await
+    {
+        Some(c) => c,
+        None => {
+            let err = "Workstation not enrolled with Cloud fleet. Run 'tq auth login' first.";
+            if json {
+                println!("{}", serde_json::json!({ "success": false, "error": err }));
+            } else {
+                crate::ui::Notify::error(err);
+            }
+            return Err(err.into());
+        }
+    };
+
+    let cloud_url = creds
+        .cloud_url
+        .as_deref()
+        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
+    let anon_key = creds
+        .api_key
+        .as_deref()
+        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let tenant_id = creds.tenant_id.as_deref().unwrap_or("default");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
-    // 1. Request presigned download URL from Storage Hub
-    let download_url_endpoint = format!("{}/api/profiles/{}/download-url", storage_base, id);
-    let download_res = client
-        .get(&download_url_endpoint)
-        .header("X-Device-Token", device_token)
-        .header("X-Device-Id", device_id)
-        .header("X-Tenant-Id", "default")
+    // 1. Fetch profile metadata from Cloud via RPC list_browsers
+    let rpc_endpoint = format!("{}/rest/v1/rpc/list_browsers", cloud_url.trim_end_matches('/'));
+    let rpc_res = client
+        .post(&rpc_endpoint)
+        .header("apikey", anon_key)
+        .header("Authorization", format!("Bearer {}", anon_key))
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({
+            "p_device_id": creds.device_id,
+            "p_device_token": creds.device_token
+        }))
         .send()
         .await?;
 
-    if !download_res.status().is_success() {
-        let err_body = download_res.text().await.unwrap_or_default();
-        let err_msg = format!(
-            "Failed to request Download URL from Storage Hub: {}",
-            err_body
-        );
+    if !rpc_res.status().is_success() {
+        let err_body = rpc_res.text().await.unwrap_or_default();
+        let err_msg = format!("Failed to query profiles from Cloud: {}", err_body);
         if json {
-            println!(
-                "{}",
-                serde_json::json!({ "success": false, "error": err_msg })
-            );
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
         } else {
             crate::ui::Notify::error(&err_msg);
         }
         return Err(err_msg.into());
     }
 
-    let download_json: serde_json::Value = download_res.json().await?;
-    let download_url = download_json["download_url"]
-        .as_str()
-        .ok_or("Missing download_url in response")?;
-    let storage_path = download_json["storage_path"].as_str().unwrap_or("");
+    let profiles: Vec<serde_json::Value> = rpc_res.json().await?;
+    let matched_profile = profiles.into_iter().find(|p| {
+        p.get("id").and_then(|v| v.as_str()) == Some(id)
+            || p.get("name").and_then(|v| v.as_str()).map(|n| n.eq_ignore_ascii_case(id)).unwrap_or(false)
+    });
 
-    // 2. Stream download archive from Cloudflare R2
-    let get_res = client.get(download_url).send().await?;
+    let profile_data = match matched_profile {
+        Some(p) => p,
+        None => {
+            let err = format!("No cloud profile found matching ID or name '{}'", id);
+            if json {
+                println!("{}", serde_json::json!({ "success": false, "error": err }));
+            } else {
+                crate::ui::Notify::error(&err);
+            }
+            return Err(err.into());
+        }
+    };
+
+    let cloud_profile_id = profile_data["id"].as_str().unwrap_or(id);
+    let storage_path = profile_data["storage_path"]
+        .as_str()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("{}/{}.tar.zst", tenant_id, cloud_profile_id));
+    let expected_hash = profile_data["storage_hash"].as_str();
+
+    // 2. Stream download archive from Supabase Storage: bucket 'browser-profiles'
+    let download_endpoint = format!(
+        "{}/storage/v1/object/authenticated/browser-profiles/{}",
+        cloud_url.trim_end_matches('/'),
+        storage_path
+    );
+
+    let get_res = client
+        .get(&download_endpoint)
+        .header("apikey", anon_key)
+        .header("Authorization", format!("Bearer {}", anon_key))
+        .send()
+        .await?;
+
     if !get_res.status().is_success() {
         let err_msg = format!(
-            "Failed to stream archive from R2: status {}",
+            "Failed to download archive from Supabase Storage: HTTP {}",
             get_res.status()
         );
         if json {
-            println!(
-                "{}",
-                serde_json::json!({ "success": false, "error": err_msg })
-            );
+            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
         } else {
             crate::ui::Notify::error(&err_msg);
         }
@@ -718,12 +765,15 @@ pub async fn handle_profile_pull(
     }
 
     let archive_bytes = get_res.bytes().await?;
-    let target_archive = base_dir.join(format!("{}.tar.zst", id));
+    let target_archive = base_dir.join(format!("{}.tar.zst", cloud_profile_id));
     std::fs::write(&target_archive, &archive_bytes)?;
 
-    // 3. Unpack into local profile directory
-    let profile =
-        crate::core::browser::BrowserProfile::unpack_archive(&target_archive, &base_dir, None)?;
+    // 3. Unpack into local profile directory and verify SHA-256
+    let profile = crate::core::browser::BrowserProfile::unpack_archive(
+        &target_archive,
+        &base_dir,
+        expected_hash,
+    )?;
 
     if json {
         println!(
@@ -741,18 +791,22 @@ pub async fn handle_profile_pull(
     }
 
     println!();
-    let mut card = Card::new("PROFILE PULLED (CLOUDFLARE R2)");
+    let mut card = Card::new("BROWSER PROFILE PULLED FROM CLOUD");
     card.with_badge(badge_online("RESTORED"));
     card.with_min_width(74);
     card.add_kv("Profile ID", &profile.id);
     card.add_kv("Profile Name", &profile.name);
+    card.add_kv("Remote Key", &storage_path);
+    card.add_kv("Downloaded Size", format!("{} bytes", archive_bytes.len()));
+    if let Some(h) = expected_hash {
+        card.add_kv("Verified SHA-256", h);
+    }
     card.add_kv(
-        "Sandbox Directory",
+        "Local Sandbox",
         profile.get_sandbox_dir(&base_dir).display().to_string(),
     );
-    card.add_kv("Downloaded Bytes", format!("{} bytes", archive_bytes.len()));
     card.with_footer(format!(
-        "Ready for stealth automation. Launch with: tq browser launch {}",
+        "Profile session restored safely. Launch with: tq browser launch {}",
         profile.id
     ));
     card.print();
