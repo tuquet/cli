@@ -559,6 +559,17 @@ pub async fn handle_profile_push(
     }
 
     // 5. Upsert metadata & integrity hash into browsers.profiles via RPC
+    let profile_uuid = match &profile.cloud_id {
+        Some(cid) if uuid::Uuid::parse_str(cid).is_ok() => cid.clone(),
+        _ => {
+            if uuid::Uuid::parse_str(&profile.id).is_ok() {
+                profile.id.clone()
+            } else {
+                uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, profile.id.as_bytes()).to_string()
+            }
+        }
+    };
+
     let rpc_endpoint = format!("{}/rest/v1/rpc/upsert_browser_profile", cloud_url.trim_end_matches('/'));
     let rpc_res = client
         .post(&rpc_endpoint)
@@ -566,7 +577,7 @@ pub async fn handle_profile_push(
         .header("Authorization", format!("Bearer {}", anon_key))
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
-            "p_profile_id": profile.id,
+            "p_profile_id": profile_uuid,
             "p_device_id": creds.device_id,
             "p_device_token": creds.device_token,
             "p_name": profile.name,
@@ -585,6 +596,7 @@ pub async fn handle_profile_push(
             "p_storage_hash": report.sha256_hash,
             "p_cookies_count": profile.cookies_count.unwrap_or(0),
             "p_metadata": {
+                "local_id": profile.id,
                 "file_count": report.file_count,
                 "compression_ratio": report.compression_ratio
             }
@@ -604,6 +616,7 @@ pub async fn handle_profile_push(
     }
 
     // Save remote metadata locally
+    profile.cloud_id = Some(profile_uuid.clone());
     profile.storage_path = Some(storage_rel_path.clone());
     profile.storage_hash = Some(report.sha256_hash.clone());
     profile.storage_size_bytes = Some(report.compressed_bytes);

@@ -26,8 +26,22 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
             variables,
             timeout,
             cloud_profile,
+            safe,
         } => {
             let target_workflow = workflow.or(workflow_pos);
+            if safe {
+                if !crate::infrastructure::bridge::probe_port(1080) {
+                    crate::ui::Notify::info("Safe mode: Gateway is offline. Auto-starting gateway...");
+                    let _ = crate::commands::gateway::start::start_bridge(crate::commands::gateway::start::BridgeStartOptions {
+                        server: None, tag: None, http: true, ssh: false, foreground: false,
+                    }).await;
+                }
+                let probe = crate::core::browser::ProxyProbe::probe("socks5://127.0.0.1:1080", 5).await;
+                if !probe.alive {
+                    return Err("Safe Mode: Gateway probe failed. Aborting to protect IP.".into());
+                }
+                crate::ui::Notify::success(format!("Safe mode: Egress IP verified {} (WebRTC Shielded)", probe.egress_ip.as_deref().unwrap_or("ok")));
+            }
             if let Some(ref target_cloud) = cloud_profile {
                 crate::infrastructure::cloud_fleet::CloudFleetOrchestrator::run_autonomous_cloud_session(
                     target_cloud,

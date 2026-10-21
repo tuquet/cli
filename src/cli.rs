@@ -503,6 +503,10 @@ pub enum AutomaSubcommands {
         /// Optional workflow execution timeout in seconds
         #[arg(short, long)]
         timeout: Option<u64>,
+
+        /// Automatically ensure Gateway is running and verify WebRTC leak shield before execution
+        #[arg(long)]
+        safe: bool,
     },
 
     /// Manage stored workflows in local database and vault
