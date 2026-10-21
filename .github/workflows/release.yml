@@ -58,7 +58,7 @@ jobs:
 
       - name: Checkout runner dependency
         shell: bash
-        run: git clone --depth 1 https://github.com/tuquet/runner.git ../runner
+        run: git clone --depth 1 https://github.com/tuquet/runner.git ../worker
 
       - name: Determine Release Tag & Version
         id: vars
