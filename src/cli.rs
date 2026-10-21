@@ -26,13 +26,27 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mDEVELOPER & ENVIRONMENT\x1b[0m
   \x1b[1;36mauth\x1b[0m            Authenticate with cloud ecosystem (login, logout, whoami, tenant)
-  \x1b[1;36mdev\x1b[0m             Local workstation task runner & dev radar (scripts, port, env)
+  \x1b[1;36mdev\x1b[0m             Scan machine projects & run scripts interactively (Multi-stack)
   \x1b[1;36mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
+  \x1b[1;36mport\x1b[0m            Scan active local listening TCP ports & terminate processes
+  \x1b[1;36mcode\x1b[0m            Find any project across machine & open in IDE
+  \x1b[1;36menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
   \x1b[1;36mconfig\x1b[0m          Inspect and manage configuration profiles across subsystems
+
+\x1b[1;38;2;56;189;248mOPERATIONS & DAEMONS\x1b[0m
+  \x1b[1;33mrunner\x1b[0m          Distributed daemon execution node & cloud worker
+  \x1b[1;33mproxy\x1b[0m           Probe proxy connectivity, latency, and public egress IP
+  \x1b[1;33minbox\x1b[0m           Catch-all email & OTP interceptor daemon for automated testing
+  \x1b[1;33mmcp\x1b[0m             Model Context Protocol (MCP) stdio server for AI agents
 
 \x1b[1;38;2;56;189;248mSYSTEM & TELEMETRY\x1b[0m
   \x1b[1;35mtui\x1b[0m             Launch Mission Control full-screen interactive dashboard
+  \x1b[1;35mstatus\x1b[0m          Inspect unified status across Cloud, Runner, Bridge & Browser
+  \x1b[1;35mdoctor\x1b[0m          System health radar & automated dependency diagnostics
   \x1b[1;35msetup\x1b[0m           Interactive guided workstation onboarding wizard
+  \x1b[1;35mbootstrap\x1b[0m       One-command ecosystem provisioning (SSOT, DB, runtimes)
+  \x1b[1;35mupgrade\x1b[0m         Check and upgrade CLI binary to latest release
+  \x1b[1;35mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
 
 \x1b[1;38;2;56;189;248mFLAGS\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Show help for command
@@ -90,7 +104,7 @@ pub enum Commands {
     },
 
     /// Scan active local listening TCP ports and terminate processes interactively
-    #[command(name = "port", hide = true)]
+    #[command(name = "port")]
     Port {
         /// Optional port number or process name filter (e.g. 5173, 8080, node, java)
         #[arg(value_name = "QUERY")]
@@ -113,7 +127,7 @@ pub enum Commands {
     },
 
     /// Find any project across the machine and open in VS Code, Antigravity, Cursor, or Explorer
-    #[command(name = "code", hide = true)]
+    #[command(name = "code")]
     Code {
         /// Target project name or path query
         #[arg(value_name = "PROJECT")]
@@ -163,7 +177,7 @@ pub enum Commands {
     },
 
     /// Validate .env against .env.example, sync missing keys, and switch environment profiles
-    #[command(name = "env", hide = true)]
+    #[command(name = "env")]
     Env {
         /// Optional target project name or path query (defaults to current directory if .env* exists)
         #[arg(value_name = "PROJECT")]
@@ -190,7 +204,7 @@ pub enum Commands {
     },
 
     /// Show unified status overview of ecosystem
-    #[command(name = "status", hide = true)]
+    #[command(name = "status")]
     Status {
         #[command(flatten)]
         format: crate::ui::FormatArgs,
@@ -201,7 +215,7 @@ pub enum Commands {
     Tui,
 
     /// Check system dependencies, required tools & environment health
-    #[command(name = "doctor", hide = true)]
+    #[command(name = "doctor")]
     Doctor {
         /// Attempt automatic fix / installation of missing dependencies where supported
         #[arg(long)]
@@ -212,7 +226,7 @@ pub enum Commands {
     },
 
     /// One-command workstation onboarding & ecosystem bootstrap (SSOT directories, DB, MCP, browser)
-    #[command(name = "bootstrap", aliases = ["init"], hide = true)]
+    #[command(name = "bootstrap", aliases = ["init"])]
     Bootstrap {
         /// Force re-download and re-provisioning of runtimes even if already present
         #[arg(short, long)]
@@ -243,67 +257,6 @@ pub enum Commands {
         show: bool,
     },
 
-    /// Show current Cloud identity and enrollment status
-    #[command(name = "whoami", hide = true)]
-    Whoami {
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
-    #[command(name = "login", hide = true)]
-    Login {
-        /// Cloud / Supabase endpoint URL
-        #[arg(short, long)]
-        url: Option<String>,
-
-        /// Operator account email for Supabase GoTrue authentication
-        #[arg(short, long)]
-        email: Option<String>,
-
-        /// Operator account password
-        #[arg(short, long)]
-        password: Option<String>,
-
-        /// Request and authenticate via One-Time Passcode (OTP / Magic Code)
-        #[arg(long)]
-        otp: bool,
-
-        /// Pre-supplied 6-digit One-Time Passcode (OTP)
-        #[arg(short, long)]
-        code: Option<String>,
-
-        /// JWT access token or organization enrollment token
-        #[arg(short, long)]
-        token: Option<String>,
-
-        /// Pre-select target workspace by slug or ID
-        #[arg(long)]
-        tenant: Option<String>,
-
-        /// Custom workstation name (defaults to machine hostname)
-        #[arg(short, long)]
-        name: Option<String>,
-
-        /// Optional custom Supabase API key (publishable or anon key)
-        #[arg(long)]
-        api_key: Option<String>,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Disconnect workstation and remove local session credentials
-    #[command(name = "logout", hide = true)]
-    Logout,
-
-    /// Manage accessible multi-tenant workspaces and active context
-    #[command(name = "tenant", aliases = ["workspace", "ws"], hide = true)]
-    Tenant {
-        #[command(subcommand)]
-        command: Option<TenantSubcommands>,
-    },
-
     /// Manage and execute browser automation workflows
     #[command(name = "workflow", aliases = ["automa", "wf"])]
     Workflow {
@@ -312,7 +265,7 @@ pub enum Commands {
     },
 
     /// Distributed runner daemon worker & cloud execution node
-    #[command(name = "runner", hide = true)]
+    #[command(name = "runner")]
     Runner {
         #[command(subcommand)]
         command: Option<RunnerSubcommands>,
@@ -343,15 +296,15 @@ pub enum Commands {
     },
 
     /// Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents
-    #[command(name = "mcp", hide = true)]
+    #[command(name = "mcp")]
     Mcp,
 
     /// Check and upgrade CLI to the latest release
-    #[command(name = "upgrade", aliases = ["update"], hide = true)]
+    #[command(name = "upgrade", aliases = ["update"])]
     Upgrade,
 
     /// Probe proxy connectivity, latency, and public egress IP address
-    #[command(name = "proxy", hide = true)]
+    #[command(name = "proxy")]
     Proxy {
         #[command(subcommand)]
         command: Option<ProxyCommands>,
@@ -365,14 +318,14 @@ pub enum Commands {
     },
 
     /// Universal Catch-All Email & OTP Interceptor Subsystem
-    #[command(name = "inbox", aliases = ["mail", "otp"], hide = true)]
+    #[command(name = "inbox", aliases = ["mail", "otp"])]
     Inbox {
         #[command(subcommand)]
         command: Option<InboxSubcommands>,
     },
 
     /// Inspect and export CLI command manifests and microservice JSON schemas
-    #[command(name = "schema", aliases = ["manifest"], hide = true)]
+    #[command(name = "schema", aliases = ["manifest"])]
     Schema {
         #[command(subcommand)]
         command: Option<SchemaSubcommands>,

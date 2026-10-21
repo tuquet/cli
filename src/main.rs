@@ -83,40 +83,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             edit,
             show,
         }) => handle_global_config(service.as_deref(), &args, edit, show).await,
-        Some(Commands::Whoami { format }) => commands::cloud::whoami(format.resolve())
-            .await
-            .map_err(|e| e as Box<dyn std::error::Error>),
-        Some(Commands::Login {
-            url,
-            email,
-            password,
-            otp,
-            code,
-            token,
-            tenant,
-            name,
-            api_key,
-            format,
-        }) => commands::cloud::login(
-            url,
-            email,
-            password,
-            otp,
-            code,
-            token,
-            tenant,
-            name,
-            api_key,
-            format.resolve(),
-        )
-        .await
-        .map_err(|e| e as Box<dyn std::error::Error>),
-        Some(Commands::Logout) => commands::cloud::logout()
-            .await
-            .map_err(|e| e as Box<dyn std::error::Error>),
-        Some(Commands::Tenant { command }) => commands::tenant::handle(command)
-            .await
-            .map_err(|e| e as Box<dyn std::error::Error>),
         Some(Commands::Workflow { command }) => match command {
             Some(cmd) => commands::automa::handle(cmd).await,
             None => commands::automa::handle_interactive().await,
