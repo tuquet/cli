@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::commands::bridge::start::{BridgeStartOptions, start_bridge};
+use crate::commands::gateway::start::{BridgeStartOptions, start_bridge};
 use crate::commands::dev::scanner::{
     collect_machine_scan_roots, format_clean_package_id, get_user_home_dir, should_skip_dir_entry,
 };

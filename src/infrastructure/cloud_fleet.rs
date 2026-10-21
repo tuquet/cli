@@ -359,7 +359,7 @@ impl CloudFleetOrchestrator {
             badge_step("4/6")
         );
         let execution_result = if workflow_path_opt.is_some() || workflow_json_opt.is_some() {
-            crate::commands::automa::run_workflow(
+            crate::commands::automation::run_workflow(
                 workflow_path_opt,
                 workflow_json_opt,
                 headless,

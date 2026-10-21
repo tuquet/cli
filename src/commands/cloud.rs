@@ -46,60 +46,12 @@ pub async fn handle(command: CloudSubcommands) -> Result<(), Box<dyn std::error:
 }
 
 pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
-    if !crate::ui::is_interactive_tty() {
-        return whoami(OutputFormat::Json).await;
+    use clap::CommandFactory;
+    let mut cmd = crate::cli::Cli::command();
+    if let Some(sub) = cmd.find_subcommand_mut("auth") {
+        let _ = sub.print_help();
     }
-
-    clack_intro("tq auth", "Cloud & Fleet Identity Hub");
-
-    let options = vec![
-        ClackOption::new(
-            "Current Cloud Identity (Whoami)",
-            "Inspect active operator session, machine fingerprint, and tenant",
-            "whoami",
-        ),
-        ClackOption::new(
-            "Authenticate / Pair Node (Login)",
-            "Sign in with Email, OTP, JWT Token, or pair anonymous node",
-            "login",
-        ),
-        ClackOption::new(
-            "Sign Out (Logout)",
-            "Revoke local cloud credentials",
-            "logout",
-        ),
-        ClackOption::new(
-            "Cloud Configuration",
-            "Inspect or update Supabase / Cloud endpoints",
-            "config",
-        ),
-    ];
-
-    let Some(idx) = clack_select("Select Cloud operation:", &options, 0, 6)? else {
-        clack_cancel("Cloud hub closed.");
-        return Ok(());
-    };
-
-    match idx {
-        0 => whoami(OutputFormat::Card).await,
-        1 => login(
-            None,
-            None,
-            None,
-            false,
-            None,
-            None,
-            None,
-            None,
-            None,
-            OutputFormat::Card,
-        )
-        .await
-        .map_err(|e| e as Box<dyn std::error::Error>),
-        2 => logout().await,
-        3 => manage_config(&[], false, false),
-        _ => Ok(()),
-    }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

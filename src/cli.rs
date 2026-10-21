@@ -13,57 +13,14 @@ pub fn get_styles() -> Styles {
         .invalid(AnsiColor::Yellow.on_default())
 }
 
-pub const MAIN_HELP_TEMPLATE: &str = "\
-\x1b[1;38;2;56;189;248mtq\x1b[0m \x1b[38;2;148;163;184mv1.2.1\x1b[0m — Autonomous Browser Automation & Distributed Mesh Runtime
-
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m <command> [subcommand] [flags]
-
-\x1b[1;38;2;56;189;248mCORE COMMANDS\x1b[0m
-  \x1b[1;32mworkflow\x1b[0m        Manage and execute browser automation workflows (run, list, inspect)
-  \x1b[1;32mbrowser\x1b[0m         Manage isolated anti-detect Chromium runtimes & profiles (launch, install)
-  \x1b[1;32mbridge\x1b[0m          Manage multi-VPS encrypted mesh & SOCKS5 proxy (start, stop, status)
-  \x1b[1;32mfaker\x1b[0m           Generate localized synthetic personas and test data (cccd, address, otp)
-
-\x1b[1;38;2;56;189;248mDEVELOPER & ENVIRONMENT\x1b[0m
-  \x1b[1;36mauth\x1b[0m            Authenticate with cloud ecosystem (login, logout, whoami, tenant)
-  \x1b[1;36mdev\x1b[0m             Scan machine projects & run scripts interactively (Multi-stack)
-  \x1b[1;36mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
-  \x1b[1;36mport\x1b[0m            Scan active local listening TCP ports & terminate processes
-  \x1b[1;36mcode\x1b[0m            Find any project across machine & open in IDE
-  \x1b[1;36menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
-  \x1b[1;36mconfig\x1b[0m          Inspect and manage configuration profiles across subsystems
-
-\x1b[1;38;2;56;189;248mOPERATIONS & DAEMONS\x1b[0m
-  \x1b[1;33mrunner\x1b[0m          Distributed daemon execution node & cloud worker
-  \x1b[1;33mproxy\x1b[0m           Probe proxy connectivity, latency, and public egress IP
-  \x1b[1;33minbox\x1b[0m           Catch-all email & OTP interceptor daemon for automated testing
-  \x1b[1;33mmcp\x1b[0m             Model Context Protocol (MCP) stdio server for AI agents
-
-\x1b[1;38;2;56;189;248mSYSTEM & TELEMETRY\x1b[0m
-  \x1b[1;35mtui\x1b[0m             Launch Mission Control full-screen interactive dashboard
-  \x1b[1;35mstatus\x1b[0m          Inspect unified status across Cloud, Runner, Bridge & Browser
-  \x1b[1;35mdoctor\x1b[0m          System health radar & automated dependency diagnostics
-  \x1b[1;35msetup\x1b[0m           Interactive guided workstation onboarding wizard
-  \x1b[1;35mbootstrap\x1b[0m       One-command ecosystem provisioning (SSOT, DB, runtimes)
-  \x1b[1;35mupgrade\x1b[0m         Check and upgrade CLI binary to latest release
-  \x1b[1;35mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
-
-\x1b[1;38;2;56;189;248mFLAGS\x1b[0m
-  \x1b[38;2;148;163;184m-h, --help\x1b[0m      Show help for command
-  \x1b[38;2;148;163;184m-V, --version\x1b[0m   Show tq version
-
-Use '\x1b[1mtq <command> --help\x1b[0m' for more information about a command.";
-
 /// - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
 #[command(
     name = "tuquet",
     author = "Ecosystem <tuquet@users.noreply.github.com>",
     version = env!("CARGO_PKG_VERSION"),
-    about = "- Autonomous Browser Automation & Distributed Mesh Runtime",
-    long_about = "is an autonomous browser automation & distributed mesh runtime engine.",
+    about = "Autonomous Browser Automation & Distributed Mesh Runtime",
     styles = get_styles(),
-    help_template = MAIN_HELP_TEMPLATE,
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -72,269 +29,49 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Scan machine for projects (package.json, Cargo.toml, pom.xml, compose.yml) and run scripts interactively
-    #[command(name = "dev")]
-    Dev {
-        /// Target project name, folder path, or <project>:<script> shorthand
-        #[arg(value_name = "PROJECT")]
-        project: Option<String>,
-
-        /// Optional script name to execute (e.g. dev, build, start, lint, run)
-        #[arg(value_name = "SCRIPT")]
-        script: Option<String>,
-
-        /// List all discovered projects and scripts
-        #[arg(short = 'l', long)]
-        list: bool,
-
-        /// Custom workspace root directory to scan (defaults to full machine)
-        #[arg(short = 'P', long)]
-        path: Option<PathBuf>,
-
-        /// Override detected package manager / toolchain (npm, pnpm, yarn, bun, cargo, mvn, gradle, docker)
-        #[arg(long)]
-        pm: Option<String>,
-
-        /// Extra arguments passed to the script after `--`
-        #[arg(last = true, value_name = "EXTRA_ARGS")]
-        extra_args: Vec<String>,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Scan active local listening TCP ports and terminate processes interactively
-    #[command(name = "port")]
-    Port {
-        /// Optional port number or process name filter (e.g. 5173, 8080, node, java)
-        #[arg(value_name = "QUERY")]
-        query: Option<String>,
-
-        /// Terminate matching port process immediately without interactive prompt
-        #[arg(short = 'k', long)]
-        kill: bool,
-
-        /// Include all OS and ephemeral ports (defaults to developer ports)
-        #[arg(short = 'a', long)]
-        all: bool,
-
-        /// List listening ports without prompting to terminate
-        #[arg(short = 'l', long)]
-        list: bool,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Find any project across the machine and open in VS Code, Antigravity, Cursor, or Explorer
-    #[command(name = "code")]
-    Code {
-        /// Target project name or path query
-        #[arg(value_name = "PROJECT")]
-        project: Option<String>,
-
-        /// Target editor or file manager (code, agy, cursor, explorer)
-        #[arg(short = 'e', long)]
-        editor: Option<String>,
-
-        /// List discovered projects and detected editors
-        #[arg(short = 'l', long)]
-        list: bool,
-
-        /// Custom workspace root directory to scan
-        #[arg(short = 'P', long)]
-        path: Option<PathBuf>,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Scan all Git repositories across the machine and synchronize via Bridge
-    #[command(name = "git")]
-    Git {
-        /// Target repository name or path query
-        #[arg(value_name = "REPO")]
-        repo: Option<String>,
-
-        /// Git action to execute (push-bridge, status, pull, push, stash)
-        #[arg(value_name = "ACTION")]
-        action: Option<String>,
-
-        /// Include clean repositories (defaults to dirty or unpushed repositories)
-        #[arg(short = 'a', long)]
-        all: bool,
-
-        /// List repositories and their branch/dirty/sync status
-        #[arg(short = 'l', long)]
-        list: bool,
-
-        /// Custom workspace root directory to scan
-        #[arg(short = 'P', long)]
-        path: Option<PathBuf>,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Validate .env against .env.example, sync missing keys, and switch environment profiles
-    #[command(name = "env")]
-    Env {
-        /// Optional target project name or path query (defaults to current directory if .env* exists)
-        #[arg(value_name = "PROJECT")]
-        project: Option<String>,
-
-        /// Check and display .env diff report non-interactively
-        #[arg(short = 'c', long)]
-        check: bool,
-
-        /// Switch active .env to the specified profile (e.g. development, staging, production, local)
-        #[arg(short = 's', long = "switch")]
-        switch_profile: Option<String>,
-
-        /// List .env variables and diff report
-        #[arg(short = 'l', long)]
-        list: bool,
-
-        /// Custom workspace root directory to scan
-        #[arg(short = 'P', long)]
-        path: Option<PathBuf>,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Show unified status overview of ecosystem
-    #[command(name = "status")]
-    Status {
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// Launch full-screen interactive Terminal User Interface (Mission Control Dashboard)
-    #[command(name = "tui", aliases = ["top", "dashboard", "shell"])]
-    Tui,
-
-    /// Check system dependencies, required tools & environment health
-    #[command(name = "doctor")]
-    Doctor {
-        /// Attempt automatic fix / installation of missing dependencies where supported
-        #[arg(long)]
-        fix: bool,
-
-        #[command(flatten)]
-        format: crate::ui::FormatArgs,
-    },
-
-    /// One-command workstation onboarding & ecosystem bootstrap (SSOT directories, DB, MCP, browser)
-    #[command(name = "bootstrap", aliases = ["init"])]
-    Bootstrap {
-        /// Force re-download and re-provisioning of runtimes even if already present
-        #[arg(short, long)]
-        force: bool,
-    },
-
-    /// Interactive guided workstation onboarding wizard (Core + Optional Modules)
-    #[command(name = "setup")]
-    Setup(SetupArgs),
-
-    /// Inspect or edit unified service configurations across microservice pillars
-    #[command(name = "config")]
-    Config {
-        /// Optional target service (bridge, automa, runner, browser, cloud, system, faker, inbox)
-        #[arg(value_name = "SERVICE")]
-        service: Option<String>,
-
-        /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
-        #[arg(value_name = "ARGS")]
-        args: Vec<String>,
-
-        /// Open configuration file in default editor
-        #[arg(short, long)]
-        edit: bool,
-
-        /// Display structured configuration details and summary card
-        #[arg(short, long)]
-        show: bool,
-    },
-
-    /// Manage and execute browser automation workflows
-    #[command(name = "workflow", aliases = ["automa", "wf"])]
-    Workflow {
-        #[command(subcommand)]
-        command: Option<AutomaSubcommands>,
-    },
-
-    /// Distributed runner daemon worker & cloud execution node
-    #[command(name = "runner")]
-    Runner {
-        #[command(subcommand)]
-        command: Option<RunnerSubcommands>,
-    },
-
     /// Authenticate with cloud ecosystem and manage credentials
-    #[command(name = "auth", aliases = ["cloud"])]
+    #[command(name = "auth")]
     Auth {
         #[command(subcommand)]
         command: Option<CloudSubcommands>,
     },
 
-    /// Dedicated isolated browser runtime management
+    /// Distributed worker daemon and cloud execution node
+    #[command(name = "worker")]
+    Worker {
+        #[command(subcommand)]
+        command: Option<WorkerSubcommands>,
+    },
+
+    /// Manage and execute automation workflows
+    #[command(name = "automation")]
+    Automation {
+        #[command(subcommand)]
+        command: Option<AutomationSubcommands>,
+    },
+
+    /// Secure network gateway, VPS tunnel mesh & proxy manager
+    #[command(name = "gateway")]
+    Gateway {
+        #[command(subcommand)]
+        command: Option<GatewaySubcommands>,
+    },
+
+    /// Dedicated isolated antidetect browser runtime & profile sandbox
     #[command(name = "browser")]
     Browser {
         #[command(subcommand)]
         command: Option<BrowserCommands>,
     },
 
-    /// Enterprise synthetic persona & identity generator (CCCD, addresses, credentials)
-    #[command(name = "faker", aliases = ["user", "persona"])]
-    Faker {
-        #[command(subcommand)]
-        command: Option<FakerSubcommands>,
-
-        #[command(flatten)]
-        args: FakerGenerateArgs,
-    },
-
     /// Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents
-    #[command(name = "mcp")]
+    #[command(name = "mcp", hide = true)]
     Mcp,
-
-    /// Check and upgrade CLI to the latest release
-    #[command(name = "upgrade", aliases = ["update"])]
-    Upgrade,
-
-    /// Probe proxy connectivity, latency, and public egress IP address
-    #[command(name = "proxy")]
-    Proxy {
-        #[command(subcommand)]
-        command: Option<ProxyCommands>,
-    },
-
-    /// Network bridge, multi-VPS tunnel mesh & proxy manager
-    #[command(name = "bridge", aliases = ["tunnel", "vps"])]
-    Bridge {
-        #[command(subcommand)]
-        command: Option<BridgeSubcommands>,
-    },
-
-    /// Universal Catch-All Email & OTP Interceptor Subsystem
-    #[command(name = "inbox", aliases = ["mail", "otp"])]
-    Inbox {
-        #[command(subcommand)]
-        command: Option<InboxSubcommands>,
-    },
-
-    /// Inspect and export CLI command manifests and microservice JSON schemas
-    #[command(name = "schema", aliases = ["manifest"])]
-    Schema {
-        #[command(subcommand)]
-        command: Option<SchemaSubcommands>,
-
-        /// Output full schema manifest in raw JSON format
-        #[arg(short, long)]
-        json: bool,
-    },
 }
+
+pub type WorkerSubcommands = RunnerSubcommands;
+pub type AutomationSubcommands = AutomaSubcommands;
+pub type GatewaySubcommands = BridgeSubcommands;
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum SchemaSubcommands {
@@ -364,6 +101,21 @@ pub enum SchemaSubcommands {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum BridgeSubcommands {
+    /// Probe proxy egress connectivity, latency, and WebRTC leak shield
+    #[command(name = "probe")]
+    Probe {
+        /// Target proxy URL to probe (defaults to socks5://127.0.0.1:1080)
+        #[arg(value_name = "URL")]
+        url: Option<String>,
+
+        /// Probe timeout in seconds
+        #[arg(short, long, default_value_t = 5)]
+        timeout: u64,
+
+        /// Output results in raw JSON format
+        #[arg(short, long)]
+        json: bool,
+    },
     /// Show health check dashboard of all configured VPSs, ports, and workloads
     #[command(name = "status")]
     Status {

@@ -18,7 +18,7 @@ path = "src/main.rs"
 [dependencies]
 faker = { path = "../faker" }
 browser = { path = "../browser", features = ["utoipa"] }
-runner = { path = "../runner" }
+worker = { path = "../worker", package = "worker" }
 axum = { version = "0.8.9", features = ["ws"] }
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -34,7 +34,7 @@ hmac = "0.12.1"
 base64 = "0.22.1"
 rand = "0.8.5"
 hex = "0.4.3"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "socks"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots", "json", "stream", "socks"] }
 zip = "0.6.6"
 uuid = { version = "1.10", features = ["v4"] }
 tracing = "0.1.44"
@@ -54,7 +54,7 @@ regex = "1.11"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 
 [dev-dependencies]
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots", "json"] }
 tower = { version = "0.5.3", features = ["util"] }
 
 [target.'cfg(windows)'.build-dependencies]

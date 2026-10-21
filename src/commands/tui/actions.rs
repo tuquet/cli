@@ -9,14 +9,14 @@ pub async fn toggle_bridge(state: &mut TuiState) {
         state.status_message = "Specter Bridge stopped.".to_string();
     } else {
         state.status_message = "Starting Specter Bridge (SOCKS5 + HTTP)...".to_string();
-        let opts = crate::commands::bridge::start::BridgeStartOptions {
+        let opts = crate::commands::gateway::start::BridgeStartOptions {
             server: None,
             tag: None,
             http: true,
             ssh: false,
             foreground: false,
         };
-        let _ = crate::commands::bridge::start::start_bridge(opts).await;
+        let _ = crate::commands::gateway::start::start_bridge(opts).await;
         state.refresh().await;
         state.status_message = "Specter Bridge online.".to_string();
     }

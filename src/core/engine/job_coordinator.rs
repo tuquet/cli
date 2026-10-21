@@ -314,7 +314,7 @@ impl JobCoordinator {
             job_id
         );
 
-        let graph = match runner::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
+        let graph = match worker::drivers::cdp::WorkflowGraph::from_json(&workflow_data) {
             Ok(g) => g,
             Err(e) => {
                 tracing::error!("Failed to parse workflow graph for job {}: {}", job_id, e);
@@ -331,7 +331,7 @@ impl JobCoordinator {
         };
 
         let cdp_session =
-            match runner::drivers::cdp::CdpSession::connect(session.debugging_port).await {
+            match worker::drivers::cdp::CdpSession::connect(session.debugging_port).await {
                 Ok(c) => c,
                 Err(e) => {
                     tracing::error!(
@@ -351,14 +351,14 @@ impl JobCoordinator {
                 }
             };
 
-        let mut initial_state = runner::drivers::cdp::ExecutionState::new();
+        let mut initial_state = worker::drivers::cdp::ExecutionState::new();
         if let Some(serde_json::Value::Object(map)) = variables {
             for (k, v) in map {
                 initial_state.set_variable(&k, v);
             }
         }
 
-        let executor = runner::drivers::cdp::WorkflowDagExecutor::new(
+        let executor = worker::drivers::cdp::WorkflowDagExecutor::new(
             graph,
             std::sync::Arc::new(cdp_session),
         );

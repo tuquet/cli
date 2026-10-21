@@ -3,6 +3,7 @@ pub mod banner;
 pub mod card;
 pub mod colors;
 pub mod format;
+pub mod gate;
 pub mod notify;
 pub mod prompt;
 pub mod response;

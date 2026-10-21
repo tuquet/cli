@@ -325,17 +325,19 @@ impl BridgeConfig {
                 });
             }
 
-            // Check identity key existence
-            if let Some(ref key_path_str) = srv.identity_file {
-                let expanded = expand_home(key_path_str);
-                if !expanded.exists() {
-                    diags.push(ConfigDiagnostic {
-                        level: DiagnosticLevel::Warning,
-                        message: format!(
-                            "Server '{}': IdentityFile not found at {:?}",
-                            id, expanded
-                        ),
-                    });
+            // Check identity key existence (only check for enabled servers)
+            if srv.enabled.unwrap_or(true) {
+                if let Some(ref key_path_str) = srv.identity_file {
+                    let expanded = expand_home(key_path_str);
+                    if !expanded.exists() {
+                        diags.push(ConfigDiagnostic {
+                            level: DiagnosticLevel::Warning,
+                            message: format!(
+                                "Server '{}': IdentityFile not found at {:?}",
+                                id, expanded
+                            ),
+                        });
+                    }
                 }
             }
 

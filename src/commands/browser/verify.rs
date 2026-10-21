@@ -89,7 +89,7 @@ pub async fn verify_stealth_presentation(
 
     // 3. Attach native CDP Driver
     println!("\n[2/4] Connecting Native Pure Rust CDP Session...");
-    let session = match runner::CdpSession::connect_auto(None, Some(&temp_profile)).await {
+    let session = match worker::CdpSession::connect_auto(None, Some(&temp_profile)).await {
         Ok(s) => s,
         Err(e) => {
             let _ = child.kill();
@@ -101,7 +101,7 @@ pub async fn verify_stealth_presentation(
     println!("      ✅ CDP Session Attached! Isolated World execution initialized.");
 
     // Visual pointer helper function
-    async fn inject_visual_pointer(s: &runner::CdpSession) {
+    async fn inject_visual_pointer(s: &worker::CdpSession) {
         let _ = s
             .evaluate(
                 r#"(() => {
