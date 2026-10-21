@@ -27,290 +27,9 @@
   ],
   "commands": [
     {
-      "id": "tuquet.bootstrap",
-      "route": [
-        "bootstrap"
-      ],
-      "pillar": "system",
-      "title": "One-Command Workstation Onboarding",
-      "description": "Initialize 5 SSOT storage pillars, SQLite database, native MCP stdio server, and download Chromium Golden LTS.",
-      "options": [
-        {
-          "name": "force",
-          "short": "f",
-          "type": "boolean",
-          "default": false,
-          "description": "Force re-download and re-provisioning of runtimes even if already present."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.config",
-      "route": [
-        "config"
-      ],
-      "pillar": "system",
-      "title": "Unified Configuration Manager",
-      "description": "Inspect or edit configuration across microservice pillars (~/.tuquet/).",
-      "arguments": [
-        {
-          "name": "service",
-          "type": "choice",
-          "required": false,
-          "description": "Target service (bridge, automa, runner, browser, cloud, system, faker)",
-          "choices": [
-            "bridge",
-            "automa",
-            "runner",
-            "browser",
-            "cloud",
-            "system",
-            "faker",
-            "inbox"
-          ]
-        }
-      ],
-      "options": [
-        {
-          "name": "edit",
-          "short": "e",
-          "type": "boolean",
-          "default": false,
-          "description": "Open target configuration file in system default editor."
-        },
-        {
-          "name": "show",
-          "short": "s",
-          "type": "boolean",
-          "default": false,
-          "description": "Display structured configuration details and summary card."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.doctor",
-      "route": [
-        "doctor"
-      ],
-      "pillar": "system",
-      "title": "System & Dependency Health Check",
-      "description": "Check system dependencies, required tools, network tunnels, and environment health.",
-      "options": [
-        {
-          "name": "fix",
-          "type": "boolean",
-          "default": false,
-          "description": "Attempt automatic remediation of missing dependencies where supported."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.mcp",
-      "route": [
-        "mcp"
-      ],
-      "pillar": "system",
-      "title": "Run MCP Stdio Server",
-      "description": "Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents."
-    },
-    {
-      "id": "tuquet.schema",
-      "route": [
-        "schema"
-      ],
-      "pillar": "system",
-      "title": "Schema Manifest & Introspection",
-      "description": "Inspect and export CLI command manifests and microservice JSON schemas.",
-      "options": [
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": false,
-          "description": "Output schema in raw JSON format for machine parsing."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.schema.commands",
-      "route": [
-        "schema",
-        "commands"
-      ],
-      "pillar": "system",
-      "title": "Export Command Manifest",
-      "description": "List or export the full command manifest catalog matching the VS Code contributes standard.",
-      "options": [
-        {
-          "name": "pillar",
-          "short": "p",
-          "type": "string",
-          "description": "Filter commands by microservice pillar domain."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.schema.config",
-      "route": [
-        "schema",
-        "config"
-      ],
-      "pillar": "system",
-      "title": "Export Configuration JSON Schema",
-      "description": "Export the JSON Schema definition for a microservice configuration file.",
-      "arguments": [
-        {
-          "name": "service",
-          "type": "choice",
-          "required": true,
-          "description": "Service configuration schema to output",
-          "choices": [
-            "bridge",
-            "browser",
-            "automa",
-            "runner",
-            "faker",
-            "system"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "tuquet.schema.mcp",
-      "route": [
-        "schema",
-        "mcp"
-      ],
-      "pillar": "system",
-      "title": "Export MCP Agent Tools Catalog",
-      "description": "Export the AI Agent Model Context Protocol (MCP) tool schemas generated from this manifest."
-    },
-    {
-      "id": "tuquet.shell",
-      "route": [
-        "shell"
-      ],
-      "pillar": "system",
-      "title": "Interactive REPL Shell",
-      "description": "Launch interactive scoped terminal shell session with auto-completion and hotkeys.",
-      "arguments": [
-        {
-          "name": "service",
-          "type": "string",
-          "required": false,
-          "description": "Optional service domain to scope REPL into (automa, browser, bridge, faker)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.status",
-      "route": [
-        "status"
-      ],
-      "pillar": "system",
-      "title": "System Status Overview",
-      "description": "Show unified status overview across Cloud, Runner, Bridge, and Antidetect Browser.",
-      "options": [
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual dashboard cards (shortcut for -f card)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output status in raw JSON format (default)."
-        }
-      ],
-      "mcp": {
-        "tool_name": "status",
-        "exported": true
-      }
-    },
-    {
-      "id": "tuquet.upgrade",
-      "route": [
-        "upgrade"
-      ],
-      "pillar": "system",
-      "title": "Upgrade CLI",
-      "description": "Check and atomically upgrade CLI binary in-place to latest release."
-    },
-    {
       "id": "tuquet.automa.inspect",
       "route": [
-        "automa",
+        "automation",
         "inspect"
       ],
       "pillar": "automa",
@@ -332,7 +51,7 @@
     {
       "id": "tuquet.automa.probe",
       "route": [
-        "automa",
+        "automation",
         "probe"
       ],
       "pillar": "automa",
@@ -342,7 +61,7 @@
     {
       "id": "tuquet.automa.run",
       "route": [
-        "automa",
+        "automation",
         "run"
       ],
       "pillar": "automa",
@@ -390,7 +109,7 @@
     {
       "id": "tuquet.automa.studio",
       "route": [
-        "automa",
+        "automation",
         "studio"
       ],
       "pillar": "automa",
@@ -400,7 +119,7 @@
     {
       "id": "tuquet.automa.workflow.delete",
       "route": [
-        "automa",
+        "automation",
         "workflow",
         "delete"
       ],
@@ -427,7 +146,7 @@
     {
       "id": "tuquet.automa.workflow.export",
       "route": [
-        "automa",
+        "automation",
         "workflow",
         "export"
       ],
@@ -454,7 +173,7 @@
     {
       "id": "tuquet.automa.workflow.import",
       "route": [
-        "automa",
+        "automation",
         "workflow",
         "import"
       ],
@@ -492,7 +211,7 @@
     {
       "id": "tuquet.automa.workflow.info",
       "route": [
-        "automa",
+        "automation",
         "workflow",
         "info"
       ],
@@ -511,7 +230,7 @@
     {
       "id": "tuquet.automa.workflow.list",
       "route": [
-        "automa",
+        "automation",
         "workflow",
         "list"
       ],
@@ -1469,7 +1188,7 @@
     {
       "id": "tuquet.bridge.check",
       "route": [
-        "bridge",
+        "gateway",
         "check"
       ],
       "pillar": "bridge",
@@ -1479,7 +1198,7 @@
     {
       "id": "tuquet.bridge.disable",
       "route": [
-        "bridge",
+        "gateway",
         "disable"
       ],
       "pillar": "bridge",
@@ -1497,7 +1216,7 @@
     {
       "id": "tuquet.bridge.enable",
       "route": [
-        "bridge",
+        "gateway",
         "enable"
       ],
       "pillar": "bridge",
@@ -1515,7 +1234,7 @@
     {
       "id": "tuquet.bridge.start",
       "route": [
-        "bridge",
+        "gateway",
         "start"
       ],
       "pillar": "bridge",
@@ -1554,7 +1273,7 @@
     {
       "id": "tuquet.bridge.status",
       "route": [
-        "bridge",
+        "gateway",
         "status"
       ],
       "pillar": "bridge",
@@ -1593,7 +1312,7 @@
     {
       "id": "tuquet.bridge.stop",
       "route": [
-        "bridge",
+        "gateway",
         "stop"
       ],
       "pillar": "bridge",
@@ -1611,7 +1330,7 @@
     {
       "id": "tuquet.proxy.probe",
       "route": [
-        "proxy",
+        "gateway",
         "probe"
       ],
       "pillar": "bridge",
@@ -1642,176 +1361,9 @@
       ]
     },
     {
-      "id": "tuquet.faker.card",
-      "route": [
-        "faker",
-        "card"
-      ],
-      "pillar": "faker",
-      "title": "Display Detailed Persona Card",
-      "description": "Inspect a single detailed persona card with full credentials and citizen data.",
-      "options": [
-        {
-          "name": "gender",
-          "short": "g",
-          "type": "string",
-          "description": "Filter by gender."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.faker.generate",
-      "route": [
-        "faker",
-        "generate"
-      ],
-      "pillar": "faker",
-      "title": "Generate Synthetic Identities",
-      "description": "Generate compliant personas with validated 12-digit CCCD, phone, and addresses.",
-      "options": [
-        {
-          "name": "count",
-          "short": "n",
-          "type": "integer",
-          "default": 1,
-          "description": "Number of profiles to generate."
-        },
-        {
-          "name": "gender",
-          "short": "g",
-          "type": "choice",
-          "description": "Filter by gender: male, female, or all.",
-          "choices": [
-            "male",
-            "female",
-            "all"
-          ]
-        },
-        {
-          "name": "nat",
-          "type": "string",
-          "default": "US",
-          "description": "Filter by nationality (US, VN, JP)."
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "choice",
-          "default": "json",
-          "description": "Output format: json, table, card, or csv.",
-          "choices": [
-            "json",
-            "table",
-            "card",
-            "csv"
-          ]
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual identity card (shortcut for -f card)."
-        },
-        {
-          "name": "table",
-          "short": "t",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rounded ANSI tabular overview (shortcut for -f table)."
-        },
-        {
-          "name": "csv",
-          "type": "boolean",
-          "default": false,
-          "description": "Export to RFC-compliant CSV (shortcut for -f csv)."
-        },
-        {
-          "name": "output",
-          "short": "o",
-          "type": "path",
-          "description": "Optional file path to export output to."
-        }
-      ],
-      "mcp": {
-        "tool_name": "faker_generate",
-        "exported": true
-      }
-    },
-    {
-      "id": "tuquet.faker.nationalities",
-      "route": [
-        "faker",
-        "nationalities"
-      ],
-      "pillar": "faker",
-      "title": "List Supported Nationalities & Schemas",
-      "description": "List supported nationalities, ID schemas, and provider metadata.",
-      "options": [
-        {
-          "name": "table",
-          "short": "t",
-          "type": "boolean",
-          "default": false,
-          "description": "Display catalog in formatted ANSI table."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.faker.id",
-      "route": [
-        "faker",
-        "id"
-      ],
-      "pillar": "faker",
-      "title": "Generate Isolated National ID",
-      "description": "Generate isolated national ID with mathematically valid checksum (SSN, CCCD, My Number).",
-      "options": [
-        {
-          "name": "nat",
-          "type": "string",
-          "description": "Filter by nationality: US, VN, JP."
-        },
-        {
-          "name": "raw",
-          "short": "r",
-          "type": "boolean",
-          "default": false,
-          "description": "Output raw ID string only without JSON wrapper."
-        }
-      ]
-    },
-    {
       "id": "tuquet.runner.logs",
       "route": [
-        "runner",
+        "worker",
         "logs"
       ],
       "pillar": "runner",
@@ -1837,7 +1389,7 @@
     {
       "id": "tuquet.runner.probe",
       "route": [
-        "runner",
+        "worker",
         "probe"
       ],
       "pillar": "runner",
@@ -1851,7 +1403,7 @@
     {
       "id": "tuquet.runner.restart",
       "route": [
-        "runner",
+        "worker",
         "restart"
       ],
       "pillar": "runner",
@@ -1870,7 +1422,7 @@
     {
       "id": "tuquet.runner.start",
       "route": [
-        "runner",
+        "worker",
         "start"
       ],
       "pillar": "runner",
@@ -1896,7 +1448,7 @@
     {
       "id": "tuquet.runner.status",
       "route": [
-        "runner",
+        "worker",
         "status"
       ],
       "pillar": "runner",
@@ -1935,7 +1487,7 @@
     {
       "id": "tuquet.runner.stop",
       "route": [
-        "runner",
+        "worker",
         "stop"
       ],
       "pillar": "runner",
@@ -1954,7 +1506,7 @@
     {
       "id": "tuquet.runner.worker",
       "route": [
-        "runner",
+        "worker",
         "worker"
       ],
       "pillar": "runner",
@@ -1996,7 +1548,7 @@
     {
       "id": "tuquet.cloud.login",
       "route": [
-        "cloud",
+        "auth",
         "login"
       ],
       "pillar": "cloud",
@@ -2087,7 +1639,7 @@
     {
       "id": "tuquet.cloud.logout",
       "route": [
-        "cloud",
+        "auth",
         "logout"
       ],
       "pillar": "cloud",
@@ -2097,7 +1649,7 @@
     {
       "id": "tuquet.cloud.whoami",
       "route": [
-        "cloud",
+        "auth",
         "whoami"
       ],
       "pillar": "cloud",
@@ -2140,7 +1692,7 @@
     {
       "id": "tuquet.cloud.tenant.list",
       "route": [
-        "cloud",
+        "auth",
         "tenant",
         "list"
       ],
@@ -2180,7 +1732,7 @@
     {
       "id": "tuquet.cloud.tenant.switch",
       "route": [
-        "cloud",
+        "auth",
         "tenant",
         "switch"
       ],
@@ -2228,7 +1780,7 @@
     {
       "id": "tuquet.cloud.tenant.current",
       "route": [
-        "cloud",
+        "auth",
         "tenant",
         "current"
       ],
@@ -2262,394 +1814,6 @@
           "type": "boolean",
           "default": true,
           "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.otp",
-      "route": [
-        "inbox",
-        "otp"
-      ],
-      "pillar": "inbox",
-      "title": "Fetch or Intercept OTP",
-      "description": "Retrieve latest OTP code for a recipient with optional wait polling and auto-consumption.",
-      "arguments": [
-        {
-          "name": "recipient",
-          "type": "string",
-          "required": true,
-          "description": "Target email recipient (e.g. acc1@domain.com)"
-        }
-      ],
-      "options": [
-        {
-          "name": "wait",
-          "short": "w",
-          "type": "boolean",
-          "default": false,
-          "description": "Wait and poll until OTP arrives"
-        },
-        {
-          "name": "timeout",
-          "short": "t",
-          "type": "integer",
-          "default": 60,
-          "description": "Maximum wait time in seconds (default: 60)"
-        },
-        {
-          "name": "raw",
-          "short": "r",
-          "type": "boolean",
-          "default": false,
-          "description": "Output raw OTP code only (ideal for shell pipes & automation)"
-        },
-        {
-          "name": "no-consume",
-          "type": "boolean",
-          "default": false,
-          "description": "Do not mark OTP as consumed"
-        },
-        {
-          "name": "copy",
-          "type": "boolean",
-          "default": false,
-          "description": "Auto-copy intercepted OTP code to system clipboard"
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ],
-      "mcp": {
-        "tool_name": "inbox_otp",
-        "exported": true
-      }
-    },
-    {
-      "id": "tuquet.inbox.link",
-      "route": [
-        "inbox",
-        "link"
-      ],
-      "pillar": "inbox",
-      "title": "Fetch Verification or Magic Link",
-      "description": "Extract latest verification, password reset, or magic link from recipient inbox.",
-      "arguments": [
-        {
-          "name": "recipient",
-          "type": "string",
-          "required": true,
-          "description": "Target email recipient (e.g. acc1@domain.com)"
-        }
-      ],
-      "options": [
-        {
-          "name": "link-type",
-          "short": "l",
-          "type": "string",
-          "description": "Optional link type filter (verification, reset_password, magic_link)"
-        },
-        {
-          "name": "open",
-          "short": "o",
-          "type": "boolean",
-          "default": false,
-          "description": "Open link automatically in default browser"
-        },
-        {
-          "name": "raw",
-          "short": "r",
-          "type": "boolean",
-          "default": false,
-          "description": "Output raw URL only"
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.list",
-      "route": [
-        "inbox",
-        "list"
-      ],
-      "pillar": "inbox",
-      "title": "List Inbound Emails and OTPs",
-      "description": "List recent caught emails and extracted OTPs in local storage.",
-      "options": [
-        {
-          "name": "recipient",
-          "short": "r",
-          "type": "string",
-          "description": "Filter by recipient email address"
-        },
-        {
-          "name": "limit",
-          "short": "l",
-          "type": "integer",
-          "default": 20,
-          "description": "Maximum records to display (default: 20)"
-        },
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.start",
-      "route": [
-        "inbox",
-        "start"
-      ],
-      "pillar": "inbox",
-      "title": "Start Catch-All Webhook Daemon",
-      "description": "Start the local Axum webhook listener daemon to receive Cloudflare email routing events.",
-      "options": [
-        {
-          "name": "port",
-          "short": "p",
-          "type": "integer",
-          "description": "Custom listening port (default from inbox.json: 9123)"
-        },
-        {
-          "name": "host",
-          "type": "string",
-          "description": "Custom listening host (default: 127.0.0.1)"
-        },
-        {
-          "name": "foreground",
-          "short": "f",
-          "type": "boolean",
-          "default": false,
-          "description": "Run in foreground instead of background daemon"
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.stop",
-      "route": [
-        "inbox",
-        "stop"
-      ],
-      "pillar": "inbox",
-      "title": "Stop Inbox Daemon",
-      "description": "Stop running inbox webhook listener daemon process."
-    },
-    {
-      "id": "tuquet.inbox.status",
-      "route": [
-        "inbox",
-        "status"
-      ],
-      "pillar": "inbox",
-      "title": "Inbox Subsystem Status",
-      "description": "Inspect daemon PID, port, database statistics, and cloud synchronization status.",
-      "options": [
-        {
-          "name": "format",
-          "short": "f",
-          "type": "string",
-          "default": "json",
-          "description": "Output format: json, table, or card (default: json)."
-        },
-        {
-          "name": "table",
-          "type": "boolean",
-          "default": false,
-          "description": "Display formatted terminal table view (shortcut for -f table)."
-        },
-        {
-          "name": "card",
-          "short": "c",
-          "type": "boolean",
-          "default": false,
-          "description": "Display rich visual card view (shortcut for -f card)."
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": true,
-          "description": "Output results in raw JSON format (default)."
-        }
-      ],
-      "mcp": {
-        "tool_name": "inbox_status",
-        "exported": true
-      }
-    },
-    {
-      "id": "tuquet.inbox.test",
-      "route": [
-        "inbox",
-        "test"
-      ],
-      "pillar": "inbox",
-      "title": "One-Click Inbox Acceptance Test",
-      "description": "Execute one-click acceptance test verifying local storage, cloud discovery, and OTP interception.",
-      "options": [
-        {
-          "name": "simulate",
-          "short": "s",
-          "type": "boolean",
-          "default": false,
-          "description": "Force simulated local loop test even when online"
-        },
-        {
-          "name": "remote",
-          "short": "r",
-          "type": "boolean",
-          "default": false,
-          "description": "Verify connectivity to remote cloud endpoint"
-        },
-        {
-          "name": "json",
-          "short": "j",
-          "type": "boolean",
-          "default": false,
-          "description": "Output results in JSON format"
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.setup-worker",
-      "route": [
-        "inbox",
-        "setup-worker"
-      ],
-      "pillar": "inbox",
-      "title": "Generate Cloudflare Email Worker",
-      "description": "Export ready-to-deploy Cloudflare Email Routing Worker script for 1-click catch-all.",
-      "options": [
-        {
-          "name": "output",
-          "short": "o",
-          "type": "string",
-          "description": "Write generated script to target file path"
-        },
-        {
-          "name": "secret",
-          "short": "s",
-          "type": "string",
-          "description": "Custom webhook secret token"
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.sync",
-      "route": [
-        "inbox",
-        "sync"
-      ],
-      "pillar": "inbox",
-      "title": "Sync Inbound Emails from Cloud",
-      "description": "Synchronize latest incoming emails and OTPs from Supabase Cloud.",
-      "options": [
-        {
-          "name": "limit",
-          "short": "l",
-          "type": "integer",
-          "default": 50,
-          "description": "Number of recent emails to pull from cloud (default: 50)"
-        }
-      ]
-    },
-    {
-      "id": "tuquet.inbox.config",
-      "route": [
-        "inbox",
-        "config"
-      ],
-      "pillar": "inbox",
-      "title": "Manage Inbox Configuration",
-      "description": "Display, inspect, or edit the canonical inbox configuration file (~/.tuquet/inbox/inbox.json).",
-      "options": [
-        {
-          "name": "edit",
-          "short": "e",
-          "type": "boolean",
-          "default": false,
-          "description": "Open ~/.tuquet/inbox/inbox.json in your default editor"
-        },
-        {
-          "name": "show",
-          "short": "s",
-          "type": "boolean",
-          "default": false,
-          "description": "Display raw configuration file path or content"
         }
       ]
     }

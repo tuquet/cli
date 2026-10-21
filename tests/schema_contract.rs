@@ -200,12 +200,12 @@ fn test_runtime_manifest_queries() {
         "Expected bridge commands in manifest"
     );
 
-    let schema_cmd = find_by_route(&["schema", "commands"]);
+    let auth_cmd = find_by_route(&["auth", "whoami"]);
     assert!(
-        schema_cmd.is_some(),
-        "Expected 'tq schema commands' to resolve via find_by_route"
+        auth_cmd.is_some(),
+        "Expected 'tq auth whoami' to resolve via find_by_route"
     );
-    assert_eq!(schema_cmd.unwrap().id, "tuquet.schema.commands");
+    assert_eq!(auth_cmd.unwrap().id, "tuquet.cloud.whoami");
 }
 
 #[test]
