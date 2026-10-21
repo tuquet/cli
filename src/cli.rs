@@ -14,62 +14,34 @@ pub fn get_styles() -> Styles {
 }
 
 pub const MAIN_HELP_TEMPLATE: &str = "\
-\x1b[38;2;56;189;248m   _____  ____   ______  ______ ______  ______  ____  \x1b[0m
-\x1b[38;2;96;165;250m  / ___/ / __ \\ / ____/ / ____//_  __/ / ____/ / __ \\ \x1b[0m
-\x1b[38;2;129;140;248m  \\__ \\  / /_/ // __/   / /     / /    / __/   / /_/ /\x1b[0m   \x1b[1;38;2;56;189;248mv1.2.1\x1b[0m
-\x1b[38;2;168;85;247m ___/ /  / ____// /___  / /___  / /    / /___  / _, _/\x1b[0m
-\x1b[38;2;192;132;252m/____/   /_/    /_____/ \\____/  /_/    /_____/ /_/ |_|\x1b[0m
+\x1b[1;38;2;56;189;248mtq\x1b[0m \x1b[38;2;148;163;184mv1.2.1\x1b[0m — Autonomous Browser Automation & Distributed Mesh Runtime
 
-  Autonomous Browser Automation & Distributed Mesh Runtime
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m <COMMAND> [OPTIONS]
 
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m [COMMAND] [OPTIONS]
+\x1b[1;38;2;56;189;248mCore Commands:\x1b[0m
+  \x1b[1;32mtui\x1b[0m             Mission Control interactive terminal dashboard
+  \x1b[1;32mdev\x1b[0m             Interactive multi-stack script runner (Node/Rust/Java/Docker)
+  \x1b[1;32mstatus\x1b[0m          Unified ecosystem dashboard (Cloud, Runner, Browser)
+  \x1b[1;32mbridge\x1b[0m          Network bridge, multi-VPS mesh & SOCKS5 proxy
+  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push
+  \x1b[1;32mdoctor\x1b[0m          Ecosystem health, dependencies & automated bootstrap
 
-\x1b[1;38;2;56;189;248mDeveloper Suite:\x1b[0m
-  \x1b[1;32mdev\x1b[0m             Scan machine projects & run scripts interactively (★ Recent + Multi-stack)
-  \x1b[1;32mport\x1b[0m            Scan active local listening TCP ports & terminate processes
-  \x1b[1;32mcode\x1b[0m            Find any project across machine & open in VS Code / Antigravity / Explorer
-  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
-  \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
-
-\x1b[1;38;2;56;189;248mQuick Commands:\x1b[0m
-  \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, and Browser
-  \x1b[1;32mdoctor\x1b[0m          Check all ecosystem dependencies, system tools & health
-  \x1b[1;32mbootstrap\x1b[0m       One-command workstation onboarding & ecosystem bootstrap
-  \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
-  \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
-  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Cloud
-  \x1b[1;32mupgrade\x1b[0m         Check and upgrade CLI to the latest release
-  \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
-
-
-\x1b[1;38;2;56;189;248mSubsystems:\x1b[0m
+\x1b[1;38;2;56;189;248mSubsystems & Tools:\x1b[0m
   \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
+  \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
   \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
   \x1b[1;36mcloud\x1b[0m           Cloud authentication & multi-tenant pairing
-  \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
   \x1b[1;36mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
-  \x1b[1;36mbridge\x1b[0m          Network bridge, multi-VPS mesh & proxy manager
-
-\x1b[1;38;2;56;189;248mIntegration:\x1b[0m
-  \x1b[1;35mmcp\x1b[0m             Run Model Context Protocol (MCP) stdio server for AI agents
-
-\x1b[1;38;2;56;189;248mInteractive:\x1b[0m
-  \x1b[1;35mtui\x1b[0m             Launch Mission Control terminal dashboard (interactive TUI)
+  \x1b[1;36mmcp\x1b[0m             Run Model Context Protocol (MCP) server for AI agents
+  \x1b[1;36mport\x1b[0m            Scan active listening TCP ports & terminate processes
+  \x1b[1;36mcode\x1b[0m            Find machine projects & open in VS Code / Antigravity
+  \x1b[1;36menv\x1b[0m             Validate .env vs .env.example & sync missing keys
 
 \x1b[1;38;2;56;189;248mOptions:\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
   \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
-\x1b[1;38;2;56;189;248mExamples:\x1b[0m
-  tq                              Launch Mission Control terminal dashboard (interactive TUI)
-  tq tui                          Launch Mission Control terminal dashboard
-  tq dev                          Scan projects & interactively run scripts (Node/Rust/Java/Docker)
-  tq port                         Scan listening ports & terminate zombie processes
-  tq code                         Find project across machine & open in IDE
-  tq git                          Inspect multi-repo Git radar & push via Bridge
-  tq env                          Validate .env vs .env.example & sync missing keys
-  tq doctor                       Check dependencies and system health
-  tq status                       Check full ecosystem dashboard";
+Run '\x1b[1mtq <command> --help\x1b[0m' for more information on a command.";
 
 /// - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
