@@ -249,6 +249,15 @@
       "description": "Launch full-screen interactive Terminal User Interface dashboard."
     },
     {
+      "id": "tuquet.setup",
+      "route": [
+        "setup"
+      ],
+      "pillar": "system",
+      "title": "Interactive Onboarding Setup Wizard",
+      "description": "Interactive guided workstation onboarding wizard for Core SSOT and optional modules."
+    },
+    {
       "id": "tuquet.status",
       "route": [
         "status"

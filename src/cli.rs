@@ -20,6 +20,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mCore Commands:\x1b[0m
   \x1b[1;32mtui\x1b[0m             Mission Control interactive terminal dashboard
+  \x1b[1;32msetup\x1b[0m           Interactive guided workstation onboarding wizard
   \x1b[1;32mdev\x1b[0m             Interactive multi-stack script runner (Node/Rust/Java/Docker)
   \x1b[1;32mstatus\x1b[0m          Unified ecosystem dashboard (Cloud, Runner, Browser)
   \x1b[1;32mbridge\x1b[0m          Network bridge, multi-VPS mesh & SOCKS5 proxy
@@ -215,12 +216,16 @@ pub enum Commands {
     },
 
     /// One-command workstation onboarding & ecosystem bootstrap (SSOT directories, DB, MCP, browser)
-    #[command(name = "bootstrap", aliases = ["setup", "init"])]
+    #[command(name = "bootstrap", aliases = ["init"])]
     Bootstrap {
         /// Force re-download and re-provisioning of runtimes even if already present
         #[arg(short, long)]
         force: bool,
     },
+
+    /// Interactive guided workstation onboarding wizard (Core + Optional Modules)
+    #[command(name = "setup")]
+    Setup(SetupArgs),
 
     /// Inspect or edit unified service configurations across microservice pillars
     #[command(name = "config")]
@@ -1632,6 +1637,48 @@ pub enum WorkflowCommands {
         #[arg(long, default_value_t = true)]
         vault: bool,
     },
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct SetupArgs {
+    /// Target sub-component to set up directly (core, mcp, bridge, browser, cloud)
+    #[command(subcommand)]
+    pub component: Option<SetupComponent>,
+
+    /// Quick non-interactive core setup (SSOT + MCP only, skips optional modules)
+    #[arg(short = 'q', long)]
+    pub quick: bool,
+
+    /// Force re-provisioning / overwrite existing configurations
+    #[arg(short, long)]
+    pub force: bool,
+
+    /// Assume yes to all interactive prompts (automated onboarding)
+    #[arg(short = 'y', long)]
+    pub yes: bool,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum SetupComponent {
+    /// Initialize SSOT directory (~/.tq) and database
+    #[command(name = "core")]
+    Core,
+
+    /// Auto-wire MCP server into AI agent editors (Antigravity, Cursor, Claude, Hermes)
+    #[command(name = "mcp")]
+    Mcp,
+
+    /// Configure Specter Bridge VPS tunnel & verify SOCKS5 mesh proxy
+    #[command(name = "bridge")]
+    Bridge,
+
+    /// Provision Antidetect Chromium browser sandbox
+    #[command(name = "browser")]
+    Browser,
+
+    /// Pair workstation with TQ Cloud (Supabase)
+    #[command(name = "cloud")]
+    Cloud,
 }
 
 #[cfg(test)]

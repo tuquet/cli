@@ -13,6 +13,7 @@ pub mod mcp;
 pub mod port;
 pub mod runner;
 pub mod schema;
+pub mod setup;
 pub mod status;
 pub mod tenant;
 pub mod tui;

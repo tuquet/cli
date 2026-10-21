@@ -76,6 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::doctor::run(fix, format.resolve()).await
         }
         Some(Commands::Bootstrap { force }) => commands::doctor::bootstrap(force).await,
+        Some(Commands::Setup(args)) => commands::setup::run(args).await,
         Some(Commands::Config {
             service,
             args,
