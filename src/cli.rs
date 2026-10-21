@@ -18,31 +18,36 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
 
 \x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m <COMMAND> [OPTIONS]
 
-\x1b[1;38;2;56;189;248mCore Commands:\x1b[0m
-  \x1b[1;32mtui\x1b[0m             Mission Control interactive terminal dashboard
-  \x1b[1;32msetup\x1b[0m           Interactive guided workstation onboarding wizard
-  \x1b[1;32mdev\x1b[0m             Interactive multi-stack script runner (Node/Rust/Java/Docker)
-  \x1b[1;32mstatus\x1b[0m          Unified ecosystem dashboard (Cloud, Runner, Browser)
+\x1b[1;38;2;56;189;248mCommands:\x1b[0m
+  \x1b[1;32mautoma\x1b[0m          Browser workflow automation engine & execution runner
+  \x1b[1;32mbootstrap\x1b[0m       One-command ecosystem provisioning (SSOT, DB, runtimes)
   \x1b[1;32mbridge\x1b[0m          Network bridge, multi-VPS mesh & SOCKS5 proxy
-  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push
-  \x1b[1;32mdoctor\x1b[0m          Ecosystem health, dependencies & automated bootstrap
-
-\x1b[1;38;2;56;189;248mSubsystems & Tools:\x1b[0m
-  \x1b[1;36mautoma\x1b[0m          Browser automation engine & workflow runner
-  \x1b[1;36mbrowser\x1b[0m         Dedicated isolated browser runtime management
-  \x1b[1;36mrunner\x1b[0m          Distributed daemon worker & cloud execution node
-  \x1b[1;36mcloud\x1b[0m           Cloud authentication & multi-tenant pairing
-  \x1b[1;36mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
-  \x1b[1;36mmcp\x1b[0m             Run Model Context Protocol (MCP) server for AI agents
-  \x1b[1;36mport\x1b[0m            Scan active listening TCP ports & terminate processes
-  \x1b[1;36mcode\x1b[0m            Find machine projects & open in VS Code / Antigravity
-  \x1b[1;36menv\x1b[0m             Validate .env vs .env.example & sync missing keys
+  \x1b[1;32mbrowser\x1b[0m         Dedicated isolated Chromium runtime & profile sandbox
+  \x1b[1;32mcloud\x1b[0m           Cloud authentication, pairing & tenant workspace switcher
+  \x1b[1;32mcode\x1b[0m            Locate machine repositories & launch in IDE
+  \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
+  \x1b[1;32mdev\x1b[0m             Interactive multi-stack script runner (★ Recent + Multi-stack)
+  \x1b[1;32mdoctor\x1b[0m          System health radar & automated dependency diagnostics
+  \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
+  \x1b[1;32mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
+  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
+  \x1b[1;32minbox\x1b[0m           Webhook & OTP listener daemon for test automation
+  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Cloud
+  \x1b[1;32mmcp\x1b[0m             Model Context Protocol (MCP) stdio server for AI agents
+  \x1b[1;32mport\x1b[0m            Scan active listening TCP ports & terminate processes
+  \x1b[1;32mrunner\x1b[0m          Distributed daemon worker & cloud execution node
+  \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
+  \x1b[1;32msetup\x1b[0m           Interactive guided workstation onboarding wizard
+  \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, Bridge & Browser
+  \x1b[1;32mtui\x1b[0m             Mission Control full-screen interactive dashboard
+  \x1b[1;32mupgrade\x1b[0m         Check and upgrade CLI to the latest release
+  \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
 
 \x1b[1;38;2;56;189;248mOptions:\x1b[0m
   \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
   \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
 
-Run '\x1b[1mtq <command> --help\x1b[0m' for more information on a command.";
+Run '\x1b[1mtq <command> --help\x1b[0m' for details on a specific command.";
 
 /// - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
