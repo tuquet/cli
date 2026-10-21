@@ -16,38 +16,30 @@ pub fn get_styles() -> Styles {
 pub const MAIN_HELP_TEMPLATE: &str = "\
 \x1b[1;38;2;56;189;248mtq\x1b[0m \x1b[38;2;148;163;184mv1.2.1\x1b[0m — Autonomous Browser Automation & Distributed Mesh Runtime
 
-\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m <COMMAND> [OPTIONS]
+\x1b[1;38;2;56;189;248mUsage:\x1b[0m \x1b[1mtq\x1b[0m <command> [subcommand] [flags]
 
-\x1b[1;38;2;56;189;248mCommands:\x1b[0m
-  \x1b[1;32mautoma\x1b[0m          Browser workflow automation engine & execution runner
-  \x1b[1;32mbootstrap\x1b[0m       One-command ecosystem provisioning (SSOT, DB, runtimes)
-  \x1b[1;32mbridge\x1b[0m          Network bridge, multi-VPS mesh & SOCKS5 proxy
-  \x1b[1;32mbrowser\x1b[0m         Dedicated isolated Chromium runtime & profile sandbox
-  \x1b[1;32mcloud\x1b[0m           Cloud authentication, pairing & tenant workspace switcher
-  \x1b[1;32mcode\x1b[0m            Locate machine repositories & launch in IDE
-  \x1b[1;32mconfig\x1b[0m          Inspect or edit configuration across all microservice pillars
-  \x1b[1;32mdev\x1b[0m             Interactive multi-stack script runner (★ Recent + Multi-stack)
-  \x1b[1;32mdoctor\x1b[0m          System health radar & automated dependency diagnostics
-  \x1b[1;32menv\x1b[0m             Validate .env vs .env.example, sync missing keys & switch profiles
-  \x1b[1;32mfaker\x1b[0m           Synthetic persona & test data generator (CCCD, addresses)
-  \x1b[1;32mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
-  \x1b[1;32minbox\x1b[0m           Webhook & OTP listener daemon for test automation
-  \x1b[1;32mlogin\x1b[0m           Authenticate and pair workstation with Cloud
-  \x1b[1;32mmcp\x1b[0m             Model Context Protocol (MCP) stdio server for AI agents
-  \x1b[1;32mport\x1b[0m            Scan active listening TCP ports & terminate processes
-  \x1b[1;32mrunner\x1b[0m          Distributed daemon worker & cloud execution node
-  \x1b[1;32mschema\x1b[0m          Inspect CLI command manifests & microservice schemas
-  \x1b[1;32msetup\x1b[0m           Interactive guided workstation onboarding wizard
-  \x1b[1;32mstatus\x1b[0m          Inspect unified status across Cloud, Runner, Bridge & Browser
-  \x1b[1;32mtui\x1b[0m             Mission Control full-screen interactive dashboard
-  \x1b[1;32mupgrade\x1b[0m         Check and upgrade CLI to the latest release
-  \x1b[1;32mwhoami\x1b[0m          Check active cloud enrollment identity & device ID
+\x1b[1;38;2;56;189;248mCORE COMMANDS\x1b[0m
+  \x1b[1;32mworkflow\x1b[0m        Manage and execute browser automation workflows (run, list, inspect)
+  \x1b[1;32mbrowser\x1b[0m         Manage isolated anti-detect Chromium runtimes & profiles (launch, install)
+  \x1b[1;32mbridge\x1b[0m          Manage multi-VPS encrypted mesh & SOCKS5 proxy (start, stop, status)
+  \x1b[1;32mfaker\x1b[0m           Generate localized synthetic personas and test data (cccd, address, otp)
 
-\x1b[1;38;2;56;189;248mOptions:\x1b[0m
-  \x1b[38;2;148;163;184m-h, --help\x1b[0m      Print help overview
-  \x1b[38;2;148;163;184m-V, --version\x1b[0m   Print version
+\x1b[1;38;2;56;189;248mDEVELOPER & ENVIRONMENT\x1b[0m
+  \x1b[1;36mauth\x1b[0m            Authenticate with cloud ecosystem (login, logout, status, switch)
+  \x1b[1;36mdev\x1b[0m             Local workstation task runner & dev radar (scripts, port, env)
+  \x1b[1;36mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
+  \x1b[1;36mconfig\x1b[0m          Inspect and manage configuration profiles across subsystems
 
-Run '\x1b[1mtq <command> --help\x1b[0m' for details on a specific command.";
+\x1b[1;38;2;56;189;248mSYSTEM & TELEMETRY\x1b[0m
+  \x1b[1;35mtui\x1b[0m             Launch Mission Control full-screen interactive dashboard
+  \x1b[1;35msetup\x1b[0m           Interactive guided workstation onboarding wizard
+  \x1b[1;35mdoctor\x1b[0m          Verify environment health & system dependencies
+
+\x1b[1;38;2;56;189;248mFLAGS\x1b[0m
+  \x1b[38;2;148;163;184m-h, --help\x1b[0m      Show help for command
+  \x1b[38;2;148;163;184m-V, --version\x1b[0m   Show tq version
+
+Use '\x1b[1mtq <command> --help\x1b[0m' for more information about a command.";
 
 /// - Autonomous Browser Automation & Distributed Mesh Runtime
 #[derive(Parser, Debug)]
@@ -99,7 +91,7 @@ pub enum Commands {
     },
 
     /// Scan active local listening TCP ports and terminate processes interactively
-    #[command(name = "port")]
+    #[command(name = "port", hide = true)]
     Port {
         /// Optional port number or process name filter (e.g. 5173, 8080, node, java)
         #[arg(value_name = "QUERY")]
@@ -122,7 +114,7 @@ pub enum Commands {
     },
 
     /// Find any project across the machine and open in VS Code, Antigravity, Cursor, or Explorer
-    #[command(name = "code")]
+    #[command(name = "code", hide = true)]
     Code {
         /// Target project name or path query
         #[arg(value_name = "PROJECT")]
@@ -172,7 +164,7 @@ pub enum Commands {
     },
 
     /// Validate .env against .env.example, sync missing keys, and switch environment profiles
-    #[command(name = "env")]
+    #[command(name = "env", hide = true)]
     Env {
         /// Optional target project name or path query (defaults to current directory if .env* exists)
         #[arg(value_name = "PROJECT")]
@@ -199,7 +191,7 @@ pub enum Commands {
     },
 
     /// Show unified status overview of ecosystem
-    #[command(name = "status")]
+    #[command(name = "status", hide = true)]
     Status {
         #[command(flatten)]
         format: crate::ui::FormatArgs,
@@ -221,7 +213,7 @@ pub enum Commands {
     },
 
     /// One-command workstation onboarding & ecosystem bootstrap (SSOT directories, DB, MCP, browser)
-    #[command(name = "bootstrap", aliases = ["init"])]
+    #[command(name = "bootstrap", aliases = ["init"], hide = true)]
     Bootstrap {
         /// Force re-download and re-provisioning of runtimes even if already present
         #[arg(short, long)]
@@ -253,14 +245,14 @@ pub enum Commands {
     },
 
     /// Show current Cloud identity and enrollment status
-    #[command(name = "whoami")]
+    #[command(name = "whoami", hide = true)]
     Whoami {
         #[command(flatten)]
         format: crate::ui::FormatArgs,
     },
 
     /// Authenticate operator account, resolve multi-tenant workspace, and pair workstation
-    #[command(name = "login")]
+    #[command(name = "login", hide = true)]
     Login {
         /// Cloud / Supabase endpoint URL
         #[arg(short, long)]
@@ -303,33 +295,33 @@ pub enum Commands {
     },
 
     /// Disconnect workstation and remove local session credentials
-    #[command(name = "logout")]
+    #[command(name = "logout", hide = true)]
     Logout,
 
     /// Manage accessible multi-tenant workspaces and active context
-    #[command(name = "tenant", aliases = ["workspace", "ws"])]
+    #[command(name = "tenant", aliases = ["workspace", "ws"], hide = true)]
     Tenant {
         #[command(subcommand)]
         command: Option<TenantSubcommands>,
     },
 
-    /// Automa browser workflow automation engine
-    #[command(name = "automa")]
-    Automa {
+    /// Manage and execute browser automation workflows
+    #[command(name = "workflow", aliases = ["automa", "wf"])]
+    Workflow {
         #[command(subcommand)]
         command: Option<AutomaSubcommands>,
     },
 
     /// Distributed runner daemon worker & cloud execution node
-    #[command(name = "runner")]
+    #[command(name = "runner", hide = true)]
     Runner {
         #[command(subcommand)]
         command: Option<RunnerSubcommands>,
     },
 
-    /// Cloud authentication & multi-tenant pairing
-    #[command(name = "cloud")]
-    Cloud {
+    /// Authenticate with cloud ecosystem and manage credentials
+    #[command(name = "auth", aliases = ["cloud"])]
+    Auth {
         #[command(subcommand)]
         command: Option<CloudSubcommands>,
     },
@@ -352,15 +344,15 @@ pub enum Commands {
     },
 
     /// Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents
-    #[command(name = "mcp")]
+    #[command(name = "mcp", hide = true)]
     Mcp,
 
     /// Check and upgrade CLI to the latest release
-    #[command(name = "upgrade", aliases = ["update"])]
+    #[command(name = "upgrade", aliases = ["update"], hide = true)]
     Upgrade,
 
     /// Probe proxy connectivity, latency, and public egress IP address
-    #[command(name = "proxy")]
+    #[command(name = "proxy", hide = true)]
     Proxy {
         #[command(subcommand)]
         command: Option<ProxyCommands>,
@@ -374,14 +366,14 @@ pub enum Commands {
     },
 
     /// Universal Catch-All Email & OTP Interceptor Subsystem
-    #[command(name = "inbox", aliases = ["mail", "otp"])]
+    #[command(name = "inbox", aliases = ["mail", "otp"], hide = true)]
     Inbox {
         #[command(subcommand)]
         command: Option<InboxSubcommands>,
     },
 
     /// Inspect and export CLI command manifests and microservice JSON schemas
-    #[command(name = "schema", aliases = ["manifest"])]
+    #[command(name = "schema", aliases = ["manifest"], hide = true)]
     Schema {
         #[command(subcommand)]
         command: Option<SchemaSubcommands>,

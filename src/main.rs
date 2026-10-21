@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Tenant { command }) => commands::tenant::handle(command)
             .await
             .map_err(|e| e as Box<dyn std::error::Error>),
-        Some(Commands::Automa { command }) => match command {
+        Some(Commands::Workflow { command }) => match command {
             Some(cmd) => commands::automa::handle(cmd).await,
             None => commands::automa::handle_interactive().await,
         },
@@ -125,7 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(cmd) => commands::runner::handle(cmd).await,
             None => commands::runner::handle_interactive().await,
         },
-        Some(Commands::Cloud { command }) => match command {
+        Some(Commands::Auth { command }) => match command {
             Some(cmd) => commands::cloud::handle(cmd)
                 .await
                 .map_err(|e| e as Box<dyn std::error::Error>),
