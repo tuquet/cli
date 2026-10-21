@@ -50,7 +50,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return whoami(OutputFormat::Json).await;
     }
 
-    clack_intro("tq cloud", "Cloud & Fleet Identity Hub");
+    clack_intro("tq auth", "Cloud & Fleet Identity Hub");
 
     let options = vec![
         ClackOption::new(
@@ -130,7 +130,7 @@ pub async fn login(
 
     if !format.is_json() && is_tty {
         clack_intro(
-            "tq login",
+            "tq auth login",
             &format!("Cloud Authentication & Fleet Pairing • {cloud_url}"),
         );
     }
@@ -581,7 +581,7 @@ fn present_login_success(
     });
 
     respond_with(format, &payload, |_| {
-        let mut card = Card::new("TQ CLOUD");
+        let mut card = Card::new("TQ AUTH");
         card.with_badge(badge_online(badge_status));
         card.with_min_width(68);
 
@@ -627,7 +627,7 @@ fn present_logout(logged_out: bool) {
         card.with_badge(badge_offline("LOGGED OUT"));
         card.with_min_width(64);
         card.add_line("Removed local cloud pairing credentials and session identity.");
-        card.with_footer("Run 'tq login' to authenticate with Cloud");
+        card.with_footer("Run 'tq auth login' to authenticate with Cloud");
         println!();
         card.print();
         println!();
@@ -728,7 +728,7 @@ fn present_whoami(
                 }
             }
 
-            card.with_footer("Run 'tq tenant list' to view available multi-tenant workspaces");
+            card.with_footer("Run 'tq auth tenant' to view available multi-tenant workspaces");
             println!();
             card.print();
             println!();
@@ -737,7 +737,7 @@ fn present_whoami(
         let payload = serde_json::json!({
             "enrolled": false,
             "authenticated": false,
-            "message": "Workstation not enrolled with cloud fleet. Run 'tq login' to authenticate."
+            "message": "Workstation not enrolled with cloud fleet. Run 'tq auth login' to authenticate."
         });
 
         respond_with(format, &payload, |_| {
@@ -745,7 +745,7 @@ fn present_whoami(
             card.with_badge(badge_offline("DISCONNECTED"));
             card.with_min_width(64);
             card.add_line("Workstation not enrolled with cloud fleet.");
-            card.with_footer("Run 'tq login' to authenticate with Cloud");
+            card.with_footer("Run 'tq auth login' to authenticate with Cloud");
             println!();
             card.print();
             println!();

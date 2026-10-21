@@ -83,7 +83,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         Some(if cloud_creds.is_some() {
             "Workstation enrolled in Cloud Mesh"
         } else {
-            "Run 'tq login' to authenticate with Cloud"
+            "Run 'tq auth login' to authenticate with Cloud"
         }),
         72,
     );
@@ -362,6 +362,6 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         automa_card.print();
         browser_card.print();
         bridge_card.print();
-        crate::ui::prompt::clack_outro("Run 'tq doctor' for deep diagnostics.");
+        crate::ui::prompt::clack_outro("Run 'tq tui' for full-screen live dashboard.");
     })
 }

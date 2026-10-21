@@ -25,7 +25,7 @@ pub const MAIN_HELP_TEMPLATE: &str = "\
   \x1b[1;32mfaker\x1b[0m           Generate localized synthetic personas and test data (cccd, address, otp)
 
 \x1b[1;38;2;56;189;248mDEVELOPER & ENVIRONMENT\x1b[0m
-  \x1b[1;36mauth\x1b[0m            Authenticate with cloud ecosystem (login, logout, status, switch)
+  \x1b[1;36mauth\x1b[0m            Authenticate with cloud ecosystem (login, logout, whoami, tenant)
   \x1b[1;36mdev\x1b[0m             Local workstation task runner & dev radar (scripts, port, env)
   \x1b[1;36mgit\x1b[0m             Multi-repo Git status radar & Bridge-aware push/pull
   \x1b[1;36mconfig\x1b[0m          Inspect and manage configuration profiles across subsystems
@@ -1002,7 +1002,7 @@ pub enum CloudSubcommands {
     Logout,
 
     /// Show current Cloud authentication and enrollment status
-    #[command(name = "whoami")]
+    #[command(name = "whoami", aliases = ["status"])]
     Whoami {
         #[command(flatten)]
         format: crate::ui::FormatArgs,
