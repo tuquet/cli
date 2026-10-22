@@ -60,6 +60,7 @@ impl Table {
         self
     }
 
+    /// Render Borderless Tabular View (Google Cloud CLI / POSIX standard)
     pub fn render(&self) -> String {
         // Compute column widths
         let mut widths: Vec<usize> = self
@@ -79,36 +80,18 @@ impl Table {
         }
 
         let mut out = String::new();
-        let border = colors::BORDER;
         let reset = colors::RESET;
         let bold = colors::BOLD;
         let cyan = colors::CYAN;
         let muted = colors::MUTED;
         let white = colors::BOLD_WHITE;
 
-        // Top Border: ╭──────┬──────╮
-        out.push_str(border);
-        out.push('╭');
-        for (i, &w) in widths.iter().enumerate() {
-            out.push_str(&"─".repeat(w + 2));
-            if i + 1 < widths.len() {
-                out.push('┬');
-            } else {
-                out.push('╮');
-            }
-        }
-        out.push('\n');
-        out.push_str(reset);
-
-        // Header Row: │  ID  │ NAME │
-        out.push_str(border);
-        out.push('│');
+        // Header Row: COL1    COL2    COL3 (Borderless)
+        out.push_str("  ");
         for (i, col) in self.columns.iter().enumerate() {
             let w = widths[i];
             let cw = visible_width(&col.title);
             let pad = " ".repeat(w.saturating_sub(cw));
-            out.push(' ');
-            out.push_str(reset);
             out.push_str(bold);
             out.push_str(cyan);
             if col.align_right {
@@ -119,52 +102,27 @@ impl Table {
                 out.push_str(&pad);
             }
             out.push_str(reset);
-            out.push(' ');
-            out.push_str(border);
-            out.push('│');
-        }
-        out.push('\n');
-
-        // Middle Divider: ├──────┼──────┤
-        out.push('├');
-        for (i, &w) in widths.iter().enumerate() {
-            out.push_str(&"─".repeat(w + 2));
-            if i + 1 < widths.len() {
-                out.push('┼');
-            } else {
-                out.push('┤');
+            if i + 1 < self.columns.len() {
+                out.push_str("   "); // 3 spaces between columns
             }
         }
         out.push('\n');
-        out.push_str(reset);
 
         // Data Rows
         if self.rows.is_empty() {
-            let total_w: usize = widths.iter().sum::<usize>() + (widths.len() * 3) - 1;
-            let empty_text = "(No entries found)";
-            let pad = (total_w.saturating_sub(empty_text.len())) / 2;
-            out.push_str(border);
-            out.push('│');
-            out.push_str(&" ".repeat(pad));
-            out.push_str(reset);
+            out.push_str("  ");
             out.push_str(muted);
-            out.push_str(empty_text);
+            out.push_str("(No entries found)");
             out.push_str(reset);
-            let remaining = total_w.saturating_sub(pad + empty_text.len());
-            out.push_str(&" ".repeat(remaining));
-            out.push_str(border);
-            out.push_str("│\n");
+            out.push('\n');
         } else {
             for row in &self.rows {
-                out.push_str(border);
-                out.push('│');
+                out.push_str("  ");
                 for (i, col) in self.columns.iter().enumerate() {
                     let w = widths[i];
                     let cell = row.get(i).map(|s| s.as_str()).unwrap_or("");
                     let cw = visible_width(cell);
                     let pad = " ".repeat(w.saturating_sub(cw));
-                    out.push(' ');
-                    out.push_str(reset);
                     out.push_str(white);
                     if col.align_right {
                         out.push_str(&pad);
@@ -174,30 +132,17 @@ impl Table {
                         out.push_str(&pad);
                     }
                     out.push_str(reset);
-                    out.push(' ');
-                    out.push_str(border);
-                    out.push('│');
+                    if i + 1 < self.columns.len() {
+                        out.push_str("   ");
+                    }
                 }
                 out.push('\n');
             }
         }
 
-        // Bottom Border: ╰──────┴──────╯
-        out.push_str(border);
-        out.push('╰');
-        for (i, &w) in widths.iter().enumerate() {
-            out.push_str(&"─".repeat(w + 2));
-            if i + 1 < widths.len() {
-                out.push('┴');
-            } else {
-                out.push('╯');
-            }
-        }
-        out.push('\n');
-        out.push_str(reset);
-
-        // Footer Tip
+        // Footer Summary / Note
         if let Some(ref f) = self.footer {
+            out.push('\n');
             out.push_str("  ");
             out.push_str(muted);
             out.push_str(f);
@@ -208,7 +153,6 @@ impl Table {
         out
     }
 
-    /// Render token-compact table for Non-TTY / AI Agents (zero Unicode border bloat)
     pub fn render_compact(&self) -> String {
         use super::prompt::strip_ansi_codes;
         let mut out = String::new();
@@ -239,9 +183,7 @@ impl Table {
     pub fn print(&self) {
         use std::io::IsTerminal;
         if std::io::stdout().is_terminal() {
-            for line in self.render().lines() {
-                println!("  \x1b[90m│\x1b[0m  {}", line.trim_start());
-            }
+            print!("{}", self.render());
         } else {
             print!("{}", self.render_compact());
         }

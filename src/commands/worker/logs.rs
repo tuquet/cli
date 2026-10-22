@@ -21,11 +21,10 @@ pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::er
     let all_lines: Vec<&str> = content.lines().collect();
     let start_idx = all_lines.len().saturating_sub(lines);
 
-    println!("\x1b[1;36m╭─ WORKER LOGS ({}) ─\x1b[0m", log_file.display());
+    println!("\x1b[1;36mWorker Logs ({})\x1b[0m", log_file.display());
     for line in &all_lines[start_idx..] {
-        println!("│ {}", line);
+        println!("{}", line);
     }
-    println!("\x1b[1;36m╰───────────────────────────────────────────────────\x1b[0m");
 
     if follow {
         use std::io::{BufRead, BufReader, Seek, SeekFrom};
@@ -38,7 +37,7 @@ pub async fn show_logs(follow: bool, lines: usize) -> Result<(), Box<dyn std::er
             line_buf.clear();
             let bytes = reader.read_line(&mut line_buf)?;
             if bytes > 0 {
-                print!("│ {}", line_buf);
+                print!("{}", line_buf);
             } else {
                 tokio::time::sleep(std::time::Duration::from_millis(300)).await;
             }

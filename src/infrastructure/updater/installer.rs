@@ -108,11 +108,10 @@ async fn perform_in_place_self_update(
     current_exe: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!();
-    println!("╭─ IN-PLACE SELF-UPDATE ────────────────────────────────────── ● INITIATED ─╮");
-    println!("│  Current Version    v{:<52} │", info.current_version);
-    println!("│  Target Version     v{:<52} │", info.latest_version);
-    println!("│  Target Executable  {:<53} │", current_exe.display());
-    println!("╰───────────────────────────────────────────────────────────────────────────╯");
+    println!("Initiating in-place self-update...");
+    println!("  Current version   : v{}", info.current_version);
+    println!("  Target version    : v{}", info.latest_version);
+    println!("  Target executable : {}", current_exe.display());
     println!();
 
     let url = format!(
@@ -330,11 +329,10 @@ async fn perform_in_place_self_update(
     }
 
     println!();
-    println!("╭─ UPGRADE COMPLETED ────────────────────────────────────────── ● SUCCESS ─╮");
-    println!("│  Previous Version   v{:<52} │", info.current_version);
-    println!("│  Active Version     v{:<52} │", info.latest_version);
-    println!("│  Binary Executable  {:<53} │", target_spc.display());
-    println!("╰─ In-place upgrade applied successfully! Run 'tq doctor' to inspect. ────╯");
+    println!("In-place upgrade completed successfully.");
+    println!("  Previous version  : v{}", info.current_version);
+    println!("  Active version    : v{}", info.latest_version);
+    println!("  Target executable : {}", target_spc.display());
     println!();
 
     Ok(())
