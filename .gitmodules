@@ -1,0 +1,3 @@
+[submodule "crates/faker"]
+	path = crates/faker
+	url = https://github.com/tuquet/faker.git
