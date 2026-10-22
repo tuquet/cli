@@ -44,70 +44,19 @@ pub async fn handle_profile(
                 return Ok(());
             }
 
-            crate::ui::prompt::clack_intro(
-                "tq browser profile",
-                "Antidetect Browser Profiles",
-            );
-            let mut header_card = Card::new("ANTIDETECT BROWSER PROFILES");
-            header_card.with_badge(badge_online(&format!("{} REGISTERED", profiles.len())));
-            header_card.with_min_width(74);
-            header_card.add_kv(
-                "Storage SSOT",
-                base_dir.join("profiles").display().to_string(),
-            );
-            header_card.with_footer(
-                "Run 'tq browser launch <id>' to start or 'profile create <name>' to add",
-            );
-            header_card.print();
-
             if profiles.is_empty() {
-                let mut empty_card = Card::new("NO PROFILES FOUND");
-                empty_card.with_badge(badge_warn("EMPTY"));
-                empty_card.with_min_width(74);
-                empty_card.add_line("No browser profiles found in ~/.tq/browser/profiles/.");
-                empty_card.add_line("Create your first profile with:");
-                empty_card.add_line("  tq browser profile create 'My-Profile-1'");
-                empty_card.print();
-                crate::ui::prompt::clack_outro("0 profiles registered.");
+                println!("No browser profiles found.");
                 return Ok(());
             }
 
             let columns = vec![
-                Column {
-                    title: "Profile ID".to_string(),
-                    min_width: 22,
-                    align_right: false,
-                },
-                Column {
-                    title: "Name".to_string(),
-                    min_width: 18,
-                    align_right: false,
-                },
-                Column {
-                    title: "PRNG Seed".to_string(),
-                    min_width: 12,
-                    align_right: false,
-                },
-                Column {
-                    title: "OS / Brand".to_string(),
-                    min_width: 14,
-                    align_right: false,
-                },
-                Column {
-                    title: "Cores / RAM".to_string(),
-                    min_width: 13,
-                    align_right: false,
-                },
-                Column {
-                    title: "Disk Footprint".to_string(),
-                    min_width: 14,
-                    align_right: false,
-                },
-                Column {
-                    title: "Proxy".to_string(),
-                    min_width: 16,
-                    align_right: false,
-                },
+                Column::new("Profile ID").with_priority(1),
+                Column::new("Name").with_priority(1),
+                Column::new("PRNG Seed").with_priority(2),
+                Column::new("OS/Brand").with_priority(3),
+                Column::new("Hardware").with_priority(2),
+                Column::new("Disk").right_aligned().with_priority(3),
+                Column::new("Proxy").with_priority(2),
             ];
 
             let mut table = Table::new(columns);
@@ -135,7 +84,7 @@ pub async fn handle_profile(
                     p.hardware_concurrency.unwrap_or(8),
                     p.device_memory_gb.unwrap_or(16)
                 );
-                let proxy_str = p.proxy.as_deref().unwrap_or("-");
+                let proxy_str = p.proxy.as_deref().unwrap_or("direct");
 
                 table.add_row(vec![
                     p.id.clone(),
@@ -148,7 +97,6 @@ pub async fn handle_profile(
                 ]);
             }
             table.print();
-            crate::ui::prompt::clack_outro(&format!("{} profile(s) listed.", profiles.len()));
             Ok(())
         }
         Some(ProfileCommands::Create {
@@ -241,95 +189,51 @@ pub async fn handle_profile(
                 format!("{} bytes", bytes)
             };
 
-            let mut card = Card::new("BROWSER PROFILE SPECIFICATION");
-            card.with_badge(badge_online("INSPECTED"));
-            card.with_min_width(74);
-            card.add_kv("ID", &profile.id);
-            card.add_kv("Name", &profile.name);
-            card.add_kv(
-                "Fingerprint Seed",
-                profile
-                    .fingerprint_seed
-                    .map(|s| format!("{} (Deterministic C++ PRNG)", s))
-                    .unwrap_or_else(|| "Random".to_string()),
+            let seed_str = profile
+                .fingerprint_seed
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "random".to_string());
+            let platform_str = format!(
+                "{} ({})",
+                profile.os_platform.as_deref().unwrap_or("windows"),
+                profile.os_version.as_deref().unwrap_or("10.0.0")
             );
-            card.add_kv(
-                "Platform / Version",
-                format!(
-                    "{} ({})",
-                    profile.os_platform.as_deref().unwrap_or("windows"),
-                    profile.os_version.as_deref().unwrap_or("10.0.0")
-                ),
+            let hw_str = format!(
+                "{} cores, {} GB RAM",
+                profile.hardware_concurrency.unwrap_or(8),
+                profile.device_memory_gb.unwrap_or(16)
             );
-            card.add_kv(
-                "Browser Brand",
-                profile.browser_brand.as_deref().unwrap_or("Chrome"),
-            );
-            card.add_kv(
-                "Hardware Cores",
-                profile.hardware_concurrency.unwrap_or(8).to_string(),
-            );
-            card.add_kv(
-                "Device Memory",
-                format!("{} GB", profile.device_memory_gb.unwrap_or(16)),
-            );
-            card.add_kv("Locale / Lang", profile.lang.as_deref().unwrap_or("vi-VN"));
-            card.add_kv(
-                "Accept-Language",
-                profile
-                    .accept_lang
-                    .as_deref()
-                    .unwrap_or("vi-VN,vi,en-US,en"),
-            );
-            card.add_kv(
-                "Timezone",
-                profile.timezone.as_deref().unwrap_or("Asia/Ho_Chi_Minh"),
-            );
-            card.add_kv("Proxy", profile.proxy.as_deref().unwrap_or("Direct (None)"));
-            card.add_kv(
-                "WebRTC Shield",
-                profile.webrtc_mode.as_deref().unwrap_or("proxy_shielded"),
-            );
-            card.add_kv("Disk Footprint", size_str);
-            card.add_kv(
-                "Sandbox Path",
-                profile.get_sandbox_dir(&base_dir).display().to_string(),
-            );
-            card.with_footer(format!(
-                "Launch with: tq browser launch {}",
-                profile.id
-            ));
-            println!();
-            card.print();
-            println!();
+            let sandbox_str = profile.get_sandbox_dir(&base_dir).display().to_string();
+            let proxy_str = profile.proxy.as_deref().unwrap_or("direct");
+
+            crate::ui::print_key_values(&[
+                ("ID", &profile.id),
+                ("Name", &profile.name),
+                ("PRNG Seed", &seed_str),
+                ("Platform", &platform_str),
+                ("Brand", profile.browser_brand.as_deref().unwrap_or("Chrome")),
+                ("Hardware", &hw_str),
+                ("Locale / Lang", profile.lang.as_deref().unwrap_or("vi-VN")),
+                ("Timezone", profile.timezone.as_deref().unwrap_or("Asia/Ho_Chi_Minh")),
+                ("Proxy", proxy_str),
+                ("WebRTC Shield", profile.webrtc_mode.as_deref().unwrap_or("proxy_shielded")),
+                ("Disk Footprint", &size_str),
+                ("Sandbox Path", &sandbox_str),
+            ]);
             Ok(())
         }
         Some(ProfileCommands::Delete { id, force: _ }) => {
             match crate::core::browser::BrowserProfile::delete(&id, &base_dir) {
                 Ok(true) => {
-                    let mut card = Card::new("BROWSER PROFILE");
-                    card.with_badge(badge_online("DELETED"));
-                    card.with_min_width(68);
-                    card.add_kv("Target ID", id);
-                    card.add_line("Profile metadata and sandbox directory removed successfully.");
-                    println!();
-                    card.print();
-                    println!();
+                    println!("Deleted profile [{}].", id);
                     Ok(())
                 }
                 Ok(false) => {
-                    let mut card = Card::new("BROWSER PROFILE");
-                    card.with_badge(badge_warn("NOT FOUND"));
-                    card.with_min_width(68);
-                    card.add_kv("Target ID", id);
-                    card.add_line("No profile directory found to delete.");
-                    println!();
-                    card.print();
-                    println!();
+                    eprintln!("Profile [{}] not found.", id);
                     Ok(())
                 }
                 Err(e) => {
-                    crate::ui::Notify::error(format!("Failed to delete profile: {}", e));
+                    eprintln!("ERROR: (tq.browser.profile.delete) Failed to delete profile [{}]: {}", id, e);
                     Err(e.into())
                 }
             }

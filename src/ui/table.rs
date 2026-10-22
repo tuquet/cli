@@ -9,6 +9,32 @@ pub struct Column {
     pub align_right: bool,
 }
 
+impl Column {
+    pub fn new(title: impl Into<String>) -> Self {
+        let t = title.into();
+        let len = t.len();
+        Self {
+            title: t,
+            min_width: len,
+            align_right: false,
+        }
+    }
+
+    pub fn with_min_width(mut self, width: usize) -> Self {
+        self.min_width = width;
+        self
+    }
+
+    pub fn with_priority(self, _priority: u8) -> Self {
+        self
+    }
+
+    pub fn right_aligned(mut self) -> Self {
+        self.align_right = true;
+        self
+    }
+}
+
 pub struct Table {
     columns: Vec<Column>,
     rows: Vec<Vec<String>>,
