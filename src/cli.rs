@@ -57,6 +57,33 @@ pub enum Commands {
         command: Option<GatewaySubcommands>,
     },
 
+    /// Manage environment variables, local secrets vault, and workspace sync
+    #[command(name = "env")]
+    Env {
+        /// Project to inspect/switch (e.g. admin, bot, cloud)
+        project: Option<String>,
+
+        /// Check environment integrity and report missing/empty keys
+        #[arg(short = 'c', long)]
+        check: bool,
+
+        /// Switch profile (.env.<profile> -> .env)
+        #[arg(short = 's', long)]
+        switch: Option<String>,
+
+        /// List all discovered projects with .env files
+        #[arg(short = 'l', long)]
+        list: bool,
+
+        /// Custom root path to scan
+        #[arg(short = 'p', long)]
+        path: Option<std::path::PathBuf>,
+
+        /// Format: table, json, or card
+        #[arg(short = 'f', long, default_value = "table")]
+        format: String,
+    },
+
     /// Dedicated isolated antidetect browser runtime & profile sandbox
     #[command(name = "browser")]
     Browser {

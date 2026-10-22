@@ -54,6 +54,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(())
             }
         },
+        Some(Commands::Env {
+            project,
+            check,
+            switch,
+            list,
+            path,
+            format,
+        }) => {
+            let fmt = match format.to_lowercase().as_str() {
+                "json" => automa_core::ui::OutputFormat::Json,
+                "card" => automa_core::ui::OutputFormat::Card,
+                _ => automa_core::ui::OutputFormat::Table,
+            };
+            commands::env_cmd::handle(project, check, switch, list, path, fmt).await
+        }
         Some(Commands::Browser { command }) => match command {
             Some(cmd) => commands::browser::handle(cmd).await,
             None => commands::browser::handle_interactive().await,

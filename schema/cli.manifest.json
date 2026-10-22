@@ -1816,6 +1816,53 @@
           "description": "Output results in raw JSON format (default)."
         }
       ]
+    },
+    {
+      "id": "tuquet.env",
+      "title": "Manage Environment & Secrets",
+      "description": "Inspect, validate, and switch environment profiles with secret masking and leak prevention",
+      "route": [
+        "env"
+      ],
+      "pillar": "system",
+      "arguments": [],
+      "options": [
+        {
+          "name": "project",
+          "type": "string",
+          "description": "Target project name (e.g. admin, bot, cloud)"
+        },
+        {
+          "name": "check",
+          "type": "boolean",
+          "short": "c",
+          "description": "Check environment integrity vs template"
+        },
+        {
+          "name": "switch",
+          "type": "string",
+          "short": "s",
+          "description": "Switch profile (.env.<profile> -> .env)"
+        },
+        {
+          "name": "list",
+          "type": "boolean",
+          "short": "l",
+          "description": "List all discovered projects with .env files"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "short": "p",
+          "description": "Custom root path to scan"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "short": "f",
+          "description": "Format: table, json, or card"
+        }
+      ]
     }
   ]
 }
