@@ -10,6 +10,82 @@ use crate::ui::{
     badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
 };
 
+
+// =============================================================================
+// HERMES-INSPIRED SECRET SCRUBBING & CHILD PROCESS SECURITY
+// =============================================================================
+
+/// Substrings that trigger aggressive secret scrubbing (Hermes Agent standard)
+pub const SECRET_SUBSTRINGS: &[&str] = &[
+    "KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "PASSWD",
+    "AUTH", "DSN", "WEBHOOK", "CREDS", "BEARER", "APIKEY", "COOKIE",
+];
+
+/// Safe system environment variable prefixes allowed in subshells and sandboxes
+pub const SAFE_ENV_PREFIXES: &[&str] = &[
+    "PATH", "HOME", "USER", "LANG", "LC_", "TERM", "TMPDIR", "TMP",
+    "TEMP", "SHELL", "LOGNAME", "XDG_", "PYTHONPATH", "VIRTUAL_ENV", "CONDA",
+];
+
+/// Essential Windows operating system environment variables (prevents WinSock / CRT crash)
+pub const WINDOWS_ESSENTIAL_ENV_VARS: &[&str] = &[
+    "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "COMSPEC", "PATHEXT", "OS",
+    "PROCESSOR_ARCHITECTURE", "NUMBER_OF_PROCESSORS", "PUBLIC", "ALLUSERSPROFILE",
+    "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "APPDATA", "LOCALAPPDATA",
+    "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "COMPUTERNAME",
+];
+
+/// Non-secret Tuquet runtime environment variables that can safely ride along
+pub const TQ_ALLOWED_CONTEXT_VARS: &[&str] = &[
+    "TQ_HOME", "TQ_TENANT_ID", "TQ_SESSION_ID", "TQ_PROFILE",
+];
+
+/// Check if an environment variable name is considered secret
+pub fn is_secret_env_name(name: &str) -> bool {
+    let upper = name.to_uppercase();
+    SECRET_SUBSTRINGS.iter().any(|s| upper.contains(s))
+}
+
+/// Scrub an environment map for child process execution (sandboxing & leak-prevention)
+pub fn scrub_child_env<I, K, V>(source_env: I) -> std::collections::HashMap<String, String>
+where
+    I: IntoIterator<Item = (K, V)>,
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    let mut clean_env = std::collections::HashMap::new();
+
+    for (k, v) in source_env {
+        let key = k.as_ref();
+        let val = v.as_ref();
+        let upper_key = key.to_uppercase();
+
+        // 1. Secret-substring block: drop immediately
+        if is_secret_env_name(key) {
+            continue;
+        }
+
+        // 2. Windows essentials: pass through
+        if cfg!(windows) && WINDOWS_ESSENTIAL_ENV_VARS.contains(&upper_key.as_str()) {
+            clean_env.insert(key.to_string(), val.to_string());
+            continue;
+        }
+
+        // 3. Allowed Tuquet context vars: pass through
+        if TQ_ALLOWED_CONTEXT_VARS.contains(&upper_key.as_str()) {
+            clean_env.insert(key.to_string(), val.to_string());
+            continue;
+        }
+
+        // 4. Safe prefix match: pass through
+        if SAFE_ENV_PREFIXES.iter().any(|p| upper_key.starts_with(p)) {
+            clean_env.insert(key.to_string(), val.to_string());
+        }
+    }
+
+    clean_env
+}
+
 const SECRET_KEYWORDS: &[&str] = &[
     "secret",
     "password",
@@ -638,6 +714,34 @@ fn render_env_multi_list(reports: &[EnvProjectReport], format: OutputFormat) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_hermes_secret_scrubbing() {
+        let env_vars = vec![
+            ("PATH", "C:\\Windows\\system32"),
+            ("SUPABASE_SERVICE_ROLE_KEY", "super_secret_role_key"),
+            ("DATABASE_PASSWORD", "db_pwd_123"),
+            ("TELEGRAM_BOT_TOKEN", "bot_12345"),
+            ("TEMP", "C:\\Temp"),
+            ("TQ_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
+            ("USER_DEFINED_SECRET", "should_be_dropped"),
+            ("NODE_AUTH_TOKEN", "should_be_dropped"),
+        ];
+
+        let clean = scrub_child_env(env_vars);
+
+        // Secrets must be dropped
+        assert!(!clean.contains_key("SUPABASE_SERVICE_ROLE_KEY"));
+        assert!(!clean.contains_key("DATABASE_PASSWORD"));
+        assert!(!clean.contains_key("TELEGRAM_BOT_TOKEN"));
+        assert!(!clean.contains_key("USER_DEFINED_SECRET"));
+        assert!(!clean.contains_key("NODE_AUTH_TOKEN"));
+
+        // Safe variables must remain
+        assert!(clean.contains_key("PATH"));
+        assert!(clean.contains_key("TEMP"));
+        assert!(clean.contains_key("TQ_TENANT_ID"));
+    }
 
     #[test]
     fn test_parse_dotenv_and_sync_missing() {
