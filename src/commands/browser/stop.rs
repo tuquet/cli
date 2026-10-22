@@ -1,4 +1,4 @@
-use crate::ui::{Card, badge_offline, badge_online};
+use crate::ui::{Card, badge_offline};
 
 pub async fn handle_stop(
     profile_query: Option<String>,
@@ -30,19 +30,9 @@ pub async fn handle_stop(
             }
         }
 
-        println!();
-        let mut card = Card::new("TERMINATED BROWSER PROFILES");
-        card.with_badge(badge_online(&format!("{} TERMINATED", terminated.len())));
-        card.with_min_width(68);
-        card.add_kv("Count", terminated.len().to_string());
-        for (i, t) in terminated.iter().enumerate() {
-            card.add_kv(format!("Profile #{}", i + 1), t);
+        for t in &terminated {
+            println!("Stopped browser {}.", t);
         }
-        card.add_line("");
-        card.add_line("All active browser processes and child renderers closed cleanly.");
-        card.with_footer("Start profiles again with 'tq browser launch <name>'");
-        card.print();
-        println!();
         return Ok(());
     }
 
@@ -73,22 +63,11 @@ pub async fn handle_stop(
         crate::core::browser::pid_tracker::find_active_session(&target, &base_dir)
     {
         let pid = session.pid;
-        let p_name = session.profile_name.clone();
-        let p_id = session.profile_id.clone();
+                let p_id = session.profile_id.clone();
 
         crate::core::browser::pid_tracker::terminate_session(&session, &base_dir, force).await?;
 
-        println!();
-        let mut card = Card::new("BROWSER PROFILE TERMINATED");
-        card.with_badge(badge_online("STOPPED"));
-        card.with_min_width(68);
-        card.add_kv("Profile", format!("{} [{}]", p_name, p_id));
-        card.add_kv("Terminated PID", pid.to_string());
-        card.add_line("");
-        card.add_line("Process tree terminated and sandbox lock files cleaned up.");
-        card.with_footer("Relaunch with 'tq browser launch <name>'");
-        card.print();
-        println!();
+        println!("Stopped browser [{}] (pid: {}).", p_id, pid);
     } else {
         crate::ui::Notify::error(format!(
             "No running browser profile found matching '{}'.",

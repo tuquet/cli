@@ -1,5 +1,5 @@
 use crate::core::browser::ExtensionRegistry;
-use crate::ui::{Card, badge_error, badge_online, badge_warn};
+use crate::ui::{Card, badge_online};
 
 pub async fn launch_browser(
     profile_arg: String,
@@ -65,32 +65,14 @@ pub async fn launch_browser(
         if let Some(active) =
             crate::core::browser::pid_tracker::find_active_session(&profile.id, &base_dir)
         {
-            println!();
-            let mut card = Card::new("PROFILE ALREADY RUNNING");
-            card.with_badge(badge_warn("ACTIVE INSTANCE DETECTED"));
-            card.with_min_width(74);
-            card.add_kv(
-                "Profile",
-                format!("{} [{}]", active.profile_name, active.profile_id),
+            eprintln!(
+                "ERROR: (tq.browser.launch) Profile [{}] is already running (pid: {}, uptime: {}).",
+                profile.id,
+                active.pid,
+                active.uptime_formatted()
             );
-            card.add_kv("Active PID", active.pid.to_string());
-            card.add_kv(
-                "Running Port",
-                if active.port > 0 {
-                    format!("http://127.0.0.1:{}", active.port)
-                } else {
-                    "Zero-Port Stealth (Disabled)".to_string()
-                },
-            );
-            card.add_kv("Uptime", active.uptime_formatted());
-            card.add_line("");
-            card.add_line("Safety Guardrail Triggered:");
-            card.add_line("  • Profile is already open and running on this machine.");
-            card.add_line("  • To stop it, run:  tq browser stop");
-            card.add_line("  • To force multiple instances, launch with '--force'.");
-            card.with_footer("List all running browser profiles with: tq browser ps");
-            card.print();
-            println!();
+            eprintln!("- To terminate the running instance: tq browser stop {}", profile.id);
+            eprintln!("- To force a concurrent instance: re-run with '--force'.");
             return Ok(());
         }
     }
@@ -100,23 +82,14 @@ pub async fn launch_browser(
         if !skip_proxy_check {
             let probe = crate::core::browser::ProxyProbe::probe(pxy, 4).await;
             if !probe.alive {
-                println!();
-                let mut card = Card::new("PRE-FLIGHT CHECK FAILED: PROXY UNREACHABLE");
-                card.with_badge(badge_error("FAIL-SAFE ABORT"));
-                card.with_min_width(74);
-                card.add_kv("Profile", format!("{} [{}]", profile.name, profile.id));
-                card.add_kv("Target Proxy", pxy);
-                if let Some(ref err) = probe.error {
-                    card.add_kv("Probe Error", err);
-                }
-                card.add_line("");
-                card.add_line("Safety Guardrail Triggered:");
-                card.add_line("  • The configured proxy server is offline or unreachable.");
-                card.add_line("  • Launch aborted to prevent session failure or real IP leakage.");
-                card.add_line("  • To bypass this guardrail, launch with '--skip-proxy-check'.");
-                card.with_footer("Test proxy directly with: tq proxy probe <url>");
-                card.print();
-                println!();
+                eprintln!(
+                    "ERROR: (tq.browser.launch) Proxy unreachable: {} ({})",
+                    pxy,
+                    probe.error.as_deref().unwrap_or("connection failed")
+                );
+                eprintln!("- The configured proxy server is offline or unreachable.");
+                eprintln!("- To bypass this guardrail, launch with '--skip-proxy-check'.");
+                eprintln!("- Test proxy directly with: tq proxy probe {}", pxy);
                 return Err("Proxy unreachable (pre-flight check failed)".into());
             }
 
@@ -249,57 +222,17 @@ pub async fn launch_browser(
         );
         let _ = crate::core::browser::pid_tracker::save_session(&session, &base_dir);
 
-        let title = if is_extension_mode {
-            "ANTIDETECT BROWSER (ZERO-PORT STEALTH - DETACHED)"
-        } else {
-            "ANTIDETECT BROWSER CDP BRIDGE (DETACHED)"
-        };
-        let badge = if is_extension_mode {
-            badge_online("ZERO-PORT STEALTH")
-        } else {
-            badge_online("DETACHED")
-        };
-
-        let mut card = Card::new(title);
-        card.with_badge(badge);
-        card.with_min_width(74);
-        card.add_kv(
-            "Engine",
-            format!(
-                "adryfish/fingerprint-chromium (v{})",
-                crate::core::browser::resolver::get_active_version()
-            ),
-        );
-        card.add_kv("Profile", format!("{} [{}]", profile.name, profile.id));
-        if let Some(seed) = profile.fingerprint_seed {
-            card.add_kv("Seed (PRNG)", format!("{} (Deterministic Hardware)", seed));
-        }
-        if profile.proxy.is_some() {
-            card.add_kv("Proxy", &proxy_display);
-        }
-        if is_extension_mode {
-            card.add_kv(
-                "CDP Port",
-                "Disabled (Zero-Port Protection against localhost port scanning)",
-            );
-            card.add_kv(
-                "Extensions",
-                format!("{} active extension(s)", extension_paths.len()),
+        if effective_port > 0 {
+            println!(
+                "Started browser [{}] (pid: {}, cdp: http://127.0.0.1:{}).",
+                profile.id, pid, effective_port
             );
         } else {
-            card.add_kv(
-                "CDP Endpoint",
-                format!("http://127.0.0.1:{}", effective_port),
+            println!(
+                "Started browser [{}] (pid: {}).",
+                profile.id, pid
             );
-            if !ws_url.is_empty() {
-                card.add_kv("WebSocket URL", &ws_url);
-            }
         }
-        card.add_kv("PID", pid.to_string());
-        card.with_footer("Browser running in background. Connect your agent or automation script.");
-        println!();
-        card.print();
-        println!();
         return Ok(());
     }
 
