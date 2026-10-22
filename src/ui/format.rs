@@ -1,13 +1,16 @@
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
+/// Output presentation mode.
+/// Internal logic can distinguish Table vs Card presentation if needed,
+/// but CLI flags are strictly streamlined to standard: Text (default) or JSON.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
     #[default]
-    Json,
     Table,
     Card,
+    Json,
 }
 
 impl OutputFormat {
@@ -24,22 +27,17 @@ impl OutputFormat {
     }
 }
 
-/// Common CLI arguments for output formatting across commands
+/// Standard, clean CLI arguments for output formatting
+/// Eliminates legacy `-f card` and `-f table`.
+/// By default on terminal, commands output clean formatted Text (table/describe).
+/// With `--json` or `-j`, commands output structured JSON.
 #[derive(Args, Debug, Clone)]
 pub struct FormatArgs {
-    /// Output format: auto, json, table, or card (default: auto)
-    #[arg(short = 'f', long, default_value = "auto")]
+    /// Output format: text, json (default: text on TTY, json if piped)
+    #[arg(long, default_value = "auto")]
     pub format: String,
 
-    /// Display formatted terminal table view (shortcut for -f table)
-    #[arg(long)]
-    pub table: bool,
-
-    /// Display rich visual card view (shortcut for -f card)
-    #[arg(long)]
-    pub card: bool,
-
-    /// Output results in raw JSON format (shortcut for -f json)
+    /// Output results in raw JSON format (alias for --format=json)
     #[arg(short = 'j', long)]
     pub json: bool,
 }
@@ -48,34 +46,27 @@ impl Default for FormatArgs {
     fn default() -> Self {
         Self {
             format: "auto".to_string(),
-            table: false,
-            card: false,
             json: false,
         }
     }
 }
 
 impl FormatArgs {
-    /// Resolve the effective output format based on flags, format string, and TTY detection
+    /// Resolve the effective output format based on flags and TTY detection
     pub fn resolve(&self) -> OutputFormat {
         if self.json {
-            OutputFormat::Json
-        } else if self.card {
-            OutputFormat::Card
-        } else if self.table {
-            OutputFormat::Table
-        } else {
-            match self.format.trim().to_lowercase().as_str() {
-                "card" => OutputFormat::Card,
-                "table" => OutputFormat::Table,
-                "json" => OutputFormat::Json,
-                _ => {
-                    use std::io::IsTerminal;
-                    if std::io::stdout().is_terminal() {
-                        OutputFormat::Card
-                    } else {
-                        OutputFormat::Json
-                    }
+            return OutputFormat::Json;
+        }
+
+        match self.format.trim().to_lowercase().as_str() {
+            "json" => OutputFormat::Json,
+            "text" | "plain" | "table" | "card" => OutputFormat::Table,
+            _ => {
+                use std::io::IsTerminal;
+                if std::io::stdout().is_terminal() {
+                    OutputFormat::Table
+                } else {
+                    OutputFormat::Json
                 }
             }
         }
@@ -87,20 +78,10 @@ impl From<OutputFormat> for FormatArgs {
         match fmt {
             OutputFormat::Json => FormatArgs {
                 format: "json".to_string(),
-                table: false,
-                card: false,
                 json: true,
             },
-            OutputFormat::Table => FormatArgs {
-                format: "table".to_string(),
-                table: true,
-                card: false,
-                json: false,
-            },
-            OutputFormat::Card => FormatArgs {
-                format: "card".to_string(),
-                table: false,
-                card: true,
+            _ => FormatArgs {
+                format: "text".to_string(),
                 json: false,
             },
         }
@@ -112,58 +93,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_format_args_default_is_json() {
-        let args = FormatArgs::default();
+    fn test_format_args_json_flag() {
+        let args = FormatArgs {
+            format: "auto".to_string(),
+            json: true,
+        };
         assert_eq!(args.resolve(), OutputFormat::Json);
-        assert!(args.resolve().is_json());
     }
 
     #[test]
-    fn test_format_args_string_resolution() {
-        let args_card = FormatArgs {
-            format: "card".to_string(),
-            ..Default::default()
-        };
-        assert_eq!(args_card.resolve(), OutputFormat::Card);
-
-        let args_table = FormatArgs {
-            format: "TABLE".to_string(),
-            ..Default::default()
-        };
-        assert_eq!(args_table.resolve(), OutputFormat::Table);
-
-        let args_unknown = FormatArgs {
-            format: "unknown".to_string(),
-            ..Default::default()
-        };
-        assert_eq!(args_unknown.resolve(), OutputFormat::Json);
-    }
-
-    #[test]
-    fn test_format_args_flag_precedence() {
-        // --card overrides default format "json"
-        let args_card = FormatArgs {
+    fn test_format_args_string_overrides() {
+        let args_json = FormatArgs {
             format: "json".to_string(),
-            card: true,
-            ..Default::default()
+            json: false,
         };
-        assert_eq!(args_card.resolve(), OutputFormat::Card);
+        assert_eq!(args_json.resolve(), OutputFormat::Json);
 
-        // --table overrides default format "json"
-        let args_table = FormatArgs {
-            format: "json".to_string(),
-            table: true,
-            ..Default::default()
+        let args_text = FormatArgs {
+            format: "text".to_string(),
+            json: false,
         };
-        assert_eq!(args_table.resolve(), OutputFormat::Table);
-
-        // --card has precedence over --table
-        let args_both = FormatArgs {
-            format: "json".to_string(),
-            card: true,
-            table: true,
-            ..Default::default()
-        };
-        assert_eq!(args_both.resolve(), OutputFormat::Card);
+        assert_eq!(args_text.resolve(), OutputFormat::Table);
     }
 }
