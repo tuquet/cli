@@ -17,9 +17,9 @@ pub struct Browser {
 fn parse_extensions(raw: Option<String>) -> Vec<String> {
     match raw {
         Some(s) if !s.trim().is_empty() => {
-            serde_json::from_str(&s).unwrap_or_else(|_| vec!["automa".to_string()])
+            serde_json::from_str(&s).unwrap_or_else(|_| vec!["automation".to_string()])
         }
-        _ => vec!["automa".to_string()],
+        _ => vec!["automation".to_string()],
     }
 }
 
@@ -42,8 +42,8 @@ impl<'a> SqliteBrowserRepository<'a> {
         extensions: Option<&[String]>,
     ) -> Result<()> {
         let exts_json = extensions
-            .map(|e| serde_json::to_string(e).unwrap_or_else(|_| "[\"automa\"]".to_string()))
-            .unwrap_or_else(|| "[\"automa\"]".to_string());
+            .map(|e| serde_json::to_string(e).unwrap_or_else(|_| "[\"automation\"]".to_string()))
+            .unwrap_or_else(|| "[\"automation\"]".to_string());
 
         self.conn.execute(
             "INSERT INTO browsers (id, name, user_agent, timezone, proxy, extensions) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
@@ -142,7 +142,7 @@ impl<'a> SqliteBrowserRepository<'a> {
     ) -> Result<()> {
         if let Some(exts) = extensions {
             let exts_json =
-                serde_json::to_string(exts).unwrap_or_else(|_| "[\"automa\"]".to_string());
+                serde_json::to_string(exts).unwrap_or_else(|_| "[\"automation\"]".to_string());
             self.conn.execute(
                 "UPDATE browsers SET name = ?1, user_agent = ?2, timezone = ?3, proxy = ?4, extensions = ?5, updated_at = CURRENT_TIMESTAMP WHERE id = ?6",
                 params![name, user_agent, timezone, proxy, exts_json, id],
@@ -166,15 +166,15 @@ impl<'a> SqliteBrowserRepository<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
 
     #[test]
     fn test_sqlite_browser_repo_crud() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let conn = db.raw_conn();
         let repo = SqliteBrowserRepository::new(conn);
 
-        let initial_exts = vec!["automa".to_string(), "ublock".to_string()];
+        let initial_exts = vec!["automation".to_string(), "ublock".to_string()];
         repo.create_browser(
             "b_test_1",
             "Profile 1",
@@ -196,7 +196,7 @@ mod tests {
         assert_eq!(b.extensions.as_ref().unwrap(), &initial_exts);
 
         let updated_exts = vec![
-            "automa".to_string(),
+            "automation".to_string(),
             "ublock".to_string(),
             "cookie-injector".to_string(),
         ];

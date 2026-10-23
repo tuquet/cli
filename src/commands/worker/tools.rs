@@ -2,7 +2,7 @@ use std::path::Path;
 
 pub fn print_probe_manifest() -> Result<(), Box<dyn std::error::Error>> {
     let manifest = serde_json::json!({
-        "protocol": crate::constants::PROTOCOL_AUTOMA_V1,
+        "protocol": crate::constants::PROTOCOL_AUTOMATION_V1,
         "name": "worker",
         "version": env!("CARGO_PKG_VERSION"),
         "engine": "chromium-extension-worker",

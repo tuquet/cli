@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use axum::extract::{Json, Path, Query, State};
 
 use super::types::{
@@ -23,12 +23,12 @@ use super::types::{
 pub async fn get_workflows(
     State(state): State<AppState>,
     Query(query): Query<GetWorkflowsQuery>,
-) -> Result<Json<Vec<WorkflowStorageItem>>, AutomaError> {
+) -> Result<Json<Vec<WorkflowStorageItem>>, AutomationError> {
     let db = state.db.lock().await;
     let list = db
         .workflows()
         .get_workflows(query.limit, query.offset, query.search.as_deref())
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let items = list
         .into_iter()
@@ -70,13 +70,13 @@ pub async fn get_workflows(
 pub async fn get_workflow_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<WorkflowStorageItem>, AutomaError> {
+) -> Result<Json<WorkflowStorageItem>, AutomationError> {
     let db = state.db.lock().await;
     let item = db
         .workflows()
         .get_workflow(&id)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?
-        .ok_or_else(|| AutomaError::NotFound(format!("Workflow '{}' not found in database", id)))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?
+        .ok_or_else(|| AutomationError::NotFound(format!("Workflow '{}' not found in database", id)))?;
 
     let parsed_data =
         serde_json::from_str::<serde_json::Value>(&item.data).unwrap_or(serde_json::json!({}));
@@ -110,12 +110,12 @@ pub async fn get_workflow_by_id(
 pub async fn create_storage_workflow(
     State(state): State<AppState>,
     Json(payload): Json<CreateWorkflowStorageRequest>,
-) -> Result<Json<WorkflowStorageItem>, AutomaError> {
+) -> Result<Json<WorkflowStorageItem>, AutomationError> {
     let id = payload
         .id
         .unwrap_or_else(|| format!("wf_{}", uuid::Uuid::new_v4().simple()));
     let data_str = serde_json::to_string(&payload.data)
-        .map_err(|e| AutomaError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
+        .map_err(|e| AutomationError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
 
     let db = state.db.lock().await;
     let created = db
@@ -128,7 +128,7 @@ pub async fn create_storage_workflow(
             payload.version.as_deref(),
             payload.icon.as_deref(),
         )
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let parsed_data =
         serde_json::from_str::<serde_json::Value>(&created.data).unwrap_or(serde_json::json!({}));
@@ -167,13 +167,13 @@ pub async fn update_storage_workflow(
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(payload): Json<UpdateWorkflowStorageRequest>,
-) -> Result<Json<WorkflowStorageItem>, AutomaError> {
+) -> Result<Json<WorkflowStorageItem>, AutomationError> {
     let data_str = payload
         .data
         .as_ref()
         .map(serde_json::to_string)
         .transpose()
-        .map_err(|e| AutomaError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
+        .map_err(|e| AutomationError::BadRequest(format!("Invalid workflow JSON: {}", e)))?;
 
     let db = state.db.lock().await;
     let updated = db
@@ -186,7 +186,7 @@ pub async fn update_storage_workflow(
             payload.version.as_deref(),
             payload.icon.as_deref(),
         )
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let _ = state.tx.send(
         serde_json::json!({
@@ -233,15 +233,15 @@ pub async fn update_storage_workflow(
 pub async fn delete_storage_workflow(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<DeleteWorkflowResponse>, AutomaError> {
+) -> Result<Json<DeleteWorkflowResponse>, AutomationError> {
     let db = state.db.lock().await;
     let deleted = db
         .workflows()
         .delete_workflow(&id)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     if !deleted {
-        return Err(AutomaError::NotFound(format!(
+        return Err(AutomationError::NotFound(format!(
             "Workflow '{}' not found in database",
             id
         )));

@@ -26,11 +26,11 @@ pub struct StartServerResult {
     pub ssh_started: bool,
 }
 
-pub struct BridgeSupervisor;
+pub struct GatewaySupervisor;
 
-impl BridgeSupervisor {
+impl GatewaySupervisor {
     pub fn pids_dir() -> PathBuf {
-        let dir = super::config::BridgeConfig::canonical_dir()
+        let dir = super::config::GatewayConfig::canonical_dir()
             .join("gateway")
             .join("pids");
         let _ = fs::create_dir_all(&dir);
@@ -298,9 +298,9 @@ impl BridgeSupervisor {
             }
         }
 
-        // 2. Discover dynamically configured ports from BridgeConfig
+        // 2. Discover dynamically configured ports from GatewayConfig
         let (configured_cf_ports, configured_socks_ports) =
-            if let Ok(config) = super::config::BridgeConfig::load() {
+            if let Ok(config) = super::config::GatewayConfig::load() {
                 let mut cf_ports = Vec::new();
                 let mut socks_ports = Vec::new();
                 for srv in config.servers.values() {
@@ -344,7 +344,7 @@ impl BridgeSupervisor {
     }
 }
 
-pub(crate) fn is_valid_bridge_process_name(raw_name: &str) -> bool {
+pub(crate) fn is_valid_gateway_process_name(raw_name: &str) -> bool {
     let name = raw_name.to_lowercase();
     name.contains("cloudflared") || name.contains("ssh") || name.contains("tuquet")
 }
@@ -353,7 +353,7 @@ fn kill_pid(sys: &System, pid_u32: u32) {
     let pid = Pid::from(pid_u32 as usize);
     if let Some(proc) = sys.process(pid) {
         let name = proc.name().to_string_lossy();
-        if is_valid_bridge_process_name(&name) {
+        if is_valid_gateway_process_name(&name) {
             let _ = proc.kill();
             info!("Killed PID {} ({})", pid_u32, name);
         } else {
@@ -371,19 +371,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_valid_bridge_process_name() {
-        assert!(is_valid_bridge_process_name("cloudflared"));
-        assert!(is_valid_bridge_process_name("cloudflared.exe"));
-        assert!(is_valid_bridge_process_name("ssh"));
-        assert!(is_valid_bridge_process_name("ssh.exe"));
-        assert!(is_valid_bridge_process_name("tuquet"));
-        assert!(is_valid_bridge_process_name("tuquet.exe"));
+    fn test_is_valid_gateway_process_name() {
+        assert!(is_valid_gateway_process_name("cloudflared"));
+        assert!(is_valid_gateway_process_name("cloudflared.exe"));
+        assert!(is_valid_gateway_process_name("ssh"));
+        assert!(is_valid_gateway_process_name("ssh.exe"));
+        assert!(is_valid_gateway_process_name("tuquet"));
+        assert!(is_valid_gateway_process_name("tuquet.exe"));
 
         // Innocent processes must NOT match
-        assert!(!is_valid_bridge_process_name("explorer.exe"));
-        assert!(!is_valid_bridge_process_name("chrome.exe"));
-        assert!(!is_valid_bridge_process_name("firefox.exe"));
-        assert!(!is_valid_bridge_process_name("node.exe"));
-        assert!(!is_valid_bridge_process_name("svchost.exe"));
+        assert!(!is_valid_gateway_process_name("explorer.exe"));
+        assert!(!is_valid_gateway_process_name("chrome.exe"));
+        assert!(!is_valid_gateway_process_name("firefox.exe"));
+        assert!(!is_valid_gateway_process_name("node.exe"));
+        assert!(!is_valid_gateway_process_name("svchost.exe"));
     }
 }

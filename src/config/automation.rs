@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AutomaConfig {
+pub struct AutomationConfig {
     #[serde(default = "default_timeout")]
     pub default_timeout_secs: u64,
     #[serde(default = "default_browser")]
@@ -33,7 +33,7 @@ fn default_true() -> bool {
     true
 }
 
-impl Default for AutomaConfig {
+impl Default for AutomationConfig {
     fn default() -> Self {
         let mut variables = HashMap::new();
         variables.insert("BASE_URL".to_string(), "https://example.com".to_string());
@@ -48,11 +48,11 @@ impl Default for AutomaConfig {
     }
 }
 
-impl AutomaConfig {
+impl AutomationConfig {
     pub fn config_path() -> PathBuf {
-        let dir = canonical_dir().join(crate::constants::PILLAR_AUTOMA);
+        let dir = canonical_dir().join(crate::constants::PILLAR_AUTOMATION);
         let _ = fs::create_dir_all(&dir);
-        dir.join(crate::constants::FILE_AUTOMA_JSON)
+        dir.join(crate::constants::FILE_AUTOMATION_JSON)
     }
 
     pub fn load() -> Self {
@@ -86,8 +86,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_automa_config_defaults() {
-        let config = AutomaConfig::default();
+    fn test_automation_config_defaults() {
+        let config = AutomationConfig::default();
         assert_eq!(config.default_timeout_secs, 300);
         assert_eq!(config.studio_port, 8765);
         assert!(config.auto_backup);

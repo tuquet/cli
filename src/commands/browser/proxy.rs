@@ -18,7 +18,7 @@ pub async fn handle_proxy(
                 );
                 let opts = vec![
                     ClackOption::new(
-                        "Probe Local SOCKS5 Bridge (127.0.0.1:1080)",
+                        "Probe Local SOCKS5 Gateway (127.0.0.1:1080)",
                         "Verify SSH Dynamic Proxy tunnel egress & Cloudflare datacenter",
                         "socks5://127.0.0.1:1080",
                     ),

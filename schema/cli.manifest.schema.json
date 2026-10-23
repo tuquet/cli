@@ -59,7 +59,7 @@
         },
         "pillar": {
           "type": "string",
-          "enum": ["system", "automa", "browser", "gateway", "faker", "runner", "cloud", "core"],
+          "enum": ["system", "automation", "browser", "gateway", "faker", "runner", "cloud", "core"],
           "description": "Target microservice pillar domain."
         },
         "title": {

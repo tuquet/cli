@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 use crate::config::AppConfig;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 #[derive(Serialize)]
 struct WfSummary {
@@ -27,7 +27,7 @@ pub async fn execute_workflow_list(args: &Value) -> Result<String, String> {
     // Fetch strictly from SQLite Database
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
-        && let Ok(db) = AutomaDb::new(&db_path)
+        && let Ok(db) = AutomationDb::new(&db_path)
         && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref())
     {
         for wf in list {
@@ -153,7 +153,7 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
     // Check DB
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
-        && let Ok(db) = AutomaDb::new(&db_path)
+        && let Ok(db) = AutomationDb::new(&db_path)
         && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
     {
         return Ok((wf.data, format!("Database (ID: {})", wf.id)));
@@ -203,7 +203,7 @@ pub async fn execute_workflow_run(args: &Value) -> Result<String, String> {
     let exe = std::env::current_exe().map_err(|e| format!("Cannot find current exe: {}", e))?;
 
     let mut cmd = tokio::process::Command::new(exe);
-    cmd.arg("automa").arg("run").arg(workflow);
+    cmd.arg("automation").arg("run").arg(workflow);
 
     if headless {
         cmd.arg("--headless");

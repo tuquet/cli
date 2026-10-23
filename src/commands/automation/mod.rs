@@ -12,11 +12,11 @@ pub use studio::open_studio;
 pub use table::list_workflows;
 pub use store::{delete_workflow, export_workflow, import_workflow};
 
-use crate::cli::{AutomaSubcommands, WorkflowCommands};
+use crate::cli::{AutomationSubcommands, WorkflowCommands};
 
-pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle(command: AutomationSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     match command {
-        AutomaSubcommands::Run {
+        AutomationSubcommands::Run {
             workflow_pos,
             workflow,
             workflow_json,
@@ -32,7 +32,7 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
             if safe {
                 if !crate::infrastructure::gateway::probe_port(1080) {
                     crate::ui::Notify::info("Safe mode: Gateway is offline. Auto-starting gateway...");
-                    let _ = crate::commands::gateway::start::start_bridge(crate::commands::gateway::start::BridgeStartOptions {
+                    let _ = crate::commands::gateway::start::start_gateway(crate::commands::gateway::start::GatewayStartOptions {
                         server: None, tag: None, http: true, ssh: false, foreground: false,
                     }).await;
                 }
@@ -65,7 +65,7 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
                 .await
             }
         }
-        AutomaSubcommands::Workflow { command } => match command {
+        AutomationSubcommands::Workflow { command } => match command {
             WorkflowCommands::List { search, format } => {
                 list_workflows(search, format.resolve()).await
             }
@@ -79,10 +79,10 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
             WorkflowCommands::Info { id } => inspect_workflow(&id),
             WorkflowCommands::Delete { id } => delete_workflow(id).await,
         },
-        AutomaSubcommands::Inspect { workflow } => inspect_workflow(&workflow),
-        AutomaSubcommands::Studio => open_studio(),
-        AutomaSubcommands::Probe => crate::commands::worker::print_probe_manifest(),
-        AutomaSubcommands::Config { edit, show, args } => manage_config(&args, edit, show),
+        AutomationSubcommands::Inspect { workflow } => inspect_workflow(&workflow),
+        AutomationSubcommands::Studio => open_studio(),
+        AutomationSubcommands::Probe => crate::commands::worker::print_probe_manifest(),
+        AutomationSubcommands::Config { edit, show, args } => manage_config(&args, edit, show),
     }
 }
 
@@ -93,7 +93,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         return list_workflows(None, crate::ui::OutputFormat::Json).await;
     }
 
-    clack_intro("tq automa", "Automa Workflow Engine");
+    clack_intro("tq automation", "Automation Workflow Engine");
 
     let options = vec![
         ClackOption::new(
@@ -103,7 +103,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Run Workflow",
-            "Execute an Automa workflow locally or in headless mode",
+            "Execute an Automation workflow locally or in headless mode",
             "run",
         ),
         ClackOption::new(
@@ -112,19 +112,19 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
             "inspect",
         ),
         ClackOption::new(
-            "Open Automa Studio",
+            "Open Automation Studio",
             "Launch the visual workflow studio",
             "studio",
         ),
         ClackOption::new(
-            "Automa Configuration",
-            "Inspect or update Automa engine settings",
+            "Automation Configuration",
+            "Inspect or update Automation engine settings",
             "config",
         ),
     ];
 
-    let Some(idx) = clack_select("Select Automa operation:", &options, 0, 6)? else {
-        clack_cancel("Automa hub closed.");
+    let Some(idx) = clack_select("Select Automation operation:", &options, 0, 6)? else {
+        clack_cancel("Automation hub closed.");
         return Ok(());
     };
 

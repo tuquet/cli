@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::config::AppConfig;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 pub async fn list_workflows(
     search: Option<String>,
@@ -22,7 +22,7 @@ pub async fn list_workflows(
     // 1. Fetch strictly from SQLite Database
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
-        && let Ok(db) = AutomaDb::new(&db_path)
+        && let Ok(db) = AutomationDb::new(&db_path)
         && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref())
     {
         for wf in list {
@@ -124,11 +124,11 @@ pub async fn list_workflows(
         }
         if let Some(first) = workflows.first() {
             table = table.with_footer(format!(
-                "Run workflow with: tq automa run {} --headless",
+                "Run workflow with: tq automation run {} --headless",
                 first.id
             ));
         } else {
-            table = table.with_footer("Import a workflow with: tq automa workflow import <file.json> --id <workflow_id>");
+            table = table.with_footer("Import a workflow with: tq automation workflow import <file.json> --id <workflow_id>");
         }
         table.print();
         println!();

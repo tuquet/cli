@@ -1,4 +1,4 @@
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -89,7 +89,7 @@ pub async fn read_and_validate_file(path: &Path) -> Result<ResolvedWorkflow, Wor
 
 pub async fn find_in_database(
     wf_id: &str,
-    db: &Arc<Mutex<AutomaDb>>,
+    db: &Arc<Mutex<AutomationDb>>,
 ) -> Option<crate::infrastructure::db::workflows::DbWorkflow> {
     // Step 1: Active / ephemeral DB
     let active_result = {
@@ -109,7 +109,7 @@ pub async fn find_in_database(
     let persistent_config = crate::config::AppConfig::load();
     let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if persistent_db_path.exists()
-        && let Ok(pdb) = AutomaDb::new(&persistent_db_path)
+        && let Ok(pdb) = AutomationDb::new(&persistent_db_path)
     {
         return pdb
             .workflows()

@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!({"id": "var_1", "name": "API_KEY", "value": "sk_test_123"}))]
-/// Global variable stored in Automa SQLite / FS storage
+/// Global variable stored in Automation SQLite / FS storage
 pub struct StorageVariable {
     /// Unique variable identifier
     pub id: Option<String>,
@@ -35,7 +35,7 @@ pub struct StorageCredential {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!({"id": "tbl_1", "name": "Users"}))]
-/// User data table schema in Automa storage
+/// User data table schema in Automation storage
 pub struct StorageTable {
     /// Unique table identifier
     pub id: Option<String>,

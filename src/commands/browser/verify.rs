@@ -69,13 +69,13 @@ pub async fn verify_stealth_presentation(
         cmd.arg("--headless=new");
     }
 
-    // Check optional Bridge proxy (port 1080)
+    // Check optional Gateway proxy (port 1080)
     if std::net::TcpListener::bind("127.0.0.1:1080").is_err() {
-        println!("      • Proxy Route:   SOCKS5 Bridge Active (127.0.0.1:1080)");
+        println!("      • Proxy Route:   SOCKS5 Gateway Active (127.0.0.1:1080)");
         cmd.arg("--proxy-server=socks5://127.0.0.1:1080")
             .arg("--disable-non-proxied-udp");
     } else {
-        println!("      • Proxy Route:   Direct Connection (Bridge Idle)");
+        println!("      • Proxy Route:   Direct Connection (Gateway Idle)");
     }
 
     let mut child = cmd.spawn()?;
@@ -198,7 +198,7 @@ pub async fn verify_stealth_presentation(
             true
         }
         Ok(false) => {
-            println!("      ⚠ Turnstile box resolved automatically or timeout reached.");
+            println!("      ⚠ Turnstile box resolved automationtically or timeout reached.");
             false
         }
         Err(e) => {

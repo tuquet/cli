@@ -983,7 +983,7 @@ mod tests {
     #[test]
     fn test_convert_and_validate_array() {
         let arr_prop = json!({ "type": "array" });
-        let val = convert_and_validate(&arr_prop, "automa, stealth", "extensions").unwrap();
-        assert_eq!(val, json!(["automa", "stealth"]));
+        let val = convert_and_validate(&arr_prop, "automation, stealth", "extensions").unwrap();
+        assert_eq!(val, json!(["automation", "stealth"]));
     }
 }

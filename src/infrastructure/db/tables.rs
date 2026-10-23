@@ -165,11 +165,11 @@ impl<'a> SqliteTableRepository<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
 
     #[test]
     fn test_sqlite_tables_crud_and_rows() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let conn = db.raw_conn();
         let repo = SqliteTableRepository::new(conn);
 

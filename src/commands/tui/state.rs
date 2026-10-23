@@ -5,7 +5,7 @@ use std::time::Instant;
 pub enum ActiveTab {
     Workflow,
     Browser,
-    Bridge,
+    Gateway,
     Auth,
 }
 
@@ -13,8 +13,8 @@ impl ActiveTab {
     pub fn next(self) -> Self {
         match self {
             Self::Workflow => Self::Browser,
-            Self::Browser => Self::Bridge,
-            Self::Bridge => Self::Auth,
+            Self::Browser => Self::Gateway,
+            Self::Gateway => Self::Auth,
             Self::Auth => Self::Workflow,
         }
     }
@@ -23,8 +23,8 @@ impl ActiveTab {
         match self {
             Self::Workflow => Self::Auth,
             Self::Browser => Self::Workflow,
-            Self::Bridge => Self::Browser,
-            Self::Auth => Self::Bridge,
+            Self::Gateway => Self::Browser,
+            Self::Auth => Self::Gateway,
         }
     }
 
@@ -32,14 +32,14 @@ impl ActiveTab {
         match self {
             Self::Workflow => "[1] WORKFLOW",
             Self::Browser => "[2] BROWSER",
-            Self::Bridge => "[3] BRIDGE",
+            Self::Gateway => "[3] GATEWAY",
             Self::Auth => "[4] AUTH",
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BridgeState {
+pub struct GatewayState {
     pub socks5_online: bool,
     pub socks5_port: u16,
     pub http_online: bool,
@@ -51,7 +51,7 @@ pub struct BridgeState {
     pub total_servers: usize,
 }
 
-impl Default for BridgeState {
+impl Default for GatewayState {
     fn default() -> Self {
         Self {
             socks5_online: false,
@@ -131,7 +131,7 @@ impl Default for CloudState {
 #[derive(Debug, Clone)]
 pub struct TuiState {
     pub active_tab: ActiveTab,
-    pub gateway: BridgeState,
+    pub gateway: GatewayState,
     pub browser: BrowserState,
     pub runner: RunnerState,
     pub cloud: CloudState,
@@ -144,11 +144,11 @@ impl Default for TuiState {
     fn default() -> Self {
         Self {
             active_tab: ActiveTab::Workflow,
-            gateway: BridgeState::default(),
+            gateway: GatewayState::default(),
             browser: BrowserState::default(),
             runner: RunnerState::default(),
             cloud: CloudState::default(),
-            status_message: "Ready. Hotkeys: (b) Toggle Bridge, (r) Refresh, (q) Quit."
+            status_message: "Ready. Hotkeys: (b) Toggle Gateway, (r) Refresh, (q) Quit."
                 .to_string(),
             last_tick: Instant::now(),
             tick_count: 0,
@@ -161,22 +161,22 @@ impl TuiState {
         self.tick_count = self.tick_count.wrapping_add(1);
         self.last_tick = Instant::now();
 
-        // 1. Probe Bridge
-        let bridge_cfg = crate::infrastructure::gateway::BridgeConfig::load()
-            .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
-        let git_port = bridge_cfg
+        // 1. Probe Gateway
+        let gateway_cfg = crate::infrastructure::gateway::GatewayConfig::load()
+            .unwrap_or_else(|_| crate::infrastructure::gateway::GatewayConfig::default_config());
+        let git_port = gateway_cfg
             .workloads
             .as_ref()
             .and_then(|w| w.git.as_ref())
             .map(|g| g.port)
             .unwrap_or(1080);
-        let http_port = bridge_cfg
+        let http_port = gateway_cfg
             .workloads
             .as_ref()
             .and_then(|w| w.supabase.as_ref())
             .map(|s| s.http_port)
             .unwrap_or(8118);
-        let ssh_port = bridge_cfg
+        let ssh_port = gateway_cfg
             .servers
             .get("my-vps")
             .and_then(|s| s.local_ssh_port)
@@ -188,20 +188,20 @@ impl TuiState {
             crate::infrastructure::gateway::probe_port_async(ssh_port),
         );
 
-        self.gateway = BridgeState {
+        self.gateway = GatewayState {
             socks5_online: git_active,
             socks5_port: git_port,
             http_online: http_active,
             http_port,
             ssh_online: ssh_active,
             ssh_port,
-            default_server: bridge_cfg
+            default_server: gateway_cfg
                 .workstation
                 .as_ref()
                 .and_then(|w| w.default_server.clone())
                 .unwrap_or_else(|| "my-vps".to_string()),
             active_servers: if git_active || ssh_active || http_active { 1 } else { 0 },
-            total_servers: bridge_cfg.servers.len(),
+            total_servers: gateway_cfg.servers.len(),
         };
 
         // 2. Probe Browser Fleet
@@ -220,11 +220,11 @@ impl TuiState {
             profile_count,
         };
 
-        // 3. Probe Runner & Automa
+        // 3. Probe Runner & Automation
         let config = crate::config::AppConfig::load();
-        let host = std::env::var(crate::constants::ENV_AUTOMA_HOST)
+        let host = std::env::var(crate::constants::ENV_AUTOMATION_HOST)
             .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
-        let port = std::env::var(crate::constants::ENV_AUTOMA_PORT)
+        let port = std::env::var(crate::constants::ENV_AUTOMATION_PORT)
             .unwrap_or_else(|_| config.server_port.to_string());
         let port_u16 = port.parse::<u16>().unwrap_or(8765);
         let health_url = format!("http://{}:{}/api/v1/health", host, port);
@@ -248,7 +248,7 @@ impl TuiState {
             } else {
                 "Present".to_string()
             };
-            let count = if let Ok(db) = crate::infrastructure::db::AutomaDb::new(&db_path) {
+            let count = if let Ok(db) = crate::infrastructure::db::AutomationDb::new(&db_path) {
                 db.workflows().get_workflows(None, None, None).map(|w| w.len()).unwrap_or(0)
             } else {
                 0

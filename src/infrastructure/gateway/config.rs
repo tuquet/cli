@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BridgeConfig {
+pub struct GatewayConfig {
     pub workstation: Option<WorkstationConfig>,
     pub servers: HashMap<String, ServerConfig>,
     pub workloads: Option<WorkloadsConfig>,
@@ -87,7 +87,7 @@ pub struct ServerSelector;
 
 impl ServerSelector {
     /// Lọc danh sách server được kích hoạt (enabled != false)
-    pub fn get_enabled(config: &BridgeConfig) -> Vec<(&String, &ServerConfig)> {
+    pub fn get_enabled(config: &GatewayConfig) -> Vec<(&String, &ServerConfig)> {
         config
             .servers
             .iter()
@@ -96,7 +96,7 @@ impl ServerSelector {
     }
 
     /// Lọc danh sách server bị vô hiệu hóa (enabled == false)
-    pub fn get_disabled(config: &BridgeConfig) -> Vec<(&String, &ServerConfig)> {
+    pub fn get_disabled(config: &GatewayConfig) -> Vec<(&String, &ServerConfig)> {
         config
             .servers
             .iter()
@@ -106,7 +106,7 @@ impl ServerSelector {
 
     /// Lọc danh sách server theo tag
     pub fn filter_by_tag<'a>(
-        config: &'a BridgeConfig,
+        config: &'a GatewayConfig,
         tag: &str,
     ) -> Vec<(&'a String, &'a ServerConfig)> {
         config
@@ -118,7 +118,7 @@ impl ServerSelector {
 
     /// Lọc danh sách server theo pattern hoặc tên cụ thể
     pub fn filter_by_pattern<'a>(
-        config: &'a BridgeConfig,
+        config: &'a GatewayConfig,
         pattern: &str,
     ) -> Vec<(&'a String, &'a ServerConfig)> {
         if pattern.eq_ignore_ascii_case("all") || pattern == "*" {
@@ -139,7 +139,7 @@ impl ServerSelector {
     }
 }
 
-impl BridgeConfig {
+impl GatewayConfig {
     /// Canonical root path for SSOT storage (~/.tq/)
     pub fn canonical_dir() -> PathBuf {
         crate::config::canonical_ssot_dir()
@@ -148,8 +148,8 @@ impl BridgeConfig {
     /// Single Canonical config path: ~/.tq/gateway/gateway.json (SSOT)
     pub fn config_path() -> PathBuf {
         crate::config::canonical_ssot_dir()
-            .join(crate::constants::PILLAR_BRIDGE)
-            .join(crate::constants::FILE_BRIDGE_JSON)
+            .join(crate::constants::PILLAR_GATEWAY)
+            .join(crate::constants::FILE_GATEWAY_JSON)
     }
 
     /// Load the configuration with dynamic environment variable expansion
@@ -232,20 +232,20 @@ impl BridgeConfig {
                 supabase: Some(WorkloadSupabase {
                     server: "my-vps".to_string(),
                     socks_port: crate::constants::DEFAULT_SOCKS5_PORT,
-                    http_port: crate::constants::DEFAULT_HTTP_BRIDGE_PORT,
+                    http_port: crate::constants::DEFAULT_HTTP_GATEWAY_PORT,
                 }),
             }),
         }
     }
 }
 
-impl Default for BridgeConfig {
+impl Default for GatewayConfig {
     fn default() -> Self {
         Self::default_config()
     }
 }
 
-impl BridgeConfig {
+impl GatewayConfig {
     /// Validate workloads binding to servers
     pub fn validate_workloads(&self) -> Vec<ConfigDiagnostic> {
         let mut diags = Vec::new();
@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn test_server_selector_enabled_and_disabled() {
-        let mut config = BridgeConfig::default_config();
+        let mut config = GatewayConfig::default_config();
         config.servers.insert(
             "disabled-vps".to_string(),
             ServerConfig {
@@ -434,7 +434,7 @@ mod tests {
 
     #[test]
     fn test_server_selector_patterns() {
-        let mut config = BridgeConfig::default_config();
+        let mut config = GatewayConfig::default_config();
         config.servers.insert(
             "mmo-worker-1".to_string(),
             ServerConfig {
@@ -466,7 +466,7 @@ mod tests {
 
     #[test]
     fn test_validate_workloads() {
-        let mut config = BridgeConfig::default_config();
+        let mut config = GatewayConfig::default_config();
         config.workloads = Some(WorkloadsConfig {
             git: Some(WorkloadGit {
                 server: "non-existent".to_string(),

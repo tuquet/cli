@@ -1,4 +1,4 @@
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::id::JobId;
 use crate::infrastructure::db::{JobDetails, JobHistoryItem};
 use axum::{
@@ -48,7 +48,7 @@ pub struct HistoryActionResponse {
 pub async fn get_history(
     State(state): State<crate::AppState>,
     Query(query): Query<HistoryQuery>,
-) -> Result<Json<Vec<JobHistoryItem>>, AutomaError> {
+) -> Result<Json<Vec<JobHistoryItem>>, AutomationError> {
     let db = state.db.lock().await;
     let history_res = db
         .jobs()
@@ -58,7 +58,7 @@ pub async fn get_history(
             query.search.as_deref(),
             query.status.as_deref(),
         )
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     Ok(Json(history_res))
 }
@@ -82,12 +82,12 @@ pub async fn get_history(
 pub async fn get_logs(
     State(state): State<crate::AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<JobDetails>, AutomaError> {
+) -> Result<Json<JobDetails>, AutomationError> {
     let db = state.db.lock().await;
     let logs_res = db
         .jobs()
         .get_job_details(job_id.as_str())
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     Ok(Json(logs_res))
 }
@@ -111,11 +111,11 @@ pub async fn get_logs(
 pub async fn delete_history_item(
     State(state): State<crate::AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<HistoryActionResponse>, AutomaError> {
+) -> Result<Json<HistoryActionResponse>, AutomationError> {
     let db = state.db.lock().await;
     db.jobs()
         .delete_job(job_id.as_str())
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     Ok(Json(HistoryActionResponse {
         success: true,
@@ -137,11 +137,11 @@ pub async fn delete_history_item(
 )]
 pub async fn clear_history(
     State(state): State<crate::AppState>,
-) -> Result<Json<HistoryActionResponse>, AutomaError> {
+) -> Result<Json<HistoryActionResponse>, AutomationError> {
     let db = state.db.lock().await;
     let success = db.jobs().clear_all_jobs();
     if !success {
-        return Err(AutomaError::DatabaseError(
+        return Err(AutomationError::DatabaseError(
             "Failed to clear jobs from database".to_string(),
         ));
     }

@@ -1,4 +1,4 @@
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use axum::{
     body::Body,
     extract::{Json, Query},
@@ -8,16 +8,16 @@ use std::path::PathBuf;
 
 use super::types::{GetWorkflowFileParams, SaveWorkflowFilePayload, SaveWorkflowFileResponse};
 
-pub fn resolve_safe_workflow_path(raw_path: &str) -> Result<PathBuf, AutomaError> {
+pub fn resolve_safe_workflow_path(raw_path: &str) -> Result<PathBuf, AutomationError> {
     if raw_path.is_empty() || raw_path.contains('\0') {
-        return Err(AutomaError::BadRequest(
+        return Err(AutomationError::BadRequest(
             "Invalid path: empty or contains null character".into(),
         ));
     }
     let path = PathBuf::from(raw_path);
     let normalized = if path.exists() {
         path.canonicalize()
-            .map_err(|e| AutomaError::BadRequest(format!("Failed to canonicalize path: {}", e)))?
+            .map_err(|e| AutomationError::BadRequest(format!("Failed to canonicalize path: {}", e)))?
     } else {
         path
     };
@@ -38,23 +38,23 @@ pub fn resolve_safe_workflow_path(raw_path: &str) -> Result<PathBuf, AutomaError
 )]
 pub async fn get_workflow(
     Query(params): Query<GetWorkflowFileParams>,
-) -> Result<Response, AutomaError> {
+) -> Result<Response, AutomationError> {
     let safe_path = resolve_safe_workflow_path(&params.path)?;
     if !safe_path.exists() {
-        return Err(AutomaError::NotFound(format!(
+        return Err(AutomationError::NotFound(format!(
             "Workflow file does not exist: {}",
             params.path
         )));
     }
     let content = tokio::fs::read_to_string(&safe_path)
         .await
-        .map_err(|e| AutomaError::Internal(format!("Failed to read file: {}", e)))?;
+        .map_err(|e| AutomationError::Internal(format!("Failed to read file: {}", e)))?;
     let _ = serde_json::from_str::<serde_json::Value>(&content)
-        .map_err(|e| AutomaError::BadRequest(format!("Failed to parse workflow JSON: {}", e)))?;
+        .map_err(|e| AutomationError::BadRequest(format!("Failed to parse workflow JSON: {}", e)))?;
     Response::builder()
         .header("content-type", "application/json")
         .body(Body::from(content))
-        .map_err(|e| AutomaError::Internal(format!("Failed to build response: {}", e)))
+        .map_err(|e| AutomationError::Internal(format!("Failed to build response: {}", e)))
 }
 
 #[utoipa::path(
@@ -70,21 +70,21 @@ pub async fn get_workflow(
 )]
 pub async fn save_workflow(
     Json(payload): Json<SaveWorkflowFilePayload>,
-) -> Result<Json<SaveWorkflowFileResponse>, AutomaError> {
+) -> Result<Json<SaveWorkflowFileResponse>, AutomationError> {
     let safe_path = resolve_safe_workflow_path(&payload.path)?;
     if let Some(parent) = safe_path.parent()
         && !parent.exists()
     {
         tokio::fs::create_dir_all(parent).await.map_err(|e| {
-            AutomaError::Internal(format!("Failed to create parent directory: {}", e))
+            AutomationError::Internal(format!("Failed to create parent directory: {}", e))
         })?;
     }
     let json_str = serde_json::to_string_pretty(&payload.content).map_err(|e| {
-        AutomaError::BadRequest(format!("Failed to serialize workflow JSON: {}", e))
+        AutomationError::BadRequest(format!("Failed to serialize workflow JSON: {}", e))
     })?;
     tokio::fs::write(&safe_path, json_str)
         .await
-        .map_err(|e| AutomaError::Internal(format!("Failed to write file: {}", e)))?;
+        .map_err(|e| AutomationError::Internal(format!("Failed to write file: {}", e)))?;
     Ok(Json(SaveWorkflowFileResponse {
         success: true,
         message: format!("Workflow saved successfully to {}", payload.path),

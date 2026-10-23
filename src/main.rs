@@ -1,5 +1,5 @@
-use automa_core::cli::{Cli, Commands};
-use automa_core::commands;
+use automation_core::cli::{Cli, Commands};
+use automation_core::commands;
 use clap::{CommandFactory, Parser};
 use std::io::IsTerminal;
 
@@ -8,8 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     // Trigger non-blocking 24h background update check & clean up stale update backups
-    automa_core::infrastructure::updater::cleanup_stale_update_files();
-    automa_core::infrastructure::updater::spawn_background_update_check();
+    automation_core::infrastructure::updater::cleanup_stale_update_files();
+    automation_core::infrastructure::updater::spawn_background_update_check();
 
     let result = match cli.command {
         Some(Commands::Auth { command }) => match command {
@@ -63,9 +63,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             format,
         }) => {
             let fmt = match format.to_lowercase().as_str() {
-                "json" => automa_core::ui::OutputFormat::Json,
-                "card" => automa_core::ui::OutputFormat::Card,
-                _ => automa_core::ui::OutputFormat::Table,
+                "json" => automation_core::ui::OutputFormat::Json,
+                "card" => automation_core::ui::OutputFormat::Card,
+                _ => automation_core::ui::OutputFormat::Table,
             };
             commands::env_cmd::handle(project, check, switch, list, path, fmt).await
         }
@@ -75,9 +75,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         Some(Commands::Mcp) => commands::mcp::run().await,
         None => {
-            let readiness = automa_core::core::readiness::quick_probe();
+            let readiness = automation_core::core::readiness::quick_probe();
             if !readiness.is_pristine() {
-                automa_core::ui::gate::handle_readiness_gate(&readiness).await
+                automation_core::ui::gate::handle_readiness_gate(&readiness).await
             } else if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
                 let mut cmd = Cli::command();
                 let _ = cmd.print_help();
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             std::process::exit(130);
         }
-        automa_core::ui::Notify::error(e);
+        automation_core::ui::Notify::error(e);
         std::process::exit(1);
     }
 

@@ -24,8 +24,8 @@ pub async fn execute_status() -> Result<String, String> {
     };
 
     // 2. Worker Daemon
-    let host = std::env::var("AUTOMA_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = std::env::var("AUTOMA_PORT").unwrap_or_else(|_| config.server_port.to_string());
+    let host = std::env::var("AUTOMATION_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port = std::env::var("AUTOMATION_PORT").unwrap_or_else(|_| config.server_port.to_string());
     let daemon_url = format!("http://{}:{}", host, port);
     let health_url = format!("{}/api/v1/health", daemon_url);
 

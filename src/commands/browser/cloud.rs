@@ -439,7 +439,7 @@ pub async fn handle_profile_cloud(
             );
             card.add_kv("SHA-256 Digest", &report.sha256_hash);
             card.with_footer(
-                "Profile lease returned to cloud fleet. Ready for next automated run.",
+                "Profile lease returned to cloud fleet. Ready for next automationted run.",
             );
             card.print();
             println!();

@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::storage::StorageVariable;
 use axum::extract::{Json, Path, Query, State};
 use serde::Deserialize;
@@ -23,7 +23,7 @@ pub struct GetVariablesQuery {
     path = "/api/v1/storage/variables",
     operation_id = "get_storage_variables",
     summary = "List all storage variables",
-    description = "Retrieves all global and local variables persisted in Automa SQLite storage.",
+    description = "Retrieves all global and local variables persisted in Automation SQLite storage.",
     params(GetVariablesQuery),
     responses(
         (status = 200, description = "List of variables", body = Vec<StorageVariable>),
@@ -33,7 +33,7 @@ pub struct GetVariablesQuery {
 pub async fn get_variables(
     State(state): State<AppState>,
     Query(query): Query<GetVariablesQuery>,
-) -> Result<Json<Vec<StorageVariable>>, AutomaError> {
+) -> Result<Json<Vec<StorageVariable>>, AutomationError> {
     let db = state.db.lock().await;
     let vars = db
         .storage()
@@ -58,7 +58,7 @@ pub async fn get_variables(
 pub async fn add_variable(
     State(state): State<AppState>,
     Json(payload): Json<StorageVariable>,
-) -> Result<Json<StorageVariable>, AutomaError> {
+) -> Result<Json<StorageVariable>, AutomationError> {
     let db = state.db.lock().await;
     let res = db.storage().save_variable(&payload)?;
 
@@ -95,7 +95,7 @@ pub async fn add_variable(
 pub async fn delete_variable(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<super::StorageActionResponse>, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomationError> {
     let db = state.db.lock().await;
     db.storage().delete_variable(&id)?;
 

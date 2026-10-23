@@ -42,7 +42,7 @@ pub enum WsCommand {
     path = "/api/v1/ws",
     operation_id = "ws_handler",
     summary = "Establish WebSocket connection for real-time control",
-    description = "Low-latency bidirectional WebSocket connection consuming types from @automa/types/ws for PAUSE_JOB, RESUME_JOB, KILL_JOB, and live breakpoints.",
+    description = "Low-latency bidirectional WebSocket connection consuming types from @automation/types/ws for PAUSE_JOB, RESUME_JOB, KILL_JOB, and live breakpoints.",
     responses(
         (status = 101, description = "WebSocket Upgrade for 2-way real-time communication")
     )

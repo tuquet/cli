@@ -272,7 +272,7 @@ pub async fn launch_browser(
     let title = if is_extension_mode {
         "ANTIDETECT BROWSER (ZERO-PORT STEALTH)"
     } else {
-        "ANTIDETECT BROWSER CDP BRIDGE"
+        "ANTIDETECT BROWSER CDP GATEWAY"
     };
     let badge = if is_extension_mode {
         badge_online("ZERO-PORT STEALTH")
@@ -318,7 +318,7 @@ pub async fn launch_browser(
         card.add_line("");
         card.add_line("Ultra-Stealth Mode Active:");
         card.add_line("  • No listening CDP socket on localhost (anti-port scanning)");
-        card.add_line("  • Automa MV3 background service worker / isolated world active");
+        card.add_line("  • Automation MV3 background service worker / isolated world active");
         card.add_line("  • Native chrome.tabs and chrome.cookies execution");
     } else {
         card.add_kv(

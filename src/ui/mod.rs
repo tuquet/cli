@@ -77,7 +77,7 @@ mod tests {
         assert_eq!(endpoints.len(), 3);
 
         let card = create_network_topology_card(
-            "NETWORK BRIDGE & LISTENERS",
+            "NETWORK GATEWAY & LISTENERS",
             &endpoints,
             Some("Custom footer tip"),
         );

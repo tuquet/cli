@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "CLI & Core Bridge API",
+    "title": "CLI & Core Gateway API",
     "description": "Lightweight native process launcher, WebSocket event hub, and SQLite storage gateway for the Ecosystem.",
     "contact": {
       "name": "Ecosystem",
@@ -15,7 +15,7 @@
   "servers": [
     {
       "url": "http://127.0.0.1:8765",
-      "description": "Local Daemon Bridge Server"
+      "description": "Local Daemon Gateway Server"
     }
   ],
   "paths": {
@@ -619,7 +619,7 @@
           "Browsers"
         ],
         "summary": "Set a browser profile as system-wide default",
-        "description": "Updates the core daemon settings to mark this profile as default for all automated workflow jobs.",
+        "description": "Updates the core daemon settings to mark this profile as default for all automationted workflow jobs.",
         "operationId": "set_default_browser",
         "parameters": [
           {
@@ -1031,7 +1031,7 @@
           "Jobs"
         ],
         "summary": "Submit a workflow execution job",
-        "description": "Submits a new automation workflow job to be executed by a browser worker instance. Supports workflowId, inline workflowData, or filesystem workflowPath. Automatically ensures the required browser instance is launched and connected.",
+        "description": "Submits a new automation workflow job to be executed by a browser worker instance. Supports workflowId, inline workflowData, or filesystem workflowPath. Automationtically ensures the required browser instance is launched and connected.",
         "operationId": "submit_job",
         "requestBody": {
           "content": {
@@ -1337,8 +1337,8 @@
         "tags": [
           "Lint"
         ],
-        "summary": "Validate and lint Automa assets (Bridge Stub)",
-        "description": "Bridge passthrough stub. In the architecture, workflow graph validation is performed client-side by Web Studio and runtime blocks are executed by the browser worker.",
+        "summary": "Validate and lint Automation assets (Gateway Stub)",
+        "description": "Gateway passthrough stub. In the architecture, workflow graph validation is performed client-side by Web Studio and runtime blocks are executed by the browser worker.",
         "operationId": "lint_workflow",
         "requestBody": {
           "content": {
@@ -1369,8 +1369,8 @@
         "tags": [
           "Storage"
         ],
-        "summary": "Export full Automa backup JSON",
-        "description": "Exports all workflows, storage variables, and storage tables from SQLite into a standardized Automa backup JSON format.",
+        "summary": "Export full Automation backup JSON",
+        "description": "Exports all workflows, storage variables, and storage tables from SQLite into a standardized Automation backup JSON format.",
         "operationId": "export_storage_backup",
         "parameters": [
           {
@@ -1415,8 +1415,8 @@
         "tags": [
           "Storage"
         ],
-        "summary": "Restore full Automa backup into SQLite",
-        "description": "Restores workflows, storage variables, and storage tables from an Automa backup JSON. Supports protected backups encrypted with AES-256-CBC and HMAC-SHA256.",
+        "summary": "Restore full Automation backup into SQLite",
+        "description": "Restores workflows, storage variables, and storage tables from an Automation backup JSON. Supports protected backups encrypted with AES-256-CBC and HMAC-SHA256.",
         "operationId": "restore_storage_backup",
         "requestBody": {
           "content": {
@@ -1981,7 +1981,7 @@
           "Storage"
         ],
         "summary": "List all storage variables",
-        "description": "Retrieves all global and local variables persisted in Automa SQLite storage.",
+        "description": "Retrieves all global and local variables persisted in Automation SQLite storage.",
         "operationId": "get_storage_variables",
         "parameters": [
           {
@@ -2816,7 +2816,7 @@
           "System"
         ],
         "summary": "Open Web Studio in default system browser",
-        "description": "Spawns the default OS web browser and navigates to the locally served Automa Web Studio canvas editor.",
+        "description": "Spawns the default OS web browser and navigates to the locally served Automation Web Studio canvas editor.",
         "operationId": "open_web_studio",
         "responses": {
           "200": {
@@ -2838,7 +2838,7 @@
           "Events"
         ],
         "summary": "Establish WebSocket connection for real-time control",
-        "description": "Low-latency bidirectional WebSocket connection consuming types from @automa/types/ws for PAUSE_JOB, RESUME_JOB, KILL_JOB, and live breakpoints.",
+        "description": "Low-latency bidirectional WebSocket connection consuming types from @automation/types/ws for PAUSE_JOB, RESUME_JOB, KILL_JOB, and live breakpoints.",
         "operationId": "ws_handler",
         "responses": {
           "101": {
@@ -3339,7 +3339,7 @@
       },
       "ExportBackupResponse": {
         "type": "object",
-        "description": "Full Automa backup export payload",
+        "description": "Full Automation backup export payload",
         "required": [
           "isProtected",
           "workflows",
@@ -3460,7 +3460,7 @@
           }
         },
         "example": {
-          "message": "Automa Core Daemon is running",
+          "message": "Automation Core Daemon is running",
           "status": "ok",
           "version": "1.0.0"
         }
@@ -3913,14 +3913,14 @@
       },
       "RestoreBackupRequest": {
         "type": "object",
-        "description": "Request payload to restore a full Automa backup JSON into SQLite",
+        "description": "Request payload to restore a full Automation backup JSON into SQLite",
         "required": [
           "backup"
         ],
         "properties": {
           "backup": {
             "type": "object",
-            "description": "Full Automa backup JSON payload"
+            "description": "Full Automation backup JSON payload"
           },
           "password": {
             "type": [
@@ -3933,7 +3933,7 @@
       },
       "RestoreBackupResponse": {
         "type": "object",
-        "description": "Summary response returned after successfully restoring an Automa backup",
+        "description": "Summary response returned after successfully restoring an Automation backup",
         "required": [
           "success",
           "message",
@@ -4014,7 +4014,7 @@
           },
           "version": {
             "type": "string",
-            "description": "Version of automa-runner daemon"
+            "description": "Version of automation-runner daemon"
           }
         }
       },
@@ -4306,7 +4306,7 @@
       },
       "StorageTable": {
         "type": "object",
-        "description": "User data table schema in Automa storage",
+        "description": "User data table schema in Automation storage",
         "properties": {
           "columns": {
             "type": [
@@ -4367,7 +4367,7 @@
       },
       "StorageVariable": {
         "type": "object",
-        "description": "Global variable stored in Automa SQLite / FS storage",
+        "description": "Global variable stored in Automation SQLite / FS storage",
         "required": [
           "value"
         ],
@@ -4421,7 +4421,7 @@
               "boolean",
               "null"
             ],
-            "description": "Automatically close browser session when workflow execution finishes",
+            "description": "Automationtically close browser session when workflow execution finishes",
             "example": true
           },
           "debug": {
@@ -4501,7 +4501,7 @@
             "debug": false,
             "headless": true,
             "variables": {
-              "keyword": "automa automation"
+              "keyword": "automation automation"
             }
           },
           "workflowId": "google_search"

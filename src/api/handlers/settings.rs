@@ -16,7 +16,7 @@ use axum::{Json, extract::State};
 )]
 pub async fn get_settings(
     State(state): State<AppState>,
-) -> Result<Json<AppSettings>, crate::core::error::AutomaError> {
+) -> Result<Json<AppSettings>, crate::core::error::AutomationError> {
     let db = state.db.lock().await;
     let settings = db.settings().get_settings()?;
     Ok(Json(settings))
@@ -39,7 +39,7 @@ pub async fn get_settings(
 pub async fn update_settings(
     State(state): State<AppState>,
     Json(payload): Json<AppSettings>,
-) -> Result<Json<AppSettings>, crate::core::error::AutomaError> {
+) -> Result<Json<AppSettings>, crate::core::error::AutomationError> {
     let db = state.db.lock().await;
     db.settings().save_settings(&payload)?;
     Ok(Json(payload))
@@ -62,7 +62,7 @@ pub async fn update_settings(
 pub async fn patch_settings(
     State(state): State<AppState>,
     Json(patch): Json<UpdateAppSettingsRequest>,
-) -> Result<Json<AppSettings>, crate::core::error::AutomaError> {
+) -> Result<Json<AppSettings>, crate::core::error::AutomationError> {
     let db = state.db.lock().await;
     let mut settings = db.settings().get_settings()?;
     settings.apply_patch(patch);
@@ -74,7 +74,7 @@ pub async fn patch_settings(
 mod tests {
     use super::*;
     use crate::core::models::settings::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
     use std::sync::Arc;
     use tokio::sync::Mutex;
     use tokio::sync::broadcast;
@@ -82,7 +82,7 @@ mod tests {
     fn create_test_state() -> AppState {
         let (tx, _) = broadcast::channel(10);
         let (worker_tx, _) = broadcast::channel(10);
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let config = Arc::new(crate::config::AppConfig::load());
         AppState {
             db: Arc::new(Mutex::new(db)),

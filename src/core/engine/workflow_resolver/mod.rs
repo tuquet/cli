@@ -11,7 +11,7 @@ pub use self::validator::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
     use std::sync::Arc;
     use tokio::sync::Mutex;
 
@@ -68,7 +68,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_missing_all_params_fails() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let res = WorkflowResolver::resolve("job_empty", "/tmp", None, None, None, &db).await;
 
         assert!(res.is_err());
@@ -82,7 +82,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_by_db_id_and_name() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         {
             let guard = db.lock().await;
             guard
@@ -101,7 +101,7 @@ mod tests {
         let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
         let _ = tokio::fs::create_dir_all(&temp_dir).await;
 
-        // Resolve by exact ID via workflow_path (simulating `automa run flow_db_test`)
+        // Resolve by exact ID via workflow_path (simulating `automation run flow_db_test`)
         let res_id = WorkflowResolver::resolve(
             "job_001",
             &temp_dir.to_string_lossy(),
@@ -116,7 +116,7 @@ mod tests {
         assert_eq!(resolved.data["name"], "My Database Flow");
         assert!(resolved.path.exists());
 
-        // Resolve by Name (case-insensitive) via workflow_path (simulating `automa run "my database flow"`)
+        // Resolve by Name (case-insensitive) via workflow_path (simulating `automation run "my database flow"`)
         let res_name = WorkflowResolver::resolve(
             "job_002",
             &temp_dir.to_string_lossy(),
@@ -134,7 +134,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_inline_json_string_via_path() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
         let _ = tokio::fs::create_dir_all(&temp_dir).await;
 
@@ -159,7 +159,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_db_file_via_id() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let temp_dir = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
         let _ = tokio::fs::create_dir_all(&temp_dir).await;
 
@@ -199,7 +199,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_path_traversal_in_id_fails() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let res = WorkflowResolver::resolve(
             "job_traversal",
             "/tmp",

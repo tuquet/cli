@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::storage::{StorageTable, StorageVariable};
 use axum::extract::{Json, Query, State};
 use serde::{Deserialize, Serialize};
@@ -7,9 +7,9 @@ use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Request payload to restore a full Automa backup JSON into SQLite
+/// Request payload to restore a full Automation backup JSON into SQLite
 pub struct RestoreBackupRequest {
-    /// Full Automa backup JSON payload
+    /// Full Automation backup JSON payload
     #[schema(value_type = Object)]
     pub backup: serde_json::Value,
     /// Optional password to decrypt protected workflows
@@ -18,7 +18,7 @@ pub struct RestoreBackupRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Summary response returned after successfully restoring an Automa backup
+/// Summary response returned after successfully restoring an Automation backup
 pub struct RestoreBackupResponse {
     /// True if restore succeeded
     pub success: bool,
@@ -40,7 +40,7 @@ pub struct ExportBackupQuery {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-/// Full Automa backup export payload
+/// Full Automation backup export payload
 pub struct ExportBackupResponse {
     /// True if workflows are encrypted with AES-256-CBC
     pub is_protected: bool,
@@ -60,8 +60,8 @@ pub struct ExportBackupResponse {
     post,
     path = "/api/v1/storage/backup/restore",
     operation_id = "restore_storage_backup",
-    summary = "Restore full Automa backup into SQLite",
-    description = "Restores workflows, storage variables, and storage tables from an Automa backup JSON. Supports protected backups encrypted with AES-256-CBC and HMAC-SHA256.",
+    summary = "Restore full Automation backup into SQLite",
+    description = "Restores workflows, storage variables, and storage tables from an Automation backup JSON. Supports protected backups encrypted with AES-256-CBC and HMAC-SHA256.",
     request_body = RestoreBackupRequest,
     responses(
         (status = 200, description = "Backup restored successfully", body = RestoreBackupResponse),
@@ -72,7 +72,7 @@ pub struct ExportBackupResponse {
 pub async fn restore_storage_backup(
     State(state): State<AppState>,
     Json(payload): Json<RestoreBackupRequest>,
-) -> Result<Json<RestoreBackupResponse>, AutomaError> {
+) -> Result<Json<RestoreBackupResponse>, AutomationError> {
     let backup_val = &payload.backup;
     let mut total_workflows = 0;
     let mut total_variables = 0;
@@ -80,9 +80,9 @@ pub async fn restore_storage_backup(
 
     let db = state.db.lock().await;
 
-    let insert_workflow = |db: &crate::infrastructure::db::AutomaDb,
+    let insert_workflow = |db: &crate::infrastructure::db::AutomationDb,
                            wf: &serde_json::Value|
-     -> Result<bool, AutomaError> {
+     -> Result<bool, AutomationError> {
         if !wf.is_object() {
             return Ok(false);
         }
@@ -114,7 +114,7 @@ pub async fn restore_storage_backup(
             .map(|s| s.to_string());
 
         let data_str = serde_json::to_string(wf)
-            .map_err(|e| AutomaError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
+            .map_err(|e| AutomationError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
 
         db.workflows()
             .create_workflow(
@@ -125,7 +125,7 @@ pub async fn restore_storage_backup(
                 version.as_deref(),
                 icon.as_deref(),
             )
-            .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+            .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
         if let Some(included) = wf.get("includedWorkflows").and_then(|v| v.as_object()) {
             for (sub_id, sub_wf) in included {
@@ -173,21 +173,21 @@ pub async fn restore_storage_backup(
                 let parsed_wf_list: Vec<serde_json::Value> = if is_protected {
                     let pass = payload.password.as_deref().unwrap_or("");
                     if pass.is_empty() {
-                        return Err(AutomaError::BadRequest(
+                        return Err(AutomationError::BadRequest(
                             "Password is required to decrypt protected backup".into(),
                         ));
                     }
                     let enc_str = wf_field.as_str().ok_or_else(|| {
-                        AutomaError::BadRequest(
+                        AutomationError::BadRequest(
                             "Protected workflows must be an encrypted string".into(),
                         )
                     })?;
                     let decrypted_str = crate::core::crypto::decrypt_secret(enc_str, pass)
                         .map_err(|e| {
-                            AutomaError::BadRequest(format!("Failed to decrypt workflows: {}", e))
+                            AutomationError::BadRequest(format!("Failed to decrypt workflows: {}", e))
                         })?;
                     serde_json::from_str(&decrypted_str).map_err(|e| {
-                        AutomaError::BadRequest(format!("Invalid decrypted workflow JSON: {}", e))
+                        AutomationError::BadRequest(format!("Invalid decrypted workflow JSON: {}", e))
                     })?
                 } else if let Some(s) = wf_field.as_str() {
                     serde_json::from_str(s).unwrap_or_default()
@@ -304,7 +304,7 @@ pub async fn restore_storage_backup(
             total_workflows += 1;
         }
     } else {
-        return Err(AutomaError::BadRequest(
+        return Err(AutomationError::BadRequest(
             "Backup payload must be a JSON object or array".into(),
         ));
     }
@@ -337,8 +337,8 @@ pub async fn restore_storage_backup(
     get,
     path = "/api/v1/storage/backup/export",
     operation_id = "export_storage_backup",
-    summary = "Export full Automa backup JSON",
-    description = "Exports all workflows, storage variables, and storage tables from SQLite into a standardized Automa backup JSON format.",
+    summary = "Export full Automation backup JSON",
+    description = "Exports all workflows, storage variables, and storage tables from SQLite into a standardized Automation backup JSON format.",
     params(
         ExportBackupQuery
     ),
@@ -350,13 +350,13 @@ pub async fn restore_storage_backup(
 pub async fn export_storage_backup(
     State(state): State<AppState>,
     Query(query): Query<ExportBackupQuery>,
-) -> Result<Json<ExportBackupResponse>, AutomaError> {
+) -> Result<Json<ExportBackupResponse>, AutomationError> {
     let db = state.db.lock().await;
 
     let raw_workflows = db
         .workflows()
         .get_workflows(None, None, None)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let mut workflows_array = Vec::new();
     for w in raw_workflows {
@@ -382,9 +382,9 @@ pub async fn export_storage_backup(
         query.password.as_deref().filter(|p| !p.trim().is_empty())
     {
         let serialized = serde_json::to_string(&workflows_array)
-            .map_err(|e| AutomaError::Internal(format!("Failed to serialize workflows: {}", e)))?;
+            .map_err(|e| AutomationError::Internal(format!("Failed to serialize workflows: {}", e)))?;
         let encrypted = crate::core::crypto::encrypt_secret(&serialized, pass)
-            .map_err(|e| AutomaError::Internal(format!("Failed to encrypt workflows: {}", e)))?;
+            .map_err(|e| AutomationError::Internal(format!("Failed to encrypt workflows: {}", e)))?;
         (true, serde_json::Value::String(encrypted))
     } else {
         (false, serde_json::Value::Array(workflows_array))
@@ -393,12 +393,12 @@ pub async fn export_storage_backup(
     let variables = db
         .storage()
         .get_variables(None, None, None)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let mut tables = db
         .tables()
         .get_tables(None, None, None)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     for t in &mut tables {
         if let Some(ref tid) = t.id {

@@ -35,7 +35,7 @@ mod tests {
     use super::*;
     use crate::AppState;
     use crate::config::AppConfig;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
     use axum::extract::{Json, Path, Query, State};
     use std::sync::Arc;
     use tokio::sync::{Mutex, RwLock, broadcast};
@@ -43,7 +43,7 @@ mod tests {
     fn create_test_state() -> AppState {
         let (tx, _) = broadcast::channel(100);
         let (worker_tx, _) = broadcast::channel(100);
-        let in_memory_db = AutomaDb::new_in_memory().expect("Failed to create in-memory test db");
+        let in_memory_db = AutomationDb::new_in_memory().expect("Failed to create in-memory test db");
         let config = Arc::new(AppConfig::load());
 
         AppState {

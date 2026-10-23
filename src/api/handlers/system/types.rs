@@ -56,7 +56,7 @@ pub struct RunnerIdentityResponse {
     pub service: String,
     /// Protocol contract version for Runner
     pub protocol: String,
-    /// Version of automa-runner daemon
+    /// Version of automation-runner daemon
     pub version: String,
     /// Runner operational lifecycle status
     pub status: String,

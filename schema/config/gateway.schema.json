@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "SpecterBridgeConfig",
-  "description": "Configuration schema for Network Bridge and Multi-VPS Mesh (~/.tuquet/gateway/gateway.json)",
+  "title": "SpecterGatewayConfig",
+  "description": "Configuration schema for Network Gateway and Multi-VPS Mesh (~/.tuquet/gateway/gateway.json)",
   "type": "object",
   "properties": {
     "$schema": {
@@ -25,7 +25,7 @@
     "auto_reconnect": {
       "type": "boolean",
       "default": true,
-      "description": "Automatically reconnect dropped SSH tunnels in supervisor mode"
+      "description": "Automationtically reconnect dropped SSH tunnels in supervisor mode"
     },
     "servers": {
       "type": "array",

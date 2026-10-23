@@ -35,7 +35,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
             timezone TEXT,
             proxy TEXT,
             browser_type TEXT DEFAULT 'Chromium',
-            extensions TEXT DEFAULT '["automa"]',
+            extensions TEXT DEFAULT '["automation"]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -105,7 +105,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
 
     if !columns.iter().any(|c| c == "extensions") {
         conn.execute(
-            "ALTER TABLE browsers ADD COLUMN extensions TEXT DEFAULT '[\"automa\"]'",
+            "ALTER TABLE browsers ADD COLUMN extensions TEXT DEFAULT '[\"automation\"]'",
             [],
         )?;
     }

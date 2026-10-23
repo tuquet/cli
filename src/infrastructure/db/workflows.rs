@@ -239,11 +239,11 @@ impl<'a> SqliteWorkflowRepository<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
 
     #[test]
     fn test_sqlite_workflow_repo_crud() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let conn = db.raw_conn();
         let repo = SqliteWorkflowRepository::new(conn);
 
@@ -252,7 +252,7 @@ mod tests {
             .create_workflow(
                 "wf_search",
                 "Search Google",
-                Some("Automated search"),
+                Some("Automationted search"),
                 initial_data,
                 Some("1.0.0"),
                 Some("search"),
@@ -261,7 +261,7 @@ mod tests {
 
         assert_eq!(created.id, "wf_search");
         assert_eq!(created.name, "Search Google");
-        assert_eq!(created.description.as_deref(), Some("Automated search"));
+        assert_eq!(created.description.as_deref(), Some("Automationted search"));
 
         // Get by ID
         let fetched = repo
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_get_workflow_by_id_or_name() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let conn = db.raw_conn();
         let repo = SqliteWorkflowRepository::new(conn);
 

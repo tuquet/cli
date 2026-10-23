@@ -3,5 +3,5 @@ pub fn manage_config(
     edit: bool,
     show: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    crate::config::ConfigController::handle_dispatch("automa", args, edit, show)
+    crate::config::ConfigController::handle_dispatch("automation", args, edit, show)
 }

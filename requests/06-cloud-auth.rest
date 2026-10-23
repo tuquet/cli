@@ -1,4 +1,4 @@
-### Automa Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
+### Automation Runner - Cloud Auth, Multi-Tenant Pairing & Device Enrollment
 @baseUrl = http://127.0.0.1:8765
 @cloudUrl = https://dswhacsoaxgpfnkaxnhz.supabase.co
 @contentType = application/json

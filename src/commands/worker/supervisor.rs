@@ -7,7 +7,7 @@ use tracing_subscriber::FmtSubscriber;
 
 use crate::AppState;
 use crate::config::AppConfig;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 pub fn get_pid_file_path(data_dir: &str) -> PathBuf {
     Path::new(data_dir).join(crate::constants::FILE_WORKER_PID)
@@ -407,7 +407,7 @@ pub async fn run_server(
     let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
-    info!("Automa Core Bridge starting in Native Launcher mode...");
+    info!("Automation Core Gateway starting in Native Launcher mode...");
     info!("Environment: {}", config.environment);
     info!("Data Directory: {}", config.data_dir);
 
@@ -418,7 +418,7 @@ pub async fn run_server(
     let _ = std::fs::write(&pid_file_path, pid.to_string());
 
     let db_path = Path::new(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-    let db = Arc::new(Mutex::new(AutomaDb::new(db_path)?));
+    let db = Arc::new(Mutex::new(AutomationDb::new(db_path)?));
 
     let (tx, _) = tokio::sync::broadcast::channel(10000);
     let (worker_tx, _) = tokio::sync::broadcast::channel(10000);
@@ -461,7 +461,7 @@ pub async fn run_server(
         );
         card.add_kv(
             "Proxy Mesh",
-            "Smart Bridge Auto-Detect (127.0.0.1:1080 / 8118)",
+            "Smart Gateway Auto-Detect (127.0.0.1:1080 / 8118)",
         );
         card.add_kv(
             "Local Endpoint",
@@ -508,7 +508,7 @@ pub async fn run_server(
     let shutdown_signal = async move {
         #[cfg(windows)]
         {
-            if std::env::var("AUTOMA_NO_CTRLC_SHUTDOWN").is_ok() {
+            if std::env::var("AUTOMATION_NO_CTRLC_SHUTDOWN").is_ok() {
                 std::future::pending::<()>().await;
             } else {
                 let _ = tokio::signal::ctrl_c().await;

@@ -6,6 +6,9 @@ Write-Host "[1/2] Compiling debug binary (fast)..." -ForegroundColor Cyan
 
 $cliDir = Resolve-Path (Join-Path $PSScriptRoot "..")
 cargo build --manifest-path (Join-Path $cliDir "Cargo.toml") --bin tq
+if ($LASTEXITCODE -ne 0) {
+    throw "Cargo build failed with exit code $LASTEXITCODE. Existing tq binaries were not updated."
+}
 
 $binPath = Join-Path $cliDir "target\x86_64-pc-windows-gnu\debug\tq.exe"
 if (-not (Test-Path $binPath)) {
@@ -18,10 +21,11 @@ if (-not (Test-Path $binPath)) {
 
 Write-Host "[2/2] Updating PATH locations..." -ForegroundColor Cyan
 
+$userProfile = [Environment]::GetFolderPath('UserProfile')
+
 $destinations = @(
-    "C:\Users\ndtu6\.tq\bin\tq.exe",
-    "C:\Users\ndtu6\.tuquet\bin\tq.exe",
-    "C:\Users\ndtu6\scoop\apps\rustup-msvc\current\.cargo\bin\tq.exe"
+    (Join-Path $userProfile ".tq\bin\tq.exe"),
+    (Join-Path $userProfile "scoop\apps\rustup-msvc\current\.cargo\bin\tq.exe")
 )
 
 foreach ($dest in $destinations) {

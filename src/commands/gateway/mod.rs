@@ -6,44 +6,44 @@ pub mod start;
 pub mod status;
 
 pub use config::{check_config, manage_config};
-pub use manage::{stop_bridge, toggle_server};
-pub use start::{BridgeStartOptions, start_bridge};
+pub use manage::{stop_gateway, toggle_server};
+pub use start::{GatewayStartOptions, start_gateway};
 pub use status::show_status;
 
-use crate::cli::BridgeSubcommands;
+use crate::cli::GatewaySubcommands;
 use crate::ui::{
     ClackOption, FormatArgs, OutputFormat, clack_cancel, clack_intro, clack_outro, clack_select,
     is_interactive_tty,
 };
 
-pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle(subcmd: Option<GatewaySubcommands>) -> Result<(), Box<dyn std::error::Error>> {
     match subcmd {
-        Some(BridgeSubcommands::Probe { url, timeout, json }) => run_probe(url, timeout, json).await?,
-        Some(BridgeSubcommands::Status { format }) => {
+        Some(GatewaySubcommands::Probe { url, timeout, json }) => run_probe(url, timeout, json).await?,
+        Some(GatewaySubcommands::Status { format }) => {
             let fmt = format.resolve();
             if !fmt.is_json() {
                 clack_intro("tq gateway status", "Multi-VPS Mesh & Workload Topology");
             }
             show_status(fmt).await?;
             if !fmt.is_json() {
-                clack_outro("Bridge mesh topology inspected.");
+                clack_outro("Gateway mesh topology inspected.");
             }
         }
         None => {
             if is_interactive_tty() {
-                run_interactive_bridge().await?;
+                run_interactive_gateway().await?;
             } else {
                 show_status(OutputFormat::Json).await?;
             }
         }
-        Some(BridgeSubcommands::Start {
+        Some(GatewaySubcommands::Start {
             server,
             tag,
             http,
             ssh,
             foreground,
         }) => {
-            start_bridge(BridgeStartOptions {
+            start_gateway(GatewayStartOptions {
                 server: server.as_deref(),
                 tag: tag.as_deref(),
                 http,
@@ -52,43 +52,43 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
             })
             .await?
         }
-        Some(BridgeSubcommands::Stop { server }) => stop_bridge(server.as_deref()).await?,
-        Some(BridgeSubcommands::Enable { server }) => toggle_server(server.as_deref(), true)?,
-        Some(BridgeSubcommands::Disable { server }) => toggle_server(server.as_deref(), false)?,
-        Some(BridgeSubcommands::Check) => check_config()?,
-        Some(BridgeSubcommands::Config { edit, show, args }) => manage_config(&args, edit, show)?,
+        Some(GatewaySubcommands::Stop { server }) => stop_gateway(server.as_deref()).await?,
+        Some(GatewaySubcommands::Enable { server }) => toggle_server(server.as_deref(), true)?,
+        Some(GatewaySubcommands::Disable { server }) => toggle_server(server.as_deref(), false)?,
+        Some(GatewaySubcommands::Check) => check_config()?,
+        Some(GatewaySubcommands::Config { edit, show, args }) => manage_config(&args, edit, show)?,
     }
     Ok(())
 }
 
-async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
-    clack_intro("tq gateway", "Network Bridge & Multi-VPS Mesh Controller");
+async fn run_interactive_gateway() -> Result<(), Box<dyn std::error::Error>> {
+    clack_intro("tq gateway", "Network Gateway & Multi-VPS Mesh Controller");
 
     let opts = vec![
         ClackOption::new(
-            "Inspect Bridge Mesh Status & Topology",
+            "Inspect Gateway Mesh Status & Topology",
             "Probe all configured VPS tunnels, SSH ports & SOCKS5/HTTP listeners",
-            "Inspect Bridge Mesh Status",
+            "Inspect Gateway Mesh Status",
         ),
         ClackOption::new(
-            "Start Enabled Bridge Tunnels",
+            "Start Enabled Gateway Tunnels",
             "Activate Cloudflare & SSH SOCKS5 proxy tunnels for enabled servers",
-            "Start Enabled Bridge Tunnels",
+            "Start Enabled Gateway Tunnels",
         ),
         ClackOption::new(
-            "Stop Active Bridge Tunnels",
+            "Stop Active Gateway Tunnels",
             "Gracefully terminate running gateway tunnel daemons",
-            "Stop Active Bridge Tunnels",
+            "Stop Active Gateway Tunnels",
         ),
         ClackOption::new(
-            "Enable a Bridge Server",
+            "Enable a Gateway Server",
             "Interactively enable a server in ~/.tq/gateway/gateway.json",
-            "Enable a Bridge Server",
+            "Enable a Gateway Server",
         ),
         ClackOption::new(
-            "Disable a Bridge Server",
+            "Disable a Gateway Server",
             "Interactively disable a server in ~/.tq/gateway/gateway.json",
-            "Disable a Bridge Server",
+            "Disable a Gateway Server",
         ),
         ClackOption::new(
             "Validate gateway.json Configuration",
@@ -96,13 +96,13 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
             "Validate gateway.json Configuration",
         ),
         ClackOption::new(
-            "Configure Bridge Settings",
+            "Configure Gateway Settings",
             "Inspect or edit ~/.tq/gateway/gateway.json",
-            "Configure Bridge Settings",
+            "Configure Gateway Settings",
         ),
     ];
 
-    let Some(idx) = clack_select("Select a Bridge operation", &opts, 0, 8)? else {
+    let Some(idx) = clack_select("Select a Gateway operation", &opts, 0, 8)? else {
         clack_cancel("Operation cancelled.");
         return Ok(());
     };
@@ -110,10 +110,10 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
     match idx {
         0 => {
             show_status(FormatArgs::default().resolve()).await?;
-            clack_outro("Bridge mesh topology inspected.");
+            clack_outro("Gateway mesh topology inspected.");
         }
         1 => {
-            start_bridge(BridgeStartOptions {
+            start_gateway(GatewayStartOptions {
                 server: None,
                 tag: None,
                 http: false,
@@ -122,7 +122,7 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
             })
             .await?;
         }
-        2 => stop_bridge(None).await?,
+        2 => stop_gateway(None).await?,
         3 => toggle_server(None, true)?,
         4 => toggle_server(None, false)?,
         5 => check_config()?,

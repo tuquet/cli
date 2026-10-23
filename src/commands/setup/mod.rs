@@ -22,7 +22,7 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
                 mcp::run(true)?;
                 return Ok(());
             }
-            SetupComponent::Bridge => {
+            SetupComponent::Gateway => {
                 gateway::run(true).await?;
                 return Ok(());
             }
@@ -66,11 +66,11 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // OPTIONAL 1: Specter Bridge (VPS Mesh & SOCKS5 Proxy)
+    // OPTIONAL 1: Specter Gateway (VPS Mesh & SOCKS5 Proxy)
     // ─────────────────────────────────────────────────────────────────────────────
-    let want_bridge = if is_interactive {
+    let want_gateway = if is_interactive {
         clack_confirm(
-            "Configure Specter Bridge (VPS SOCKS5 proxy via Cloudflare)?",
+            "Configure Specter Gateway (VPS SOCKS5 proxy via Cloudflare)?",
             false,
         )?
         .unwrap_or(false)
@@ -78,10 +78,10 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
         false
     };
 
-    if want_bridge {
+    if want_gateway {
         gateway::run(is_interactive).await?;
     } else {
-        clack_step_skip("Specter Bridge (configure anytime via 'tq setup gateway')");
+        clack_step_skip("Specter Gateway (configure anytime via 'tq setup gateway')");
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

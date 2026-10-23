@@ -95,7 +95,7 @@ pub fn generate_hmac(encrypted_value: &str, passphrase: &str) -> Result<String> 
     Ok(hex::encode(result.into_bytes()))
 }
 
-/// Encrypts a secret exactly how `automa-cli` EncryptSecretCommand does it.
+/// Encrypts a secret exactly how `automation-cli` EncryptSecretCommand does it.
 /// Returns: `hmac_hex(64 chars) + aes_base64`
 pub fn encrypt_secret(plaintext: &str, passphrase: &str) -> Result<String> {
     let encrypted_value = encrypt_aes(plaintext, passphrase)?;
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_encryption_decryption_cycle() {
-        let plaintext = "Hello, Automa!";
+        let plaintext = "Hello, Automation!";
         let passphrase = "my-strong-password";
 
         let encrypted = encrypt_secret(plaintext, passphrase).expect("Encryption failed");

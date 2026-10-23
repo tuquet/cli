@@ -96,15 +96,12 @@ pub enum Commands {
     Mcp,
 }
 
-pub type AutomationSubcommands = AutomaSubcommands;
-pub type GatewaySubcommands = BridgeSubcommands;
-
 #[derive(Subcommand, Debug, Clone)]
 pub enum SchemaSubcommands {
     /// List or export all commands declared in the schema manifest
     #[command(name = "commands", aliases = ["cmds"])]
     Commands {
-        /// Filter commands by microservice pillar domain (system, automa, browser, gateway, faker, runner, cloud)
+        /// Filter commands by microservice pillar domain (system, automation, browser, gateway, faker, runner, cloud)
         #[arg(short, long)]
         pillar: Option<String>,
 
@@ -115,7 +112,7 @@ pub enum SchemaSubcommands {
     /// Export the JSON Schema definition for a microservice configuration file
     #[command(name = "config")]
     Config {
-        /// Service configuration schema to output (gateway, browser, automa, runner, faker, system)
+        /// Service configuration schema to output (gateway, browser, automation, runner, faker, system)
         #[arg(value_name = "SERVICE")]
         service: Option<String>,
     },
@@ -126,7 +123,7 @@ pub enum SchemaSubcommands {
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum BridgeSubcommands {
+pub enum GatewaySubcommands {
     /// Probe proxy egress connectivity, latency, and WebRTC leak shield
     #[command(name = "probe")]
     Probe {
@@ -262,7 +259,7 @@ pub enum InboxSubcommands {
         #[arg(short, long)]
         link_type: Option<String>,
 
-        /// Open link automatically in default browser
+        /// Open link automationtically in default browser
         #[arg(short, long)]
         open: bool,
 
@@ -491,7 +488,7 @@ pub enum FakerSubcommands {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum AutomaSubcommands {
+pub enum AutomationSubcommands {
     /// Execute a workflow directly via browser worker
     Run {
         /// Path to workflow JSON file (.workflow.json)
@@ -530,7 +527,7 @@ pub enum AutomaSubcommands {
         #[arg(short, long)]
         timeout: Option<u64>,
 
-        /// Automatically ensure Gateway is running and verify WebRTC leak shield before execution
+        /// Automationtically ensure Gateway is running and verify WebRTC leak shield before execution
         #[arg(long)]
         safe: bool,
     },
@@ -549,20 +546,20 @@ pub enum AutomaSubcommands {
         workflow: String,
     },
 
-    /// Launch Automa Web Studio in default system browser
+    /// Launch Automation Web Studio in default system browser
     Studio,
 
-    /// Probe Automa manifest capabilities
+    /// Probe Automation manifest capabilities
     Probe,
 
-    /// Display, inspect, or edit Automa configuration (~/.tq/automa/automa.json)
+    /// Display, inspect, or edit Automation configuration (~/.tq/automation/automation.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
         #[arg(value_name = "ARGS")]
         args: Vec<String>,
 
-        /// Open automa.json in default editor
+        /// Open automation.json in default editor
         #[arg(short = 'e', long)]
         edit: bool,
 
@@ -642,7 +639,7 @@ pub enum WorkerSubcommands {
 
     /// Inspect local runner daemon status and health check endpoint
     Status {
-        /// Daemon server base URL (defaults to http://{AUTOMA_HOST}:{AUTOMA_PORT} or http://127.0.0.1:8765)
+        /// Daemon server base URL (defaults to http://{AUTOMATION_HOST}:{AUTOMATION_PORT} or http://127.0.0.1:8765)
         #[arg(short, long)]
         url: Option<String>,
 
@@ -672,7 +669,7 @@ pub enum WorkerSubcommands {
         output: PathBuf,
     },
 
-    /// Display, inspect, or edit Runner daemon configuration (~/.tq/automa/runner.json)
+    /// Display, inspect, or edit Runner daemon configuration (~/.tq/automation/runner.json)
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
@@ -849,7 +846,7 @@ pub enum BrowserCommands {
     #[command(name = "path")]
     Path,
 
-    /// Manage and configure browser extensions (Automa MV3 and custom extensions)
+    /// Manage and configure browser extensions (Automation MV3 and custom extensions)
     #[command(name = "ext")]
     Ext {
         #[command(subcommand)]
@@ -1228,7 +1225,7 @@ pub enum ExtCommands {
     /// Download and install an extension package from scoop catalog
     #[command(name = "install")]
     Install {
-        /// Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')
+        /// Extension ID from catalog (e.g. 'automation', 'ublock', 'cookie-injector')
         id: String,
 
         /// Force re-download and overwrite existing installation
@@ -1254,7 +1251,7 @@ pub enum ExtCommands {
         id: String,
     },
 
-    /// Enable an extension for automated browser sessions
+    /// Enable an extension for automationted browser sessions
     #[command(name = "enable")]
     Enable {
         /// Extension ID to enable
@@ -1271,16 +1268,16 @@ pub enum ExtCommands {
     /// Show detailed metadata and manifest for an extension
     #[command(name = "info")]
     Info {
-        /// Extension ID to inspect (defaults to 'automa')
-        #[arg(default_value = "automa")]
+        /// Extension ID to inspect (defaults to 'automation')
+        #[arg(default_value = "automation")]
         id: String,
     },
 
-    /// Print the absolute filesystem path of an extension (defaults to 'automa')
+    /// Print the absolute filesystem path of an extension (defaults to 'automation')
     #[command(name = "path")]
     Path {
-        /// Extension ID (defaults to 'automa')
-        #[arg(default_value = "automa")]
+        /// Extension ID (defaults to 'automation')
+        #[arg(default_value = "automation")]
         id: String,
     },
 
@@ -1372,7 +1369,7 @@ pub struct SetupArgs {
     #[arg(short, long)]
     pub force: bool,
 
-    /// Assume yes to all interactive prompts (automated onboarding)
+    /// Assume yes to all interactive prompts (automationted onboarding)
     #[arg(short = 'y', long)]
     pub yes: bool,
 }
@@ -1387,9 +1384,9 @@ pub enum SetupComponent {
     #[command(name = "mcp")]
     Mcp,
 
-    /// Configure Specter Bridge VPS tunnel & verify SOCKS5 mesh proxy
+    /// Configure Specter Gateway VPS tunnel & verify SOCKS5 mesh proxy
     #[command(name = "gateway")]
-    Bridge,
+    Gateway,
 
     /// Provision Antidetect Chromium browser sandbox
     #[command(name = "browser")]

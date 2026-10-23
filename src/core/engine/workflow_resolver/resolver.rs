@@ -1,4 +1,4 @@
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -18,7 +18,7 @@ impl WorkflowResolver {
         workflow_id: Option<&str>,
         workflow_path: Option<&str>,
         workflow_data: Option<&serde_json::Value>,
-        db: &Arc<Mutex<AutomaDb>>,
+        db: &Arc<Mutex<AutomationDb>>,
     ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
         if let Some(data) = workflow_data {
             Self::resolve_inline_data(job_id, data_dir, data).await
@@ -63,7 +63,7 @@ impl WorkflowResolver {
         data_dir: &str,
         wf_id: &str,
         fallback_path: Option<&str>,
-        db: &Arc<Mutex<AutomaDb>>,
+        db: &Arc<Mutex<AutomationDb>>,
     ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
         if wf_id.contains("..") {
             return Err(WorkflowResolveError::BadRequest(

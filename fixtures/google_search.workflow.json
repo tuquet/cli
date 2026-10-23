@@ -1,7 +1,7 @@
 {
   "id": "google_search",
   "name": "Google Search Bot",
-  "description": "Automated Google search workflow with parameter keyword",
+  "description": "Automationted Google search workflow with parameter keyword",
   "version": "1.0.0",
   "icon": "ri-search-line",
   "drawflow": {
@@ -15,7 +15,7 @@
           "parameters": [
             {
               "name": "keyword",
-              "defaultValue": "Automa Runner"
+              "defaultValue": "Automation Runner"
             }
           ]
         }

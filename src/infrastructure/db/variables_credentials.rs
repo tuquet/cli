@@ -188,9 +188,9 @@ impl<'a> SqliteStorageRepository<'a> {
         let raw_val = cred.value.as_deref().unwrap_or_default();
 
         // Auto-encrypt with AES if not already encrypted
-        let passphrase = std::env::var("AUTOMA_SECRET_KEY")
-            .or_else(|_| std::env::var("AUTOMA_PASSPHRASE"))
-            .unwrap_or_else(|_| "automa-storage-secret".to_string());
+        let passphrase = std::env::var("AUTOMATION_SECRET_KEY")
+            .or_else(|_| std::env::var("AUTOMATION_PASSPHRASE"))
+            .unwrap_or_else(|_| "automation-storage-secret".to_string());
 
         let encrypted_val = if raw_val.starts_with("Salted__")
             || (raw_val.len() > 64 && raw_val[64..].starts_with("Salted__"))
@@ -232,11 +232,11 @@ impl<'a> SqliteStorageRepository<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
 
     #[test]
     fn test_variables_crud() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let storage = db.storage();
 
         // 1. Add variable
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_credentials_auto_aes_encryption() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let storage = db.storage();
 
         // 1. Add plaintext credential

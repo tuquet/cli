@@ -7,7 +7,7 @@ use axum::{
 use crate::AppState;
 use crate::core::engine::job_coordinator::{JobCoordinator, JobCoordinatorError};
 use crate::core::engine::workflow_resolver::WorkflowResolveError;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::id::JobId;
 
 use super::types::{
@@ -21,7 +21,7 @@ use super::types::{
     path = "/api/v1/jobs",
     operation_id = "submit_job",
     summary = "Submit a workflow execution job",
-    description = "Submits a new automation workflow job to be executed by a browser worker instance. Supports workflowId, inline workflowData, or filesystem workflowPath. Automatically ensures the required browser instance is launched and connected.",
+    description = "Submits a new automation workflow job to be executed by a browser worker instance. Supports workflowId, inline workflowData, or filesystem workflowPath. Automationtically ensures the required browser instance is launched and connected.",
     request_body = SubmitJobPayload,
     responses(
         (status = 200, description = "Job submitted and accepted for execution", body = SubmitJobResponse),
@@ -129,10 +129,10 @@ pub async fn job_log(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
     Json(payload): Json<JobLogPayload>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<StatusCode, AutomationError> {
     JobCoordinator::record_log(&state, &job_id, &payload)
         .await
-        .map_err(|e| AutomaError::Internal(e.to_string()))?;
+        .map_err(|e| AutomationError::Internal(e.to_string()))?;
     Ok(StatusCode::OK)
 }
 
@@ -154,14 +154,14 @@ pub async fn job_log(
 pub async fn job_finish(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<StatusCode, AutomaError> {
+) -> Result<StatusCode, AutomationError> {
     JobCoordinator::finish(&state, &job_id)
         .await
         .map_err(|e| match e {
             JobCoordinatorError::NotFound(_) => {
-                AutomaError::NotFound(format!("Job '{job_id}' not found or already finished"))
+                AutomationError::NotFound(format!("Job '{job_id}' not found or already finished"))
             }
-            other => AutomaError::Internal(other.to_string()),
+            other => AutomationError::Internal(other.to_string()),
         })?;
     Ok(StatusCode::OK)
 }
@@ -184,7 +184,7 @@ pub async fn job_finish(
 pub async fn get_job_status(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<JobStatusResponse>, AutomaError> {
+) -> Result<Json<JobStatusResponse>, AutomationError> {
     let status = JobCoordinator::get_status(&state, &job_id).await;
     Ok(Json(JobStatusResponse { status }))
 }
@@ -204,7 +204,7 @@ pub async fn get_job_status(
 pub async fn get_active_jobs(
     State(state): State<AppState>,
     Query(query): Query<GetActiveJobsQuery>,
-) -> Result<Json<Vec<ActiveJobResponse>>, AutomaError> {
+) -> Result<Json<Vec<ActiveJobResponse>>, AutomationError> {
     let active = state.active_jobs.read().await;
     let mut jobs: Vec<ActiveJobResponse> = active
         .keys()
@@ -245,14 +245,14 @@ pub async fn get_active_jobs(
 pub async fn kill_job(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<JobControlResponse>, AutomaError> {
+) -> Result<Json<JobControlResponse>, AutomationError> {
     JobCoordinator::kill(&state, &job_id)
         .await
         .map_err(|e| match e {
             JobCoordinatorError::NotFound(_) => {
-                AutomaError::NotFound(format!("Job '{job_id}' not found or not active"))
+                AutomationError::NotFound(format!("Job '{job_id}' not found or not active"))
             }
-            other => AutomaError::Internal(other.to_string()),
+            other => AutomationError::Internal(other.to_string()),
         })?;
     Ok(Json(JobControlResponse {
         success: true,
@@ -280,10 +280,10 @@ pub async fn kill_job(
 pub async fn pause_job(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<JobControlResponse>, AutomaError> {
+) -> Result<Json<JobControlResponse>, AutomationError> {
     let is_active = state.active_jobs.read().await.contains_key(job_id.as_str());
     if !is_active {
-        return Err(AutomaError::NotFound(format!(
+        return Err(AutomationError::NotFound(format!(
             "Job '{job_id}' not found or not active"
         )));
     }
@@ -339,10 +339,10 @@ pub async fn pause_job(
 pub async fn resume_job(
     State(state): State<AppState>,
     Path(job_id): Path<JobId>,
-) -> Result<Json<JobControlResponse>, AutomaError> {
+) -> Result<Json<JobControlResponse>, AutomationError> {
     let is_active = state.active_jobs.read().await.contains_key(job_id.as_str());
     if !is_active {
-        return Err(AutomaError::NotFound(format!(
+        return Err(AutomationError::NotFound(format!(
             "Job '{job_id}' not found or not active"
         )));
     }

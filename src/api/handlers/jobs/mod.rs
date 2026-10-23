@@ -23,7 +23,7 @@ mod tests {
     use super::*;
     use crate::AppState;
     use crate::config::AppConfig;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
     use axum::{
         Router,
         body::Body,
@@ -37,7 +37,7 @@ mod tests {
     use tower::ServiceExt;
 
     async fn create_test_app() -> Router {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let (tx, _) = tokio::sync::broadcast::channel(100);
         let (worker_tx, _) = tokio::sync::broadcast::channel(100);
         let config = Arc::new(AppConfig::load());
@@ -107,7 +107,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_job_log_handler_saves_to_db() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let (tx, mut rx) = tokio::sync::broadcast::channel(100);
         let (worker_tx, _) = tokio::sync::broadcast::channel(100);
         let config = Arc::new(AppConfig::load());
@@ -143,7 +143,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_kill_job_not_found() {
-        let db = Arc::new(Mutex::new(AutomaDb::new_in_memory().unwrap()));
+        let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let (tx, _) = tokio::sync::broadcast::channel(100);
         let (worker_tx, _) = tokio::sync::broadcast::channel(100);
         let config = Arc::new(AppConfig::load());

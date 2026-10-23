@@ -24,15 +24,15 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     let dirs = [
         root.join("bin"),
         root.join(crate::constants::PILLAR_SYSTEM),
-        root.join(crate::constants::PILLAR_AUTOMA),
+        root.join(crate::constants::PILLAR_AUTOMATION),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_RUNTIMES),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_EXTENSIONS),
-        root.join(crate::constants::PILLAR_BRIDGE).join("bin"),
-        root.join(crate::constants::PILLAR_BRIDGE)
+        root.join(crate::constants::PILLAR_GATEWAY).join("bin"),
+        root.join(crate::constants::PILLAR_GATEWAY)
             .join(crate::constants::DIR_PIDS),
         root.join(crate::constants::PILLAR_FAKER),
     ];
@@ -48,12 +48,12 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
     );
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 2. Initialize Automa SQLite Database
+    // 2. Initialize Automation SQLite Database
     // ─────────────────────────────────────────────────────────────────────────────
     let db_path = root
-        .join(crate::constants::PILLAR_AUTOMA)
-        .join(crate::constants::FILE_AUTOMA_SQLITE);
-    match crate::infrastructure::db::AutomaDb::new(&db_path) {
+        .join(crate::constants::PILLAR_AUTOMATION)
+        .join(crate::constants::FILE_AUTOMATION_SQLITE);
+    match crate::infrastructure::db::AutomationDb::new(&db_path) {
         Ok(_) => {
             println!(
                 "  {GREEN}✓{RESET} SQLite database initialized: {}",

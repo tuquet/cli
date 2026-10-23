@@ -84,7 +84,7 @@ pub async fn get_system_info(State(state): State<crate::AppState>) -> impl IntoR
         StatusCode::OK,
         Json(RunnerIdentityResponse {
             service: "cli".to_string(),
-            protocol: "tuquet.automa.v1".to_string(),
+            protocol: "tuquet.automation.v1".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             status: "ready".to_string(),
             machine: MachineInfo {

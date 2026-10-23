@@ -7,13 +7,13 @@ use tracing::{debug, info, warn};
 
 /// Pure Rust embedded HTTP CONNECT -> SOCKS5 gateway server.
 /// Eliminates the external sing-box dependency completely.
-pub struct HttpToSocks5Bridge {
+pub struct HttpToSocks5Gateway {
     listen_port: u16,
     socks5_port: u16,
     running: Arc<AtomicBool>,
 }
 
-impl HttpToSocks5Bridge {
+impl HttpToSocks5Gateway {
     pub fn new(listen_port: u16, socks5_port: u16) -> Self {
         Self {
             listen_port,
@@ -32,7 +32,7 @@ impl HttpToSocks5Bridge {
         let is_running = self.running.clone();
 
         info!(
-            "Embedded HTTP-to-SOCKS5 Bridge listening on 127.0.0.1:{} -> forwarding to SOCKS5 127.0.0.1:{}",
+            "Embedded HTTP-to-SOCKS5 Gateway listening on 127.0.0.1:{} -> forwarding to SOCKS5 127.0.0.1:{}",
             self.listen_port, socks_port
         );
 

@@ -368,11 +368,11 @@ impl<'a> SqliteJobRepository<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
 
     #[test]
     fn test_sqlite_jobs_lifecycle_and_logs() {
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let conn = db.raw_conn();
         let repo = SqliteJobRepository::new(conn);
 

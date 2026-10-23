@@ -1,5 +1,5 @@
 use crate::infrastructure::gateway::{
-    BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge, ServerConfig, ServerSelector,
+    GatewayConfig, GatewaySupervisor, HttpToSocks5Gateway, ServerConfig, ServerSelector,
     check_dependencies, probe_port,
 };
 use crate::ui::prompt::{
@@ -7,7 +7,7 @@ use crate::ui::prompt::{
     ClackOption, ClackSpinner, is_interactive_tty,
 };
 
-pub struct BridgeStartOptions<'a> {
+pub struct GatewayStartOptions<'a> {
     pub server: Option<&'a str>,
     pub tag: Option<&'a str>,
     pub http: bool,
@@ -15,13 +15,13 @@ pub struct BridgeStartOptions<'a> {
     pub foreground: bool,
 }
 
-pub async fn start_bridge(mut opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn std::error::Error>> {
-    let config = BridgeConfig::load()?;
+pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    let config = GatewayConfig::load()?;
 
     if config.servers.is_empty() {
         return Err(format!(
             "No servers found in configuration {}",
-            BridgeConfig::config_path().display()
+            GatewayConfig::config_path().display()
         )
         .into());
     }
@@ -80,7 +80,7 @@ pub async fn start_bridge(mut opts: BridgeStartOptions<'_>) -> Result<(), Box<dy
             if let Ok(Some(idx)) = clack_select("Select target server:", &srv_options, 0, 7) {
                 if idx < srv_options.len() - 1 {
                     let chosen = srv_options[idx].label.clone();
-                    return Box::pin(start_bridge_resolved(opts, chosen)).await;
+                    return Box::pin(start_gateway_resolved(opts, chosen)).await;
                 }
             }
         } else if let Some((single_id, single_srv)) = enabled_servers.first() {
@@ -89,23 +89,23 @@ pub async fn start_bridge(mut opts: BridgeStartOptions<'_>) -> Result<(), Box<dy
         }
     }
 
-    start_bridge_core(opts, &config, enabled_servers).await
+    start_gateway_core(opts, &config, enabled_servers).await
 }
 
-async fn start_bridge_resolved(
-    opts: BridgeStartOptions<'_>,
+async fn start_gateway_resolved(
+    opts: GatewayStartOptions<'_>,
     server_target: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let config = BridgeConfig::load()?;
+    let config = GatewayConfig::load()?;
     let mut resolved_opts = opts;
     resolved_opts.server = Some(&server_target);
     let enabled_servers = ServerSelector::get_enabled(&config);
-    start_bridge_core(resolved_opts, &config, enabled_servers).await
+    start_gateway_core(resolved_opts, &config, enabled_servers).await
 }
 
-async fn start_bridge_core(
-    opts: BridgeStartOptions<'_>,
-    config: &BridgeConfig,
+async fn start_gateway_core(
+    opts: GatewayStartOptions<'_>,
+    config: &GatewayConfig,
     enabled_servers: Vec<(&String, &ServerConfig)>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Determine target servers
@@ -135,14 +135,14 @@ async fn start_bridge_core(
                     format!(
                         "Server '{}' not found in configuration {}",
                         target,
-                        BridgeConfig::config_path().display()
+                        GatewayConfig::config_path().display()
                     )
                 })?;
                 if !srv.is_enabled() {
                     clack_step_warn(format!(
                         "Server '{}' is disabled in {} (Enable with: tq gateway enable {})",
                         target,
-                        BridgeConfig::config_path().display(),
+                        GatewayConfig::config_path().display(),
                         target
                     ));
                     return Err(format!("Server '{}' is disabled in gateway.json", target).into());
@@ -182,7 +182,7 @@ async fn start_bridge_core(
         }
 
         let sp = ClackSpinner::start(format!("Connecting to '{}' ({})...", srv_id, srv.name));
-        match BridgeSupervisor::start_server(srv_id, srv, opts.ssh).await {
+        match GatewaySupervisor::start_server(srv_id, srv, opts.ssh).await {
             Ok(result) => {
                 let port = result.socks_port.unwrap_or(1080);
                 sp.finish(format!(
@@ -217,7 +217,7 @@ async fn start_bridge_core(
             ));
             http_active = true;
         } else {
-            let gateway = HttpToSocks5Bridge::new(http_port, last_socks_port);
+            let gateway = HttpToSocks5Gateway::new(http_port, last_socks_port);
             match gateway.start().await {
                 Ok(_) => {
                     clack_step_ok(format!(
@@ -255,7 +255,7 @@ async fn start_bridge_core(
                     let socks_port = srv.socks_port.unwrap_or(1080);
                     if !probe_port(socks_port) {
                         eprintln!("[watchdog] WARN: Port {} dropped. Reconnecting to '{}'...", socks_port, srv_id);
-                        let _ = BridgeSupervisor::start_server(srv_id, srv, opts.ssh).await;
+                        let _ = GatewaySupervisor::start_server(srv_id, srv, opts.ssh).await;
                     }
                 }
             }

@@ -1,6 +1,6 @@
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 use crate::ui::{
     OutputFormat, TabularRow, badge_offline, badge_online, badge_warn,
     create_network_topology_card, create_tabular_card, default_workstation_endpoints, respond_with,
@@ -89,10 +89,10 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         72,
     );
 
-    // 2. AUTOMA (Runner Daemon + SQLite Database + Workflows)
-    let host = std::env::var(crate::constants::ENV_AUTOMA_HOST)
+    // 2. AUTOMATION (Runner Daemon + SQLite Database + Workflows)
+    let host = std::env::var(crate::constants::ENV_AUTOMATION_HOST)
         .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
-    let port = std::env::var(crate::constants::ENV_AUTOMA_PORT)
+    let port = std::env::var(crate::constants::ENV_AUTOMATION_PORT)
         .unwrap_or_else(|_| config.server_port.to_string());
     let daemon_url = format!("http://{}:{}", host, port);
     let health_url = format!("{}/api/v1/health", daemon_url);
@@ -113,7 +113,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         } else {
             "Present".to_string()
         };
-        let count = if let Ok(db) = AutomaDb::new(&db_path) {
+        let count = if let Ok(db) = AutomationDb::new(&db_path) {
             db.workflows().get_workflows(None, None, None).map(|w| w.len()).unwrap_or(0)
         } else {
             0
@@ -128,11 +128,11 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     } else {
         badge_offline("OFFLINE")
     };
-    let automa_rows = vec![
+    let automation_rows = vec![
         TabularRow::new(
             "Runner RPC",
             format!("127.0.0.1:{}", port),
-            "Local Daemon Bridge",
+            "Local Daemon Gateway",
             daemon_status,
         ),
         TabularRow::new(
@@ -157,8 +157,8 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ),
     ];
 
-    let automa_card = create_tabular_card(
-        "AUTOMA & RUNNER",
+    let automation_card = create_tabular_card(
+        "AUTOMATION & RUNNER",
         Some(if daemon_running {
             badge_online("RUNNING")
         } else {
@@ -170,7 +170,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
             "ROLE / DETAILS",
             "STATUS",
         ],
-        &automa_rows,
+        &automation_rows,
         Some(if daemon_running {
             "Runner daemon active on local endpoint"
         } else {
@@ -269,26 +269,26 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         72,
     );
 
-    // 4. NETWORK BRIDGE
-    let bridge_config = crate::infrastructure::gateway::BridgeConfig::load()
-        .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
-    let git_port = bridge_config
+    // 4. NETWORK GATEWAY
+    let gateway_config = crate::infrastructure::gateway::GatewayConfig::load()
+        .unwrap_or_else(|_| crate::infrastructure::gateway::GatewayConfig::default_config());
+    let git_port = gateway_config
         .workloads
         .as_ref()
         .and_then(|w| w.git.as_ref())
         .map(|g| g.port)
         .unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
-    let primary_ssh_port = bridge_config
+    let primary_ssh_port = gateway_config
         .servers
         .get("my-vps")
         .and_then(|s| s.local_ssh_port)
         .unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
-    let http_port = bridge_config
+    let http_port = gateway_config
         .workloads
         .as_ref()
         .and_then(|w| w.supabase.as_ref())
         .map(|s| s.http_port)
-        .unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
+        .unwrap_or(crate::constants::DEFAULT_HTTP_GATEWAY_PORT);
 
     let (git_active, ssh_active, http_active) = tokio::join!(
         crate::infrastructure::gateway::probe_port_async(git_port),
@@ -305,15 +305,15 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ssh_active,
         None,
     );
-    let mut bridge_card = create_network_topology_card(
-        "NETWORK BRIDGE",
+    let mut gateway_card = create_network_topology_card(
+        "NETWORK GATEWAY",
         &endpoints,
         Some("Manage with 'tq gateway status' or 'tq gateway start'"),
     );
     if git_active || ssh_active || http_active {
-        bridge_card.with_badge(badge_online("CONNECTED"));
+        gateway_card.with_badge(badge_online("CONNECTED"));
     } else {
-        bridge_card.with_badge(badge_offline("DISCONNECTED"));
+        gateway_card.with_badge(badge_offline("DISCONNECTED"));
     }
 
     let payload = serde_json::json!({
@@ -330,7 +330,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
             "endpoint": daemon_url,
             "port": port
         },
-        "automa": {
+        "automation": {
             "workflows_count": workflow_count,
             "database": db_size_str
         },
@@ -360,9 +360,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         }
 
         system_card.print();
-        automa_card.print();
+        automation_card.print();
         browser_card.print();
-        bridge_card.print();
+        gateway_card.print();
         crate::ui::prompt::clack_outro("Run 'tq tui' for full-screen live dashboard.");
     })
 }

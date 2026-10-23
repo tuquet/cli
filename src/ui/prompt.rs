@@ -244,7 +244,7 @@ pub fn clack_block(rendered: &str) {
 }
 
 /// RAII `@clack/prompts` animated spinner (`◒ ◐ ◓ ◑`)
-/// Automatically cleans up terminal line on completion, failure, or drop.
+/// Automationtically cleans up terminal line on completion, failure, or drop.
 /// In Non-TTY (Agent mode), emits zero animation frames to save tokens.
 pub struct ClackSpinner {
     active: Arc<AtomicBool>,

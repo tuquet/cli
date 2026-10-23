@@ -1,4 +1,4 @@
-use crate::infrastructure::gateway::{BridgeConfig, check_dependencies, probe_port_async};
+use crate::infrastructure::gateway::{GatewayConfig, check_dependencies, probe_port_async};
 use crate::ui::{
     Card, Column, Table, badge_online, badge_warn, create_network_topology_card,
     default_workstation_endpoints, respond_with,
@@ -7,7 +7,7 @@ use crate::ui::{
 pub async fn show_status(
     format: crate::ui::OutputFormat,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let config = BridgeConfig::load().unwrap_or_else(|_| BridgeConfig::default_config());
+    let config = GatewayConfig::load().unwrap_or_else(|_| GatewayConfig::default_config());
     let workstation_name = config
         .workstation
         .as_ref()
@@ -131,7 +131,7 @@ pub async fn show_status(
         .as_ref()
         .and_then(|w| w.supabase.as_ref())
         .map(|s| s.http_port)
-        .unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
+        .unwrap_or(crate::constants::DEFAULT_HTTP_GATEWAY_PORT);
 
     let (ssh_online, git_online, http_online) = tokio::join!(
         probe_port_async(ssh_port),
@@ -144,7 +144,7 @@ pub async fn show_status(
 
     let payload = serde_json::json!({
         "workstation": workstation_name,
-        "config_source": BridgeConfig::config_path().to_string_lossy(),
+        "config_source": GatewayConfig::config_path().to_string_lossy(),
         "default_server": default_server,
         "servers": server_json_entries,
         "workloads": {
@@ -163,13 +163,13 @@ pub async fn show_status(
 
     respond_with(format, &payload, |_| {
         println!();
-        let mut header_card = Card::new("NETWORK BRIDGE & MULTI-VPS MESH");
+        let mut header_card = Card::new("NETWORK GATEWAY & MULTI-VPS MESH");
         header_card.with_badge(badge_online("CONTROLLER READY"));
         header_card.with_min_width(74);
         header_card.add_kv("Workstation", workstation_name);
         header_card.add_kv(
             "Config Source",
-            BridgeConfig::config_path().to_string_lossy().to_string(),
+            GatewayConfig::config_path().to_string_lossy().to_string(),
         );
         header_card.add_kv("Default Server", default_server);
         header_card

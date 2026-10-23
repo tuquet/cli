@@ -9,14 +9,14 @@ use super::types::SystemResponse;
     path = "/api/v1/system/studio/session",
     operation_id = "open_web_studio",
     summary = "Open Web Studio in default system browser",
-    description = "Spawns the default OS web browser and navigates to the locally served Automa Web Studio canvas editor.",
+    description = "Spawns the default OS web browser and navigates to the locally served Automation Web Studio canvas editor.",
     responses(
         (status = 200, description = "Web Studio opened successfully in system browser", body = SystemResponse)
     )
 )]
 pub async fn open_studio(State(state): State<crate::AppState>) -> impl IntoResponse {
     let port = state.config.server_port;
-    let url = std::env::var("AUTOMA_STUDIO_URL")
+    let url = std::env::var("AUTOMATION_STUDIO_URL")
         .map(|u| {
             if !u.contains("port=") {
                 let separator = if u.contains('?') { '&' } else { '?' };
@@ -25,7 +25,7 @@ pub async fn open_studio(State(state): State<crate::AppState>) -> impl IntoRespo
                 u
             }
         })
-        .unwrap_or_else(|_| format!("https://automa-studio.vercel.app?port={}", port));
+        .unwrap_or_else(|_| format!("https://automation-studio.vercel.app?port={}", port));
 
     let _ = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]

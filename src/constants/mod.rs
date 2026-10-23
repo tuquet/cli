@@ -2,12 +2,12 @@
 //! Single Source of Truth (SSOT) Architecture
 
 pub mod ports {
-    /// Default port for Automa / Runner HTTP and WebSocket API server
+    /// Default port for Automation / Runner HTTP and WebSocket API server
     pub const DEFAULT_RUNNER_PORT: u16 = 8765;
     /// Default SOCKS5 proxy port
     pub const DEFAULT_SOCKS5_PORT: u16 = 1080;
     /// Default HTTP gateway proxy port
-    pub const DEFAULT_HTTP_BRIDGE_PORT: u16 = 8118;
+    pub const DEFAULT_HTTP_GATEWAY_PORT: u16 = 8118;
     /// Default Chrome DevTools Protocol (CDP) port
     pub const DEFAULT_CDP_PORT: u16 = 9222;
     /// Default local SSH tunnel port
@@ -19,8 +19,8 @@ pub mod ports {
 }
 
 pub mod protocols {
-    /// Protocol identifier for Automa workflow engine v1
-    pub const PROTOCOL_AUTOMA_V1: &str = "tuquet.automa.v1";
+    /// Protocol identifier for Automation workflow engine v1
+    pub const PROTOCOL_AUTOMATION_V1: &str = "tuquet.automation.v1";
     /// Protocol identifier for dedicated browser runtime v1
     pub const PROTOCOL_BROWSER_V1: &str = "tuquet.browser.v1";
     /// Protocol identifier for distributed execution agent v1
@@ -28,20 +28,20 @@ pub mod protocols {
 }
 
 pub mod pillars {
-    pub const PILLAR_BRIDGE: &str = "gateway";
+    pub const PILLAR_GATEWAY: &str = "gateway";
     pub const PILLAR_FAKER: &str = "faker";
     pub const PILLAR_BROWSER: &str = "browser";
-    pub const PILLAR_AUTOMA: &str = "automa";
+    pub const PILLAR_AUTOMATION: &str = "automation";
     pub const PILLAR_WORKER: &str = "worker";
     pub const PILLAR_CLOUD: &str = "cloud";
     pub const PILLAR_SYSTEM: &str = "system";
     pub const PILLAR_INBOX: &str = "inbox";
 
     pub const ALL_PILLARS: &[&str] = &[
-        PILLAR_BRIDGE,
+        PILLAR_GATEWAY,
         PILLAR_FAKER,
         PILLAR_BROWSER,
-        PILLAR_AUTOMA,
+        PILLAR_AUTOMATION,
         PILLAR_WORKER,
         PILLAR_CLOUD,
         PILLAR_SYSTEM,
@@ -63,14 +63,14 @@ pub mod envs {
     pub const ENV_SPECTER_FORCE_NO_SANDBOX: &str = "SPECTER_FORCE_NO_SANDBOX";
     pub const ENV_SPECTER_EXTENSION_PATH: &str = "SPECTER_EXTENSION_PATH";
 
-    pub const ENV_AUTOMA_HOST: &str = "AUTOMA_HOST";
-    pub const ENV_AUTOMA_PORT: &str = "AUTOMA_PORT";
-    pub const ENV_AUTOMA_DATA_DIR: &str = "AUTOMA_DATA_DIR";
-    pub const ENV_AUTOMA_ENV: &str = "AUTOMA_ENV";
-    pub const ENV_AUTOMA_LOG_LEVEL: &str = "AUTOMA_LOG_LEVEL";
-    pub const ENV_AUTOMA_CLOUD_URL: &str = "AUTOMA_CLOUD_URL";
-    pub const ENV_AUTOMA_ENROLLMENT_TOKEN: &str = "AUTOMA_ENROLLMENT_TOKEN";
-    pub const ENV_AUTOMA_HEARTBEAT_INTERVAL: &str = "AUTOMA_HEARTBEAT_INTERVAL";
+    pub const ENV_AUTOMATION_HOST: &str = "AUTOMATION_HOST";
+    pub const ENV_AUTOMATION_PORT: &str = "AUTOMATION_PORT";
+    pub const ENV_AUTOMATION_DATA_DIR: &str = "AUTOMATION_DATA_DIR";
+    pub const ENV_AUTOMATION_ENV: &str = "AUTOMATION_ENV";
+    pub const ENV_AUTOMATION_LOG_LEVEL: &str = "AUTOMATION_LOG_LEVEL";
+    pub const ENV_AUTOMATION_CLOUD_URL: &str = "AUTOMATION_CLOUD_URL";
+    pub const ENV_AUTOMATION_ENROLLMENT_TOKEN: &str = "AUTOMATION_ENROLLMENT_TOKEN";
+    pub const ENV_AUTOMATION_HEARTBEAT_INTERVAL: &str = "AUTOMATION_HEARTBEAT_INTERVAL";
 
     pub const ENV_ALL_PROXY: &str = "ALL_PROXY";
     pub const ENV_HTTP_PROXY: &str = "HTTP_PROXY";
@@ -80,7 +80,7 @@ pub mod endpoints {
     pub const DEFAULT_HOST: &str = "127.0.0.1";
     pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tq.dev";
     pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
-    pub const DEFAULT_AUTOMA_STUDIO_URL: &str = "https://automa-studio.vercel.app";
+    pub const DEFAULT_AUTOMATION_STUDIO_URL: &str = "https://automation-studio.vercel.app";
     pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/cli";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
     pub const GITHUB_REPO: &str = "tuquet/cli";
@@ -90,11 +90,10 @@ pub mod paths {
     pub const DEFAULT_SSOT_ROOT_DIR: &str = ".tq";
 
     pub const FILE_AUTOMATION_SQLITE: &str = "automation.sqlite";
-    pub const FILE_AUTOMA_SQLITE: &str = FILE_AUTOMATION_SQLITE;
-    pub const FILE_BRIDGE_JSON: &str = "gateway.json";
+    pub const FILE_GATEWAY_JSON: &str = "gateway.json";
     pub const FILE_FAKER_JSON: &str = "faker.json";
     pub const FILE_BROWSER_JSON: &str = "browser.json";
-    pub const FILE_AUTOMA_JSON: &str = "automa.json";
+    pub const FILE_AUTOMATION_JSON: &str = "automation.json";
     pub const FILE_WORKER_JSON: &str = "worker.json";
     pub const FILE_SYSTEM_JSON: &str = "system.json";
     pub const FILE_INBOX_JSON: &str = "inbox.json";

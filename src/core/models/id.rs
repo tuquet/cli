@@ -80,12 +80,12 @@ impl BrowserId {
                 .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
     }
 
-    /// Validates the browser identifier or returns an AutomaError::BadRequest
-    pub fn validate(&self) -> Result<(), crate::core::error::AutomaError> {
+    /// Validates the browser identifier or returns an AutomationError::BadRequest
+    pub fn validate(&self) -> Result<(), crate::core::error::AutomationError> {
         if self.is_valid() {
             Ok(())
         } else {
-            Err(crate::core::error::AutomaError::BadRequest(
+            Err(crate::core::error::AutomationError::BadRequest(
                 "Invalid browser ID".to_string(),
             ))
         }

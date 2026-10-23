@@ -16,11 +16,11 @@ pub use tables::SqliteTableRepository;
 pub use variables_credentials::SqliteStorageRepository;
 pub use workflows::{DbWorkflow, SqliteWorkflowRepository};
 
-pub struct AutomaDb {
+pub struct AutomationDb {
     conn: Connection,
 }
 
-impl AutomaDb {
+impl AutomationDb {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let conn = Connection::open(path)?;
         schema::init_db(&conn)?;

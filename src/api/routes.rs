@@ -100,7 +100,7 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::ws::ws_handler
     ),
     info(
-        title = "CLI & Core Bridge API",
+        title = "CLI & Core Gateway API",
         version = "1.0.0",
         description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage gateway for the Ecosystem.",
         contact(
@@ -112,7 +112,7 @@ use utoipa_swagger_ui::SwaggerUi;
         )
     ),
     servers(
-        (url = "http://127.0.0.1:8765", description = "Local Daemon Bridge Server")
+        (url = "http://127.0.0.1:8765", description = "Local Daemon Gateway Server")
     ),
     components(
         schemas(
@@ -298,7 +298,7 @@ pub fn create_router(state: crate::AppState) -> Router {
                         || host == "tuquet.tq.com"
                         || host == "tuquet.com"
                         || host.ends_with(".tq.com")
-                        || s_trimmed == "https://automa-studio.vercel.app"
+                        || s_trimmed == "https://automation-studio.vercel.app"
                         || s_trimmed == "https://tuquet.github.io"
                 } else {
                     false
@@ -322,14 +322,14 @@ pub fn create_router(state: crate::AppState) -> Router {
 mod tests {
     use super::*;
     use crate::AppState;
-    use crate::infrastructure::db::AutomaDb;
+    use crate::infrastructure::db::AutomationDb;
     use std::sync::Arc;
     use tokio::sync::{Mutex, broadcast};
 
     fn create_test_state() -> AppState {
         let (tx, _) = broadcast::channel(10);
         let (worker_tx, _) = broadcast::channel(10);
-        let db = AutomaDb::new_in_memory().unwrap();
+        let db = AutomationDb::new_in_memory().unwrap();
         let config = Arc::new(crate::config::AppConfig::load());
         AppState {
             db: Arc::new(Mutex::new(db)),
@@ -437,7 +437,7 @@ mod tests {
             json_result.err()
         );
         let json_str = json_result.unwrap();
-        assert!(json_str.contains("CLI & Core Bridge API"));
+        assert!(json_str.contains("CLI & Core Gateway API"));
         assert!(json_str.contains("/api/v1/system/tenants"));
         assert!(json_str.contains("/api/v1/system/cloud/auth/start"));
         assert!(json_str.contains("/api/v1/auth/callback"));

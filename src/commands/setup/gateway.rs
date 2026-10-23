@@ -50,7 +50,7 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or(0);
 
         if let Some(chosen_idx) = clack_select(
-            "Select SSH Private Key for Bridge SOCKS5 Tunnel:",
+            "Select SSH Private Key for Gateway SOCKS5 Tunnel:",
             &options,
             default_idx,
             8,
@@ -81,16 +81,16 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Update gateway.json
-    let bridge_cfg_path = crate::config::canonical_ssot_dir()
-        .join(crate::constants::PILLAR_BRIDGE)
-        .join(crate::constants::FILE_BRIDGE_JSON);
+    let gateway_cfg_path = crate::config::canonical_ssot_dir()
+        .join(crate::constants::PILLAR_GATEWAY)
+        .join(crate::constants::FILE_GATEWAY_JSON);
 
-    if let Some(parent) = bridge_cfg_path.parent() {
+    if let Some(parent) = gateway_cfg_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let mut cfg: serde_json::Value = if bridge_cfg_path.exists() {
-        match std::fs::read_to_string(&bridge_cfg_path) {
+    let mut cfg: serde_json::Value = if gateway_cfg_path.exists() {
+        match std::fs::read_to_string(&gateway_cfg_path) {
             Ok(s) => serde_json::from_str(&s).unwrap_or_else(|_| serde_json::json!({})),
             Err(_) => serde_json::json!({}),
         }
@@ -136,10 +136,10 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let pretty = serde_json::to_string_pretty(&cfg)?;
-    std::fs::write(&bridge_cfg_path, pretty)?;
+    std::fs::write(&gateway_cfg_path, pretty)?;
 
     clack_step_ok(format!(
-        "Configured Specter Bridge: {} with key {}",
+        "Configured Specter Gateway: {} with key {}",
         endpoint, key_to_save
     ));
 

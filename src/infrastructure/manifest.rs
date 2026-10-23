@@ -80,7 +80,7 @@ pub fn manifest() -> &'static CliManifest {
     })
 }
 
-/// Filter commands by pillar name (e.g. "browser", "gateway", "automa")
+/// Filter commands by pillar name (e.g. "browser", "gateway", "automation")
 pub fn list_by_pillar(pillar: &str) -> Vec<&'static CommandDef> {
     manifest()
         .commands

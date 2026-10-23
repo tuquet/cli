@@ -65,7 +65,7 @@ async fn run_loop(
                             }
                             KeyCode::Char('1') => state.active_tab = state::ActiveTab::Workflow,
                             KeyCode::Char('2') => state.active_tab = state::ActiveTab::Browser,
-                            KeyCode::Char('3') => state.active_tab = state::ActiveTab::Bridge,
+                            KeyCode::Char('3') => state.active_tab = state::ActiveTab::Gateway,
                             KeyCode::Char('4') => state.active_tab = state::ActiveTab::Auth,
                             KeyCode::Char('r') | KeyCode::Char('R') => {
                                 state.status_message = "Refreshing state...".to_string();
@@ -73,7 +73,7 @@ async fn run_loop(
                                 state.status_message = "Refreshed live state.".to_string();
                             }
                             KeyCode::Char('b') | KeyCode::Char('B') => {
-                                actions::toggle_bridge(state).await;
+                                actions::toggle_gateway(state).await;
                             }
                             KeyCode::Char('k') | KeyCode::Char('K') => {
                                 actions::kill_browsers(state).await;

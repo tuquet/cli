@@ -17,7 +17,7 @@
   },
   "pillars": [
     "system",
-    "automa",
+    "automation",
     "browser",
     "gateway",
     "faker",
@@ -27,12 +27,12 @@
   ],
   "commands": [
     {
-      "id": "tuquet.automa.inspect",
+      "id": "tuquet.automation.inspect",
       "route": [
         "automation",
         "inspect"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Inspect Workflow DAG",
       "description": "Inspect and validate a workflow JSON file, its block sequence, and parameters.",
       "arguments": [
@@ -49,22 +49,22 @@
       }
     },
     {
-      "id": "tuquet.automa.probe",
+      "id": "tuquet.automation.probe",
       "route": [
         "automation",
         "probe"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Probe Automation Engine",
-      "description": "Probe Automa manifest capabilities and protocol version."
+      "description": "Probe Automation manifest capabilities and protocol version."
     },
     {
-      "id": "tuquet.automa.run",
+      "id": "tuquet.automation.run",
       "route": [
         "automation",
         "run"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Execute Automation Workflow",
       "description": "Execute a DAG workflow directly via Chromium automation worker.",
       "arguments": [
@@ -107,23 +107,23 @@
       }
     },
     {
-      "id": "tuquet.automa.studio",
+      "id": "tuquet.automation.studio",
       "route": [
         "automation",
         "studio"
       ],
-      "pillar": "automa",
-      "title": "Launch Automa Web Studio",
-      "description": "Launch Automa Web Studio in default system browser."
+      "pillar": "automation",
+      "title": "Launch Automation Web Studio",
+      "description": "Launch Automation Web Studio in default system browser."
     },
     {
-      "id": "tuquet.automa.workflow.delete",
+      "id": "tuquet.automation.workflow.delete",
       "route": [
         "automation",
         "workflow",
         "delete"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Delete Stored Workflow",
       "description": "Delete a workflow from database and vault.",
       "arguments": [
@@ -144,13 +144,13 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.export",
+      "id": "tuquet.automation.workflow.export",
       "route": [
         "automation",
         "workflow",
         "export"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Export Workflow File",
       "description": "Export a workflow from database or vault to a JSON file.",
       "arguments": [
@@ -171,13 +171,13 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.import",
+      "id": "tuquet.automation.workflow.import",
       "route": [
         "automation",
         "workflow",
         "import"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Import Workflow File",
       "description": "Import a workflow file (.json) into SQLite database and vault.",
       "arguments": [
@@ -209,13 +209,13 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.info",
+      "id": "tuquet.automation.workflow.info",
       "route": [
         "automation",
         "workflow",
         "info"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "Inspect Stored Workflow Details",
       "description": "Inspect details, triggers, parameters, and block sequence of a stored workflow.",
       "arguments": [
@@ -228,13 +228,13 @@
       ]
     },
     {
-      "id": "tuquet.automa.workflow.list",
+      "id": "tuquet.automation.workflow.list",
       "route": [
         "automation",
         "workflow",
         "list"
       ],
-      "pillar": "automa",
+      "pillar": "automation",
       "title": "List Stored Workflows",
       "description": "List all workflows saved in SQLite database and local file vault.",
       "options": [
@@ -361,7 +361,7 @@
       ],
       "pillar": "browser",
       "title": "Enable Extension",
-      "description": "Enable an extension for automated browser sessions.",
+      "description": "Enable an extension for automationted browser sessions.",
       "arguments": [
         {
           "name": "id",
@@ -386,8 +386,8 @@
           "name": "id",
           "type": "string",
           "required": false,
-          "default": "automa",
-          "description": "Extension ID to inspect (defaults to 'automa')."
+          "default": "automation",
+          "description": "Extension ID to inspect (defaults to 'automation')."
         }
       ]
     },
@@ -406,7 +406,7 @@
           "name": "id",
           "type": "string",
           "required": true,
-          "description": "Extension ID from catalog (e.g. 'automa', 'ublock', 'cookie-injector')."
+          "description": "Extension ID from catalog (e.g. 'automation', 'ublock', 'cookie-injector')."
         }
       ],
       "options": [
@@ -465,14 +465,14 @@
       ],
       "pillar": "browser",
       "title": "Extension Filesystem Path",
-      "description": "Print the absolute filesystem path of an extension (defaults to 'automa').",
+      "description": "Print the absolute filesystem path of an extension (defaults to 'automation').",
       "arguments": [
         {
           "name": "id",
           "type": "string",
           "required": false,
-          "default": "automa",
-          "description": "Extension ID (defaults to 'automa')."
+          "default": "automation",
+          "description": "Extension ID (defaults to 'automation')."
         }
       ]
     },
@@ -1192,7 +1192,7 @@
         "check"
       ],
       "pillar": "gateway",
-      "title": "Validate Bridge Configuration",
+      "title": "Validate Gateway Configuration",
       "description": "Validate ~/.tuquet/gateway/gateway.json configuration schema, ports, and workloads."
     },
     {
@@ -1202,7 +1202,7 @@
         "disable"
       ],
       "pillar": "gateway",
-      "title": "Disable Bridge Server",
+      "title": "Disable Gateway Server",
       "description": "Disable a server in gateway configuration (~/.tuquet/gateway/gateway.json).",
       "arguments": [
         {
@@ -1220,7 +1220,7 @@
         "enable"
       ],
       "pillar": "gateway",
-      "title": "Enable Bridge Server",
+      "title": "Enable Gateway Server",
       "description": "Enable a server in gateway configuration (~/.tuquet/gateway/gateway.json).",
       "arguments": [
         {
@@ -1238,7 +1238,7 @@
         "start"
       ],
       "pillar": "gateway",
-      "title": "Start Bridge Mesh Tunnels",
+      "title": "Start Gateway Mesh Tunnels",
       "description": "Start background SOCKS5 proxy (1080) and HTTP adapter (8118) for configured VPS servers.",
       "arguments": [
         {
@@ -1277,7 +1277,7 @@
         "status"
       ],
       "pillar": "gateway",
-      "title": "Bridge Mesh Status",
+      "title": "Gateway Mesh Status",
       "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads.",
       "options": [
         {
@@ -1316,7 +1316,7 @@
         "stop"
       ],
       "pillar": "gateway",
-      "title": "Stop Bridge Tunnels",
+      "title": "Stop Gateway Tunnels",
       "description": "Stop running gateway tunnels and proxy background daemons.",
       "arguments": [
         {

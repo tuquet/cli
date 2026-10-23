@@ -235,7 +235,7 @@ pub async fn handle_ext(
                 card.with_badge(badge_warn("DISABLED"));
                 card.with_min_width(64);
                 card.add_kv("ID", id);
-                card.add_line("Extension disabled and will NOT be loaded automatically.");
+                card.add_line("Extension disabled and will NOT be loaded automationtically.");
                 println!();
                 card.print();
                 println!();
@@ -371,7 +371,7 @@ pub async fn setup_extension(
 
     if !exists {
         card.add_line("Status: Extension unpacked directory does not exist yet.");
-        card.with_footer("Build extension with: pnpm --filter @automa/runner build");
+        card.with_footer("Build extension with: pnpm --filter @automation/runner build");
     } else {
         card.add_line(format!(
             "Launch command: chrome.exe --load-extension=\"{}\"",

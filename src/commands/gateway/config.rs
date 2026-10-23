@@ -1,17 +1,17 @@
-use crate::infrastructure::gateway::{BridgeConfig, DiagnosticLevel};
+use crate::infrastructure::gateway::{GatewayConfig, DiagnosticLevel};
 use crate::ui::prompt::{
     clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok, clack_step_warn,
 };
 
 pub fn check_config() -> Result<(), Box<dyn std::error::Error>> {
-    let config_path = BridgeConfig::config_path();
+    let config_path = GatewayConfig::config_path();
     clack_intro("tq gateway", "Configuration Validator");
     clack_step_info(format!(
         "Checking configuration at {}...",
         config_path.display()
     ));
 
-    let config = BridgeConfig::load()?;
+    let config = GatewayConfig::load()?;
     let diagnostics = config.validate();
 
     if diagnostics.is_empty() {

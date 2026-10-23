@@ -184,7 +184,7 @@ pub fn handle_tools_list(id: Option<Value>) -> JsonRpcResponse {
         },
         {
             "name": "inbox_otp",
-            "description": "Retrieve or wait for latest OTP verification code for an email address from Catch-All inbox with automatic consumption.",
+            "description": "Retrieve or wait for latest OTP verification code for an email address from Catch-All inbox with automationtic consumption.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

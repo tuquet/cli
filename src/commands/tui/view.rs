@@ -44,7 +44,7 @@ impl TuiView {
         let tabs = [
             ActiveTab::Workflow,
             ActiveTab::Browser,
-            ActiveTab::Bridge,
+            ActiveTab::Gateway,
             ActiveTab::Auth,
         ];
         write!(stdout, " ")?;
@@ -75,7 +75,7 @@ impl TuiView {
         let rendered_rows = match state.active_tab {
             ActiveTab::Workflow => Self::render_workflow_details(state, width, &mut stdout)?,
             ActiveTab::Browser => Self::render_browser_details(state, width, &mut stdout)?,
-            ActiveTab::Bridge => Self::render_bridge_details(state, width, &mut stdout)?,
+            ActiveTab::Gateway => Self::render_gateway_details(state, width, &mut stdout)?,
             ActiveTab::Auth => Self::render_auth_details(state, width, &mut stdout)?,
         };
 
@@ -268,9 +268,9 @@ impl TuiView {
         Ok(count)
     }
 
-    fn render_bridge_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_gateway_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
         let mut count = 0;
-        Self::print_box_line(stdout, width, "● NETWORK BRIDGE & MULTI-VPS MESH")?;
+        Self::print_box_line(stdout, width, "● NETWORK GATEWAY & MULTI-VPS MESH")?;
         count += 1;
         Self::print_box_line(stdout, width, "")?;
         count += 1;
@@ -342,7 +342,7 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            "  • 'b' / 'B'         : Start / Stop Specter Bridge tunnel daemons",
+            "  • 'b' / 'B'         : Start / Stop Specter Gateway tunnel daemons",
         )?;
         count += 1;
         Self::print_box_line(

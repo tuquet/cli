@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::commands::gateway::start::{BridgeStartOptions, start_bridge};
+use crate::commands::gateway::start::{GatewayStartOptions, start_gateway};
 use crate::commands::dev::scanner::{
     collect_machine_scan_roots, format_clean_package_id, get_user_home_dir, should_skip_dir_entry,
 };
@@ -228,7 +228,7 @@ pub async fn handle(
     let actions = [
         (
             "push-gateway",
-            "Push via Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
+            "Push via Gateway (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
         ),
         ("status", "Inspect detailed git status & diff summary"),
         ("pull", "Pull latest changes (git pull --rebase)"),
@@ -274,8 +274,8 @@ pub async fn handle(
     };
 
     if selected_action == "push-gateway" && !probe_port(1080) {
-        println!("  \x1b[36m◆\x1b[0m  Starting Bridge SOCKS5 tunnel (127.0.0.1:1080)...");
-        start_bridge(BridgeStartOptions {
+        println!("  \x1b[36m◆\x1b[0m  Starting Gateway SOCKS5 tunnel (127.0.0.1:1080)...");
+        start_gateway(GatewayStartOptions {
             server: None,
             tag: Some("git"),
             http: false,
@@ -343,7 +343,7 @@ async fn execute_git_action_single(
         "push-gateway" => {
             if !is_batch {
                 clack_outro(&format!(
-                    "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",
+                    "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Gateway {MUTED}(socks5://127.0.0.1:1080){RESET}",
                     BOLD = colors::BOLD,
                     CYAN = colors::CYAN,
                     MUTED = colors::MUTED,
@@ -353,14 +353,14 @@ async fn execute_git_action_single(
                 ));
             } else {
                 println!(
-                    "    \x1b[90m└─ Pushing via Bridge (socks5://127.0.0.1:1080)...\x1b[0m"
+                    "    \x1b[90m└─ Pushing via Gateway (socks5://127.0.0.1:1080)...\x1b[0m"
                 );
             }
 
             run_git_subprocess(&repo.dir, &["push"], true)?;
         }
         "push" => {
-            let use_bridge = probe_port(1080);
+            let use_gateway = probe_port(1080);
             if !is_batch {
                 clack_outro(&format!(
                     "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}]{proxy}",
@@ -369,8 +369,8 @@ async fn execute_git_action_single(
                     RESET = colors::RESET,
                     id = repo.id,
                     branch = repo.branch,
-                    proxy = if use_bridge {
-                        " (via Bridge :1080)"
+                    proxy = if use_gateway {
+                        " (via Gateway :1080)"
                     } else {
                         ""
                     }
@@ -378,17 +378,17 @@ async fn execute_git_action_single(
             } else {
                 println!(
                     "    \x1b[90m└─ Pushing {proxy}...\x1b[0m",
-                    proxy = if use_bridge {
-                        "(via Bridge :1080)"
+                    proxy = if use_gateway {
+                        "(via Gateway :1080)"
                     } else {
                         ""
                     }
                 );
             }
-            run_git_subprocess(&repo.dir, &["push"], use_bridge)?;
+            run_git_subprocess(&repo.dir, &["push"], use_gateway)?;
         }
         "pull" => {
-            let use_bridge = probe_port(1080);
+            let use_gateway = probe_port(1080);
             if !is_batch {
                 clack_outro(&format!(
                     "Pulling {BOLD}{CYAN}{id}{RESET} [{branch}] (--rebase)",
@@ -401,7 +401,7 @@ async fn execute_git_action_single(
             } else {
                 println!("    \x1b[90m└─ Pulling (--rebase)...\x1b[0m");
             }
-            run_git_subprocess(&repo.dir, &["pull", "--rebase"], use_bridge)?;
+            run_git_subprocess(&repo.dir, &["pull", "--rebase"], use_gateway)?;
         }
         "stash" => {
             if !is_batch {
@@ -443,7 +443,7 @@ async fn execute_git_action_single(
 fn run_git_subprocess(
     dir: &Path,
     args: &[&str],
-    use_socks_bridge: bool,
+    use_socks_gateway: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::new("git");
     cmd.args(args)
@@ -452,7 +452,7 @@ fn run_git_subprocess(
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
 
-    if use_socks_bridge {
+    if use_socks_gateway {
         cmd.env("ALL_PROXY", "socks5://127.0.0.1:1080")
             .env("HTTPS_PROXY", "socks5://127.0.0.1:1080")
             .env("HTTP_PROXY", "socks5://127.0.0.1:1080");
@@ -738,7 +738,7 @@ fn render_git_list(repos: &[DiscoveredGitRepo], scan_label: &str, format: Output
                 .collect();
 
             let footer = format!(
-                "Found {} repo(s) • Run 'tq git' to push via Bridge or inspect",
+                "Found {} repo(s) • Run 'tq git' to push via Gateway or inspect",
                 repos.len()
             );
             let card = create_tabular_card(

@@ -35,7 +35,7 @@ pub const MSG_BROWSER_CHECKSUM_OK: &str = "SHA256 checksum verified successfully
 pub const MSG_BROWSER_CLEANUP_OK: &str = "All browser child processes cleanly terminated.";
 
 /// Storage & Workflow messages
-pub const MSG_DB_INITIALIZED: &str = "Automa SQLite database initialized successfully.";
+pub const MSG_DB_INITIALIZED: &str = "Automation SQLite database initialized successfully.";
 pub const MSG_PILLARS_INITIALIZED: &str = "Canonical storage pillars initialized under ~/.tq/";
 pub const MSG_WORKFLOW_EXPORTED: &str = "Workflow exported successfully.";
 pub const MSG_WORKFLOW_NOT_FOUND: &str = "Workflow ID not found in database.";

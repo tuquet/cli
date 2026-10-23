@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::storage::StorageCredential;
 use axum::extract::{Json, Path, Query, State};
 use serde::Deserialize;
@@ -33,7 +33,7 @@ pub struct GetCredentialsQuery {
 pub async fn get_credentials(
     State(state): State<AppState>,
     Query(query): Query<GetCredentialsQuery>,
-) -> Result<Json<Vec<StorageCredential>>, AutomaError> {
+) -> Result<Json<Vec<StorageCredential>>, AutomationError> {
     let db = state.db.lock().await;
     let creds = db
         .storage()
@@ -58,7 +58,7 @@ pub async fn get_credentials(
 pub async fn add_credential(
     State(state): State<AppState>,
     Json(payload): Json<StorageCredential>,
-) -> Result<Json<StorageCredential>, AutomaError> {
+) -> Result<Json<StorageCredential>, AutomationError> {
     let db = state.db.lock().await;
     let res = db.storage().save_credential(&payload)?;
 
@@ -95,7 +95,7 @@ pub async fn add_credential(
 pub async fn delete_credential(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<super::StorageActionResponse>, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomationError> {
     let db = state.db.lock().await;
     db.storage().delete_credential(&id)?;
 

@@ -2,10 +2,10 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use crate::config::AppConfig;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
-    crate::ui::Notify::header("Automa Workflow Inspector");
+    crate::ui::Notify::header("Automation Workflow Inspector");
 
     let (content, source_label) = {
         let target_path = Path::new(target);
@@ -23,7 +23,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
             let db_path =
                 PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
             if db_path.exists()
-                && let Ok(db) = AutomaDb::new(&db_path)
+                && let Ok(db) = AutomationDb::new(&db_path)
                 && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
             {
                 resolved = Some((wf.data, format!("Database (ID: {})", wf.id)));
@@ -217,7 +217,7 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
     println!("============================================================");
     println!("Status: VALID WORKFLOW");
     println!("Execution command:");
-    println!("  tq automa run \"{}\"", target);
+    println!("  tq automation run \"{}\"", target);
     println!("============================================================");
 
     Ok(())

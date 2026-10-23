@@ -192,7 +192,7 @@ if ($env:PATH -split ';' -notcontains $TqBinDir) {
 
 # 5. Run One-Command Bootstrap
 Write-Host ""
-Write-Step "Triggering automatic ecosystem bootstrap (SSOT, DB, MCP, Chromium LTS)..."
+Write-Step "Triggering automationtic ecosystem bootstrap (SSOT, DB, MCP, Chromium LTS)..."
 Write-Host ""
 
 try {

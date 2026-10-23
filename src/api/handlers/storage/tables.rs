@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use crate::core::models::storage::{StorageTable, TableRow};
 use axum::extract::{Json, Path, Query, State};
 use serde::{Deserialize, Serialize};
@@ -33,12 +33,12 @@ pub struct GetTablesQuery {
 pub async fn get_tables(
     State(state): State<AppState>,
     Query(query): Query<GetTablesQuery>,
-) -> Result<Json<Vec<StorageTable>>, AutomaError> {
+) -> Result<Json<Vec<StorageTable>>, AutomationError> {
     let db = state.db.lock().await;
     let tables = db
         .tables()
         .get_tables(query.limit, query.offset, query.search.as_deref())
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
     Ok(Json(tables))
 }
 
@@ -59,14 +59,14 @@ pub async fn get_tables(
 pub async fn add_table(
     State(state): State<AppState>,
     Json(mut payload): Json<StorageTable>,
-) -> Result<Json<StorageTable>, AutomaError> {
+) -> Result<Json<StorageTable>, AutomationError> {
     if payload.id.is_none() {
         payload.id = Some(format!("table_{}", uuid::Uuid::new_v4()));
     }
     let db = state.db.lock().await;
     db.tables()
         .save_table(&payload)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let table_id = payload.id.clone().unwrap_or_default();
     let table_name = payload.name.clone().unwrap_or_default();
@@ -104,11 +104,11 @@ pub async fn add_table(
 pub async fn delete_table(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<super::StorageActionResponse>, AutomaError> {
+) -> Result<Json<super::StorageActionResponse>, AutomationError> {
     let db = state.db.lock().await;
     db.tables()
         .delete_table(&id)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let _ = state.tx.send(
         serde_json::json!({
@@ -162,7 +162,7 @@ pub async fn get_table_rows(
     State(state): State<AppState>,
     Path(table_id): Path<String>,
     Query(query): Query<GetTableRowsQuery>,
-) -> Result<Json<Vec<TableRow>>, AutomaError> {
+) -> Result<Json<Vec<TableRow>>, AutomationError> {
     let limit = query.limit;
     let offset = query.offset;
     let search = query.search.as_deref();
@@ -171,7 +171,7 @@ pub async fn get_table_rows(
     let rows = db
         .tables()
         .get_table_rows(&table_id, limit, offset, search)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
     Ok(Json(rows))
 }
 
@@ -219,13 +219,13 @@ pub async fn add_table_row(
     State(state): State<AppState>,
     Path(table_id): Path<String>,
     Json(payload): Json<AddTableRowPayload>,
-) -> Result<Json<AddTableRowResponse>, AutomaError> {
+) -> Result<Json<AddTableRowResponse>, AutomationError> {
     let row_id = uuid::Uuid::new_v4().to_string();
-    let data_str = serde_json::to_string(&payload.data).map_err(AutomaError::JsonError)?;
+    let data_str = serde_json::to_string(&payload.data).map_err(AutomationError::JsonError)?;
     let db = state.db.lock().await;
     db.tables()
         .add_table_row(&row_id, &table_id, &data_str)
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
     let _ = state.tx.send(
         serde_json::json!({

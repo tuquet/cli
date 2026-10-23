@@ -1,4 +1,4 @@
-### Automa Runner - Browser Profiles & Lifecycle Isolation
+### Automation Runner - Browser Profiles & Lifecycle Isolation
 @baseUrl = http://127.0.0.1:8765
 @contentType = application/json
 

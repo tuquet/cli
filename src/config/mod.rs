@@ -1,4 +1,4 @@
-pub mod automa;
+pub mod automation;
 pub mod browser;
 pub mod expander;
 pub mod inbox;
@@ -7,7 +7,7 @@ pub mod registry;
 pub mod runner;
 pub mod system;
 
-pub use automa::AutomaConfig;
+pub use automation::AutomationConfig;
 pub use browser::BrowserConfig;
 pub use expander::{EnvExpander, canonical_dir, canonical_ssot_dir};
 pub use inbox::InboxConfig;
@@ -34,11 +34,11 @@ pub struct AppConfig {
 impl AppConfig {
     pub fn load() -> Self {
         let mut server_host = env::var(crate::constants::ENV_SPECTER_HOST)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_HOST))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_HOST))
             .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
 
         let mut server_port = env::var(crate::constants::ENV_SPECTER_PORT)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_PORT))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_PORT))
             .unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string())
             .parse()
             .unwrap_or(crate::constants::DEFAULT_RUNNER_PORT);
@@ -58,22 +58,22 @@ impl AppConfig {
         }
 
         let environment = env::var(crate::constants::ENV_SPECTER_ENV)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_ENV))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_ENV))
             .unwrap_or_else(|_| "development".to_string());
 
         let log_level = env::var(crate::constants::ENV_SPECTER_LOG_LEVEL)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_LOG_LEVEL))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_LOG_LEVEL))
             .unwrap_or_else(|_| "info".to_string());
 
         let data_dir = env::var(crate::constants::ENV_SPECTER_DATA_DIR).unwrap_or_else(|_| {
             canonical_ssot_dir()
-                .join(crate::constants::PILLAR_AUTOMA)
+                .join(crate::constants::PILLAR_AUTOMATION)
                 .to_string_lossy()
                 .to_string()
         });
 
         let mut cloud_url = env::var(crate::constants::ENV_SPECTER_CLOUD_URL)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_CLOUD_URL))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_CLOUD_URL))
             .ok()
             .filter(|s| !s.trim().is_empty());
 
@@ -98,12 +98,12 @@ impl AppConfig {
         }
 
         let cloud_enrollment_token = env::var(crate::constants::ENV_SPECTER_ENROLLMENT_TOKEN)
-            .or_else(|_| env::var(crate::constants::ENV_AUTOMA_ENROLLMENT_TOKEN))
+            .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_ENROLLMENT_TOKEN))
             .ok()
             .filter(|s| !s.trim().is_empty());
 
         let cloud_heartbeat_interval_secs =
-            env::var(crate::constants::ENV_AUTOMA_HEARTBEAT_INTERVAL)
+            env::var(crate::constants::ENV_AUTOMATION_HEARTBEAT_INTERVAL)
                 .ok()
                 .and_then(|s| s.parse::<u64>().ok())
                 .unwrap_or(crate::constants::DEFAULT_HEARTBEAT_INTERVAL_SECS);

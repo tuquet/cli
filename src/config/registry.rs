@@ -1,9 +1,9 @@
-use crate::config::automa::AutomaConfig;
+use crate::config::automation::AutomationConfig;
 use crate::config::browser::BrowserConfig;
 use crate::config::inbox::InboxConfig;
 use crate::config::runner::RunnerConfig;
 use crate::config::system::SystemConfig;
-use crate::infrastructure::gateway::BridgeConfig;
+use crate::infrastructure::gateway::GatewayConfig;
 use crate::ui::{Card, badge_online};
 use faker::config::FakerConfig;
 use std::path::PathBuf;
@@ -21,20 +21,20 @@ impl ConfigRegistry {
     pub const ALL_SERVICES: &'static [&'static str] = crate::constants::ALL_PILLARS;
 
     pub fn list_all() -> Vec<PillarConfigEntry> {
-        let bridge_path = BridgeConfig::config_path();
+        let gateway_path = GatewayConfig::config_path();
         let faker_path = FakerConfig::config_path();
         let browser_path = BrowserConfig::config_path();
-        let automa_path = AutomaConfig::config_path();
+        let automation_path = AutomationConfig::config_path();
         let runner_path = RunnerConfig::config_path();
         let system_path = SystemConfig::config_path();
         let inbox_path = InboxConfig::config_path();
 
         vec![
             PillarConfigEntry {
-                pillar: crate::constants::PILLAR_BRIDGE,
-                title: "Network Bridge & Multi-VPS Mesh",
-                exists: bridge_path.exists(),
-                path: bridge_path,
+                pillar: crate::constants::PILLAR_GATEWAY,
+                title: "Network Gateway & Multi-VPS Mesh",
+                exists: gateway_path.exists(),
+                path: gateway_path,
             },
             PillarConfigEntry {
                 pillar: crate::constants::PILLAR_FAKER,
@@ -49,10 +49,10 @@ impl ConfigRegistry {
                 path: browser_path,
             },
             PillarConfigEntry {
-                pillar: crate::constants::PILLAR_AUTOMA,
+                pillar: crate::constants::PILLAR_AUTOMATION,
                 title: "Browser Automation Workflow Engine",
-                exists: automa_path.exists(),
-                path: automa_path,
+                exists: automation_path.exists(),
+                path: automation_path,
             },
             PillarConfigEntry {
                 pillar: crate::constants::PILLAR_WORKER,
@@ -77,10 +77,10 @@ impl ConfigRegistry {
 
     pub fn canonical_service(service: &str) -> Option<&'static str> {
         match service.to_ascii_lowercase().as_str() {
-            "gateway" | "tunnel" | "vps" => Some(crate::constants::PILLAR_BRIDGE),
+            "gateway" | "tunnel" | "vps" => Some(crate::constants::PILLAR_GATEWAY),
             "faker" | "user" | "persona" => Some(crate::constants::PILLAR_FAKER),
             "browser" | "chromium" | "chrome" => Some(crate::constants::PILLAR_BROWSER),
-            "automa" | "workflow" => Some(crate::constants::PILLAR_AUTOMA),
+            "automation" | "workflow" => Some(crate::constants::PILLAR_AUTOMATION),
             "runner" | "worker" | "daemon" => Some(crate::constants::PILLAR_WORKER),
             "cloud" | "system" => Some(crate::constants::PILLAR_SYSTEM),
             "inbox" | "mail" | "otp" => Some(crate::constants::PILLAR_INBOX),
@@ -90,10 +90,10 @@ impl ConfigRegistry {
 
     pub fn resolve_service_path(service: &str) -> Option<PathBuf> {
         match Self::canonical_service(service) {
-            Some(crate::constants::PILLAR_BRIDGE) => Some(BridgeConfig::config_path()),
+            Some(crate::constants::PILLAR_GATEWAY) => Some(GatewayConfig::config_path()),
             Some(crate::constants::PILLAR_FAKER) => Some(FakerConfig::config_path()),
             Some(crate::constants::PILLAR_BROWSER) => Some(BrowserConfig::config_path()),
-            Some(crate::constants::PILLAR_AUTOMA) => Some(AutomaConfig::config_path()),
+            Some(crate::constants::PILLAR_AUTOMATION) => Some(AutomationConfig::config_path()),
             Some(crate::constants::PILLAR_WORKER) => Some(RunnerConfig::config_path()),
             Some(crate::constants::PILLAR_SYSTEM) => Some(SystemConfig::config_path()),
             Some(crate::constants::PILLAR_INBOX) => Some(InboxConfig::config_path()),
@@ -130,8 +130,8 @@ impl ConfigRegistry {
 
     pub fn get_default_json(service: &str) -> serde_json::Value {
         match Self::canonical_service(service) {
-            Some(crate::constants::PILLAR_BRIDGE) => {
-                serde_json::to_value(crate::infrastructure::gateway::BridgeConfig::default())
+            Some(crate::constants::PILLAR_GATEWAY) => {
+                serde_json::to_value(crate::infrastructure::gateway::GatewayConfig::default())
                     .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_FAKER) => {
@@ -141,8 +141,8 @@ impl ConfigRegistry {
             Some(crate::constants::PILLAR_BROWSER) => {
                 serde_json::to_value(crate::config::BrowserConfig::default()).unwrap_or_default()
             }
-            Some(crate::constants::PILLAR_AUTOMA) => {
-                serde_json::to_value(crate::config::AutomaConfig::default()).unwrap_or_default()
+            Some(crate::constants::PILLAR_AUTOMATION) => {
+                serde_json::to_value(crate::config::AutomationConfig::default()).unwrap_or_default()
             }
             Some(crate::constants::PILLAR_WORKER) => {
                 serde_json::to_value(crate::config::RunnerConfig::default()).unwrap_or_default()
@@ -257,8 +257,8 @@ mod tests {
         assert!(pillars.contains(&"gateway"));
         assert!(pillars.contains(&"faker"));
         assert!(pillars.contains(&"browser"));
-        assert!(pillars.contains(&"automation") || pillars.contains(&"automa"));
-        assert!(pillars.contains(&"worker") || pillars.contains(&"runner"));
+        assert!(pillars.contains(&"automation") || pillars.contains(&"automation"));
+        assert!(pillars.contains(&"worker"));
         assert!(pillars.contains(&"system"));
         assert!(pillars.contains(&"inbox"));
 
@@ -277,8 +277,8 @@ mod tests {
         assert!(ConfigRegistry::resolve_service_path("faker").is_some());
         assert!(ConfigRegistry::resolve_service_path("user").is_some());
         assert!(ConfigRegistry::resolve_service_path("browser").is_some());
-        assert!(ConfigRegistry::resolve_service_path("automa").is_some());
-        assert!(ConfigRegistry::resolve_service_path("runner").is_some());
+        assert!(ConfigRegistry::resolve_service_path("automation").is_some());
+        assert!(ConfigRegistry::resolve_service_path("worker").is_some());
         assert!(ConfigRegistry::resolve_service_path("cloud").is_some());
         assert!(ConfigRegistry::resolve_service_path("system").is_some());
         assert!(ConfigRegistry::resolve_service_path("inbox").is_some());
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn test_get_default_json_all_services() {
         for service in [
-            "gateway", "faker", "browser", "automa", "runner", "system", "inbox",
+            "gateway", "faker", "browser", "automation", "worker", "system", "inbox",
         ] {
             let def = ConfigRegistry::get_default_json(service);
             assert!(

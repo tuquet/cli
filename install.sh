@@ -189,7 +189,7 @@ fi
 
 # 5. Run One-Command Bootstrap
 printf "\n"
-write_step "Triggering automatic ecosystem bootstrap (SSOT, DB, MCP, Chromium LTS)..."
+write_step "Triggering automationtic ecosystem bootstrap (SSOT, DB, MCP, Chromium LTS)..."
 printf "\n"
 
 export PATH="${SPECTER_BIN_DIR}:${PATH}"

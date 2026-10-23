@@ -105,7 +105,7 @@ pub fn is_pid_alive_and_browser(sys: &System, pid: u32) -> bool {
 }
 
 /// List all active browser sessions.
-/// If `auto_prune` is true, stale or terminated PID files are deleted automatically.
+/// If `auto_prune` is true, stale or terminated PID files are deleted automationtically.
 pub fn list_sessions(base_dir: &Path, auto_prune: bool) -> Vec<BrowserSession> {
     let dir = pids_dir(base_dir);
     if !dir.exists() {

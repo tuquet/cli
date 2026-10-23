@@ -12,7 +12,7 @@ pub struct ApiErrorResponse {
 }
 
 #[derive(Error, Debug)]
-pub enum AutomaError {
+pub enum AutomationError {
     #[error("Not found: {0}")]
     NotFound(String),
 
@@ -35,24 +35,24 @@ pub enum AutomaError {
     Internal(String),
 }
 
-impl From<rusqlite::Error> for AutomaError {
+impl From<rusqlite::Error> for AutomationError {
     fn from(err: rusqlite::Error) -> Self {
-        AutomaError::DatabaseError(err.to_string())
+        AutomationError::DatabaseError(err.to_string())
     }
 }
 
-impl IntoResponse for AutomaError {
+impl IntoResponse for AutomationError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            AutomaError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
-            AutomaError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.clone()),
-            AutomaError::ExecutionFailed(ref msg) => {
+            AutomationError::NotFound(ref msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            AutomationError::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            AutomationError::ExecutionFailed(ref msg) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, msg.clone())
             }
-            AutomaError::DatabaseError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
-            AutomaError::IoError(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-            AutomaError::JsonError(ref err) => (StatusCode::BAD_REQUEST, err.to_string()),
-            AutomaError::Internal(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AutomationError::DatabaseError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AutomationError::IoError(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            AutomationError::JsonError(ref err) => (StatusCode::BAD_REQUEST, err.to_string()),
+            AutomationError::Internal(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
         };
 
         let body = Json(ApiErrorResponse {

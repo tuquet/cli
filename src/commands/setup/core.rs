@@ -15,15 +15,15 @@ pub fn run(verbose: bool) -> Result<CoreResult, Box<dyn std::error::Error>> {
     let dirs = [
         root.join("bin"),
         root.join(crate::constants::PILLAR_SYSTEM),
-        root.join(crate::constants::PILLAR_AUTOMA),
+        root.join(crate::constants::PILLAR_AUTOMATION),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_PROFILES),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_RUNTIMES),
         root.join(crate::constants::PILLAR_BROWSER)
             .join(crate::constants::DIR_EXTENSIONS),
-        root.join(crate::constants::PILLAR_BRIDGE).join("bin"),
-        root.join(crate::constants::PILLAR_BRIDGE)
+        root.join(crate::constants::PILLAR_GATEWAY).join("bin"),
+        root.join(crate::constants::PILLAR_GATEWAY)
             .join(crate::constants::DIR_PIDS),
         root.join(crate::constants::PILLAR_FAKER),
     ];
@@ -33,10 +33,10 @@ pub fn run(verbose: bool) -> Result<CoreResult, Box<dyn std::error::Error>> {
     }
 
     let db_path = root
-        .join(crate::constants::PILLAR_AUTOMA)
-        .join(crate::constants::FILE_AUTOMA_SQLITE);
+        .join(crate::constants::PILLAR_AUTOMATION)
+        .join(crate::constants::FILE_AUTOMATION_SQLITE);
 
-    let _ = crate::infrastructure::db::AutomaDb::new(&db_path)?;
+    let _ = crate::infrastructure::db::AutomationDb::new(&db_path)?;
 
     if verbose {
         clack_step_ok(format!(

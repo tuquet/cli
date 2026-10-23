@@ -1,4 +1,4 @@
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvBrowserProfile {
@@ -52,7 +52,7 @@ pub fn parse_csv_profiles(csv_string: &str) -> Vec<CsvBrowserProfile> {
 }
 
 /// Batch import parsed browser profiles into SQLite database
-pub fn import_csv_into_db(db: &AutomaDb, csv_string: &str) -> usize {
+pub fn import_csv_into_db(db: &AutomationDb, csv_string: &str) -> usize {
     let profiles = parse_csv_profiles(csv_string);
     let mut imported = 0;
     for p in profiles {

@@ -69,7 +69,7 @@ impl CloudApiClient {
         let ram_mb = (sys.total_memory() / (1024 * 1024)).max(256) as i32;
 
         let mut metadata = serde_json::json!({
-            "automa_version": env!("CARGO_PKG_VERSION"),
+            "automation_version": env!("CARGO_PKG_VERSION"),
             "architecture": std::env::consts::ARCH
         });
         if let Some(src) = login_source {
@@ -82,7 +82,7 @@ impl CloudApiClient {
             "p_os_info": os_info,
             "p_cpu_cores": cpu_cores,
             "p_ram_mb": ram_mb,
-            "p_capabilities": ["chromium", "automa", "gui", "worker"],
+            "p_capabilities": ["chromium", "automation", "gui", "worker"],
             "p_metadata": metadata,
             "p_enrollment_token": enrollment_token
         });

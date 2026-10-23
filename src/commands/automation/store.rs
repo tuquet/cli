@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::config::AppConfig;
-use crate::infrastructure::db::AutomaDb;
+use crate::infrastructure::db::AutomationDb;
 
 pub async fn import_workflow(
     file: PathBuf,
@@ -78,7 +78,7 @@ pub async fn import_workflow(
     tokio::fs::create_dir_all(&db_dir).await?;
     let db_path = db_dir.join(crate::constants::FILE_AUTOMATION_SQLITE);
 
-    let db = AutomaDb::new(&db_path)?;
+    let db = AutomationDb::new(&db_path)?;
     db.workflows().create_workflow(
         &id,
         &name,
@@ -126,7 +126,7 @@ pub async fn export_workflow(
     // Check persistent SQLite DB
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
-        && let Ok(db) = AutomaDb::new(&db_path)
+        && let Ok(db) = AutomationDb::new(&db_path)
         && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(&id)
     {
         workflow_json = Some(wf.data);
@@ -167,7 +167,7 @@ pub async fn delete_workflow(
     // Delete from SQLite DB
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
     if db_path.exists()
-        && let Ok(db) = AutomaDb::new(&db_path)
+        && let Ok(db) = AutomationDb::new(&db_path)
         && let Ok(res) = db.workflows().delete_workflow(&id)
     {
         deleted_db = res;

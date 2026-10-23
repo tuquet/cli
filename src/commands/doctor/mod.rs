@@ -21,7 +21,7 @@ pub async fn run(fix: bool, format: OutputFormat) -> Result<(), Box<dyn std::err
         if !format.is_json() {
             clack_intro(
                 "tq doctor --fix",
-                "Automatic Remediation & Environment Bootstrap",
+                "Automationtic Remediation & Environment Bootstrap",
             );
         }
         let _ = bootstrap(false).await;

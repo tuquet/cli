@@ -1,7 +1,7 @@
-use automa_core::AppState;
-use automa_core::api;
-use automa_core::config::AppConfig;
-use automa_core::infrastructure::db::AutomaDb;
+use automation_core::AppState;
+use automation_core::api;
+use automation_core::config::AppConfig;
+use automation_core::infrastructure::db::AutomationDb;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,8 +12,8 @@ use tokio_stream::StreamExt;
 #[tokio::test]
 async fn test_worker_sse_json_validity_e2e() {
     let config = AppConfig::load();
-    let db_path = std::env::temp_dir().join("test_automa_worker.sqlite");
-    let db = Arc::new(Mutex::new(AutomaDb::new(db_path).unwrap()));
+    let db_path = std::env::temp_dir().join("test_automation_worker.sqlite");
+    let db = Arc::new(Mutex::new(AutomationDb::new(db_path).unwrap()));
 
     let (tx, mut _rx) = tokio::sync::broadcast::channel(100);
     let (worker_tx, _) = tokio::sync::broadcast::channel(100);
@@ -38,7 +38,7 @@ async fn test_worker_sse_json_validity_e2e() {
     let client = Client::new();
 
     // Register Mock Worker in connected_browsers
-    automa_core::api::handlers::jobs::connected_browsers()
+    automation_core::api::handlers::jobs::connected_browsers()
         .write()
         .await
         .insert("daemon_worker".to_string());
@@ -152,7 +152,7 @@ async fn test_worker_sse_json_validity_e2e() {
 async fn test_submit_job_passes_options() {
     let config = AppConfig::load();
     let db_path = std::env::temp_dir().join("test_log_options.sqlite");
-    let db = Arc::new(Mutex::new(AutomaDb::new(db_path).unwrap()));
+    let db = Arc::new(Mutex::new(AutomationDb::new(db_path).unwrap()));
 
     let (tx, _rx) = tokio::sync::broadcast::channel(10);
     let (worker_tx, mut worker_rx) = tokio::sync::broadcast::channel(100);
@@ -175,7 +175,7 @@ async fn test_submit_job_passes_options() {
     let client = Client::new();
 
     // Register Mock Worker in connected_browsers
-    automa_core::api::handlers::jobs::connected_browsers()
+    automation_core::api::handlers::jobs::connected_browsers()
         .write()
         .await
         .insert("daemon_worker".to_string());

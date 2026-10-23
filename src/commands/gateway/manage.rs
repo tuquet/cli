@@ -1,4 +1,4 @@
-use crate::infrastructure::gateway::{BridgeConfig, BridgeSupervisor};
+use crate::infrastructure::gateway::{GatewayConfig, GatewaySupervisor};
 use crate::ui::prompt::{
     ClackOption, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_err,
     clack_step_ok, clack_step_warn,
@@ -8,15 +8,15 @@ pub fn toggle_server(
     server_opt: Option<&str>,
     enabled: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut config = BridgeConfig::load()?;
+    let mut config = GatewayConfig::load()?;
     let action_str = if enabled { "enabled" } else { "disabled" };
 
     clack_intro(
         "tq gateway",
         if enabled {
-            "Enable Bridge Server"
+            "Enable Gateway Server"
         } else {
-            "Disable Bridge Server"
+            "Disable Gateway Server"
         },
     );
 
@@ -65,42 +65,42 @@ pub fn toggle_server(
             "Server '{}' has been {} in {}",
             server_id,
             action_str,
-            BridgeConfig::config_path().display()
+            GatewayConfig::config_path().display()
         ));
         clack_outro(&format!(
-            "Bridge configuration updated ({} = {}).",
+            "Gateway configuration updated ({} = {}).",
             server_id, action_str
         ));
     } else {
         clack_step_err(format!(
             "Server '{}' not found in configuration {}",
             server_id,
-            BridgeConfig::config_path().display()
+            GatewayConfig::config_path().display()
         ));
     }
 
     Ok(())
 }
 
-pub async fn stop_bridge(server_opt: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
-    let config = BridgeConfig::load()?;
-    clack_intro("tq gateway", "Stop Bridge Tunnels & Daemons");
+pub async fn stop_gateway(server_opt: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    let config = GatewayConfig::load()?;
+    clack_intro("tq gateway", "Stop Gateway Tunnels & Daemons");
 
     if let Some(target) = server_opt {
         if target.eq_ignore_ascii_case("all") {
-            BridgeSupervisor::stop_all()?;
+            GatewaySupervisor::stop_all()?;
             clack_step_ok("All gateway processes terminated cleanly.");
             clack_outro("All tunnels offline.");
         } else if let Some(srv) = config.servers.get(target) {
-            BridgeSupervisor::stop_server(target, srv)?;
-            clack_step_ok(format!("Bridge for '{}' stopped.", target));
+            GatewaySupervisor::stop_server(target, srv)?;
+            clack_step_ok(format!("Gateway for '{}' stopped.", target));
             clack_outro(&format!("Tunnel '{}' offline.", target));
         } else {
             clack_step_warn(format!("Unknown server '{}'", target));
         }
     } else {
         // Default stop all
-        BridgeSupervisor::stop_all()?;
+        GatewaySupervisor::stop_all()?;
         clack_step_ok("All gateway tunnels and proxy daemons stopped cleanly.");
         clack_outro("All tunnels offline.");
     }

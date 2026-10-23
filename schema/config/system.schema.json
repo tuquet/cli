@@ -20,7 +20,7 @@
     "auto_check_update": {
       "type": "boolean",
       "default": true,
-      "description": "Perform automatic non-blocking daily update checks"
+      "description": "Perform automationtic non-blocking daily update checks"
     },
     "update_channel": {
       "type": "string",

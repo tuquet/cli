@@ -67,7 +67,7 @@ pub struct SubmitJobOptions {
     /// Enable verbose debugging and DevTools inspection
     #[schema(example = false)]
     pub debug: Option<bool>,
-    /// Automatically close browser session when workflow execution finishes
+    /// Automationtically close browser session when workflow execution finishes
     #[schema(example = true)]
     pub close_browser_on_finish: Option<bool>,
 }
@@ -78,7 +78,7 @@ pub struct SubmitJobOptions {
   "workflowId": "google_search",
   "options": {
     "variables": {
-      "keyword": "automa automation"
+      "keyword": "automation automation"
     },
     "browserId": "daemon_worker",
     "headless": true,

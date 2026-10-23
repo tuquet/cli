@@ -47,7 +47,7 @@ pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
     let cf_found = cf_path.is_some();
     tool_items.push(DiagnosticItem {
         name: "cloudflared".to_string(),
-        category: "Bridge Mesh Tunnel",
+        category: "Gateway Mesh Tunnel",
         ok: true,
         status_text: if cf_found {
             "● READY".to_string()
@@ -246,7 +246,7 @@ pub fn check_storage_pillars() -> Table {
             "Identity (.identity.json), CLI history, machine ID",
         ),
         (
-            crate::constants::PILLAR_AUTOMA,
+            crate::constants::PILLAR_AUTOMATION,
             "tuquet/automation",
             "Workflow definitions, SQLite DB (automation.sqlite)",
         ),
@@ -256,7 +256,7 @@ pub fn check_storage_pillars() -> Table {
             "Antidetect Chromium runtimes, sandbox profiles",
         ),
         (
-            crate::constants::PILLAR_BRIDGE,
+            crate::constants::PILLAR_GATEWAY,
             "tuquet/gateway (Mesh)",
             "Multi-VPS mesh configuration (gateway.json), PID locks",
         ),
@@ -317,27 +317,27 @@ pub fn check_network_topology() -> Card {
     let runner_port = app_cfg.server_port;
     let runner_active = probe_port(runner_port);
 
-    let bridge_cfg = crate::infrastructure::gateway::BridgeConfig::load()
-        .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
-    let git_port = bridge_cfg
+    let gateway_cfg = crate::infrastructure::gateway::GatewayConfig::load()
+        .unwrap_or_else(|_| crate::infrastructure::gateway::GatewayConfig::default_config());
+    let git_port = gateway_cfg
         .workloads
         .as_ref()
         .and_then(|w| w.git.as_ref())
         .map(|g| g.port)
         .unwrap_or(crate::constants::DEFAULT_SOCKS5_PORT);
     let git_active = probe_port(git_port);
-    let ssh_port = bridge_cfg
+    let ssh_port = gateway_cfg
         .servers
         .get("my-vps")
         .and_then(|s| s.local_ssh_port)
         .unwrap_or(crate::constants::DEFAULT_SSH_TUNNEL_PORT);
     let ssh_active = probe_port(ssh_port);
-    let http_port = bridge_cfg
+    let http_port = gateway_cfg
         .workloads
         .as_ref()
         .and_then(|w| w.supabase.as_ref())
         .map(|s| s.http_port)
-        .unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
+        .unwrap_or(crate::constants::DEFAULT_HTTP_GATEWAY_PORT);
     let http_active = probe_port(http_port);
 
     let endpoints = default_workstation_endpoints(

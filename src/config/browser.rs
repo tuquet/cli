@@ -39,7 +39,7 @@ fn default_args() -> Vec<String> {
     ]
 }
 fn default_extensions() -> Vec<String> {
-    vec![crate::constants::PILLAR_AUTOMA.to_string()]
+    vec![crate::constants::PILLAR_AUTOMATION.to_string()]
 }
 
 impl Default for BrowserConfig {
@@ -100,6 +100,6 @@ mod tests {
         assert_eq!(config.default_browser, "chromium");
         assert_eq!(config.viewport_width, 1280);
         assert!(!config.headless);
-        assert!(config.autoload_extensions.contains(&"automa".to_string()));
+        assert!(config.autoload_extensions.contains(&"automation".to_string()));
     }
 }

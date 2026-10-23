@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::core::error::AutomaError;
+use crate::core::error::AutomationError;
 use axum::extract::{Json, State};
 
 use super::types::{ImportWorkflowStorageRequest, WorkflowStorageItem};
@@ -21,10 +21,10 @@ use super::types::{ImportWorkflowStorageRequest, WorkflowStorageItem};
 pub async fn import_storage_workflow(
     State(state): State<AppState>,
     Json(payload): Json<ImportWorkflowStorageRequest>,
-) -> Result<Json<WorkflowStorageItem>, AutomaError> {
+) -> Result<Json<WorkflowStorageItem>, AutomationError> {
     let wf = &payload.workflow;
     if !wf.is_object() {
-        return Err(AutomaError::BadRequest(
+        return Err(AutomationError::BadRequest(
             "Import payload must contain a valid JSON object".into(),
         ));
     }
@@ -56,7 +56,7 @@ pub async fn import_storage_workflow(
         .map(|s| s.to_string());
 
     let data_str = serde_json::to_string(wf)
-        .map_err(|e| AutomaError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
+        .map_err(|e| AutomationError::BadRequest(format!("Failed to serialize workflow: {}", e)))?;
 
     let db = state.db.lock().await;
     let created = db
@@ -69,9 +69,9 @@ pub async fn import_storage_workflow(
             version.as_deref(),
             icon.as_deref(),
         )
-        .map_err(|e| AutomaError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AutomationError::DatabaseError(e.to_string()))?;
 
-    // Also import nested sub-workflows from `includedWorkflows` if present (automa-webe export standard)
+    // Also import nested sub-workflows from `includedWorkflows` if present (automation-webe export standard)
     if let Some(included) = wf.get("includedWorkflows").and_then(|v| v.as_object()) {
         for (sub_id, sub_wf) in included {
             if sub_wf.is_object() {

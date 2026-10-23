@@ -8,7 +8,7 @@ repository = "https://github.com/tuquet/cli"
 license = "MIT"
 
 [lib]
-name = "automa_core"
+name = "automation_core"
 path = "src/lib.rs"
 
 [[bin]]
