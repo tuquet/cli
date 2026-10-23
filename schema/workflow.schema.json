@@ -1,0 +1,1143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tuquet.dev/schema/workflow.schema.json",
+  "title": "Tuquet Automation Workflow",
+  "description": "Compatibility schema for Tuquet workflows and Automa-compatible workflow exports.",
+  "type": "object",
+  "anyOf": [
+    { "required": ["drawflow"] },
+    { "required": ["nodes"] }
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional JSON Schema reference."
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "extVersion": {
+      "type": "string"
+    },
+    "folderId": {
+      "type": ["string", "null"]
+    },
+    "content": {
+      "type": ["string", "object"]
+    },
+    "connectedTable": {
+      "type": ["string", "object", "null"]
+    },
+    "trigger": {
+      "type": ["object", "null"]
+    },
+    "createdAt": {
+      "type": ["string", "number"]
+    },
+    "updatedAt": {
+      "type": ["string", "number"]
+    },
+    "isDisabled": {
+      "type": "boolean"
+    },
+    "testingMode": {
+      "type": "boolean"
+    },
+    "hostId": {
+      "type": "string"
+    },
+    "teamId": {
+      "type": "string"
+    },
+    "drawflow": {
+      "description": "Flat Tuquet graph, legacy Automa graph, or a JSON-encoded graph.",
+      "oneOf": [
+        { "$ref": "#/$defs/drawflow" },
+        { "type": "string" }
+      ]
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "globalData": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "additionalProperties": true },
+        { "type": "null" }
+      ]
+    },
+    "global_data": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "additionalProperties": true },
+        { "type": "null" }
+      ]
+    },
+    "table": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tableColumn"
+      }
+    },
+    "dataColumns": {
+      "type": "array",
+      "description": "Legacy Automa alias for table.",
+      "items": {
+        "$ref": "#/$defs/tableColumn"
+      }
+    },
+    "includedWorkflows": {
+      "description": "Automa exports workflows as an object keyed by workflow ID; legacy imports may use an array.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": true
+        },
+        {
+          "type": "array",
+          "items": {}
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "drawflow": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          }
+        },
+        "Home": {
+          "type": "object",
+          "description": "Legacy Automa Drawflow container.",
+          "properties": {
+            "data": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/node"
+              }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": {
+          "type": ["string", "integer"]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/blockData"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "computedPosition": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "dragging": {
+          "type": "boolean"
+        },
+        "resizing": {
+          "type": "boolean"
+        },
+        "initialized": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "blockData": {
+      "description": "Common Automa block data fields. Block-specific and custom fields remain open.",
+      "type": "object",
+      "properties": {
+        "disableBlock": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "interval": {
+          "type": ["string", "number"]
+        },
+        "date": {
+          "type": "string"
+        },
+        "shortcut": {
+          "type": "string"
+        },
+        "activeInInput": {
+          "type": "boolean"
+        },
+        "isUrlRegex": {
+          "type": "boolean"
+        },
+        "days": {
+          "type": "array"
+        },
+        "contextMenuName": {
+          "type": "string"
+        },
+        "contextTypes": {
+          "type": "array"
+        },
+        "preferParamsInTab": {
+          "type": "boolean"
+        },
+        "observeElement": {
+          "$ref": "#/$defs/observeElement"
+        },
+        "flowUuid": {
+          "type": "string"
+        },
+        "flowLabel": {
+          "type": "string"
+        },
+        "executeId": {
+          "type": "string"
+        },
+        "workflowId": {
+          "type": "string"
+        },
+        "insertAllVars": {
+          "type": "boolean"
+        },
+        "insertAllGlobalData": {
+          "type": "boolean"
+        },
+        "insertVars": {
+          "type": "array"
+        },
+        "userAgent": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "tabZoom": {
+          "type": "number"
+        },
+        "inGroup": {
+          "type": "boolean"
+        },
+        "waitTabLoaded": {
+          "type": "boolean"
+        },
+        "updatePrevTab": {
+          "type": "boolean"
+        },
+        "customUserAgent": {
+          "type": "boolean"
+        },
+        "tabIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tabTitle": {
+          "type": "string"
+        },
+        "matchPattern": {
+          "type": "string"
+        },
+        "activeTab": {
+          "type": "boolean"
+        },
+        "createIfNoMatch": {
+          "type": "boolean"
+        },
+        "findTabBy": {
+          "type": "string"
+        },
+        "top": {
+          "type": "number"
+        },
+        "left": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "incognito": {
+          "type": "boolean"
+        },
+        "windowState": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bypassList": {
+          "type": "string"
+        },
+        "clearProxy": {
+          "type": "boolean"
+        },
+        "closeType": {
+          "type": "string"
+        },
+        "allWindows": {
+          "type": "boolean"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "ext": {
+          "type": "string"
+        },
+        "quality": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fullPage": {
+          "type": "boolean"
+        },
+        "saveToColumn": {
+          "type": "boolean"
+        },
+        "saveToComputer": {
+          "type": "boolean"
+        },
+        "captureActiveTab": {
+          "type": "boolean"
+        },
+        "setAsActiveTab": {
+          "type": "boolean"
+        },
+        "activeTabLoaded": {
+          "type": "boolean"
+        },
+        "tabLoadedUrl": {
+          "type": "string"
+        },
+        "tabUrl": {
+          "type": "string"
+        },
+        "fileQuery": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "number",
+          "minimum": 0
+        },
+        "waitForSelector": {
+          "type": "boolean"
+        },
+        "waitSelectorTimeout": {
+          "type": "number",
+          "minimum": 0
+        },
+        "selector": {
+          "type": "string"
+        },
+        "findBy": {
+          "type": "string"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "markEl": {
+          "type": "boolean"
+        },
+        "assignVariable": {
+          "type": "boolean"
+        },
+        "variableName": {
+          "type": "string"
+        },
+        "saveData": {
+          "type": "boolean"
+        },
+        "dataColumn": {
+          "type": "string"
+        },
+        "refKey": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "array"
+          ,"items": {
+            "$ref": "#/$defs/header"
+          }
+        },
+        "method": {
+          "type": "string"
+        },
+        "responseType": {
+          "enum": ["json", "base64", "text", "arrayBuffer", "blob"]
+        },
+        "dataPath": {
+          "type": "string"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "preloadScripts": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "#/$defs/preloadScript" }
+            ]
+          }
+        },
+        "conditions": {
+          "type": ["array", "null"],
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/legacyCondition" },
+              { "$ref": "#/$defs/conditionBranch" }
+            ]
+          }
+        },
+        "retryConditions": {
+          "type": "boolean"
+        },
+        "retryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retryTimeout": {
+          "type": "number",
+          "minimum": 0
+        },
+        "loopId": {
+          "type": "string"
+        },
+        "maxLoop": {
+          "type": ["string", "number"]
+        },
+        "startIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "loopData": {
+          "type": "string"
+        },
+        "loopThrough": {
+          "enum": [
+            "numbers",
+            "variable",
+            "table",
+            "data-columns",
+            "custom-data",
+            "google-sheets",
+            "elements"
+          ]
+        },
+        "fromNumber": {
+          "type": ["string", "number"]
+        },
+        "toNumber": {
+          "type": ["string", "number"]
+        },
+        "referenceKey": {
+          "type": "string"
+        },
+        "resumeLastWorkflow": {
+          "type": "boolean"
+        },
+        "elementSelector": {
+          "type": "string"
+        },
+        "loadMoreAction": {
+          "type": "string"
+        },
+        "scrollToBottom": {
+          "type": "boolean"
+        },
+        "actionElMaxWaitTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "actionElSelector": {
+          "type": "string"
+        },
+        "actionPageMaxWaitTime": {
+          "type": "number",
+          "minimum": 0
+        },
+        "onlyClickLink": {
+          "type": "boolean"
+        },
+        "repeatFor": {
+          "type": ["string", "number"]
+        },
+        "reverseLoop": {
+          "type": "boolean"
+        },
+        "getValue": {
+          "type": "boolean"
+        },
+        "clearValue": {
+          "type": "boolean"
+        },
+        "includeTags": {
+          "type": "boolean"
+        },
+        "useTextContent": {
+          "type": "boolean"
+        },
+        "regex": {
+          "type": "string"
+        },
+        "regexExp": {
+          "type": "array"
+        },
+        "prefixText": {
+          "type": "string"
+        },
+        "suffixText": {
+          "type": "string"
+        },
+        "attributeName": {
+          "type": "string"
+        },
+        "attributeValue": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": ["string", "number", "boolean", "null"]
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0
+        },
+        "time": {
+          "type": ["string", "number"]
+        },
+        "scrollY": {
+          "type": "number"
+        },
+        "scrollX": {
+          "type": "number"
+        },
+        "incX": {
+          "type": "boolean"
+        },
+        "incY": {
+          "type": "boolean"
+        },
+        "scrollIntoView": {
+          "type": "boolean"
+        },
+        "smooth": {
+          "type": "boolean"
+        },
+        "eventName": {
+          "type": "string"
+        },
+        "eventType": {
+          "type": "string"
+        },
+        "eventParams": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "dataList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dataListItem"
+          }
+        },
+        "blocks": {
+          "type": "array"
+        },
+        "filePaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inputs": {
+          "type": "array"
+        },
+        "outputs": {
+          "type": "array"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dataSource"
+          }
+        },
+        "varSourceName": {
+          "type": "string"
+        },
+        "dataSource": {
+          "type": "string"
+        },
+        "itemProperties": {
+          "type": "array"
+        },
+        "addExtraRow": {
+          "type": "boolean"
+        },
+        "extraRowValue": {
+          "type": "string"
+        },
+        "extraRowDataColumn": {
+          "type": "string"
+        },
+        "disableMultiple": {
+          "type": "boolean"
+        },
+        "openInNewTab": {
+          "type": "boolean"
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "selectOptionBy": {
+          "type": "string"
+        },
+        "optionPosition": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array"
+        },
+        "firstRowAsKey": {
+          "type": "boolean"
+        },
+        "keysAsFirstRow": {
+          "type": "boolean"
+        },
+        "valueInputOption": {
+          "type": "string"
+        },
+        "InsertDataOption": {
+          "type": "string"
+        },
+        "dataFrom": {
+          "type": "string"
+        },
+        "inputSpreadsheetId": {
+          "type": "string"
+        },
+        "sheetName": {
+          "type": "string"
+        },
+        "tryCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "throwError": {
+          "type": "boolean"
+        },
+        "clearLoop": {
+          "type": "boolean"
+        },
+        "copySelectedText": {
+          "type": "boolean"
+        },
+        "dataToCopy": {
+          "type": "string"
+        },
+        "saveDownloadIds": {
+          "type": "boolean"
+        },
+        "saveToGDrive": {
+          "type": "boolean"
+        },
+        "keys": {
+          "type": "string"
+        },
+        "keysToPress": {
+          "type": "string"
+        },
+        "pressTime": {
+          "type": "string"
+        },
+        "accept": {
+          "type": "boolean"
+        },
+        "promptText": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "waitForDownload": {
+          "type": "boolean"
+        },
+        "downloadId": {
+          "type": "string"
+        },
+        "deleteList": {
+          "type": "array"
+        },
+        "specificFlow": {
+          "type": "boolean"
+        },
+        "flowBlockId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "iconUrl": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "qTitle": {
+          "type": "string"
+        },
+        "qMatchPatterns": {
+          "type": "string"
+        },
+        "endIdxEnabled": {
+          "type": "boolean"
+        },
+        "startIdxEnabled": {
+          "type": "boolean"
+        },
+        "endIndex": {
+          "type": "integer"
+        },
+        "increaseBy": {
+          "type": "number"
+        },
+        "replaceVal": {
+          "type": "string"
+        },
+        "expression": {
+          "type": "string"
+        },
+        "flag": {
+          "type": "array"
+        },
+        "javascript": {
+          "type": "string"
+        },
+        "html": {
+          "type": "string"
+        },
+        "css": {
+          "type": "string"
+        },
+        "insertAt": {
+          "type": "string"
+        },
+        "dontInjectJS": {
+          "type": "boolean"
+        },
+        "everyNewTab": {
+          "type": "boolean"
+        },
+        "runBeforeLoad": {
+          "type": "boolean"
+        },
+        "jsonCode": {
+          "type": "string"
+        },
+        "useJson": {
+          "type": "boolean"
+        },
+        "getAll": {
+          "type": "boolean"
+        },
+        "expirationDate": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "sameSite": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "httpOnly": {
+          "type": "boolean"
+        },
+        "secure": {
+          "type": "boolean"
+        },
+        "session": {
+          "type": "boolean"
+        },
+        "windowType": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "drawing": {
+          "type": "boolean"
+        },
+        "color": {
+          "type": "string"
+        },
+        "fontSize": {
+          "type": "string"
+        },
+        "exceptCurrent": {
+          "type": "boolean"
+        },
+        "workflowsToStop": {
+          "type": "array"
+        },
+        "$frameSelector": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "header": {
+      "type": "object",
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "observeElement": {
+      "type": "object",
+      "properties": {
+        "selector": { "type": "string" },
+        "baseSelector": { "type": "string" },
+        "matchPattern": { "type": "string" },
+        "targetOptions": { "$ref": "#/$defs/observeOptions" },
+        "baseElOptions": { "$ref": "#/$defs/observeOptions" }
+      },
+      "additionalProperties": true
+    },
+    "observeOptions": {
+      "type": "object",
+      "properties": {
+        "subtree": { "type": "boolean" },
+        "childList": { "type": "boolean" },
+        "attributes": { "type": "boolean" },
+        "attributeFilter": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "characterData": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "workflowEvent": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array"
+        },
+        "action": {
+          "type": "string"
+        }
+      },
+      "required": ["events", "action"],
+      "additionalProperties": true
+    },
+    "preloadScript": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "src": { "type": "string" },
+        "type": { "type": "string" },
+        "script": { "type": "string" },
+        "data": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "legacyCondition": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "value": {},
+        "compareValue": {}
+      },
+      "not": { "required": ["conditions"] },
+      "additionalProperties": true
+    },
+    "conditionBranch": {
+      "type": "object",
+      "required": ["id", "conditions"],
+      "properties": {
+        "id": { "type": "string" },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/conditionItem" }
+              }
+            },
+            "required": ["items"],
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "conditionItem": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "type": { "type": "string" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "dataPath": { "type": "string" },
+            "value": {},
+            "code": { "type": "string" },
+            "context": { "type": "string" },
+            "selector": { "type": "string" },
+            "attrName": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+    "dataListItem": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "parameter": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "defaultValue": {},
+        "description": { "type": "string" },
+        "placeholder": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": true
+    },
+    "dataSource": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["source", "target"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "source": {
+          "type": ["string", "integer"]
+        },
+        "target": {
+          "type": ["string", "integer"]
+        },
+        "sourceHandle": {
+          "type": ["string", "null"]
+        },
+        "targetHandle": {
+          "type": ["string", "null"]
+        },
+        "updatable": {
+          "type": "boolean"
+        },
+        "selectable": {
+          "type": "boolean"
+        },
+        "class": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "position": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": ["x", "y"],
+      "additionalProperties": true
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "onError": {
+          "type": "string"
+        },
+        "restartTimes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notification": {
+          "type": "boolean"
+        },
+        "debugMode": {
+          "type": "boolean"
+        },
+        "publicId": {
+          "type": "string"
+        },
+        "aipowerToken": {
+          "type": "string"
+        },
+        "blockDelay": {
+          "type": "number",
+          "minimum": 0
+        },
+        "saveLog": {
+          "type": "boolean"
+        },
+        "reuseLastState": {
+          "type": "boolean"
+        },
+        "execContext": {
+          "type": "string"
+        },
+        "inputAutocomplete": {
+          "type": "boolean"
+        },
+        "executedBlockOnWeb": {
+          "type": "boolean"
+        },
+        "insertDefaultColumn": {
+          "type": "boolean"
+        },
+        "defaultColumnName": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workflowEvent"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tableColumn": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
