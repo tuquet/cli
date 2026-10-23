@@ -41,7 +41,7 @@ impl BridgeSupervisor {
         Self::pids_dir().join(format!("{}.json", server_id))
     }
 
-    /// Starts a specific server connection (Native Cloudflare ProxyCommand + SSH SOCKS5)
+    /// Starts a specific server connection (Cloudflare TCP loopback daemon + SSH SOCKS5)
     pub async fn start_server(
         server_id: &str,
         srv: &ServerConfig,
@@ -52,37 +52,96 @@ impl BridgeSupervisor {
 
         let mut cf_pid = None;
         let mut ssh_pid = None;
-        let cf_started = false;
+        let mut cf_started = false;
         let mut ssh_started = false;
 
+        let cf_port = srv.local_ssh_port.unwrap_or(2222);
         let socks_port = srv.socks_port.unwrap_or(1080);
 
-        // Start SSH SOCKS5 Tunnel with Native ProxyCommand (Zero Intermediary Port)
+        // 1. If server_type == "cloudflare", launch cloudflared directly with CREATE_NO_WINDOW
+        //    This avoids OpenSSH Windows ProxyCommand spawning visible conhost windows!
+        if srv.server_type == "cloudflare" {
+            let hostname = srv.cf_hostname.as_deref().ok_or_else(|| {
+                format!(
+                    "Server '{}': 'cf_hostname' is required for cloudflare tunnel",
+                    server_id
+                )
+            })?;
+
+            if !probe_port(cf_port) {
+                let cf_bin = find_executable("cloudflared").ok_or(
+                    "Binary 'cloudflared' not found in PATH. Install via 'scoop install cloudflared' or package manager."
+                )?;
+
+                info!(
+                    "Launching Cloudflare tunnel: {} -> 127.0.0.1:{}",
+                    hostname, cf_port
+                );
+                let mut cmd = Command::new(cf_bin);
+                cmd.args([
+                    "access",
+                    "tcp",
+                    "--hostname",
+                    hostname,
+                    "--url",
+                    &format!("127.0.0.1:{}", cf_port),
+                ])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+
+                #[cfg(windows)]
+                {
+                    use std::os::windows::process::CommandExt;
+                    // CREATE_NO_WINDOW (0x08000000) | DETACHED_PROCESS (0x00000008)
+                    cmd.creation_flags(0x08000008);
+                }
+
+                let child = cmd.spawn()?;
+                cf_pid = Some(child.id());
+                cf_started = true;
+
+                // Wait for Cloudflare TCP loopback port to become active (up to 10s)
+                if !wait_for_port(cf_port, Duration::from_secs(10)).await {
+                    return Err(format!(
+                        "Cloudflare tunnel on port {} failed to initialize within 10s",
+                        cf_port
+                    )
+                    .into());
+                }
+            } else {
+                info!("Cloudflare tunnel on port {} is already active", cf_port);
+            }
+        }
+
+        // 2. Start SSH SOCKS5 Tunnel connecting to 127.0.0.1:cf_port (direct TCP loopback)
         if !probe_port(socks_port) {
             let ssh_bin = find_executable("ssh")
                 .ok_or("Binary 'ssh' not found in PATH. Please install OpenSSH client.")?;
 
             let remote_user = srv.remote_user.as_deref().unwrap_or("root");
+            let target_host = if srv.server_type == "cloudflare" {
+                "127.0.0.1"
+            } else {
+                srv.host.as_deref().unwrap_or("127.0.0.1")
+            };
+            let connect_port = if srv.server_type == "cloudflare" {
+                cf_port
+            } else {
+                srv.local_ssh_port.unwrap_or(22)
+            };
 
             info!(
-                "Launching SSH SOCKS5 proxy on port 127.0.0.1:{} for server '{}'",
-                socks_port, server_id
+                "Launching SSH SOCKS5 proxy on port 127.0.0.1:{} -> {}@{}:{}",
+                socks_port, remote_user, target_host, connect_port
             );
 
             let mut cmd = Command::new(ssh_bin);
-            cmd.arg("-N")
+            cmd.arg("-p")
+                .arg(connect_port.to_string())
+                .arg("-N")
                 .arg("-D")
                 .arg(socks_port.to_string());
-
-            if srv.server_type == "cloudflare" {
-                // If defined in ~/.ssh/config as my-vps-cf or cf host alias, connect directly to target alias
-                let target_alias = format!("{}-cf", server_id);
-                cmd.arg(&target_alias);
-            } else if let Some(ref host) = srv.host {
-                let port = srv.local_ssh_port.unwrap_or(22);
-                cmd.arg("-p").arg(port.to_string());
-                cmd.arg(format!("{}@{}", remote_user, host));
-            }
 
             cmd.arg("-o")
                 .arg("BatchMode=yes")
@@ -116,7 +175,8 @@ impl BridgeSupervisor {
                 }
             }
 
-            cmd.stdin(Stdio::null())
+            cmd.arg(format!("{}@{}", remote_user, target_host))
+                .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null());
 
@@ -155,7 +215,7 @@ impl BridgeSupervisor {
 
         Ok(StartServerResult {
             server_id: server_id.to_string(),
-            cf_port: None,
+            cf_port: Some(cf_port),
             socks_port: Some(socks_port),
             cf_started,
             ssh_started,
