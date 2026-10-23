@@ -17,11 +17,8 @@ use crate::api::handlers::secrets::{
 use crate::api::handlers::settings::{get_settings, patch_settings, update_settings};
 use crate::api::handlers::sse::sse;
 use crate::api::handlers::storage::{
-    add_table, add_table_row, add_variable, create_storage_workflow, delete_storage_workflow,
-    delete_table, delete_variable, export_storage_backup, get_table_rows, get_tables,
-    get_variables,
-    get_workflow, get_workflow_by_id, get_workflows, import_storage_workflow,
-    restore_storage_backup, save_workflow, update_storage_workflow,
+    create_storage_workflow, delete_storage_workflow, get_workflow, get_workflow_by_id,
+    get_workflows, import_storage_workflow, save_workflow, update_storage_workflow,
 };
 use crate::api::handlers::system::{
     cloud_login, cloud_logout, desktop_auth_callback, desktop_auth_callback_post, get_cloud_status,
@@ -66,7 +63,6 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::system::desktop_auth_callback,
         crate::api::handlers::system::desktop_auth_callback_post,
         crate::api::handlers::lint::lint_workflow,
-        crate::api::handlers::storage::get_variables,
         crate::api::handlers::secrets::get_secrets,
         crate::api::handlers::secrets::list_credentials,
         crate::api::handlers::secrets::set_secret,
@@ -74,21 +70,12 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::secrets::push_secrets,
         crate::api::handlers::secrets::pull_secrets,
         crate::api::handlers::secrets::rotate_secrets,
-        crate::api::handlers::storage::add_variable,
-        crate::api::handlers::storage::delete_variable,
-        crate::api::handlers::storage::get_tables,
-        crate::api::handlers::storage::add_table,
-        crate::api::handlers::storage::delete_table,
-        crate::api::handlers::storage::get_table_rows,
-        crate::api::handlers::storage::add_table_row,
         crate::api::handlers::storage::get_workflows,
         crate::api::handlers::storage::get_workflow_by_id,
         crate::api::handlers::storage::create_storage_workflow,
         crate::api::handlers::storage::update_storage_workflow,
         crate::api::handlers::storage::delete_storage_workflow,
         crate::api::handlers::storage::import_storage_workflow,
-        crate::api::handlers::storage::restore_storage_backup,
-        crate::api::handlers::storage::export_storage_backup,
         crate::api::handlers::storage::get_workflow,
         crate::api::handlers::storage::save_workflow,
         crate::api::handlers::browsers::get_browsers,
@@ -167,19 +154,10 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::secrets::CredentialList,
         crate::api::handlers::secrets::SetSecretRequest,
         crate::api::handlers::secrets::SecretOpResult,
-        crate::api::handlers::storage::StorageActionResponse,
-            crate::core::models::storage::StorageVariable,
-            crate::core::models::storage::StorageTable,
-            crate::core::models::storage::TableRow,
-            crate::api::handlers::storage::AddTableRowResponse,
-            crate::api::handlers::storage::AddTableRowPayload,
             crate::api::handlers::storage::WorkflowStorageItem,
             crate::api::handlers::storage::CreateWorkflowStorageRequest,
             crate::api::handlers::storage::UpdateWorkflowStorageRequest,
             crate::api::handlers::storage::DeleteWorkflowResponse,
-            crate::api::handlers::storage::RestoreBackupRequest,
-            crate::api::handlers::storage::RestoreBackupResponse,
-            crate::api::handlers::storage::ExportBackupResponse,
             crate::core::models::settings::AppSettings,
             crate::core::models::settings::UpdateAppSettingsRequest
         )
@@ -251,16 +229,6 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/history", get(get_history).delete(clear_history))
         .route("/history/{job_id}/logs", get(get_logs))
         .route("/history/{job_id}", delete(delete_history_item))
-        .route("/storage/variables", get(get_variables).post(add_variable))
-        .route("/storage/variables/{id}", delete(delete_variable))
-        .route("/storage/tables", get(get_tables).post(add_table))
-        .route("/storage/tables/{id}", delete(delete_table))
-        .route(
-            "/storage/tables/{id}/rows",
-            get(get_table_rows).post(add_table_row),
-        )
-        .route("/storage/backup/restore", post(restore_storage_backup))
-        .route("/storage/backup/export", get(export_storage_backup))
         .route(
             "/storage/workflows",
             get(get_workflows).post(create_storage_workflow),

@@ -53,44 +53,21 @@ pub fn init_db(conn: &Connection) -> Result<()> {
 
         CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows(name);
 
-        CREATE TABLE IF NOT EXISTS storage_tables (
-            id TEXT PRIMARY KEY,
-            name TEXT,
-            columns TEXT,
-            columns_index TEXT,
-            created_at INTEGER,
-            modified_at INTEGER
-        );
-
-        CREATE TABLE IF NOT EXISTS storage_table_rows (
-            id TEXT PRIMARY KEY,
-            table_id TEXT NOT NULL,
-            data TEXT NOT NULL,
-            FOREIGN KEY(table_id) REFERENCES storage_tables(id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_table_rows_table_id ON storage_table_rows(table_id);
-
         CREATE TABLE IF NOT EXISTS system_settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
-        CREATE TABLE IF NOT EXISTS storage_variables (
-            id TEXT PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
-            value TEXT NOT NULL,
-            created_at INTEGER,
-            updated_at INTEGER
-        );
-
         "#,
     )?;
 
-    // Rip-and-replace: the legacy Automa-style `storage_credentials` table is removed
-    // (credentials now live in the encrypted Secret Store — see SPEC-secret-store).
+    // Rip-and-replace: the legacy Automa-style storage layer is removed — credentials live in the
+    // encrypted Secret Store (SPEC-secret-store), variables/secrets in Cloud, data tables in Cloud PostgREST.
     let _ = conn.execute("DROP TABLE IF EXISTS storage_credentials", []);
+    let _ = conn.execute("DROP TABLE IF EXISTS storage_table_rows", []);
+    let _ = conn.execute("DROP TABLE IF EXISTS storage_tables", []);
+    let _ = conn.execute("DROP TABLE IF EXISTS storage_variables", []);
 
     // Safe & Idempotent Schema Migration (Edge Case 6.1):
     // Ensure 'extensions' column exists on 'browsers' table for pre-existing databases
