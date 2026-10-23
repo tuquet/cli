@@ -1346,7 +1346,7 @@ pub enum ExtCommands {
 
 #[derive(Subcommand, Debug)]
 pub enum WorkflowCommands {
-    /// List all workflows saved in the local database
+    /// List all workflows stored in the Cloud (automation.workflows)
     #[command(name = "list")]
     List {
         /// Filter workflows by keyword (name, ID, or description)
@@ -1357,7 +1357,7 @@ pub enum WorkflowCommands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Import a workflow file (.json) into the local database
+    /// Import a workflow file (.json) into the Cloud (automation.workflows)
     #[command(name = "import")]
     Import {
         /// Path to workflow JSON file (.workflow.json or .json)
@@ -1377,7 +1377,7 @@ pub enum WorkflowCommands {
         description: Option<String>,
     },
 
-    /// Export a workflow from the database to a JSON file
+    /// Export a workflow from the Cloud to a JSON file
     Export {
         /// Workflow ID or Name to export
         #[arg(value_name = "WORKFLOW_ID")]
@@ -1396,7 +1396,7 @@ pub enum WorkflowCommands {
         id: String,
     },
 
-    /// Delete a workflow from the database
+    /// Delete a workflow from the Cloud (soft delete)
     #[command(name = "delete")]
     Delete {
         /// Workflow ID to delete

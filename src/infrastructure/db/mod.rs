@@ -5,12 +5,10 @@ pub mod browsers;
 pub mod jobs;
 pub mod schema;
 pub mod settings;
-pub mod workflows;
 
 pub use browsers::{Browser, SqliteBrowserRepository};
 pub use jobs::{JobDetails, JobHistoryItem, JobInfo, LogItem, SqliteJobRepository};
 pub use settings::SqliteSettingsRepository;
-pub use workflows::{DbWorkflow, SqliteWorkflowRepository};
 
 pub struct AutomationDb {
     conn: Connection,
@@ -41,10 +39,6 @@ impl AutomationDb {
 
     pub fn browsers(&self) -> SqliteBrowserRepository<'_> {
         SqliteBrowserRepository::new(&self.conn)
-    }
-
-    pub fn workflows(&self) -> SqliteWorkflowRepository<'_> {
-        SqliteWorkflowRepository::new(&self.conn)
     }
 
     pub fn settings(&self) -> SqliteSettingsRepository<'_> {

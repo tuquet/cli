@@ -1,10 +1,11 @@
 use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use crate::config::AppConfig;
-use crate::infrastructure::db::AutomationDb;
+use serde_json::json;
 
-pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
+use crate::infrastructure::cloud::CloudWorkflowRepository;
+
+pub async fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     crate::ui::Notify::header("Automation Workflow Inspector");
 
     let (content, source_label) = {
@@ -15,25 +16,25 @@ pub fn inspect_workflow(target: &str) -> Result<(), Box<dyn std::error::Error>> 
                 format!("File: {}", target_path.display()),
             )
         } else {
-            // Resolve workflow definition from SQLite database (automation.sqlite)
-            let config = AppConfig::load();
-            let mut resolved = None;
-
-            // Check SQLite DB
-            let db_path =
-                PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-            if db_path.exists()
-                && let Ok(db) = AutomationDb::new(&db_path)
-                && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
-            {
-                resolved = Some((wf.data, format!("Database (ID: {})", wf.id)));
-            }
-
-            match resolved {
-                Some(r) => r,
+            // Resolve the workflow from the Cloud table `automation.workflows`.
+            let repo = CloudWorkflowRepository::connect()
+                .await
+                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            match repo.find(target).await? {
+                Some(wf) => (
+                    serde_json::to_string(&json!({
+                        "id": wf.id,
+                        "name": wf.name,
+                        "description": wf.description,
+                        "version": wf.version,
+                        "nodes": wf.graph_data.get("nodes").cloned().unwrap_or_else(|| json!([])),
+                        "edges": wf.graph_data.get("edges").cloned().unwrap_or_else(|| json!([])),
+                    }))?,
+                    format!("Cloud (automation.workflows · ID: {})", wf.id),
+                ),
                 None => {
                     return Err(format!(
-                        "Workflow file or ID '{}' not found in database.",
+                        "Workflow file or ID '{}' not found in automation.workflows.",
                         target
                     )
                     .into());

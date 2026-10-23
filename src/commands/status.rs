@@ -1,6 +1,5 @@
 use crate::config::AppConfig;
 use crate::infrastructure::cloud_reporter::CloudReporter;
-use crate::infrastructure::db::AutomationDb;
 use crate::ui::{
     OutputFormat, TabularRow, badge_offline, badge_online, badge_warn,
     create_network_topology_card, create_tabular_card, default_workstation_endpoints, respond_with,
@@ -107,21 +106,19 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     };
 
     let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-    let (db_size_str, workflow_count) = if db_path.exists() {
-        let size_str = if let Ok(meta) = std::fs::metadata(&db_path) {
-            format!("{:.2} KB", meta.len() as f64 / 1024.0)
-        } else {
-            "Present".to_string()
-        };
-        let count = if let Ok(db) = AutomationDb::new(&db_path) {
-            db.workflows().get_workflows(None, None, None).map(|w| w.len()).unwrap_or(0)
-        } else {
-            0
-        };
-        (size_str, count)
+    let db_size_str = if db_path.exists() {
+        std::fs::metadata(&db_path)
+            .map(|meta| format!("{:.2} KB", meta.len() as f64 / 1024.0))
+            .unwrap_or_else(|_| "Present".to_string())
     } else {
-        ("Not initialized".to_string(), 0)
+        "Not initialized".to_string()
     };
+    // Workflows live in the Cloud table `automation.workflows` (single source of truth).
+    let workflow_count =
+        match crate::infrastructure::cloud::CloudWorkflowRepository::connect().await {
+            Ok(repo) => repo.count().await.unwrap_or(0),
+            Err(_) => 0,
+        };
 
     let daemon_status = if daemon_running {
         badge_online("ONLINE")

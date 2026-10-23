@@ -76,10 +76,10 @@ pub async fn handle(command: AutomationSubcommands) -> Result<(), Box<dyn std::e
                 description,
             } => import_workflow(file, id, name, description).await,
             WorkflowCommands::Export { id, output } => export_workflow(id, output).await,
-            WorkflowCommands::Info { id } => inspect_workflow(&id),
+            WorkflowCommands::Info { id } => inspect_workflow(&id).await,
             WorkflowCommands::Delete { id } => delete_workflow(id).await,
         },
-        AutomationSubcommands::Inspect { workflow } => inspect_workflow(&workflow),
+        AutomationSubcommands::Inspect { workflow } => inspect_workflow(&workflow).await,
         AutomationSubcommands::Studio => open_studio(),
         AutomationSubcommands::Probe => crate::commands::worker::print_probe_manifest(),
         AutomationSubcommands::Config { edit, show, args } => manage_config(&args, edit, show),
@@ -142,7 +142,7 @@ pub async fn handle_interactive() -> Result<(), Box<dyn std::error::Error>> {
                 clack_cancel("Cancelled.");
                 return Ok(());
             };
-            inspect_workflow(&wf)
+            inspect_workflow(&wf).await
         }
         3 => open_studio(),
         4 => manage_config(&[], false, false),

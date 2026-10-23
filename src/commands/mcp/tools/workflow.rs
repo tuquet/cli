@@ -1,9 +1,7 @@
 use serde::Serialize;
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use crate::config::AppConfig;
-use crate::infrastructure::db::AutomationDb;
 
 #[derive(Serialize)]
 struct WfSummary {
@@ -20,28 +18,20 @@ pub async fn execute_workflow_list(args: &Value) -> Result<String, String> {
         .get("search")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let config = AppConfig::load();
-
     let mut workflows: Vec<WfSummary> = Vec::new();
 
-    // Fetch strictly from SQLite Database
-    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-    if db_path.exists()
-        && let Ok(db) = AutomationDb::new(&db_path)
-        && let Ok(list) = db.workflows().get_workflows(None, None, search.as_deref())
-    {
-        for wf in list {
-            let parsed: Option<Value> = serde_json::from_str(&wf.data).ok();
-            let blocks_count = parsed.as_ref().map(count_workflow_blocks).unwrap_or(0);
-            workflows.push(WfSummary {
-                id: wf.id,
-                name: wf.name,
-                description: wf.description.unwrap_or_default(),
-                version: wf.version,
-                blocks_count,
-                source: "Database".to_string(),
-            });
-        }
+    // Workflows come from the Cloud table `automation.workflows` (single source of truth).
+    let repo = crate::infrastructure::cloud::CloudWorkflowRepository::connect().await?;
+    for wf in repo.list(search.as_deref()).await? {
+        let blocks_count = wf.block_count();
+        workflows.push(WfSummary {
+            id: wf.id,
+            name: wf.name,
+            description: wf.description.unwrap_or_default(),
+            version: wf.version,
+            blocks_count,
+            source: "Cloud".to_string(),
+        });
     }
 
     Ok(serde_json::to_string_pretty(&workflows).unwrap_or_default())
@@ -148,19 +138,27 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
         return Ok((text, format!("File: {}", target_path.display())));
     }
 
-    let config = AppConfig::load();
-
-    // Check DB
-    let db_path = PathBuf::from(&config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-    if db_path.exists()
-        && let Ok(db) = AutomationDb::new(&db_path)
-        && let Ok(Some(wf)) = db.workflows().get_workflow_by_id_or_name(target)
-    {
-        return Ok((wf.data, format!("Database (ID: {})", wf.id)));
+    // Resolve from the Cloud table `automation.workflows`.
+    let repo = crate::infrastructure::cloud::CloudWorkflowRepository::connect().await?;
+    if let Some(wf) = repo.find(target).await? {
+        let nodes = wf.graph_data.get("nodes").cloned().unwrap_or_else(|| json!([]));
+        let edges = wf.graph_data.get("edges").cloned().unwrap_or_else(|| json!([]));
+        let doc = serde_json::json!({
+            "id": wf.id,
+            "name": wf.name,
+            "description": wf.description,
+            "version": wf.version,
+            "nodes": nodes,
+            "edges": edges,
+        });
+        return Ok((
+            serde_json::to_string(&doc).unwrap_or_default(),
+            format!("Cloud (automation.workflows · ID: {})", wf.id),
+        ));
     }
 
     Err(format!(
-        "Workflow '{}' not found in database.",
+        "Workflow '{}' not found in automation.workflows.",
         target
     ))
 }

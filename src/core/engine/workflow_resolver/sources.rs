@@ -1,7 +1,4 @@
-use crate::infrastructure::db::AutomationDb;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use super::types::{ResolvedWorkflow, WorkflowResolveError};
 use super::validator::{sanitize_workflow_data, validate_workflow_structure};
@@ -87,36 +84,26 @@ pub async fn read_and_validate_file(path: &Path) -> Result<ResolvedWorkflow, Wor
     })
 }
 
-pub async fn find_in_database(
-    wf_id: &str,
-    db: &Arc<Mutex<AutomationDb>>,
-) -> Option<crate::infrastructure::db::workflows::DbWorkflow> {
-    // Step 1: Active / ephemeral DB
-    let active_result = {
-        let guard = db.lock().await;
-        guard
-            .workflows()
-            .get_workflow_by_id_or_name(wf_id)
-            .ok()
-            .flatten()
-    };
+/// Resolve a workflow document (graph + metadata) by UUID or name from the Cloud
+/// table `automation.workflows` — the single source of truth (the local SQLite
+/// workflow store was removed).
+pub async fn find_in_cloud(wf_id: &str) -> Option<serde_json::Value> {
+    let repo = crate::infrastructure::cloud::CloudWorkflowRepository::connect()
+        .await
+        .ok()?;
+    let wf = repo.find(wf_id).await.ok().flatten()?;
 
-    if active_result.is_some() {
-        return active_result;
+    let mut doc = serde_json::json!({
+        "id": wf.id,
+        "name": wf.name,
+        "description": wf.description,
+        "version": wf.version,
+        "settings": wf.settings,
+    });
+    if let (Some(obj), Some(graph)) = (doc.as_object_mut(), wf.graph_data.as_object()) {
+        for (k, v) in graph {
+            obj.insert(k.clone(), v.clone());
+        }
     }
-
-    // Step 2: Check persistent SQLite database
-    let persistent_config = crate::config::AppConfig::load();
-    let persistent_db_path = PathBuf::from(&persistent_config.data_dir).join(crate::constants::FILE_AUTOMATION_SQLITE);
-    if persistent_db_path.exists()
-        && let Ok(pdb) = AutomationDb::new(&persistent_db_path)
-    {
-        return pdb
-            .workflows()
-            .get_workflow_by_id_or_name(wf_id)
-            .ok()
-            .flatten();
-    }
-
-    None
+    Some(doc)
 }

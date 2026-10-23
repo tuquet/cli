@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use super::sources::{
-    find_in_database, read_and_validate_file, resolve_by_path, resolve_inline_data,
+    find_in_cloud, read_and_validate_file, resolve_by_path, resolve_inline_data,
 };
 use super::types::{ResolvedWorkflow, WorkflowResolveError};
 use super::validator::{sanitize_workflow_data, validate_workflow_structure};
@@ -63,7 +63,7 @@ impl WorkflowResolver {
         data_dir: &str,
         wf_id: &str,
         fallback_path: Option<&str>,
-        db: &Arc<Mutex<AutomationDb>>,
+        _db: &Arc<Mutex<AutomationDb>>,
     ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
         if wf_id.contains("..") {
             return Err(WorkflowResolveError::BadRequest(
@@ -71,23 +71,18 @@ impl WorkflowResolver {
             ));
         }
 
-        // Step 1 & 2: Database resolution
-        let db_workflow = find_in_database(wf_id, db).await;
+        // Cloud resolution — `automation.workflows` (single source of truth).
+        let cloud_workflow = find_in_cloud(wf_id).await;
 
-        if let Some(wf) = db_workflow {
-            let mut json_data: serde_json::Value = serde_json::from_str(&wf.data).map_err(|e| {
-                WorkflowResolveError::Internal(format!(
-                    "Failed to parse database workflow JSON: {}",
-                    e
-                ))
-            })?;
+        if let Some(wf) = cloud_workflow {
+            let mut json_data: serde_json::Value = wf;
 
             if json_data.get("name").is_none()
                 && let Some(obj) = json_data.as_object_mut()
             {
                 obj.insert(
                     "name".to_string(),
-                    serde_json::Value::String(wf.name.clone()),
+                    serde_json::Value::String(wf_id.to_string()),
                 );
             }
 
@@ -99,7 +94,8 @@ impl WorkflowResolver {
             let _ = tokio::fs::create_dir_all(&temp_dir).await;
             let file_path = temp_dir.join(format!("{}.workflow.json", job_id));
 
-            let content = serde_json::to_string_pretty(&sanitized_data).unwrap_or(wf.data);
+            let content = serde_json::to_string_pretty(&sanitized_data)
+                .unwrap_or_else(|_| json_data.to_string());
 
             tokio::fs::write(&file_path, content).await.map_err(|e| {
                 WorkflowResolveError::Internal(format!(

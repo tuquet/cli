@@ -6,6 +6,5 @@ pub mod lint;
 pub mod secrets;
 pub mod settings;
 pub mod sse;
-pub mod storage;
 pub mod system;
 pub mod ws;

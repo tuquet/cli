@@ -40,19 +40,6 @@ pub fn init_db(conn: &Connection) -> Result<()> {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
-        CREATE TABLE IF NOT EXISTS workflows (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            data TEXT NOT NULL, -- JSON AST (nodes, edges, settings)
-            version TEXT DEFAULT '1.0.0',
-            icon TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows(name);
-
         CREATE TABLE IF NOT EXISTS system_settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
@@ -68,6 +55,7 @@ pub fn init_db(conn: &Connection) -> Result<()> {
     let _ = conn.execute("DROP TABLE IF EXISTS storage_table_rows", []);
     let _ = conn.execute("DROP TABLE IF EXISTS storage_tables", []);
     let _ = conn.execute("DROP TABLE IF EXISTS storage_variables", []);
+    let _ = conn.execute("DROP TABLE IF EXISTS workflows", []);
 
     // Safe & Idempotent Schema Migration (Edge Case 6.1):
     // Ensure 'extensions' column exists on 'browsers' table for pre-existing databases

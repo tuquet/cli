@@ -16,10 +16,6 @@ use crate::api::handlers::secrets::{
 };
 use crate::api::handlers::settings::{get_settings, patch_settings, update_settings};
 use crate::api::handlers::sse::sse;
-use crate::api::handlers::storage::{
-    create_storage_workflow, delete_storage_workflow, get_workflow, get_workflow_by_id,
-    get_workflows, import_storage_workflow, save_workflow, update_storage_workflow,
-};
 use crate::api::handlers::system::{
     cloud_login, cloud_logout, desktop_auth_callback, desktop_auth_callback_post, get_cloud_status,
     get_metrics, get_system_info, get_tenants, kill_browsers, open_studio, start_desktop_auth,
@@ -70,14 +66,6 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::secrets::push_secrets,
         crate::api::handlers::secrets::pull_secrets,
         crate::api::handlers::secrets::rotate_secrets,
-        crate::api::handlers::storage::get_workflows,
-        crate::api::handlers::storage::get_workflow_by_id,
-        crate::api::handlers::storage::create_storage_workflow,
-        crate::api::handlers::storage::update_storage_workflow,
-        crate::api::handlers::storage::delete_storage_workflow,
-        crate::api::handlers::storage::import_storage_workflow,
-        crate::api::handlers::storage::get_workflow,
-        crate::api::handlers::storage::save_workflow,
         crate::api::handlers::browsers::get_browsers,
         crate::api::handlers::browsers::get_browser_detail,
         crate::api::handlers::browsers::create_browser,
@@ -154,10 +142,6 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::handlers::secrets::CredentialList,
         crate::api::handlers::secrets::SetSecretRequest,
         crate::api::handlers::secrets::SecretOpResult,
-            crate::api::handlers::storage::WorkflowStorageItem,
-            crate::api::handlers::storage::CreateWorkflowStorageRequest,
-            crate::api::handlers::storage::UpdateWorkflowStorageRequest,
-            crate::api::handlers::storage::DeleteWorkflowResponse,
             crate::core::models::settings::AppSettings,
             crate::core::models::settings::UpdateAppSettingsRequest
         )
@@ -229,17 +213,6 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/history", get(get_history).delete(clear_history))
         .route("/history/{job_id}/logs", get(get_logs))
         .route("/history/{job_id}", delete(delete_history_item))
-        .route(
-            "/storage/workflows",
-            get(get_workflows).post(create_storage_workflow),
-        )
-        .route("/storage/workflows/import", post(import_storage_workflow))
-        .route(
-            "/storage/workflows/{id}",
-            get(get_workflow_by_id)
-                .put(update_storage_workflow)
-                .delete(delete_storage_workflow),
-        )
         .route("/browsers", get(get_browsers).post(create_browser))
         .route("/browsers/auto-detect", post(auto_detect_browsers))
         .route("/browsers/sessions", delete(kill_browsers))
@@ -256,7 +229,6 @@ pub fn create_router(state: crate::AppState) -> Router {
         .route("/browsers/{id}/set-default", post(set_default_browser))
         .route("/browsers/{id}/extensions", post(sideload_extension))
         .route("/browsers/import-csv", post(import_csv))
-        .route("/storage/workflow", get(get_workflow).put(save_workflow))
         .route("/ws", get(ws_handler));
 
     let cors = CorsLayer::new()
