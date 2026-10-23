@@ -1,4 +1,4 @@
-use crate::core::models::storage::{StorageCredential, StorageVariable};
+use crate::core::models::storage::StorageVariable;
 use rusqlite::{Connection, Result, params};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -121,112 +121,6 @@ impl<'a> SqliteStorageRepository<'a> {
         Ok(())
     }
 
-    // --- Credentials ---
-
-    pub fn get_credentials(
-        &self,
-        limit: Option<usize>,
-        offset: Option<usize>,
-        search: Option<&str>,
-    ) -> Result<Vec<StorageCredential>> {
-        let l = limit.map(|v| v as i64).unwrap_or(-1);
-        let o = offset.unwrap_or(0) as i64;
-        let mut creds = Vec::new();
-
-        if let Some(s) = search {
-            let pattern = format!("%{}%", s);
-            let mut stmt = self.conn.prepare(
-                "SELECT id, name, value FROM storage_credentials WHERE (name LIKE ?1 OR id LIKE ?1) ORDER BY created_at ASC LIMIT ?2 OFFSET ?3"
-            )?;
-            let cred_iter = stmt.query_map(params![pattern, l, o], |row| {
-                let id: String = row.get(0)?;
-                let name: String = row.get(1)?;
-                let value: String = row.get(2)?;
-                Ok(StorageCredential {
-                    id: Some(id),
-                    name: Some(name.clone()),
-                    key: Some(name),
-                    value: Some(value),
-                })
-            })?;
-            for c in cred_iter {
-                creds.push(c?);
-            }
-        } else {
-            let mut stmt = self.conn.prepare(
-                "SELECT id, name, value FROM storage_credentials ORDER BY created_at ASC LIMIT ?1 OFFSET ?2"
-            )?;
-            let cred_iter = stmt.query_map(params![l, o], |row| {
-                let id: String = row.get(0)?;
-                let name: String = row.get(1)?;
-                let value: String = row.get(2)?;
-                Ok(StorageCredential {
-                    id: Some(id),
-                    name: Some(name.clone()),
-                    key: Some(name),
-                    value: Some(value),
-                })
-            })?;
-            for c in cred_iter {
-                creds.push(c?);
-            }
-        }
-
-        Ok(creds)
-    }
-
-    pub fn save_credential(&self, cred: &StorageCredential) -> Result<StorageCredential> {
-        let id = cred
-            .id
-            .clone()
-            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-        let name = cred
-            .name
-            .clone()
-            .or_else(|| cred.key.clone())
-            .unwrap_or_default();
-        let raw_val = cred.value.as_deref().unwrap_or_default();
-
-        // Auto-encrypt with AES if not already encrypted
-        let passphrase = std::env::var("AUTOMATION_SECRET_KEY")
-            .or_else(|_| std::env::var("AUTOMATION_PASSPHRASE"))
-            .unwrap_or_else(|_| "automation-storage-secret".to_string());
-
-        let encrypted_val = if raw_val.starts_with("Salted__")
-            || (raw_val.len() > 64 && raw_val[64..].starts_with("Salted__"))
-        {
-            raw_val.to_string()
-        } else {
-            crate::core::crypto::encrypt_secret(raw_val, &passphrase)
-                .unwrap_or_else(|_| raw_val.to_string())
-        };
-
-        let now = Self::current_time_millis();
-
-        self.conn.execute(
-            "INSERT INTO storage_credentials (id, name, value, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT(name) DO UPDATE SET
-                value = excluded.value,
-                updated_at = excluded.updated_at",
-            params![id, name, encrypted_val, now, now],
-        )?;
-
-        Ok(StorageCredential {
-            id: Some(id),
-            name: Some(name.clone()),
-            key: Some(name),
-            value: Some(encrypted_val),
-        })
-    }
-
-    pub fn delete_credential(&self, id_or_name: &str) -> Result<()> {
-        self.conn.execute(
-            "DELETE FROM storage_credentials WHERE id = ?1 OR name = ?1",
-            params![id_or_name],
-        )?;
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -279,34 +173,4 @@ mod tests {
         assert_eq!(vars_deleted.len(), 0);
     }
 
-    #[test]
-    fn test_credentials_auto_aes_encryption() {
-        let db = AutomationDb::new_in_memory().unwrap();
-        let storage = db.storage();
-
-        // 1. Add plaintext credential
-        let cred = StorageCredential {
-            id: None,
-            name: Some("GITHUB_TOKEN".to_string()),
-            key: None,
-            value: Some("ghp_secret_token_123456".to_string()),
-        };
-        let saved = storage.save_credential(&cred).unwrap();
-        let encrypted_val = saved.value.unwrap();
-
-        // Assert it is encrypted (not plaintext)
-        assert_ne!(encrypted_val, "ghp_secret_token_123456");
-        assert!(encrypted_val.len() > 64);
-
-        // 2. Query credential
-        let creds = storage.get_credentials(None, None, None).unwrap();
-        assert_eq!(creds.len(), 1);
-        assert_eq!(creds[0].name.as_deref(), Some("GITHUB_TOKEN"));
-        assert_eq!(creds[0].value.as_deref(), Some(encrypted_val.as_str()));
-
-        // 3. Delete credential
-        storage.delete_credential("GITHUB_TOKEN").unwrap();
-        let creds_deleted = storage.get_credentials(None, None, None).unwrap();
-        assert_eq!(creds_deleted.len(), 0);
-    }
 }

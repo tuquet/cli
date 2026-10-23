@@ -1,9 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-pub use crate::core::models::storage::{
-    StorageCredential, StorageTable, StorageVariable, TableRow,
-};
+pub use crate::core::models::storage::{StorageTable, StorageVariable, TableRow};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
@@ -19,13 +17,11 @@ pub struct StorageActionResponse {
 }
 
 pub mod backup;
-pub mod credentials;
 pub mod tables;
 pub mod variables;
 pub mod workflows;
 
 pub use backup::*;
-pub use credentials::*;
 pub use tables::*;
 pub use variables::*;
 pub use workflows::*;
@@ -104,54 +100,6 @@ mod tests {
         assert_eq!(vars_after.len(), 0);
     }
 
-    #[tokio::test]
-    async fn test_storage_credentials_api_flow() {
-        let state = create_test_state();
-
-        // 1. Add credential
-        let cred_payload = StorageCredential {
-            id: Some("cred_test_1".to_string()),
-            name: Some("AWS Token".to_string()),
-            key: Some("aws_token".to_string()),
-            value: Some("super_secret_aws_token_value".to_string()),
-        };
-        let added = add_credential(State(state.clone()), Json(cred_payload))
-            .await
-            .unwrap();
-        assert_eq!(added.name.as_deref(), Some("AWS Token"));
-
-        // 2. Query credentials
-        let creds = get_credentials(
-            State(state.clone()),
-            Query(GetCredentialsQuery {
-                limit: None,
-                offset: None,
-                search: None,
-            }),
-        )
-        .await
-        .unwrap();
-        assert_eq!(creds.len(), 1);
-        assert_eq!(creds[0].name.as_deref(), Some("AWS Token"));
-
-        // 3. Delete credential
-        let del_res = delete_credential(State(state.clone()), Path("cred_test_1".to_string()))
-            .await
-            .unwrap();
-        assert!(del_res.success);
-
-        let creds_after = get_credentials(
-            State(state),
-            Query(GetCredentialsQuery {
-                limit: None,
-                offset: None,
-                search: None,
-            }),
-        )
-        .await
-        .unwrap();
-        assert_eq!(creds_after.len(), 0);
-    }
 
     #[tokio::test]
     async fn test_storage_tables_and_rows_api_flow() {

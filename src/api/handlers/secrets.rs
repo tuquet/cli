@@ -16,20 +16,21 @@ use axum::{
     extract::{Path as AxumPath, State},
 };
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::AppState;
 use crate::core::error::AutomationError;
 use crate::infrastructure::cloud::SecretClient;
 use worker::core::secrets::{DeviceKeypair, SecretStore};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct SecretRow {
     pub name: String,
     pub key_version: Option<i64>,
 }
 
 /// Schema-level status of the Secret Store (`secrets`).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct SecretStoreStatus {
     pub store_path: String,
     pub device_public_key: Option<String>,
@@ -40,20 +41,20 @@ pub struct SecretStoreStatus {
 }
 
 /// Listing of the `secrets.credentials` resource.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct CredentialList {
     pub local: Vec<SecretRow>,
     pub cloud: Vec<SecretRow>,
     pub cloud_error: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct SetSecretRequest {
     pub name: String,
     pub value: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct SecretOpResult {
     pub ok: bool,
     pub affected: usize,
@@ -65,6 +66,19 @@ fn store() -> SecretStore {
 }
 
 /// GET /api/v1/secrets — schema-level status (no secret material).
+#[utoipa::path(
+    tag = "Secrets",
+    get,
+    path = "/api/v1/secrets",
+    operation_id = "get_secret_store_status",
+    summary = "Secret Store status",
+    description = "Returns the local Secret Store status (store path, device X25519 public key, cloud enrollment, counts). Never returns secret material.",
+    responses(
+        (status = 200, description = "Secret Store status", body = SecretStoreStatus),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn get_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretStoreStatus>, AutomationError> {
@@ -97,6 +111,19 @@ pub async fn get_secrets(
 }
 
 /// GET /api/v1/secrets/credentials — list `secrets.credentials` (local + cloud names).
+#[utoipa::path(
+    tag = "Secrets",
+    get,
+    path = "/api/v1/secrets/credentials",
+    operation_id = "list_credentials",
+    summary = "List credentials",
+    description = "Lists credential names of the tenant (local + cloud). Values are never returned (schema `secrets.credentials`).",
+    responses(
+        (status = 200, description = "Credential names", body = CredentialList),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn list_credentials(
     State(_state): State<AppState>,
 ) -> Result<Json<CredentialList>, AutomationError> {
@@ -128,6 +155,20 @@ pub async fn list_credentials(
 }
 
 /// POST /api/v1/secrets/credentials — create or update a credential (stored locally, encrypted).
+#[utoipa::path(
+    tag = "Secrets",
+    post,
+    path = "/api/v1/secrets/credentials",
+    operation_id = "set_credential",
+    summary = "Create or update a credential",
+    description = "Stores a credential locally, encrypted at rest (AES-256-GCM). Table `secrets.credentials`.",
+    request_body = SetSecretRequest,
+    responses(
+        (status = 200, description = "Stored", body = SecretOpResult),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn set_secret(
     State(_state): State<AppState>,
     Json(req): Json<SetSecretRequest>,
@@ -145,6 +186,19 @@ pub async fn set_secret(
 }
 
 /// DELETE /api/v1/secrets/credentials/{name}
+#[utoipa::path(
+    tag = "Secrets",
+    delete,
+    path = "/api/v1/secrets/credentials/{name}",
+    operation_id = "delete_credential",
+    summary = "Delete a credential",
+    description = "Removes a credential from the local store. Table `secrets.credentials`.",
+    responses(
+        (status = 200, description = "Removed", body = SecretOpResult),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn delete_secret(
     State(_state): State<AppState>,
     AxumPath(name): AxumPath<String>,
@@ -163,6 +217,19 @@ pub async fn delete_secret(
 }
 
 /// POST /api/v1/secrets/credentials/push — upload credentials, client-side encrypted.
+#[utoipa::path(
+    tag = "Secrets",
+    post,
+    path = "/api/v1/secrets/credentials/push",
+    operation_id = "push_credentials",
+    summary = "Push credentials to Cloud",
+    description = "Registers the device X25519 key and uploads client-side-encrypted credentials. Table `secrets.credentials`.",
+    responses(
+        (status = 200, description = "Pushed", body = SecretOpResult),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn push_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {
@@ -181,6 +248,19 @@ pub async fn push_secrets(
 }
 
 /// POST /api/v1/secrets/credentials/pull — receive the sealed DEK, fetch ciphertext, decrypt.
+#[utoipa::path(
+    tag = "Secrets",
+    post,
+    path = "/api/v1/secrets/credentials/pull",
+    operation_id = "pull_credentials",
+    summary = "Pull credentials from Cloud",
+    description = "Receives the tenant DEK (sealed) and decrypts the tenant credentials locally. Table `secrets.credentials`.",
+    responses(
+        (status = 200, description = "Pulled", body = SecretOpResult),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn pull_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {
@@ -197,6 +277,19 @@ pub async fn pull_secrets(
 }
 
 /// POST /api/v1/secrets/tenant-keys/rotate — rotate the tenant DEK (`secrets.tenant_keys`).
+#[utoipa::path(
+    tag = "Secrets",
+    post,
+    path = "/api/v1/secrets/tenant-keys/rotate",
+    operation_id = "rotate_tenant_dek",
+    summary = "Rotate the tenant DEK",
+    description = "Rotates the tenant DEK, re-encrypts every credential and re-seals the DEK for all registered devices. Table `secrets.tenant_keys`.",
+    responses(
+        (status = 200, description = "Rotated", body = SecretOpResult),
+        (status = 400, description = "Invalid request", body = crate::core::error::ApiErrorResponse),
+        (status = 500, description = "Store error", body = crate::core::error::ApiErrorResponse)
+    )
+)]
 pub async fn rotate_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {

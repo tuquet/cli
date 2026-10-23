@@ -19,21 +19,6 @@ pub struct StorageVariable {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-#[schema(example = json!({"id": "cred_1", "name": "Github Auth", "value": "secret"}))]
-/// Stored authentication credential
-pub struct StorageCredential {
-    /// Unique credential identifier
-    pub id: Option<String>,
-    /// Display name of the credential
-    pub name: Option<String>,
-    /// Credential lookup key
-    pub key: Option<String>,
-    /// Encrypted or plaintext secret value
-    pub value: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
 #[schema(example = json!({"id": "tbl_1", "name": "Users"}))]
 /// User data table schema in Automation storage
 pub struct StorageTable {

@@ -85,15 +85,12 @@ pub fn init_db(conn: &Connection) -> Result<()> {
             updated_at INTEGER
         );
 
-        CREATE TABLE IF NOT EXISTS storage_credentials (
-            id TEXT PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
-            value TEXT NOT NULL,
-            created_at INTEGER,
-            updated_at INTEGER
-        );
         "#,
     )?;
+
+    // Rip-and-replace: the legacy Automa-style `storage_credentials` table is removed
+    // (credentials now live in the encrypted Secret Store — see SPEC-secret-store).
+    let _ = conn.execute("DROP TABLE IF EXISTS storage_credentials", []);
 
     // Safe & Idempotent Schema Migration (Edge Case 6.1):
     // Ensure 'extensions' column exists on 'browsers' table for pre-existing databases

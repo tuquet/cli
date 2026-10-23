@@ -6,14 +6,14 @@ pub mod jobs;
 pub mod schema;
 pub mod settings;
 pub mod tables;
-pub mod variables_credentials;
+pub mod variables;
 pub mod workflows;
 
 pub use browsers::{Browser, SqliteBrowserRepository};
 pub use jobs::{JobDetails, JobHistoryItem, JobInfo, LogItem, SqliteJobRepository};
 pub use settings::SqliteSettingsRepository;
 pub use tables::SqliteTableRepository;
-pub use variables_credentials::SqliteStorageRepository;
+pub use variables::SqliteStorageRepository;
 pub use workflows::{DbWorkflow, SqliteWorkflowRepository};
 
 pub struct AutomationDb {
