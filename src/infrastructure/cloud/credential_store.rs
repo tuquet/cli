@@ -102,15 +102,30 @@ impl CredentialStore {
             .join(".identity.json")
     }
 
+    /// Path of the local key used to encrypt the identity file at rest.
+    fn key_path() -> PathBuf {
+        crate::config::canonical_dir().join("system").join(".identity_key")
+    }
+
     pub async fn load(data_dir: &str) -> Option<DeviceCredentials> {
         let path = Self::get_path(data_dir);
-        if path.exists()
-            && let Ok(content) = tokio::fs::read_to_string(&path).await
-            && let Ok(creds) = serde_json::from_str::<DeviceCredentials>(&content)
-        {
-            return Some(creds);
+        if !path.exists() {
+            return None;
         }
-        None
+        let content = tokio::fs::read_to_string(&path).await.ok()?;
+        // Encrypted envelope (default) or legacy plaintext identity file.
+        let json = if content.contains("\"ciphertext\"") {
+            match worker::core::secrets::decrypt_at_rest(&Self::key_path(), &content) {
+                Ok(j) => j,
+                Err(e) => {
+                    tracing::warn!("Failed to decrypt identity file: {}", e);
+                    return None;
+                }
+            }
+        } else {
+            content
+        };
+        serde_json::from_str::<DeviceCredentials>(&json).ok()
     }
 
     pub async fn save(
@@ -122,7 +137,14 @@ impl CredentialStore {
             let _ = tokio::fs::create_dir_all(parent).await;
         }
         let json = serde_json::to_string_pretty(creds)?;
-        tokio::fs::write(&path, json).await?;
+        // Encrypt the identity (device_token + Supabase access/refresh tokens) at rest.
+        let envelope = worker::core::secrets::encrypt_at_rest(&Self::key_path(), &json)?;
+        tokio::fs::write(&path, envelope).await?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = tokio::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).await;
+        }
         Ok(())
     }
 

@@ -138,6 +138,9 @@ pub enum SecretSubcommands {
     /// List secrets stored in Cloud (names only)
     #[command(name = "remote", aliases = ["list-remote"])]
     Remote,
+    /// Rotate the tenant DEK (re-encrypts values, re-seals for all devices)
+    #[command(name = "rotate")]
+    Rotate,
     /// Print the Secret Store file path
     #[command(name = "path")]
     Path,
