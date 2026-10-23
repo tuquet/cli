@@ -91,9 +91,56 @@ pub enum Commands {
         command: Option<BrowserCommands>,
     },
 
+    /// Manage the local encrypted Secret Store (referenced as {{secrets.*}})
+    #[command(name = "secret", aliases = ["secrets"])]
+    Secret {
+        #[command(subcommand)]
+        command: Option<SecretSubcommands>,
+    },
+
     /// Run Model Context Protocol (MCP) JSON-RPC 2.0 stdio server for AI agents
     #[command(name = "mcp", hide = true)]
     Mcp,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum SecretSubcommands {
+    /// Initialise the local Secret Store key (~/.tq/system/.secret_key)
+    #[command(name = "init")]
+    Init,
+    /// Store or update a secret value
+    #[command(name = "set")]
+    Set {
+        /// Secret name (referenced as {{secrets.<name>}})
+        name: String,
+        /// Secret value
+        value: String,
+    },
+    /// List stored secret names (values are never printed)
+    #[command(name = "list", aliases = ["ls"])]
+    List {
+        /// Format: table or json
+        #[arg(short = 'f', long, default_value = "table")]
+        format: String,
+    },
+    /// Remove a secret
+    #[command(name = "rm", aliases = ["remove", "delete"])]
+    Rm {
+        /// Secret name
+        name: String,
+    },
+    /// Push local secrets to the Cloud secret store (device-authenticated)
+    #[command(name = "push", aliases = ["upload"])]
+    Push,
+    /// Pull secrets from the Cloud onto this device (portable, no re-entry)
+    #[command(name = "pull", aliases = ["download"])]
+    Pull,
+    /// List secrets stored in Cloud (names only)
+    #[command(name = "remote", aliases = ["list-remote"])]
+    Remote,
+    /// Print the Secret Store file path
+    #[command(name = "path")]
+    Path,
 }
 
 #[derive(Subcommand, Debug, Clone)]

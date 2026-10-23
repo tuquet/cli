@@ -358,6 +358,20 @@ impl JobCoordinator {
             }
         }
 
+        // Seed secrets from the local encrypted Secret Store, referenced in workflows
+        // as `{{secrets.<name>}}`. Values stay in memory only (never logged/persisted).
+        {
+            let store = worker::core::secrets::SecretStore::new();
+            match store.load_all() {
+                Ok(map) => {
+                    for (k, v) in &map {
+                        initial_state.set_secret(k, serde_json::Value::String(v.clone()));
+                    }
+                }
+                Err(e) => tracing::warn!("Secret Store unavailable: {}", e),
+            }
+        }
+
         let executor = worker::drivers::cdp::WorkflowDagExecutor::new(
             graph,
             std::sync::Arc::new(cdp_session),

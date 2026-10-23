@@ -12,6 +12,7 @@ pub mod inbox;
 pub mod mcp;
 pub mod port;
 pub mod schema;
+pub mod secret;
 pub mod setup;
 pub mod status;
 pub mod tenant;

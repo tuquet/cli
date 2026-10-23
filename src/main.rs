@@ -73,6 +73,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(cmd) => commands::browser::handle(cmd).await,
             None => commands::browser::handle_interactive().await,
         },
+        Some(Commands::Secret { command }) => match command {
+            Some(cmd) => commands::secret::handle(cmd).await,
+            None => {
+                let mut cmd = Cli::command();
+                if let Some(sub) = cmd.find_subcommand_mut("secret") {
+                    let _ = sub.print_help();
+                }
+                Ok(())
+            }
+        },
         Some(Commands::Mcp) => commands::mcp::run().await,
         None => {
             let readiness = automation_core::core::readiness::quick_probe();
