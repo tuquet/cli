@@ -11,7 +11,8 @@ use crate::api::handlers::jobs::{
 };
 use crate::api::handlers::lint::lint_workflow;
 use crate::api::handlers::secrets::{
-    delete_secret, get_secrets, pull_secrets, push_secrets, rotate_secrets, set_secret,
+    delete_secret, get_secrets, list_credentials, pull_secrets, push_secrets, rotate_secrets,
+    set_secret,
 };
 use crate::api::handlers::settings::{get_settings, patch_settings, update_settings};
 use crate::api::handlers::sse::sse;
@@ -221,12 +222,13 @@ pub fn create_router(state: crate::AppState) -> Router {
             "/system/settings",
             get(get_settings).put(update_settings).patch(patch_settings),
         )
-        // Secret Store ({{secrets.*}}) — consumed by the workstation console UI
-        .route("/secrets", get(get_secrets).post(set_secret))
-        .route("/secrets/push", post(push_secrets))
-        .route("/secrets/pull", post(pull_secrets))
-        .route("/secrets/rotate", post(rotate_secrets))
-        .route("/secrets/{name}", delete(delete_secret))
+        // Secret Store — paths mirror the `secrets` schema / table names (SPEC-core-route-foundation §5.1)
+        .route("/secrets", get(get_secrets))
+        .route("/secrets/credentials", get(list_credentials).post(set_secret))
+        .route("/secrets/credentials/{name}", delete(delete_secret))
+        .route("/secrets/credentials/push", post(push_secrets))
+        .route("/secrets/credentials/pull", post(pull_secrets))
+        .route("/secrets/tenant-keys/rotate", post(rotate_secrets))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))
         .route("/jobs/{job_id}", delete(kill_job))
