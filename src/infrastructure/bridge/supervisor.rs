@@ -153,14 +153,15 @@ impl BridgeSupervisor {
                 .arg("-o")
                 .arg(format!(
                     "ServerAliveInterval={}",
-                    srv.server_alive_interval.unwrap_or(15)
+                    srv.server_alive_interval.unwrap_or(30)
                 ))
                 .arg("-o")
                 .arg(format!(
                     "ServerAliveCountMax={}",
-                    srv.server_alive_count_max.unwrap_or(3)
+                    srv.server_alive_count_max.unwrap_or(120)
                 ))
                 .arg("-o")
+                .arg("TCPKeepAlive=yes")
                 .arg("ExitOnForwardFailure=yes");
 
             if let Some(ref ciphers) = srv.ciphers

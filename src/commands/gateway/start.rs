@@ -1,10 +1,10 @@
 use crate::infrastructure::bridge::{
-    BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge, ServerConfig, ServerSelector,
+    BridgeConfig, BridgeSupervisor, ServerConfig, ServerSelector,
     check_dependencies, probe_port,
 };
 use crate::ui::prompt::{
-    ClackSpinner, clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok,
-    clack_step_skip, clack_step_warn,
+    clack_intro, clack_outro, clack_select, clack_step_err, clack_step_ok, clack_step_warn,
+    ClackOption, ClackSpinner, is_interactive_tty,
 };
 
 pub struct BridgeStartOptions<'a> {
@@ -15,7 +15,7 @@ pub struct BridgeStartOptions<'a> {
     pub foreground: bool,
 }
 
-pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn start_bridge(mut opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn std::error::Error>> {
     let config = BridgeConfig::load()?;
 
     if config.servers.is_empty() {
@@ -26,13 +26,93 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         .into());
     }
 
-    clack_intro("tq bridge", "Multi-VPS Mesh & Tunnel Controller");
+    let enabled_servers = ServerSelector::get_enabled(&config);
 
+    // Interactive prompt only when on a TTY and no explicit server/tag/http options provided
+    let is_interactive = is_interactive_tty() && opts.server.is_none() && opts.tag.is_none() && !opts.http && !opts.ssh;
+
+    if is_interactive {
+        clack_intro("tq gateway start", "Autonomous SOCKS5 & HTTP Forwarder");
+
+        // 1. Select gateway mode (Zero icons, plain technical)
+        let mode_options = vec![
+            ClackOption::new(
+                "full",
+                "full",
+                "SOCKS5 (:1080) and HTTP forwarder (:8118) (default)",
+            ),
+            ClackOption::new(
+                "socks5",
+                "socks5",
+                "SOCKS5 dynamic proxy only (:1080)",
+            ),
+            ClackOption::new(
+                "http",
+                "http",
+                "HTTP-to-SOCKS5 forwarder only (:8118)",
+            ),
+        ];
+
+        if let Ok(Some(idx)) = clack_select("Select gateway mode:", &mode_options, 0, 5) {
+            match idx {
+                0 => {
+                    opts.http = true;
+                }
+                1 => {
+                    opts.http = false;
+                }
+                2 => {
+                    opts.http = true;
+                }
+                _ => {}
+            }
+        }
+
+        // 2. Select target server: ONLY ask if more than 1 server is enabled!
+        if enabled_servers.len() > 1 {
+            let mut srv_options = Vec::new();
+            for (id, srv) in &enabled_servers {
+                let desc = srv.cf_hostname.as_deref().or(srv.host.as_deref()).unwrap_or("active");
+                srv_options.push(ClackOption::new(id.as_str(), id.as_str(), desc));
+            }
+            srv_options.push(ClackOption::new("all", "all", "all enabled servers"));
+
+            if let Ok(Some(idx)) = clack_select("Select target server:", &srv_options, 0, 7) {
+                if idx < srv_options.len() - 1 {
+                    let chosen = srv_options[idx].label.clone();
+                    return Box::pin(start_bridge_resolved(opts, chosen)).await;
+                }
+            }
+        } else if let Some((single_id, single_srv)) = enabled_servers.first() {
+            let desc = single_srv.cf_hostname.as_deref().or(single_srv.host.as_deref()).unwrap_or("active");
+            eprintln!("Target server: {} ({})", single_id, desc);
+        }
+    }
+
+    start_bridge_core(opts, &config, enabled_servers).await
+}
+
+async fn start_bridge_resolved(
+    opts: BridgeStartOptions<'_>,
+    server_target: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let config = BridgeConfig::load()?;
+    let mut resolved_opts = opts;
+    resolved_opts.server = Some(&server_target);
+    let enabled_servers = ServerSelector::get_enabled(&config);
+    start_bridge_core(resolved_opts, &config, enabled_servers).await
+}
+
+async fn start_bridge_core(
+    opts: BridgeStartOptions<'_>,
+    config: &BridgeConfig,
+    enabled_servers: Vec<(&String, &ServerConfig)>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // Determine target servers
     let servers_to_start: Vec<(&String, &ServerConfig)> = match (opts.server, opts.tag) {
         // Tag filtering
         (_, Some(tag)) => {
-            let matches = ServerSelector::filter_by_tag(&config, tag);
+            let matches = ServerSelector::filter_by_tag(config, tag);
             if matches.is_empty() {
                 clack_step_err(format!("No enabled servers found matching tag '{}'", tag));
                 return Err(format!("No enabled servers found matching tag '{}'", tag).into());
@@ -42,9 +122,9 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         // Specific server name, pattern, or "all"
         (Some(target), None) => {
             if target.eq_ignore_ascii_case("all") {
-                ServerSelector::get_enabled(&config)
+                enabled_servers
             } else if target.contains('*') {
-                let matches = ServerSelector::filter_by_pattern(&config, target);
+                let matches = ServerSelector::filter_by_pattern(config, target);
                 if matches.is_empty() {
                     clack_step_err(format!("No enabled servers matching pattern '{}'", target));
                     return Err(format!("No enabled servers matching pattern '{}'", target).into());
@@ -71,19 +151,8 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             }
         }
         // Default: Start all enabled servers
-        (None, None) => ServerSelector::get_enabled(&config),
+        (None, None) => enabled_servers,
     };
-
-    // Report skipped disabled servers when starting all or by pattern
-    let disabled = ServerSelector::get_disabled(&config);
-    if opts.server.is_none()
-        || opts.server == Some("all")
-        || opts.server.map(|s| s.contains('*')).unwrap_or(false)
-    {
-        for (id, _) in &disabled {
-            clack_step_skip(format!("SKIPPED Server '{}' (disabled in bridge.json)", id));
-        }
-    }
 
     if servers_to_start.is_empty() {
         clack_step_warn("No enabled servers to start. (Run 'tq bridge enable' to enable one)");
@@ -91,12 +160,7 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         return Ok(());
     }
 
-    clack_step_info(format!(
-        "Activating bridge connection(s) for {} server(s)...",
-        servers_to_start.len()
-    ));
-
-    let mut started_count = 0;
+    let mut _started_count = 0;
     let mut last_socks_port = 1080;
 
     let mut sorted_servers = servers_to_start;
@@ -122,11 +186,11 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
             Ok(result) => {
                 let port = result.socks_port.unwrap_or(1080);
                 sp.finish(format!(
-                    "Server '{}' is ready! SOCKS5 proxy active on 127.0.0.1:{}",
+                    "Server '{}' is ready. SOCKS5 proxy active on 127.0.0.1:{}",
                     result.server_id, port
                 ));
                 last_socks_port = port;
-                started_count += 1;
+                _started_count += 1;
             }
             Err(e) => {
                 sp.fail(format!("Failed to start server '{}': {}", srv_id, e));
@@ -134,39 +198,33 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
         }
     }
 
+    let mut http_active = false;
+    let mut http_port = 8118;
     if opts.http {
-        let default_srv_socks = config
-            .workstation
-            .as_ref()
-            .and_then(|w| w.default_server.as_deref())
-            .and_then(|id| config.servers.get(id))
-            .and_then(|s| s.socks_port)
-            .unwrap_or(last_socks_port);
-
-        let http_port = config
+        let configured_http_port = config
             .workloads
             .as_ref()
             .and_then(|w| w.supabase.as_ref())
             .map(|s| s.http_port)
             .unwrap_or(8118);
 
-        if opts.foreground {
-            let bridge = HttpToSocks5Bridge::new(http_port, default_srv_socks);
-            bridge.start().await?;
+        http_port = configured_http_port;
+
+        if probe_port(configured_http_port) {
             clack_step_ok(format!(
-                "Embedded HTTP-to-SOCKS5 adapter active on 127.0.0.1:{} -> 127.0.0.1:{}",
-                http_port, default_srv_socks
+                "HTTP-to-SOCKS5 forwarder already active on 127.0.0.1:{}",
+                configured_http_port
             ));
+            http_active = true;
         } else {
-            let current_exe =
-                std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("tuquet"));
-            let mut cmd = std::process::Command::new(current_exe);
-            cmd.arg("bridge")
+            let exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("tq"));
+            let mut cmd = std::process::Command::new(exe);
+            cmd.arg("gateway")
                 .arg("start")
                 .arg("--http")
                 .arg("--foreground");
             if let Some(srv) = opts.server {
-                cmd.arg(srv);
+                cmd.arg("-s").arg(srv);
             }
             if let Some(tag) = opts.tag {
                 cmd.arg("-t").arg(tag);
@@ -192,43 +250,40 @@ pub async fn start_bridge(opts: BridgeStartOptions<'_>) -> Result<(), Box<dyn st
                     let _ = std::fs::write(pid_path, json);
                 }
                 clack_step_ok(format!(
-                    "Embedded HTTP-to-SOCKS5 adapter active on 127.0.0.1:{} (Background daemon PID {})",
+                    "HTTP-to-SOCKS5 forwarder active on 127.0.0.1:{} (pid: {})",
                     http_port,
                     child.id()
                 ));
+                http_active = true;
             } else {
                 clack_step_err("Failed to spawn background daemon for HTTP bridge");
             }
         }
     }
 
-    clack_outro(&format!(
-        "READY Active servers: {}/{} online.",
-        started_count,
-        config.servers.len()
-    ));
+    eprintln!("\nGateway online:");
+    eprintln!("  SOCKS5 proxy   : 127.0.0.1:{}", last_socks_port);
+    if http_active {
+        eprintln!("  HTTP forwarder : 127.0.0.1:{}", http_port);
+    }
+    eprintln!("  Supervisor     : active (probe: 5s, auto-heal: enabled)");
+    eprintln!("\n[watchdog] Press Ctrl+C to detach (daemon keeps running). Run 'tq gateway stop' to terminate.\n");
 
-    if opts.foreground {
-        clack_step_info("Bridge supervisor running in foreground (Ctrl+C to stop)...");
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
-        loop {
-            tokio::select! {
-                _ = tokio::signal::ctrl_c() => {
-                    clack_step_warn("Shutdown signal received. Terminating all bridge tunnels...");
-                    let _ = BridgeSupervisor::stop_all();
-                    clack_outro("All bridge tunnels stopped cleanly.");
-                    break;
-                }
-                _ = interval.tick() => {
-                    for (srv_id, srv) in &sorted_servers {
-                        let socks_port = srv.socks_port.unwrap_or(1080);
-                        if !probe_port(socks_port) {
-                            clack_step_warn(format!(
-                                "Tunnel for '{}' dropped on port {}. Reconnecting...",
-                                srv_id, socks_port
-                            ));
-                            let _ = BridgeSupervisor::start_server(srv_id, srv, opts.ssh).await;
-                        }
+    // Unified Watchdog Loop: Streams live health and detaches cleanly on Ctrl+C without killing tunnels
+    let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
+    loop {
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {
+                eprintln!("\nDetached. Gateway watchdog continues running in background.");
+                eprintln!("Use 'tq gateway status' to inspect or 'tq gateway stop' to terminate.");
+                break;
+            }
+            _ = interval.tick() => {
+                for (srv_id, srv) in &sorted_servers {
+                    let socks_port = srv.socks_port.unwrap_or(1080);
+                    if !probe_port(socks_port) {
+                        eprintln!("[watchdog] WARN: Port {} dropped. Reconnecting to '{}'...", socks_port, srv_id);
+                        let _ = BridgeSupervisor::start_server(srv_id, srv, opts.ssh).await;
                     }
                 }
             }
