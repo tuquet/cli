@@ -1,4 +1,4 @@
-use crate::infrastructure::bridge::{BridgeConfig, check_dependencies, probe_port_async};
+use crate::infrastructure::gateway::{BridgeConfig, check_dependencies, probe_port_async};
 use crate::ui::{
     Card, Column, Table, badge_online, badge_warn, create_network_topology_card,
     default_workstation_endpoints, respond_with,
@@ -33,8 +33,8 @@ pub async fn show_status(
         let socks_port = srv.socks_port.unwrap_or(1080);
         probe_futures.push(async move {
             tokio::join!(
-                crate::infrastructure::bridge::probe_port_async(local_port),
-                crate::infrastructure::bridge::probe_port_async(socks_port),
+                crate::infrastructure::gateway::probe_port_async(local_port),
+                crate::infrastructure::gateway::probe_port_async(socks_port),
             )
         });
     }
@@ -239,7 +239,7 @@ pub async fn show_status(
         let mut workload_card = create_network_topology_card(
             "WORKLOAD TOPOLOGY & LISTENERS",
             &endpoints,
-            Some("Start workloads with 'tq bridge start' (add --http for Supabase)"),
+            Some("Start workloads with 'tq gateway start' (add --http for Supabase)"),
         );
         workload_card.with_min_width(74);
         workload_card.print();

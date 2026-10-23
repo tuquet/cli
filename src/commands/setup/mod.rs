@@ -1,4 +1,4 @@
-pub mod bridge;
+pub mod gateway;
 pub mod browser;
 pub mod cloud;
 pub mod core;
@@ -23,7 +23,7 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             SetupComponent::Bridge => {
-                bridge::run(true).await?;
+                gateway::run(true).await?;
                 return Ok(());
             }
             SetupComponent::Browser => {
@@ -79,9 +79,9 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if want_bridge {
-        bridge::run(is_interactive).await?;
+        gateway::run(is_interactive).await?;
     } else {
-        clack_step_skip("Specter Bridge (configure anytime via 'tq setup bridge')");
+        clack_step_skip("Specter Bridge (configure anytime via 'tq setup gateway')");
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

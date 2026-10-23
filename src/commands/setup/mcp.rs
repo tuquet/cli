@@ -1,6 +1,6 @@
 use serde_json::json;
 use std::path::{Path, PathBuf};
-use crate::infrastructure::bridge::tools::find_executable;
+use crate::infrastructure::gateway::tools::find_executable;
 use crate::ui::prompt::{ClackOption, clack_multiselect, clack_step_ok, is_interactive_tty};
 
 pub struct AgentTarget {

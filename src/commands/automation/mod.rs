@@ -30,7 +30,7 @@ pub async fn handle(command: AutomaSubcommands) -> Result<(), Box<dyn std::error
         } => {
             let target_workflow = workflow.or(workflow_pos);
             if safe {
-                if !crate::infrastructure::bridge::probe_port(1080) {
+                if !crate::infrastructure::gateway::probe_port(1080) {
                     crate::ui::Notify::info("Safe mode: Gateway is offline. Auto-starting gateway...");
                     let _ = crate::commands::gateway::start::start_bridge(crate::commands::gateway::start::BridgeStartOptions {
                         server: None, tag: None, http: true, ssh: false, foreground: false,

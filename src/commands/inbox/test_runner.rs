@@ -90,7 +90,7 @@ pub async fn run_acceptance_test(
         });
     }
 
-    // 3. Remote Endpoint Connectivity (Graceful fallback for offline / bridge-isolated workstations)
+    // 3. Remote Endpoint Connectivity (Graceful fallback for offline / gateway-isolated workstations)
     if remote {
         let t2 = Instant::now();
         match cloud.ping().await {
@@ -138,7 +138,7 @@ pub async fn run_acceptance_test(
                 checks.push(AcceptanceCheckResult {
                     name: "Remote Cloud Endpoint".to_string(),
                     status: "STANDBY".to_string(),
-                    detail: "Standby / Restricted network (Start bridge if sync needed)"
+                    detail: "Standby / Restricted network (Start gateway if sync needed)"
                         .to_string(),
                     duration_ms: dur2,
                     passed: true, // Non-fatal for offline MMO execution

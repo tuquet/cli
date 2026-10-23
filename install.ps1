@@ -211,7 +211,7 @@ Write-Host "    tq tui              Launch Mission Control terminal dashboard" -
 Write-Host "    tq browser launch   Launch Antidetect Chromium browser sandbox" -ForegroundColor Cyan
 Write-Host "    tq doctor           Check environment and system shims" -ForegroundColor Cyan
 Write-Host "    tq status           Inspect unified services dashboard" -ForegroundColor Cyan
-Write-Host "    tq bridge start     Start secure SOCKS5 mesh tunnel" -ForegroundColor Cyan
+Write-Host "    tq gateway start     Start secure SOCKS5 mesh tunnel" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Single Source of Truth Root: $TqRoot" -ForegroundColor Gray
 Write-Host ""

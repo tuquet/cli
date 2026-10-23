@@ -16,7 +16,7 @@ fn test_manifest_schema_and_json_validity() {
 
     // 2. Canonical pillars check (5 microservice storage pillars + execution runtimes)
     let required_pillars = [
-        "system", "automa", "browser", "bridge", "faker", "runner", "cloud", "inbox",
+        "system", "automa", "browser", "gateway", "faker", "runner", "cloud", "inbox",
     ];
     for p in &required_pillars {
         assert!(
@@ -194,10 +194,10 @@ fn test_runtime_manifest_queries() {
         "Expected browser commands in manifest"
     );
 
-    let bridge_cmds = list_by_pillar("bridge");
+    let bridge_cmds = list_by_pillar("gateway");
     assert!(
         !bridge_cmds.is_empty(),
-        "Expected bridge commands in manifest"
+        "Expected gateway commands in manifest"
     );
 
     let auth_cmd = find_by_route(&["auth", "whoami"]);
@@ -211,7 +211,7 @@ fn test_runtime_manifest_queries() {
 #[test]
 fn test_config_schemas_contract() {
     let services = [
-        "bridge", "browser", "automa", "runner", "faker", "system", "inbox",
+        "gateway", "browser", "automa", "runner", "faker", "system", "inbox",
     ];
     for s in services {
         let path = std::path::Path::new("schema/config").join(format!("{}.schema.json", s));

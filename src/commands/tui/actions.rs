@@ -1,8 +1,8 @@
 use super::state::TuiState;
-use crate::infrastructure::bridge::BridgeSupervisor;
+use crate::infrastructure::gateway::BridgeSupervisor;
 
 pub async fn toggle_bridge(state: &mut TuiState) {
-    if state.bridge.socks5_online || state.bridge.http_online {
+    if state.gateway.socks5_online || state.gateway.http_online {
         state.status_message = "Stopping Specter Bridge tunnels...".to_string();
         let _ = BridgeSupervisor::stop_all();
         state.refresh().await;

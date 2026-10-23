@@ -131,7 +131,7 @@ impl Default for CloudState {
 #[derive(Debug, Clone)]
 pub struct TuiState {
     pub active_tab: ActiveTab,
-    pub bridge: BridgeState,
+    pub gateway: BridgeState,
     pub browser: BrowserState,
     pub runner: RunnerState,
     pub cloud: CloudState,
@@ -144,7 +144,7 @@ impl Default for TuiState {
     fn default() -> Self {
         Self {
             active_tab: ActiveTab::Workflow,
-            bridge: BridgeState::default(),
+            gateway: BridgeState::default(),
             browser: BrowserState::default(),
             runner: RunnerState::default(),
             cloud: CloudState::default(),
@@ -162,8 +162,8 @@ impl TuiState {
         self.last_tick = Instant::now();
 
         // 1. Probe Bridge
-        let bridge_cfg = crate::infrastructure::bridge::BridgeConfig::load()
-            .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
+        let bridge_cfg = crate::infrastructure::gateway::BridgeConfig::load()
+            .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
         let git_port = bridge_cfg
             .workloads
             .as_ref()
@@ -183,12 +183,12 @@ impl TuiState {
             .unwrap_or(2222);
 
         let (git_active, http_active, ssh_active) = tokio::join!(
-            crate::infrastructure::bridge::probe_port_async(git_port),
-            crate::infrastructure::bridge::probe_port_async(http_port),
-            crate::infrastructure::bridge::probe_port_async(ssh_port),
+            crate::infrastructure::gateway::probe_port_async(git_port),
+            crate::infrastructure::gateway::probe_port_async(http_port),
+            crate::infrastructure::gateway::probe_port_async(ssh_port),
         );
 
-        self.bridge = BridgeState {
+        self.gateway = BridgeState {
             socks5_online: git_active,
             socks5_port: git_port,
             http_online: http_active,

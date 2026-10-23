@@ -6,7 +6,7 @@ use crate::commands::dev::history::load_history;
 use crate::commands::dev::scanner::{
     DiscoveredPackage, filter_packages, scan_machine_packages, scan_workspace_packages,
 };
-use crate::infrastructure::bridge::tools::find_executable;
+use crate::infrastructure::gateway::tools::find_executable;
 use crate::ui::{
     ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
     clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,

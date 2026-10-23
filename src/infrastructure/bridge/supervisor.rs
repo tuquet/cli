@@ -31,7 +31,7 @@ pub struct BridgeSupervisor;
 impl BridgeSupervisor {
     pub fn pids_dir() -> PathBuf {
         let dir = super::config::BridgeConfig::canonical_dir()
-            .join("bridge")
+            .join("gateway")
             .join("pids");
         let _ = fs::create_dir_all(&dir);
         dir
@@ -271,7 +271,7 @@ impl BridgeSupervisor {
         Ok(())
     }
 
-    /// Stops all running bridge processes and cleans up state
+    /// Stops all running gateway processes and cleans up state
     pub fn stop_all() -> Result<(), Box<dyn std::error::Error>> {
         let mut sys = System::new_all();
         sys.refresh_all();
@@ -312,7 +312,7 @@ impl BridgeSupervisor {
                 (vec!["2222".to_string()], vec!["1080".to_string()])
             };
 
-        // 3. Proactively stop any residual bridge processes matching configured ports
+        // 3. Proactively stop any residual gateway processes matching configured ports
         for (pid, process) in sys.processes() {
             let name = process.name().to_string_lossy().to_lowercase();
             let cmdline = process

@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tracing::{debug, info, warn};
 
-/// Pure Rust embedded HTTP CONNECT -> SOCKS5 bridge server.
+/// Pure Rust embedded HTTP CONNECT -> SOCKS5 gateway server.
 /// Eliminates the external sing-box dependency completely.
 pub struct HttpToSocks5Bridge {
     listen_port: u16,

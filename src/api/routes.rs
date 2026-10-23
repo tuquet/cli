@@ -102,7 +102,7 @@ use utoipa_swagger_ui::SwaggerUi;
     info(
         title = "CLI & Core Bridge API",
         version = "1.0.0",
-        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage bridge for the Ecosystem.",
+        description = "Embedded Backend for Frontend (BFF) Gateway, WebSocket/SSE event hub, and SQLite storage gateway for the Ecosystem.",
         contact(
             name = "Ecosystem",
             url = "https://github.com/tuquet/cli"

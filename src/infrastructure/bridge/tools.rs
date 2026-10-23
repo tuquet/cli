@@ -45,7 +45,7 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
         }
         if name == "cloudflared" {
             let cf = crate::config::canonical_ssot_dir()
-                .join("bridge")
+                .join("gateway")
                 .join("bin")
                 .join("cloudflared.exe");
             if cf.is_file() {
@@ -87,7 +87,7 @@ pub fn find_executable(name: &str) -> Option<PathBuf> {
         }
         if name == "cloudflared" {
             let cf = crate::config::canonical_ssot_dir()
-                .join("bridge")
+                .join("gateway")
                 .join("bin")
                 .join("cloudflared");
             if cf.is_file() {
@@ -151,7 +151,7 @@ pub fn unwrap_scoop_shim(path: &Path) -> PathBuf {
     path.to_path_buf()
 }
 
-/// Check status of all required external bridge dependencies.
+/// Check status of all required external gateway dependencies.
 pub fn check_dependencies() -> Vec<ToolCheckResult> {
     let mut results = Vec::new();
 

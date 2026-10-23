@@ -145,7 +145,7 @@ impl BridgeConfig {
         crate::config::canonical_ssot_dir()
     }
 
-    /// Single Canonical config path: ~/.tq/bridge/bridge.json (SSOT)
+    /// Single Canonical config path: ~/.tq/gateway/gateway.json (SSOT)
     pub fn config_path() -> PathBuf {
         crate::config::canonical_ssot_dir()
             .join(crate::constants::PILLAR_BRIDGE)
@@ -166,7 +166,7 @@ impl BridgeConfig {
         Ok(Self::default_config())
     }
 
-    /// Save configuration back to canonical file ~/.tq/bridge/bridge.json
+    /// Save configuration back to canonical file ~/.tq/gateway/gateway.json
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let path = Self::config_path();
         if let Some(parent) = path.parent() {

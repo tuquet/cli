@@ -104,7 +104,7 @@ pub enum SchemaSubcommands {
     /// List or export all commands declared in the schema manifest
     #[command(name = "commands", aliases = ["cmds"])]
     Commands {
-        /// Filter commands by microservice pillar domain (system, automa, browser, bridge, faker, runner, cloud)
+        /// Filter commands by microservice pillar domain (system, automa, browser, gateway, faker, runner, cloud)
         #[arg(short, long)]
         pillar: Option<String>,
 
@@ -115,7 +115,7 @@ pub enum SchemaSubcommands {
     /// Export the JSON Schema definition for a microservice configuration file
     #[command(name = "config")]
     Config {
-        /// Service configuration schema to output (bridge, browser, automa, runner, faker, system)
+        /// Service configuration schema to output (gateway, browser, automa, runner, faker, system)
         #[arg(value_name = "SERVICE")]
         service: Option<String>,
     },
@@ -149,7 +149,7 @@ pub enum BridgeSubcommands {
         format: crate::ui::FormatArgs,
     },
 
-    /// Start a bridge connection for configured servers (default: all enabled)
+    /// Start a gateway connection for configured servers (default: all enabled)
     #[command(name = "start")]
     Start {
         /// Target server identifier or pattern (e.g. my-vps, vps-*, or omit for all enabled)
@@ -160,7 +160,7 @@ pub enum BridgeSubcommands {
         #[arg(short = 't', long)]
         tag: Option<String>,
 
-        /// Also start the pure Rust embedded HTTP-to-SOCKS5 bridge (port 8118)
+        /// Also start the pure Rust embedded HTTP-to-SOCKS5 gateway (port 8118)
         #[arg(long)]
         http: bool,
 
@@ -173,15 +173,15 @@ pub enum BridgeSubcommands {
         foreground: bool,
     },
 
-    /// Stop running bridge tunnels and proxy daemons
+    /// Stop running gateway tunnels and proxy daemons
     #[command(name = "stop")]
     Stop {
-        /// Server identifier to stop (or 'all' to terminate all bridge processes)
+        /// Server identifier to stop (or 'all' to terminate all gateway processes)
         #[arg(value_name = "SERVER")]
         server: Option<String>,
     },
 
-    /// Enable a server in bridge configuration (~/.tq/bridge/bridge.json)
+    /// Enable a server in gateway configuration (~/.tq/gateway/gateway.json)
     #[command(name = "enable")]
     Enable {
         /// Server identifier to enable (e.g. my-vps, may-b; omit to select interactively)
@@ -189,7 +189,7 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Disable a server in bridge configuration (~/.tq/bridge/bridge.json)
+    /// Disable a server in gateway configuration (~/.tq/gateway/gateway.json)
     #[command(name = "disable")]
     Disable {
         /// Server identifier to disable (e.g. my-vps, may-b; omit to select interactively)
@@ -197,18 +197,18 @@ pub enum BridgeSubcommands {
         server: Option<String>,
     },
 
-    /// Validate ~/.tq/bridge/bridge.json configuration schema, ports, and workloads
+    /// Validate ~/.tq/gateway/gateway.json configuration schema, ports, and workloads
     #[command(name = "check")]
     Check,
 
-    /// Display, inspect, or edit the canonical bridge configuration file
+    /// Display, inspect, or edit the canonical gateway configuration file
     #[command(name = "config")]
     Config {
         /// Optional option key and value (e.g. 'key', 'key value', or 'set key value')
         #[arg(value_name = "ARGS")]
         args: Vec<String>,
 
-        /// Open ~/.tq/bridge/bridge.json in your default editor
+        /// Open ~/.tq/gateway/gateway.json in your default editor
         #[arg(short, long)]
         edit: bool,
 
@@ -899,7 +899,7 @@ pub enum BrowserCommands {
         #[arg(long)]
         proxy: Option<String>,
 
-        /// Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools bridge)
+        /// Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools gateway)
         #[arg(short, long, default_value = "extension")]
         mode: String,
 
@@ -1360,7 +1360,7 @@ pub enum WorkflowCommands {
 
 #[derive(Args, Debug, Clone)]
 pub struct SetupArgs {
-    /// Target sub-component to set up directly (core, mcp, bridge, browser, cloud)
+    /// Target sub-component to set up directly (core, mcp, gateway, browser, cloud)
     #[command(subcommand)]
     pub component: Option<SetupComponent>,
 
@@ -1388,7 +1388,7 @@ pub enum SetupComponent {
     Mcp,
 
     /// Configure Specter Bridge VPS tunnel & verify SOCKS5 mesh proxy
-    #[command(name = "bridge")]
+    #[command(name = "gateway")]
     Bridge,
 
     /// Provision Antidetect Chromium browser sandbox

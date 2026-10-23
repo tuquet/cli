@@ -2,8 +2,8 @@ use std::path::Path;
 
 use super::types::DiagnosticItem;
 use crate::config::{AppConfig, canonical_dir};
-use crate::infrastructure::bridge::probe_port;
-use crate::infrastructure::bridge::tools::find_executable;
+use crate::infrastructure::gateway::probe_port;
+use crate::infrastructure::gateway::tools::find_executable;
 use crate::ui::{
     Card, Column, Table, badge_error, badge_online, badge_warn, create_network_topology_card,
     default_workstation_endpoints,
@@ -56,7 +56,7 @@ pub fn check_tools(missing_actions: &mut Vec<String>) -> (Table, bool) {
         },
         path_or_detail: cf_path
             .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "Portable binary fetched when bridge starts".to_string()),
+            .unwrap_or_else(|| "Portable binary fetched when gateway starts".to_string()),
         action_hint: None,
     });
 
@@ -257,8 +257,8 @@ pub fn check_storage_pillars() -> Table {
         ),
         (
             crate::constants::PILLAR_BRIDGE,
-            "tuquet/bridge (Mesh)",
-            "Multi-VPS mesh configuration (bridge.json), PID locks",
+            "tuquet/gateway (Mesh)",
+            "Multi-VPS mesh configuration (gateway.json), PID locks",
         ),
         (
             crate::constants::PILLAR_FAKER,
@@ -317,8 +317,8 @@ pub fn check_network_topology() -> Card {
     let runner_port = app_cfg.server_port;
     let runner_active = probe_port(runner_port);
 
-    let bridge_cfg = crate::infrastructure::bridge::BridgeConfig::load()
-        .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
+    let bridge_cfg = crate::infrastructure::gateway::BridgeConfig::load()
+        .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
     let git_port = bridge_cfg
         .workloads
         .as_ref()
@@ -353,7 +353,7 @@ pub fn check_network_topology() -> Card {
     create_network_topology_card(
         "NETWORK TOPOLOGY & LISTENERS",
         &endpoints,
-        Some("Tunnels run on demand. Start with 'tq bridge start' or 'tq runner start'"),
+        Some("Tunnels run on demand. Start with 'tq gateway start' or 'tq runner start'"),
     )
 }
 
@@ -369,7 +369,7 @@ pub fn check_verdict(
         verdict_card.with_badge(badge_online("ALL SYSTEMS OPERATIONAL"));
         verdict_card
             .add_line("All required ecosystem dependencies and runtimes are properly provisioned.");
-        verdict_card.add_line("Your workstation is 100% ready for autonomous browser workflows, antidetect spoofing, and bridge meshes.");
+        verdict_card.add_line("Your workstation is 100% ready for autonomous browser workflows, antidetect spoofing, and gateway meshes.");
         verdict_card.with_footer(
             "Tip: Run 'tuquet' to launch interactive shell, or 'tq status' for dashboard.",
         );

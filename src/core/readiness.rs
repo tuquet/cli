@@ -111,7 +111,7 @@ pub fn quick_probe() -> WorkstationReadiness {
     }
 
     // Check OpenSSH
-    let ssh_found = crate::infrastructure::bridge::tools::find_executable("ssh").is_some();
+    let ssh_found = crate::infrastructure::gateway::tools::find_executable("ssh").is_some();
     if !ssh_found {
         issues.push(ReadinessIssue {
             component: "OpenSSH".into(),

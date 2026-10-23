@@ -2,7 +2,7 @@ use serde_json::json;
 use std::path::Path;
 
 use crate::config::canonical_ssot_dir;
-use crate::infrastructure::bridge::tools::find_executable;
+use crate::infrastructure::gateway::tools::find_executable;
 use crate::ui::{Card, badge_online, colors};
 
 pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Error>> {

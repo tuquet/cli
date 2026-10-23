@@ -28,8 +28,8 @@ Thumbs.db
 !.vscode/settings.json
 
 # Sensitive Local Configurations (Never commit real hosts, keys, or endpoints)
-bridge.toml
-bridge.json
+gateway.toml
+gateway.json
 *.local.toml
 *.local.json
 

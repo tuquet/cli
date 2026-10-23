@@ -1,4 +1,4 @@
-use crate::infrastructure::bridge::{
+use crate::infrastructure::gateway::{
     BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge, ServerConfig, ServerSelector,
     check_dependencies, probe_port,
 };
@@ -140,12 +140,12 @@ async fn start_bridge_core(
                 })?;
                 if !srv.is_enabled() {
                     clack_step_warn(format!(
-                        "Server '{}' is disabled in {} (Enable with: tq bridge enable {})",
+                        "Server '{}' is disabled in {} (Enable with: tq gateway enable {})",
                         target,
                         BridgeConfig::config_path().display(),
                         target
                     ));
-                    return Err(format!("Server '{}' is disabled in bridge.json", target).into());
+                    return Err(format!("Server '{}' is disabled in gateway.json", target).into());
                 }
                 vec![(config.servers.get_key_value(target).unwrap().0, srv)]
             }
@@ -155,7 +155,7 @@ async fn start_bridge_core(
     };
 
     if servers_to_start.is_empty() {
-        clack_step_warn("No enabled servers to start. (Run 'tq bridge enable' to enable one)");
+        clack_step_warn("No enabled servers to start. (Run 'tq gateway enable' to enable one)");
         clack_outro("0 servers activated.");
         return Ok(());
     }
@@ -217,8 +217,8 @@ async fn start_bridge_core(
             ));
             http_active = true;
         } else {
-            let bridge = HttpToSocks5Bridge::new(http_port, last_socks_port);
-            match bridge.start().await {
+            let gateway = HttpToSocks5Bridge::new(http_port, last_socks_port);
+            match gateway.start().await {
                 Ok(_) => {
                     clack_step_ok(format!(
                         "Embedded pure-Rust HTTP-to-SOCKS5 forwarder listening on 127.0.0.1:{}",
@@ -227,7 +227,7 @@ async fn start_bridge_core(
                     http_active = true;
                 }
                 Err(e) => {
-                    clack_step_err(format!("Failed to start embedded HTTP bridge on port {}: {}", http_port, e));
+                    clack_step_err(format!("Failed to start embedded HTTP gateway on port {}: {}", http_port, e));
                 }
             }
         }

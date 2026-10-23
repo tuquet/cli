@@ -1,4 +1,4 @@
-use crate::infrastructure::bridge::{BridgeConfig, BridgeSupervisor};
+use crate::infrastructure::gateway::{BridgeConfig, BridgeSupervisor};
 use crate::ui::prompt::{
     ClackOption, clack_cancel, clack_intro, clack_outro, clack_select, clack_step_err,
     clack_step_ok, clack_step_warn,
@@ -12,7 +12,7 @@ pub fn toggle_server(
     let action_str = if enabled { "enabled" } else { "disabled" };
 
     clack_intro(
-        "tq bridge",
+        "tq gateway",
         if enabled {
             "Enable Bridge Server"
         } else {
@@ -26,8 +26,8 @@ pub fn toggle_server(
             let mut ids: Vec<String> = config.servers.keys().cloned().collect();
             ids.sort();
             if ids.is_empty() {
-                clack_step_err("No servers configured in bridge.json");
-                return Err("No servers configured in bridge.json".into());
+                clack_step_err("No servers configured in gateway.json");
+                return Err("No servers configured in gateway.json".into());
             }
             let options: Vec<ClackOption> = ids
                 .iter()
@@ -84,12 +84,12 @@ pub fn toggle_server(
 
 pub async fn stop_bridge(server_opt: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let config = BridgeConfig::load()?;
-    clack_intro("tq bridge", "Stop Bridge Tunnels & Daemons");
+    clack_intro("tq gateway", "Stop Bridge Tunnels & Daemons");
 
     if let Some(target) = server_opt {
         if target.eq_ignore_ascii_case("all") {
             BridgeSupervisor::stop_all()?;
-            clack_step_ok("All bridge processes terminated cleanly.");
+            clack_step_ok("All gateway processes terminated cleanly.");
             clack_outro("All tunnels offline.");
         } else if let Some(srv) = config.servers.get(target) {
             BridgeSupervisor::stop_server(target, srv)?;
@@ -101,7 +101,7 @@ pub async fn stop_bridge(server_opt: Option<&str>) -> Result<(), Box<dyn std::er
     } else {
         // Default stop all
         BridgeSupervisor::stop_all()?;
-        clack_step_ok("All bridge tunnels and proxy daemons stopped cleanly.");
+        clack_step_ok("All gateway tunnels and proxy daemons stopped cleanly.");
         clack_outro("All tunnels offline.");
     }
 

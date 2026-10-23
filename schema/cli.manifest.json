@@ -19,7 +19,7 @@
     "system",
     "automa",
     "browser",
-    "bridge",
+    "gateway",
     "faker",
     "runner",
     "cloud",
@@ -589,7 +589,7 @@
           "short": "m",
           "type": "string",
           "default": "extension",
-          "description": "Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools bridge)."
+          "description": "Automation mode: 'extension' (Zero-port ultra-stealth default) or 'driver' (CDP DevTools gateway)."
         },
         {
           "name": "no_cdp",
@@ -1186,24 +1186,24 @@
       ]
     },
     {
-      "id": "tuquet.bridge.check",
+      "id": "tuquet.gateway.check",
       "route": [
         "gateway",
         "check"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Validate Bridge Configuration",
-      "description": "Validate ~/.tuquet/bridge/bridge.json configuration schema, ports, and workloads."
+      "description": "Validate ~/.tuquet/gateway/gateway.json configuration schema, ports, and workloads."
     },
     {
-      "id": "tuquet.bridge.disable",
+      "id": "tuquet.gateway.disable",
       "route": [
         "gateway",
         "disable"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Disable Bridge Server",
-      "description": "Disable a server in bridge configuration (~/.tuquet/bridge/bridge.json).",
+      "description": "Disable a server in gateway configuration (~/.tuquet/gateway/gateway.json).",
       "arguments": [
         {
           "name": "server",
@@ -1214,14 +1214,14 @@
       ]
     },
     {
-      "id": "tuquet.bridge.enable",
+      "id": "tuquet.gateway.enable",
       "route": [
         "gateway",
         "enable"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Enable Bridge Server",
-      "description": "Enable a server in bridge configuration (~/.tuquet/bridge/bridge.json).",
+      "description": "Enable a server in gateway configuration (~/.tuquet/gateway/gateway.json).",
       "arguments": [
         {
           "name": "server",
@@ -1232,12 +1232,12 @@
       ]
     },
     {
-      "id": "tuquet.bridge.start",
+      "id": "tuquet.gateway.start",
       "route": [
         "gateway",
         "start"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Start Bridge Mesh Tunnels",
       "description": "Start background SOCKS5 proxy (1080) and HTTP adapter (8118) for configured VPS servers.",
       "arguments": [
@@ -1253,7 +1253,7 @@
           "name": "http",
           "type": "boolean",
           "default": false,
-          "description": "Also start pure Rust HTTP-to-SOCKS5 bridge (port 8118)."
+          "description": "Also start pure Rust HTTP-to-SOCKS5 gateway (port 8118)."
         },
         {
           "name": "ssh",
@@ -1271,12 +1271,12 @@
       ]
     },
     {
-      "id": "tuquet.bridge.status",
+      "id": "tuquet.gateway.status",
       "route": [
         "gateway",
         "status"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Bridge Mesh Status",
       "description": "Show health check dashboard of all configured VPSs, ports, and proxy workloads.",
       "options": [
@@ -1310,14 +1310,14 @@
       ]
     },
     {
-      "id": "tuquet.bridge.stop",
+      "id": "tuquet.gateway.stop",
       "route": [
         "gateway",
         "stop"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Stop Bridge Tunnels",
-      "description": "Stop running bridge tunnels and proxy background daemons.",
+      "description": "Stop running gateway tunnels and proxy background daemons.",
       "arguments": [
         {
           "name": "server",
@@ -1333,7 +1333,7 @@
         "gateway",
         "probe"
       ],
-      "pillar": "bridge",
+      "pillar": "gateway",
       "title": "Probe Proxy Egress & Latency",
       "description": "Probe connectivity, latency, and public egress IP of a proxy.",
       "arguments": [

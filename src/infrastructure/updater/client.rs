@@ -24,7 +24,7 @@ pub fn create_http_client(timeout_secs: u64) -> Result<reqwest::Client, reqwest:
             builder = builder.proxy(p);
         }
     } else {
-        // 2. Probe if local SOCKS5 mesh bridge (port 1080) is actively listening
+        // 2. Probe if local SOCKS5 mesh gateway (port 1080) is actively listening
         if let Ok(_) = std::net::TcpStream::connect_timeout(
             &std::net::SocketAddr::from(([127, 0, 0, 1], 1080)),
             Duration::from_millis(80),

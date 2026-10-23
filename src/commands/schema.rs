@@ -49,7 +49,7 @@ pub async fn handle(
                     println!("{}", schema.trim());
                 } else {
                     return Err(format!(
-                        "Unknown service '{}'. Available services: bridge, browser, automa, runner, faker, system, inbox",
+                        "Unknown service '{}'. Available services: gateway, browser, automa, runner, faker, system, inbox",
                         srv
                     )
                     .into());
@@ -60,8 +60,8 @@ pub async fn handle(
                     clack_intro("tq schema config", "Microservice JSON Schema Definitions");
                     let services = [
                         (
-                            "bridge",
-                            "Network Bridge & Multi-VPS Mesh (bridge.schema.json)",
+                            "gateway",
+                            "Network Bridge & Multi-VPS Mesh (gateway.schema.json)",
                         ),
                         ("faker", "Synthetic Persona Generator (faker.schema.json)"),
                         (
@@ -147,12 +147,12 @@ fn run_interactive_schema() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Filter Commands by Microservice Pillar",
-            "Filter commands by system, automa, browser, bridge, faker, runner, cloud",
+            "Filter commands by system, automa, browser, gateway, faker, runner, cloud",
             "Filter Commands by Microservice Pillar",
         ),
         ClackOption::new(
             "Inspect Microservice Config JSON Schema",
-            "View Draft 2020-12 JSON Schema for bridge, faker, browser, automa, runner, system, inbox",
+            "View Draft 2020-12 JSON Schema for gateway, faker, browser, automa, runner, system, inbox",
             "Inspect Microservice Config JSON Schema",
         ),
         ClackOption::new(
@@ -354,7 +354,7 @@ fn show_config_overview() {
     card.add_kv("Standard", "JSON Schema Specification (Draft 2020-12)");
     card.add_kv(
         "Supported Services",
-        "bridge, browser, automa, runner, faker, system, inbox",
+        "gateway, browser, automa, runner, faker, system, inbox",
     );
     card.add_line("");
     card.add_line(format!(
@@ -363,7 +363,7 @@ fn show_config_overview() {
         RESET = colors::RESET,
     ));
     card.add_line(format!(
-        "    {CYAN}tq schema config bridge{RESET}   Output bridge.json schema",
+        "    {CYAN}tq schema config gateway{RESET}   Output gateway.json schema",
         CYAN = colors::CYAN,
         RESET = colors::RESET,
     ));
@@ -382,7 +382,7 @@ fn show_config_overview() {
     card.print();
 }
 
-const BRIDGE_SCHEMA: &str = include_str!("../../schema/config/bridge.schema.json");
+const BRIDGE_SCHEMA: &str = include_str!("../../schema/config/gateway.schema.json");
 const BROWSER_SCHEMA: &str = include_str!("../../schema/config/browser.schema.json");
 const AUTOMA_SCHEMA: &str = include_str!("../../schema/config/automa.schema.json");
 const RUNNER_SCHEMA: &str = include_str!("../../schema/config/runner.schema.json");
@@ -392,7 +392,7 @@ const INBOX_SCHEMA: &str = include_str!("../../schema/config/inbox.schema.json")
 
 pub fn get_config_schema(service: &str) -> Option<&'static str> {
     match crate::config::ConfigRegistry::canonical_service(service)? {
-        "bridge" => Some(BRIDGE_SCHEMA),
+        "gateway" => Some(BRIDGE_SCHEMA),
         "browser" => Some(BROWSER_SCHEMA),
         "automa" => Some(AUTOMA_SCHEMA),
         "runner" => Some(RUNNER_SCHEMA),

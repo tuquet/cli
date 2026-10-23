@@ -279,8 +279,8 @@ impl TuiView {
             width,
             &format!(
                 "  SOCKS5 Dynamic Proxy  : 127.0.0.1:{} -> {}",
-                state.bridge.socks5_port,
-                if state.bridge.socks5_online {
+                state.gateway.socks5_port,
+                if state.gateway.socks5_online {
                     "[ONLINE] (Operational)"
                 } else {
                     "[OFFLINE] (Standby)"
@@ -293,8 +293,8 @@ impl TuiView {
             width,
             &format!(
                 "  Embedded HTTP Adapter : 127.0.0.1:{} -> {}",
-                state.bridge.http_port,
-                if state.bridge.http_online {
+                state.gateway.http_port,
+                if state.gateway.http_online {
                     "[ONLINE] (Active)"
                 } else {
                     "[OFFLINE] (Standby)"
@@ -307,8 +307,8 @@ impl TuiView {
             width,
             &format!(
                 "  Cloudflare Tunnel SSH : 127.0.0.1:{} -> {}",
-                state.bridge.ssh_port,
-                if state.bridge.ssh_online {
+                state.gateway.ssh_port,
+                if state.gateway.ssh_online {
                     "[ONLINE] (Tunnel Up)"
                 } else {
                     "[OFFLINE] (Tunnel Down)"
@@ -319,7 +319,7 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            &format!("  Default Egress Node   : {}", state.bridge.default_server),
+            &format!("  Default Egress Node   : {}", state.gateway.default_server),
         )?;
         count += 1;
         Self::print_box_line(
@@ -327,7 +327,7 @@ impl TuiView {
             width,
             &format!(
                 "  Active Mesh Nodes     : {}/{} server(s) online",
-                state.bridge.active_servers, state.bridge.total_servers
+                state.gateway.active_servers, state.gateway.total_servers
             ),
         )?;
         count += 1;
@@ -348,13 +348,13 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            "  • tq bridge status  : Inspect multi-VPS mesh topology and latency",
+            "  • tq gateway status  : Inspect multi-VPS mesh topology and latency",
         )?;
         count += 1;
         Self::print_box_line(
             stdout,
             width,
-            "  • tq git <repo> push-bridge : Route git push operations through mesh",
+            "  • tq git <repo> push-gateway : Route git push operations through mesh",
         )?;
         count += 1;
         Ok(count)

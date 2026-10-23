@@ -22,7 +22,7 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
         Some(BridgeSubcommands::Status { format }) => {
             let fmt = format.resolve();
             if !fmt.is_json() {
-                clack_intro("tq bridge status", "Multi-VPS Mesh & Workload Topology");
+                clack_intro("tq gateway status", "Multi-VPS Mesh & Workload Topology");
             }
             show_status(fmt).await?;
             if !fmt.is_json() {
@@ -62,7 +62,7 @@ pub async fn handle(subcmd: Option<BridgeSubcommands>) -> Result<(), Box<dyn std
 }
 
 async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
-    clack_intro("tq bridge", "Network Bridge & Multi-VPS Mesh Controller");
+    clack_intro("tq gateway", "Network Bridge & Multi-VPS Mesh Controller");
 
     let opts = vec![
         ClackOption::new(
@@ -77,27 +77,27 @@ async fn run_interactive_bridge() -> Result<(), Box<dyn std::error::Error>> {
         ),
         ClackOption::new(
             "Stop Active Bridge Tunnels",
-            "Gracefully terminate running bridge tunnel daemons",
+            "Gracefully terminate running gateway tunnel daemons",
             "Stop Active Bridge Tunnels",
         ),
         ClackOption::new(
             "Enable a Bridge Server",
-            "Interactively enable a server in ~/.tq/bridge/bridge.json",
+            "Interactively enable a server in ~/.tq/gateway/gateway.json",
             "Enable a Bridge Server",
         ),
         ClackOption::new(
             "Disable a Bridge Server",
-            "Interactively disable a server in ~/.tq/bridge/bridge.json",
+            "Interactively disable a server in ~/.tq/gateway/gateway.json",
             "Disable a Bridge Server",
         ),
         ClackOption::new(
-            "Validate bridge.json Configuration",
+            "Validate gateway.json Configuration",
             "Check SSH IdentityFile paths, port conflicts & schema",
-            "Validate bridge.json Configuration",
+            "Validate gateway.json Configuration",
         ),
         ClackOption::new(
             "Configure Bridge Settings",
-            "Inspect or edit ~/.tq/bridge/bridge.json",
+            "Inspect or edit ~/.tq/gateway/gateway.json",
             "Configure Bridge Settings",
         ),
     ];

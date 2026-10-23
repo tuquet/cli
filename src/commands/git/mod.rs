@@ -6,7 +6,7 @@ use crate::commands::gateway::start::{BridgeStartOptions, start_bridge};
 use crate::commands::dev::scanner::{
     collect_machine_scan_roots, format_clean_package_id, get_user_home_dir, should_skip_dir_entry,
 };
-use crate::infrastructure::bridge::probe_port;
+use crate::infrastructure::gateway::probe_port;
 use crate::ui::{
     ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
     badge_warn, clack_cancel, clack_intro, clack_multiselect, clack_outro, clack_select, colors,
@@ -227,7 +227,7 @@ pub async fn handle(
 
     let actions = [
         (
-            "push-bridge",
+            "push-gateway",
             "Push via Bridge (SOCKS5 127.0.0.1:1080) — Bypasses corporate HTTP 403",
         ),
         ("status", "Inspect detailed git status & diff summary"),
@@ -243,7 +243,7 @@ pub async fn handle(
             .map(|(id, _)| *id)
             .ok_or_else(|| {
                 format!(
-                    "Unknown git action '{}'. Available: push-bridge, status, pull, push, stash",
+                    "Unknown git action '{}'. Available: push-gateway, status, pull, push, stash",
                     act
                 )
             })?,
@@ -273,7 +273,7 @@ pub async fn handle(
         }
     };
 
-    if selected_action == "push-bridge" && !probe_port(1080) {
+    if selected_action == "push-gateway" && !probe_port(1080) {
         println!("  \x1b[36m◆\x1b[0m  Starting Bridge SOCKS5 tunnel (127.0.0.1:1080)...");
         start_bridge(BridgeStartOptions {
             server: None,
@@ -340,7 +340,7 @@ async fn execute_git_action_single(
     is_batch: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match action {
-        "push-bridge" => {
+        "push-gateway" => {
             if !is_batch {
                 clack_outro(&format!(
                     "Pushing {BOLD}{CYAN}{id}{RESET} [{branch}] via Bridge {MUTED}(socks5://127.0.0.1:1080){RESET}",

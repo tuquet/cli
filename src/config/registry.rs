@@ -3,7 +3,7 @@ use crate::config::browser::BrowserConfig;
 use crate::config::inbox::InboxConfig;
 use crate::config::runner::RunnerConfig;
 use crate::config::system::SystemConfig;
-use crate::infrastructure::bridge::BridgeConfig;
+use crate::infrastructure::gateway::BridgeConfig;
 use crate::ui::{Card, badge_online};
 use faker::config::FakerConfig;
 use std::path::PathBuf;
@@ -77,7 +77,7 @@ impl ConfigRegistry {
 
     pub fn canonical_service(service: &str) -> Option<&'static str> {
         match service.to_ascii_lowercase().as_str() {
-            "bridge" | "tunnel" | "vps" => Some(crate::constants::PILLAR_BRIDGE),
+            "gateway" | "tunnel" | "vps" => Some(crate::constants::PILLAR_BRIDGE),
             "faker" | "user" | "persona" => Some(crate::constants::PILLAR_FAKER),
             "browser" | "chromium" | "chrome" => Some(crate::constants::PILLAR_BROWSER),
             "automa" | "workflow" => Some(crate::constants::PILLAR_AUTOMA),
@@ -131,7 +131,7 @@ impl ConfigRegistry {
     pub fn get_default_json(service: &str) -> serde_json::Value {
         match Self::canonical_service(service) {
             Some(crate::constants::PILLAR_BRIDGE) => {
-                serde_json::to_value(crate::infrastructure::bridge::BridgeConfig::default())
+                serde_json::to_value(crate::infrastructure::gateway::BridgeConfig::default())
                     .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_FAKER) => {
@@ -254,7 +254,7 @@ mod tests {
         let list = ConfigRegistry::list_all();
         assert_eq!(list.len(), 7);
         let pillars: Vec<&str> = list.iter().map(|e| e.pillar).collect();
-        assert!(pillars.contains(&"bridge"));
+        assert!(pillars.contains(&"gateway"));
         assert!(pillars.contains(&"faker"));
         assert!(pillars.contains(&"browser"));
         assert!(pillars.contains(&"automation") || pillars.contains(&"automa"));
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_resolve_service_path_aliases() {
-        assert!(ConfigRegistry::resolve_service_path("bridge").is_some());
+        assert!(ConfigRegistry::resolve_service_path("gateway").is_some());
         assert!(ConfigRegistry::resolve_service_path("tunnel").is_some());
         assert!(ConfigRegistry::resolve_service_path("faker").is_some());
         assert!(ConfigRegistry::resolve_service_path("user").is_some());
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn test_get_default_json_all_services() {
         for service in [
-            "bridge", "faker", "browser", "automa", "runner", "system", "inbox",
+            "gateway", "faker", "browser", "automa", "runner", "system", "inbox",
         ] {
             let def = ConfigRegistry::get_default_json(service);
             assert!(

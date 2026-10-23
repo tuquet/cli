@@ -6,7 +6,7 @@ pub mod ports {
     pub const DEFAULT_RUNNER_PORT: u16 = 8765;
     /// Default SOCKS5 proxy port
     pub const DEFAULT_SOCKS5_PORT: u16 = 1080;
-    /// Default HTTP bridge proxy port
+    /// Default HTTP gateway proxy port
     pub const DEFAULT_HTTP_BRIDGE_PORT: u16 = 8118;
     /// Default Chrome DevTools Protocol (CDP) port
     pub const DEFAULT_CDP_PORT: u16 = 9222;
@@ -28,7 +28,7 @@ pub mod protocols {
 }
 
 pub mod pillars {
-    pub const PILLAR_BRIDGE: &str = "bridge";
+    pub const PILLAR_BRIDGE: &str = "gateway";
     pub const PILLAR_FAKER: &str = "faker";
     pub const PILLAR_BROWSER: &str = "browser";
     pub const PILLAR_AUTOMA: &str = "automa";
@@ -91,7 +91,7 @@ pub mod paths {
 
     pub const FILE_AUTOMATION_SQLITE: &str = "automation.sqlite";
     pub const FILE_AUTOMA_SQLITE: &str = FILE_AUTOMATION_SQLITE;
-    pub const FILE_BRIDGE_JSON: &str = "bridge.json";
+    pub const FILE_BRIDGE_JSON: &str = "gateway.json";
     pub const FILE_FAKER_JSON: &str = "faker.json";
     pub const FILE_BROWSER_JSON: &str = "browser.json";
     pub const FILE_AUTOMA_JSON: &str = "automa.json";

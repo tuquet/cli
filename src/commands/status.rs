@@ -270,8 +270,8 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     );
 
     // 4. NETWORK BRIDGE
-    let bridge_config = crate::infrastructure::bridge::BridgeConfig::load()
-        .unwrap_or_else(|_| crate::infrastructure::bridge::BridgeConfig::default_config());
+    let bridge_config = crate::infrastructure::gateway::BridgeConfig::load()
+        .unwrap_or_else(|_| crate::infrastructure::gateway::BridgeConfig::default_config());
     let git_port = bridge_config
         .workloads
         .as_ref()
@@ -291,9 +291,9 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         .unwrap_or(crate::constants::DEFAULT_HTTP_BRIDGE_PORT);
 
     let (git_active, ssh_active, http_active) = tokio::join!(
-        crate::infrastructure::bridge::probe_port_async(git_port),
-        crate::infrastructure::bridge::probe_port_async(primary_ssh_port),
-        crate::infrastructure::bridge::probe_port_async(http_port),
+        crate::infrastructure::gateway::probe_port_async(git_port),
+        crate::infrastructure::gateway::probe_port_async(primary_ssh_port),
+        crate::infrastructure::gateway::probe_port_async(http_port),
     );
 
     let endpoints = default_workstation_endpoints(
@@ -308,7 +308,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
     let mut bridge_card = create_network_topology_card(
         "NETWORK BRIDGE",
         &endpoints,
-        Some("Manage with 'tq bridge status' or 'tq bridge start'"),
+        Some("Manage with 'tq gateway status' or 'tq gateway start'"),
     );
     if git_active || ssh_active || http_active {
         bridge_card.with_badge(badge_online("CONNECTED"));
@@ -341,7 +341,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
             "pinned_version": browser_status.pinned_version,
             "size_mb": browser_status.size_mb
         },
-        "bridge": {
+        "gateway": {
             "git_1080": git_active,
             "ssh_2222": ssh_active,
             "http_8118": http_active

@@ -80,7 +80,7 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
         default_endpoint.to_string()
     };
 
-    // Update bridge.json
+    // Update gateway.json
     let bridge_cfg_path = crate::config::canonical_ssot_dir()
         .join(crate::constants::PILLAR_BRIDGE)
         .join(crate::constants::FILE_BRIDGE_JSON);
