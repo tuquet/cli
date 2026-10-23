@@ -10,6 +10,9 @@ use crate::api::handlers::jobs::{
     submit_job, worker_sse,
 };
 use crate::api::handlers::lint::lint_workflow;
+use crate::api::handlers::secrets::{
+    delete_secret, get_secrets, pull_secrets, push_secrets, rotate_secrets, set_secret,
+};
 use crate::api::handlers::settings::{get_settings, patch_settings, update_settings};
 use crate::api::handlers::sse::sse;
 use crate::api::handlers::storage::{
@@ -218,6 +221,12 @@ pub fn create_router(state: crate::AppState) -> Router {
             "/system/settings",
             get(get_settings).put(update_settings).patch(patch_settings),
         )
+        // Secret Store ({{secrets.*}}) — consumed by the workstation console UI
+        .route("/secrets", get(get_secrets).post(set_secret))
+        .route("/secrets/push", post(push_secrets))
+        .route("/secrets/pull", post(pull_secrets))
+        .route("/secrets/rotate", post(rotate_secrets))
+        .route("/secrets/{name}", delete(delete_secret))
         .route("/lint", post(lint_workflow))
         .route("/jobs", post(submit_job).get(get_active_jobs))
         .route("/jobs/{job_id}", delete(kill_job))

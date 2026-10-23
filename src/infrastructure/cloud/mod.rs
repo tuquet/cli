@@ -1,6 +1,7 @@
 pub mod client;
 pub mod credential_store;
 pub mod fingerprint;
+pub mod secret_sync;
 pub mod supabase_auth;
 pub mod tenancy;
 
@@ -11,4 +12,5 @@ pub use credential_store::{
 };
 pub use fingerprint::MachineFingerprint;
 pub use supabase_auth::{AuthSession, AuthUser, SupabaseAuthClient};
+pub use secret_sync::{RemoteSecret, SecretClient};
 pub use tenancy::TenancyManager;
