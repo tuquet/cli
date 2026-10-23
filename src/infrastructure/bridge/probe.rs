@@ -4,14 +4,14 @@ use std::time::Duration;
 /// Fast, zero-overhead probe to check if a local port is actively listening (< 1ms).
 pub fn probe_port(port: u16) -> bool {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    TcpStream::connect_timeout(&addr, Duration::from_millis(50)).is_ok()
+    TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
 }
 
 /// Fast, asynchronous non-blocking probe to check if a local port is actively listening.
 pub async fn probe_port_async(port: u16) -> bool {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     tokio::time::timeout(
-        Duration::from_millis(50),
+        Duration::from_millis(300),
         tokio::net::TcpStream::connect(&addr),
     )
     .await

@@ -1,5 +1,5 @@
 use crate::infrastructure::bridge::{
-    BridgeConfig, BridgeSupervisor, ServerConfig, ServerSelector,
+    BridgeConfig, BridgeSupervisor, HttpToSocks5Bridge, ServerConfig, ServerSelector,
     check_dependencies, probe_port,
 };
 use crate::ui::prompt::{
@@ -217,46 +217,18 @@ async fn start_bridge_core(
             ));
             http_active = true;
         } else {
-            let exe = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("tq"));
-            let mut cmd = std::process::Command::new(exe);
-            cmd.arg("gateway")
-                .arg("start")
-                .arg("--http")
-                .arg("--foreground");
-            if let Some(srv) = opts.server {
-                cmd.arg("-s").arg(srv);
-            }
-            if let Some(tag) = opts.tag {
-                cmd.arg("-t").arg(tag);
-            }
-            cmd.stdin(std::process::Stdio::null())
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null());
-
-            #[cfg(windows)]
-            {
-                use std::os::windows::process::CommandExt;
-                cmd.creation_flags(0x08000008);
-            }
-
-            if let Ok(child) = cmd.spawn() {
-                let pid_path = BridgeSupervisor::pids_dir().join("http.json");
-                let pids = crate::infrastructure::bridge::supervisor::ServerPids {
-                    server_id: "http".to_string(),
-                    cf_pid: Some(child.id()),
-                    ssh_pid: None,
-                };
-                if let Ok(json) = serde_json::to_string(&pids) {
-                    let _ = std::fs::write(pid_path, json);
+            let bridge = HttpToSocks5Bridge::new(http_port, last_socks_port);
+            match bridge.start().await {
+                Ok(_) => {
+                    clack_step_ok(format!(
+                        "Embedded pure-Rust HTTP-to-SOCKS5 forwarder listening on 127.0.0.1:{}",
+                        http_port
+                    ));
+                    http_active = true;
                 }
-                clack_step_ok(format!(
-                    "HTTP-to-SOCKS5 forwarder active on 127.0.0.1:{} (pid: {})",
-                    http_port,
-                    child.id()
-                ));
-                http_active = true;
-            } else {
-                clack_step_err("Failed to spawn background daemon for HTTP bridge");
+                Err(e) => {
+                    clack_step_err(format!("Failed to start embedded HTTP bridge on port {}: {}", http_port, e));
+                }
             }
         }
     }
