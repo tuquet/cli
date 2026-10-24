@@ -200,17 +200,25 @@ mod contract_tests {
     #[test]
     fn rejects_block_the_engine_does_not_implement() {
         let mut g = supported_graph();
-        g["nodes"][1]["label"] = json!("google-sheets");
+        // `element-change` is a real Automa block this engine does not implement.
+        g["nodes"][1]["label"] = json!("element-change");
         let err = validate_workflow_document(&g).unwrap_err().to_string();
         assert!(err.contains("does not implement"), "unexpected error: {err}");
-        assert!(err.contains("google-sheets"), "unexpected error: {err}");
+        assert!(err.contains("element-change"), "unexpected error: {err}");
     }
 
     #[test]
-    fn accepts_canvas_only_block() {
-        let mut g = supported_graph();
-        g["nodes"][1]["label"] = json!("blocks-group");
-        assert!(validate_workflow_document(&g).is_ok());
+    fn accepts_canvas_only_blocks() {
+        // `blocks-group` and `note` exist only to organise the canvas — Automa itself gives
+        // them no runtime handler, so they must not block a workflow.
+        for label in ["blocks-group", "note"] {
+            let mut g = supported_graph();
+            g["nodes"][1]["label"] = json!(label);
+            assert!(
+                validate_workflow_document(&g).is_ok(),
+                "canvas-only block '{label}' must be accepted"
+            );
+        }
     }
 
     #[test]
@@ -268,33 +276,14 @@ mod automa_export_tests {
     }
 
     #[test]
-    fn documents_the_one_remaining_unimplemented_automa_block() {
-        // `export-data`, `execute-workflow` and the `note` annotation block are implemented
-        // now, so every starter export except the Google Sheets one runs as-is.
-        let sheets: serde_json::Value = serde_json::from_str(EXPORTS[0].1).unwrap();
-        let err = validate_workflow_document(&sheets).unwrap_err().to_string();
-        assert!(
-            err.contains("google-sheets"),
-            "expected google-sheets to remain the only rejection, got: {err}"
-        );
-        assert!(
-            !err.contains("export-data"),
-            "export-data is implemented and must not be rejected: {err}"
-        );
-    }
-
-    #[test]
-    fn every_automa_export_except_google_sheets_is_runnable() {
+    fn every_real_automa_export_is_runnable() {
+        // All five bundled Automa starter workflows — including the one that uses
+        // `google-sheets` and `export-data` — must pass schema + block coverage now that
+        // both blocks are implemented. This is the regression net for the whole parity push.
         for (name, raw) in EXPORTS {
             let doc: serde_json::Value = serde_json::from_str(raw).unwrap();
-            let result = validate_workflow_document(&doc);
-            match *name {
-                "twitter-to-google-sheets" => assert!(result.is_err(), "{name} should still need google-sheets"),
-                _ => assert!(
-                    result.is_ok(),
-                    "real Automa export '{name}' must be runnable end-to-end, got: {:?}",
-                    result.err().map(|e| e.to_string())
-                ),
+            if let Err(err) = validate_workflow_document(&doc) {
+                panic!("real Automa export '{name}' must be runnable, got: {err}");
             }
         }
     }
