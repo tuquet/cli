@@ -49,18 +49,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Cargo.toml path-depends on the `crates/faker` submodule.
+          submodules: recursive
 
       - name: Checkout browser dependency
         shell: bash
         run: git clone --depth 1 https://github.com/tuquet/browser.git ../browser
 
-      - name: Checkout faker dependency
-        shell: bash
-        run: git clone --depth 1 https://github.com/tuquet/faker.git ../faker
-
+      # `tuquet/runner` is private (leaked-history containment), so an anonymous clone fails.
       - name: Checkout runner dependency
         shell: bash
-        run: git clone --depth 1 https://github.com/tuquet/runner.git ../worker
+        run: git clone --depth 1 https://x-access-token:${{ secrets.SCOOP_SYNC_TOKEN }}@github.com/tuquet/runner.git ../worker
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
