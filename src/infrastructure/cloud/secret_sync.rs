@@ -1,4 +1,4 @@
-//! Cloud Secret Store client — device-authenticated sync of `{{secrets.*}}` values.
+//! Cloud Secret Store client — device-authenticated sync of `{{secrets@name}}` values.
 //!
 //! Shared by the `tq secret` CLI command **and** the workstation TUI (`tq tui` → SECRETS tab).
 //!

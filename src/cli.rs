@@ -91,7 +91,7 @@ pub enum Commands {
         command: Option<BrowserCommands>,
     },
 
-    /// Manage the local encrypted Secret Store (referenced as {{secrets.*}})
+    /// Manage the local encrypted Secret Store (referenced as {{secrets@name}})
     #[command(name = "secret", aliases = ["secrets"])]
     Secret {
         #[command(subcommand)]
@@ -111,7 +111,7 @@ pub enum SecretSubcommands {
     /// Store or update a secret value
     #[command(name = "set")]
     Set {
-        /// Secret name (referenced as {{secrets.<name>}})
+        /// Secret name (referenced as {{secrets@name}})
         name: String,
         /// Secret value
         value: String,

@@ -5,7 +5,7 @@
 //!         Values are XChaCha20-Poly1305 encrypted **client-side**; the server never
 //!         receives a plaintext value. See SPEC-secret-store.
 //!
-//! Workflows reference values as `{{secrets.<name>}}`.
+//! Workflows reference values as `{{secrets@name}}` (Automa dialect).
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as B64;

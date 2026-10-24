@@ -358,8 +358,16 @@ impl JobCoordinator {
             }
         }
 
+        // Automa dialect: `trigger.data.parameters[]` is the workflow's declared input
+        // contract. Seed the declared defaults; caller-supplied values (set above) win.
+        for (name, default) in graph.trigger_parameters() {
+            if !initial_state.variables.contains_key(&name) {
+                initial_state.set_variable(&name, default);
+            }
+        }
+
         // Seed secrets from the local encrypted Secret Store, referenced in workflows
-        // as `{{secrets.<name>}}`. Values stay in memory only (never logged/persisted).
+        // as `{{secrets@name}}` (Automa dialect). Values stay in memory only.
         {
             let store = worker::core::secrets::SecretStore::new();
             match store.load_all() {
