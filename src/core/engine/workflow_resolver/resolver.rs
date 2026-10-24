@@ -12,7 +12,24 @@ use super::validator::{sanitize_workflow_data, validate_workflow_structure};
 pub struct WorkflowResolver;
 
 impl WorkflowResolver {
+    /// Single entry point: resolves the workflow, then enforces the workflow contract
+    /// (schema + block coverage) before anything is allowed to execute.
     pub async fn resolve(
+        job_id: &str,
+        data_dir: &str,
+        workflow_id: Option<&str>,
+        workflow_path: Option<&str>,
+        workflow_data: Option<&serde_json::Value>,
+        db: &Arc<Mutex<AutomationDb>>,
+    ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
+        let resolved =
+            Self::resolve_unvalidated(job_id, data_dir, workflow_id, workflow_path, workflow_data, db)
+                .await?;
+        super::validator::validate_workflow_document(&resolved.data)?;
+        Ok(resolved)
+    }
+
+    async fn resolve_unvalidated(
         job_id: &str,
         data_dir: &str,
         workflow_id: Option<&str>,

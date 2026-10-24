@@ -1,4 +1,74 @@
+use std::sync::OnceLock;
+
 use super::types::WorkflowResolveError;
+
+/// The workflow document schema (Automa-derived) is the **SSOT for workflow structure**.
+/// It used to be decorative — no code loaded it. It is now compiled once and enforced on
+/// every document that enters the engine.
+static WORKFLOW_SCHEMA: OnceLock<Result<jsonschema::Validator, String>> = OnceLock::new();
+
+fn workflow_schema() -> Result<&'static jsonschema::Validator, WorkflowResolveError> {
+    WORKFLOW_SCHEMA
+        .get_or_init(|| {
+            let raw = include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/schema/workflow.schema.json"
+            ));
+            let schema: serde_json::Value = serde_json::from_str(raw)
+                .map_err(|e| format!("workflow.schema.json is not valid JSON: {}", e))?;
+            jsonschema::validator_for(&schema)
+                .map_err(|e| format!("workflow.schema.json failed to compile: {}", e))
+        })
+        .as_ref()
+        .map_err(|e| WorkflowResolveError::BadRequest(e.clone()))
+}
+
+/// Enforce the workflow contract before anything executes:
+///   1. the document must match `workflow.schema.json` (the declared structure), and
+///   2. every block label it uses must actually be implemented by this engine.
+///
+/// Doctrine (*Automa schema = SSOT*, *declared ⇒ satisfied*): a canvas may legitimately
+/// author blocks we do not implement yet — silently skipping them would make the canvas
+/// fake authoring and hide real gaps, so the document is rejected instead.
+pub fn validate_workflow_document(val: &serde_json::Value) -> Result<(), WorkflowResolveError> {
+    let validator = workflow_schema()?;
+
+    let mut errors: Vec<String> = validator
+        .iter_errors(val)
+        .take(8)
+        .map(|e| format!("{} (at {})", e, e.instance_path))
+        .collect();
+    if !errors.is_empty() {
+        errors.sort();
+        return Err(WorkflowResolveError::BadRequest(format!(
+            "workflow does not match workflow.schema.json: {}",
+            errors.join(" | ")
+        )));
+    }
+
+    let supported = worker::drivers::cdp::supported_block_labels();
+    let canvas_only = worker::drivers::cdp::CANVAS_ONLY_BLOCKS;
+
+    let mut unsupported: Vec<String> = val
+        .get("nodes")
+        .and_then(|n| n.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|node| node.get("label").and_then(|l| l.as_str()))
+        .filter(|label| !supported.contains(label) && !canvas_only.contains(label))
+        .map(str::to_string)
+        .collect();
+    if !unsupported.is_empty() {
+        unsupported.sort();
+        unsupported.dedup();
+        return Err(WorkflowResolveError::BadRequest(format!(
+            "workflow uses block(s) this engine does not implement: {} — refusing to run (declared => satisfied)",
+            unsupported.join(", ")
+        )));
+    }
+
+    Ok(())
+}
 
 pub fn validate_workflow_structure(val: &serde_json::Value) -> Result<(), WorkflowResolveError> {
     if let Some(nodes) = val.get("nodes")
@@ -72,5 +142,85 @@ pub fn sanitize_workflow_data(data: &serde_json::Value) -> serde_json::Value {
             sanitized_data = val;
         }
     }
-    sanitized_data
+    strip_nulls(sanitized_data)
+}
+
+/// The workflow document format has no notion of `null`: an absent field and a null field mean
+/// the same thing, while the schema (`workflow.schema.json`) rejects `null` for typed fields.
+/// Serializing our own Rust model emits `null` for every `None`, so normalise on the way out —
+/// otherwise our own pipeline would produce documents that violate our own contract.
+fn strip_nulls(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => serde_json::Value::Object(
+            map.into_iter()
+                .filter(|(_, v)| !v.is_null())
+                .map(|(k, v)| (k, strip_nulls(v)))
+                .collect(),
+        ),
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.into_iter().map(strip_nulls).collect())
+        }
+        other => other,
+    }
+}
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn supported_graph() -> serde_json::Value {
+        json!({
+            "name": "contract-test",
+            "nodes": [
+                {"id": "t", "label": "trigger", "data": {"type": "cron-job",
+                    "parameters": [{"name": "mode", "defaultValue": "dry-run"}]}},
+                {"id": "a", "label": "new-tab", "data": {"url": "https://example.com"}},
+                {"id": "b", "label": "javascript-code", "data": {"code": "return 1"}}
+            ],
+            "edges": []
+        })
+    }
+
+    #[test]
+    fn accepts_document_with_supported_blocks() {
+        assert!(validate_workflow_document(&supported_graph()).is_ok());
+    }
+
+    #[test]
+    fn rejects_block_the_engine_does_not_implement() {
+        let mut g = supported_graph();
+        g["nodes"][1]["label"] = json!("google-sheets");
+        let err = validate_workflow_document(&g).unwrap_err().to_string();
+        assert!(err.contains("does not implement"), "unexpected error: {err}");
+        assert!(err.contains("google-sheets"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn accepts_canvas_only_block() {
+        let mut g = supported_graph();
+        g["nodes"][1]["label"] = json!("blocks-group");
+        assert!(validate_workflow_document(&g).is_ok());
+    }
+
+    #[test]
+    fn rejects_structure_violating_the_schema() {
+        let g = json!({"nodes": "not-an-array"});
+        let err = validate_workflow_document(&g).unwrap_err().to_string();
+        assert!(err.contains("workflow.schema.json"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn sanitize_strips_null_fields_so_our_own_output_conforms() {
+        let raw = json!({"name": "x", "nodes": [], "edges": null, "settings": null});
+        let clean = sanitize_workflow_data(&raw);
+        assert!(clean.get("edges").is_none(), "null fields must be dropped: {clean}");
+        assert!(validate_workflow_document(&clean).is_ok());
+    }
+
+    #[test]
+    fn rejects_document_without_nodes_or_drawflow() {
+        let g = json!({"name": "empty"});
+        assert!(validate_workflow_document(&g).is_err());
+    }
 }
