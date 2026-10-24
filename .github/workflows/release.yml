@@ -56,9 +56,17 @@ jobs:
         run: git clone --depth 1 https://github.com/tuquet/browser.git ../browser
 
       # `tuquet/runner` is private (leaked-history containment), so an anonymous clone fails.
+      # The repo carries a read-only deploy key for this purpose; no PAT is needed.
       - name: Checkout runner dependency
         shell: bash
-        run: git clone --depth 1 https://x-access-token:${{ secrets.SCOOP_SYNC_TOKEN }}@github.com/tuquet/runner.git ../worker
+        env:
+          RUNNER_DEPLOY_KEY: ${{ secrets.RUNNER_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$RUNNER_DEPLOY_KEY" > ~/.ssh/runner_deploy_key
+          chmod 600 ~/.ssh/runner_deploy_key
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/runner_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            git clone --depth 1 git@github.com:tuquet/runner.git ../worker
 
       - name: Determine Release Tag & Version
         id: vars
