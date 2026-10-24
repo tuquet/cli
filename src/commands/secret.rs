@@ -14,6 +14,24 @@ use crate::cli::SecretSubcommands;
 use crate::infrastructure::cloud::SecretClient;
 use worker::core::secrets::{DeviceKeypair, SecretStore};
 
+/// Reads a secret value from a file (`@path`) or stdin (`-`).
+///
+/// Multi-line secrets — a Google service-account JSON being the motivating case — are
+/// painful (and unsafe: shell history, `ps` output) to pass as a command-line argument.
+fn resolve_secret_input(value: &str) -> Result<String, Box<dyn std::error::Error>> {
+    if value == "-" {
+        let mut buf = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)?;
+        return Ok(buf.trim_end().to_string());
+    }
+    if let Some(path) = value.strip_prefix('@') {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| format!("cannot read secret file '{path}': {e}"))?;
+        return Ok(content.trim_end().to_string());
+    }
+    Ok(value.to_string())
+}
+
 pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Error>> {
     let store = SecretStore::new();
 
@@ -32,6 +50,7 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
             println!("Sync to Cloud: tq secret push   |  On a new device: tq secret pull");
         }
         SecretSubcommands::Set { name, value } => {
+            let value = resolve_secret_input(&value)?;
             store.set(&name, &value)?;
             println!("Secret '{}' stored locally (encrypted).", name);
         }

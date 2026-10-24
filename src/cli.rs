@@ -113,7 +113,7 @@ pub enum SecretSubcommands {
     Set {
         /// Secret name (referenced as {{secrets@name}})
         name: String,
-        /// Secret value
+        /// Secret value (`@path/to/file` to read a file, `-` to read stdin)
         value: String,
     },
     /// List stored secret names (values are never printed)
