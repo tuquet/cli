@@ -268,16 +268,34 @@ mod automa_export_tests {
     }
 
     #[test]
-    fn documents_the_unimplemented_automa_blocks() {
-        // Automa ships handlers for these; the Tuquet engine does not implement them yet.
-        // They must fail LOUDLY (doctrine §0.3) instead of silently reporting success.
-        // twitter-to-google-sheets uses `google-sheets`, lorem-ipsum uses `export-data`.
+    fn documents_the_one_remaining_unimplemented_automa_block() {
+        // `export-data`, `execute-workflow` and the `note` annotation block are implemented
+        // now, so every starter export except the Google Sheets one runs as-is.
         let sheets: serde_json::Value = serde_json::from_str(EXPORTS[0].1).unwrap();
         let err = validate_workflow_document(&sheets).unwrap_err().to_string();
-        assert!(err.contains("google-sheets"), "expected google-sheets rejection, got: {err}");
+        assert!(
+            err.contains("google-sheets"),
+            "expected google-sheets to remain the only rejection, got: {err}"
+        );
+        assert!(
+            !err.contains("export-data"),
+            "export-data is implemented and must not be rejected: {err}"
+        );
+    }
 
-        let export: serde_json::Value = serde_json::from_str(EXPORTS[2].1).unwrap();
-        let err = validate_workflow_document(&export).unwrap_err().to_string();
-        assert!(err.contains("export-data"), "expected export-data rejection, got: {err}");
+    #[test]
+    fn every_automa_export_except_google_sheets_is_runnable() {
+        for (name, raw) in EXPORTS {
+            let doc: serde_json::Value = serde_json::from_str(raw).unwrap();
+            let result = validate_workflow_document(&doc);
+            match *name {
+                "twitter-to-google-sheets" => assert!(result.is_err(), "{name} should still need google-sheets"),
+                _ => assert!(
+                    result.is_ok(),
+                    "real Automa export '{name}' must be runnable end-to-end, got: {:?}",
+                    result.err().map(|e| e.to_string())
+                ),
+            }
+        }
     }
 }
