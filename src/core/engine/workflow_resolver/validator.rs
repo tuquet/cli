@@ -49,11 +49,21 @@ pub fn validate_workflow_document(val: &serde_json::Value) -> Result<(), Workflo
     let supported = worker::drivers::cdp::supported_block_labels();
     let canvas_only = worker::drivers::cdp::CANVAS_ONLY_BLOCKS;
 
+    // A document may carry its graph as a flat `nodes` array (Tuquet form) or inside
+    // `drawflow` (what the Automa canvas actually exports). Both must be checked —
+    // otherwise the coverage check silently passes for every real canvas export.
     let mut unsupported: Vec<String> = val
         .get("nodes")
         .and_then(|n| n.as_array())
         .into_iter()
         .flatten()
+        .chain(
+            val.get("drawflow")
+                .and_then(|d| d.get("nodes"))
+                .and_then(|n| n.as_array())
+                .into_iter()
+                .flatten(),
+        )
         .filter_map(|node| node.get("label").and_then(|l| l.as_str()))
         .filter(|label| !supported.contains(label) && !canvas_only.contains(label))
         .map(str::to_string)
@@ -222,5 +232,52 @@ mod contract_tests {
     fn rejects_document_without_nodes_or_drawflow() {
         let g = json!({"name": "empty"});
         assert!(validate_workflow_document(&g).is_err());
+    }
+}
+
+/// Real documents exported by the Automa canvas (bundled starter workflows, captured
+/// verbatim in `cli/fixtures/`). These are the ground truth for "does our contract still
+/// match what the canvas actually produces" — the drift this test caught: Automa writes
+/// `data.delay` as a **string** from its form inputs, our schema demanded a number.
+#[cfg(test)]
+mod automa_export_tests {
+    use super::*;
+
+    const EXPORTS: &[(&str, &str)] = &[
+        ("twitter-to-google-sheets", include_str!("../../../../fixtures/automa-export-twitter-to-google-sheets.json")),
+        ("google-search", include_str!("../../../../fixtures/automa-export-google-search.json")),
+        ("lorem-ipsum", include_str!("../../../../fixtures/automa-export-lorem-ipsum.json")),
+        ("producthunt-search", include_str!("../../../../fixtures/automa-export-producthunt-search.json")),
+        ("google-keyword-research", include_str!("../../../../fixtures/automa-export-google-keyword-research.json")),
+    ];
+
+    #[test]
+    fn every_real_automa_export_matches_the_schema() {
+        for (name, raw) in EXPORTS {
+            let doc: serde_json::Value = serde_json::from_str(raw).unwrap();
+            if let Err(err) = validate_workflow_document(&doc) {
+                let msg = err.to_string();
+                // Block coverage is engine capability, not document validity — the schema
+                // (structure) part must always pass.
+                assert!(
+                    msg.contains("does not implement"),
+                    "Automa export '{name}' failed schema validation: {msg}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn documents_the_unimplemented_automa_blocks() {
+        // Automa ships handlers for these; the Tuquet engine does not implement them yet.
+        // They must fail LOUDLY (doctrine §0.3) instead of silently reporting success.
+        // twitter-to-google-sheets uses `google-sheets`, lorem-ipsum uses `export-data`.
+        let sheets: serde_json::Value = serde_json::from_str(EXPORTS[0].1).unwrap();
+        let err = validate_workflow_document(&sheets).unwrap_err().to_string();
+        assert!(err.contains("google-sheets"), "expected google-sheets rejection, got: {err}");
+
+        let export: serde_json::Value = serde_json::from_str(EXPORTS[2].1).unwrap();
+        let err = validate_workflow_document(&export).unwrap_err().to_string();
+        assert!(err.contains("export-data"), "expected export-data rejection, got: {err}");
     }
 }

@@ -584,8 +584,11 @@
           "type": ["string", "number", "boolean", "null"]
         },
         "delay": {
-          "type": "number",
-          "minimum": 0
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Delay before executing the next block, or the type-delay in ms for form blocks. Automa writes a string from the canvas input and coerces with `+`, so both forms are valid."
         },
         "time": {
           "type": ["string", "number"]

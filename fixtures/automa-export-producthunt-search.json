@@ -1,0 +1,153 @@
+{
+  "id": "id4",
+  "name": "Search in ProductHunt",
+  "createdAt": 1792841336140,
+  "drawflow": {
+    "nodes": [
+      {
+        "type": "BlockBasic",
+        "dimensions": {
+          "width": 192,
+          "height": 72
+        },
+        "handleBounds": {
+          "source": [
+            {
+              "id": "MeMnYgI8DFrfORUfmREmq-output-1",
+              "position": "right",
+              "x": 196.00003756009605,
+              "y": 28.000018780048062,
+              "width": 16,
+              "height": 16
+            }
+          ]
+        },
+        "computedPosition": {
+          "x": 96,
+          "y": 36,
+          "z": 0
+        },
+        "position": {
+          "x": 96,
+          "y": 36
+        },
+        "id": "MeMnYgI8DFrfORUfmREmq",
+        "label": "trigger",
+        "data": {
+          "disableBlock": false,
+          "description": "",
+          "type": "context-menu",
+          "interval": 60,
+          "delay": 5,
+          "date": "",
+          "time": "00:00",
+          "url": "",
+          "shortcut": "",
+          "activeInInput": false,
+          "isUrlRegex": false,
+          "days": [],
+          "contextMenuName": "Search in ProductHunt",
+          "contextTypes": [
+            "selection"
+          ],
+          "parameters": [],
+          "observeElement": {
+            "selector": "",
+            "baseSelector": "",
+            "matchPattern": "",
+            "targetOptions": {
+              "subtree": false,
+              "childList": true,
+              "attributes": false,
+              "attributeFilter": [],
+              "characterData": false
+            },
+            "baseElOptions": {
+              "subtree": false,
+              "childList": true,
+              "attributes": false,
+              "attributeFilter": [],
+              "characterData": false
+            }
+          }
+        },
+        "selected": false
+      },
+      {
+        "type": "BlockBasic",
+        "dimensions": {
+          "width": 192,
+          "height": 72
+        },
+        "handleBounds": {
+          "source": [
+            {
+              "id": "pdeg5g8-output-1",
+              "position": "right",
+              "x": 196.00003756009605,
+              "y": 28.000018780048062,
+              "width": 16,
+              "height": 16
+            }
+          ],
+          "target": [
+            {
+              "id": "pdeg5g8-input-1",
+              "position": "left",
+              "x": -19.99999999999999,
+              "y": 28.000018780048062,
+              "width": 16,
+              "height": 16
+            }
+          ]
+        },
+        "computedPosition": {
+          "x": 388,
+          "y": 36,
+          "z": 0
+        },
+        "position": {
+          "x": 388,
+          "y": 36
+        },
+        "label": "new-tab",
+        "data": {
+          "disableBlock": false,
+          "description": "",
+          "url": "https://www.producthunt.com/search?q={{variables@$ctxTextSelection}}",
+          "userAgent": "",
+          "active": true,
+          "inGroup": false,
+          "waitTabLoaded": false,
+          "updatePrevTab": false,
+          "customUserAgent": false
+        },
+        "id": "pdeg5g8",
+        "selected": false
+      }
+    ],
+    "edges": [
+      {
+        "id": "vueflow__edge-MeMnYgI8DFrfORUfmREmqMeMnYgI8DFrfORUfmREmq-output-1-pdeg5g8pdeg5g8-input-1",
+        "source": "MeMnYgI8DFrfORUfmREmq",
+        "target": "pdeg5g8",
+        "sourceHandle": "MeMnYgI8DFrfORUfmREmq-output-1",
+        "targetHandle": "pdeg5g8-input-1",
+        "updatable": true,
+        "selectable": true,
+        "type": "default",
+        "markerEnd": "",
+        "z": 0,
+        "sourceX": 0,
+        "sourceY": 0,
+        "targetX": 0,
+        "targetY": 0
+      }
+    ],
+    "position": [
+      136.59999999999997,
+      279.20001831054685
+    ],
+    "zoom": 1.3
+  }
+}
