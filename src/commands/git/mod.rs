@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::commands::gateway::start::{GatewayStartOptions, start_gateway};
 use crate::commands::dev::scanner::{
     collect_machine_scan_roots, format_clean_package_id, get_user_home_dir, should_skip_dir_entry,
 };
+use crate::commands::gateway::start::{GatewayStartOptions, start_gateway};
 use crate::infrastructure::gateway::probe_port;
 use crate::ui::{
     ClackOption, ClackSpinner, Column, Notify, OutputFormat, Table, TabularRow, badge_online,
@@ -260,7 +260,10 @@ pub async fn handle(
                     target_repos[0].id, target_repos[0].branch
                 )
             } else {
-                format!("Select action for {} selected repositories", target_repos.len())
+                format!(
+                    "Select action for {} selected repositories",
+                    target_repos.len()
+                )
             };
 
             match clack_select(&prompt_title, &act_opts, 0, 6)? {
@@ -326,7 +329,11 @@ pub async fn handle(
                 success_count,
                 target_repos.len(),
                 failed.len(),
-                failed.iter().map(|(id, _)| *id).collect::<Vec<_>>().join(", ")
+                failed
+                    .iter()
+                    .map(|(id, _)| *id)
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
         }
     }
@@ -352,9 +359,7 @@ async fn execute_git_action_single(
                     branch = repo.branch,
                 ));
             } else {
-                println!(
-                    "    \x1b[90m└─ Pushing via Gateway (socks5://127.0.0.1:1080)...\x1b[0m"
-                );
+                println!("    \x1b[90m└─ Pushing via Gateway (socks5://127.0.0.1:1080)...\x1b[0m");
             }
 
             run_git_subprocess(&repo.dir, &["push"], true)?;

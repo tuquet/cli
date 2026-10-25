@@ -173,9 +173,8 @@ pub async fn cloud_login(
                         tenant_role: c.tenant_role,
                         user_email: c.email,
                         name: c.name,
-                        message:
-                            "Workstation authenticated and paired successfully with Cloud"
-                                .to_string(),
+                        message: "Workstation authenticated and paired successfully with Cloud"
+                            .to_string(),
                     }),
                 )
                     .into_response()
@@ -246,8 +245,7 @@ pub async fn cloud_logout(State(state): State<crate::AppState>) -> impl IntoResp
                 StatusCode::OK,
                 Json(CloudLogoutResponse {
                     success: true,
-                    message: "Successfully logged out and disconnected from Cloud"
-                        .to_string(),
+                    message: "Successfully logged out and disconnected from Cloud".to_string(),
                 }),
             )
                 .into_response()

@@ -12,7 +12,10 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if interactive && is_interactive_tty() {
-        let want_login = clack_confirm("Would you like to authenticate and pair workstation with TQ Cloud now?", false)?;
+        let want_login = clack_confirm(
+            "Would you like to authenticate and pair workstation with TQ Cloud now?",
+            false,
+        )?;
         if want_login.unwrap_or(false) {
             crate::commands::cloud::handle_interactive().await?;
         } else {

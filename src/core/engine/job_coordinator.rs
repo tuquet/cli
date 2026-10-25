@@ -368,11 +368,17 @@ impl JobCoordinator {
 
         // Seed secrets from the local encrypted Secret Store, referenced in workflows
         // as `{{secrets@name}}` (Automa dialect). Values stay in memory only.
+        //
+        // SPEC-automation-execution §11: every execution path — including this local one —
+        // must register the values with the masker before running, otherwise a block that
+        // echoes a secret leaks it into the job logs and the persisted result payload.
+        let masker = std::sync::Arc::new(worker::core::masker::SecretMasker::new());
         {
             let store = worker::core::secrets::SecretStore::new();
             match store.load_all() {
                 Ok(map) => {
                     for (k, v) in &map {
+                        masker.add_custom_secret(v.clone());
                         initial_state.set_secret(k, serde_json::Value::String(v.clone()));
                     }
                 }
@@ -380,37 +386,46 @@ impl JobCoordinator {
             }
         }
 
-        let executor = worker::drivers::cdp::WorkflowDagExecutor::new(
-            graph,
-            std::sync::Arc::new(cdp_session),
-        );
+        let executor =
+            worker::drivers::cdp::WorkflowDagExecutor::new(graph, std::sync::Arc::new(cdp_session));
         match executor.execute(Some(initial_state), cancel_token).await {
             Ok(final_state) => {
                 let duration_ms = start_time.elapsed().as_millis() as i64;
                 for step in &final_state.step_logs {
                     let log_payload = crate::api::handlers::jobs::JobLogPayload {
                         r#type: step.status.clone(),
-                        message: Some(format!(
+                        message: Some(masker.mask(&format!(
                             "{}: {}",
                             step.name,
                             step.message.as_deref().unwrap_or("ok")
-                        )),
+                        ))),
                         logs: None,
                     };
                     let _ = Self::record_log(&state, &job_id, &log_payload).await;
                 }
-                let results = serde_json::json!({
+                // Scrub secrets from everything that is persisted or returned downstream.
+                let raw_results = serde_json::json!({
                     "variables": final_state.variables,
                     "table": final_state.table,
                     "stepLogs": final_state.step_logs,
-                });
+                })
+                .to_string();
+                let results: serde_json::Value =
+                    serde_json::from_str(&masker.mask(&raw_results)).unwrap_or_else(|_| {
+                        serde_json::json!({ "error": "result payload could not be re-parsed after masking" })
+                    });
                 let _ =
                     Self::finish_with_status(&state, &job_id, "completed", results, duration_ms)
                         .await;
             }
             Err(e) => {
                 let duration_ms = start_time.elapsed().as_millis() as i64;
-                tracing::error!("Workflow execution failed for job {}: {}", job_id, e);
+                let masked_error = masker.mask(&e);
+                tracing::error!(
+                    "Workflow execution failed for job {}: {}",
+                    job_id,
+                    masked_error
+                );
                 let _ = Self::finish_with_status(
                     &state,
                     &job_id,

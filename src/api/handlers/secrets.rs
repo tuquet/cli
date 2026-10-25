@@ -84,7 +84,9 @@ pub async fn get_secrets(
 ) -> Result<Json<SecretStoreStatus>, AutomationError> {
     let s = store();
     let local = s.load_all().map_err(AutomationError::Internal)?;
-    let device_public_key = DeviceKeypair::load_or_create(s.dir()).ok().map(|k| k.public_b64());
+    let device_public_key = DeviceKeypair::load_or_create(s.dir())
+        .ok()
+        .map(|k| k.public_b64());
 
     let mut cloud_count = 0;
     let mut cloud_error = None;
@@ -137,7 +139,10 @@ pub async fn list_credentials(
             Ok(rows) => {
                 cloud = rows
                     .into_iter()
-                    .map(|r| SecretRow { name: r.name, key_version: Some(r.key_version) })
+                    .map(|r| SecretRow {
+                        name: r.name,
+                        key_version: Some(r.key_version),
+                    })
                     .collect()
             }
             Err(e) => cloud_error = Some(e),
@@ -147,7 +152,10 @@ pub async fn list_credentials(
     Ok(Json(CredentialList {
         local: local
             .keys()
-            .map(|n| SecretRow { name: n.clone(), key_version: None })
+            .map(|n| SecretRow {
+                name: n.clone(),
+                key_version: None,
+            })
             .collect(),
         cloud,
         cloud_error,
@@ -174,14 +182,20 @@ pub async fn set_secret(
     Json(req): Json<SetSecretRequest>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {
     if req.name.trim().is_empty() {
-        return Err(AutomationError::BadRequest("Credential name must not be empty".into()));
+        return Err(AutomationError::BadRequest(
+            "Credential name must not be empty".into(),
+        ));
     }
     let s = store();
-    s.set(req.name.trim(), &req.value).map_err(AutomationError::Internal)?;
+    s.set(req.name.trim(), &req.value)
+        .map_err(AutomationError::Internal)?;
     Ok(Json(SecretOpResult {
         ok: true,
         affected: 1,
-        message: format!("Credential '{}' stored locally (encrypted).", req.name.trim()),
+        message: format!(
+            "Credential '{}' stored locally (encrypted).",
+            req.name.trim()
+        ),
     }))
 }
 
@@ -236,14 +250,23 @@ pub async fn push_secrets(
     let s = store();
     let map = s.load_all().map_err(AutomationError::Internal)?;
     if map.is_empty() {
-        return Ok(Json(SecretOpResult { ok: true, affected: 0, message: "No local credentials to push.".into() }));
+        return Ok(Json(SecretOpResult {
+            ok: true,
+            affected: 0,
+            message: "No local credentials to push.".into(),
+        }));
     }
-    let client = SecretClient::connect(s.dir()).await.map_err(AutomationError::BadRequest)?;
+    let client = SecretClient::connect(s.dir())
+        .await
+        .map_err(AutomationError::BadRequest)?;
     let n = client.push(&map).await.map_err(AutomationError::Internal)?;
     Ok(Json(SecretOpResult {
         ok: true,
         affected: n,
-        message: format!("Pushed {} credential(s) to Cloud (client-side encrypted).", n),
+        message: format!(
+            "Pushed {} credential(s) to Cloud (client-side encrypted).",
+            n
+        ),
     }))
 }
 
@@ -265,7 +288,9 @@ pub async fn pull_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {
     let s = store();
-    let client = SecretClient::connect(s.dir()).await.map_err(AutomationError::BadRequest)?;
+    let client = SecretClient::connect(s.dir())
+        .await
+        .map_err(AutomationError::BadRequest)?;
     let map = client.pull().await.map_err(AutomationError::Internal)?;
     let n = map.len();
     s.save_all(&map).map_err(AutomationError::Internal)?;
@@ -294,7 +319,9 @@ pub async fn rotate_secrets(
     State(_state): State<AppState>,
 ) -> Result<Json<SecretOpResult>, AutomationError> {
     let s = store();
-    let client = SecretClient::connect(s.dir()).await.map_err(AutomationError::BadRequest)?;
+    let client = SecretClient::connect(s.dir())
+        .await
+        .map_err(AutomationError::BadRequest)?;
     let n = client.rotate().await.map_err(AutomationError::Internal)? as usize;
     Ok(Json(SecretOpResult {
         ok: true,

@@ -71,9 +71,9 @@ pub async fn import_workflow(
     let settings = val.get("settings").cloned().unwrap_or_else(|| json!({}));
     let graph = extract_graph(&val);
 
-    let repo = CloudWorkflowRepository::connect().await.map_err(|e| -> Box<dyn std::error::Error> {
-        e.into()
-    })?;
+    let repo = CloudWorkflowRepository::connect()
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
     let wf = repo
         .upsert(
             id_opt.as_deref(),
@@ -106,9 +106,9 @@ pub async fn export_workflow(
     id: String,
     output: Option<PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let repo = CloudWorkflowRepository::connect().await.map_err(|e| -> Box<dyn std::error::Error> {
-        e.into()
-    })?;
+    let repo = CloudWorkflowRepository::connect()
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
     let wf = repo
         .find(&id)
         .await?
@@ -144,9 +144,9 @@ pub async fn export_workflow(
 }
 
 pub async fn delete_workflow(id: String) -> Result<(), Box<dyn std::error::Error>> {
-    let repo = CloudWorkflowRepository::connect().await.map_err(|e| -> Box<dyn std::error::Error> {
-        e.into()
-    })?;
+    let repo = CloudWorkflowRepository::connect()
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
     if repo.delete(&id).await? {
         crate::ui::Notify::success(format!(
             "Workflow '{}' deleted from automation.workflows.",

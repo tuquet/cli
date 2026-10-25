@@ -45,8 +45,7 @@ pub async fn verify_stealth_presentation(
     }
 
     // 2. Create isolated ephemeral sandbox directory (Zero collision guarantee)
-    let temp_profile =
-        std::env::temp_dir().join(format!("verify_{}", uuid::Uuid::new_v4()));
+    let temp_profile = std::env::temp_dir().join(format!("verify_{}", uuid::Uuid::new_v4()));
     tokio::fs::create_dir_all(&temp_profile).await?;
 
     println!("[1/4] Spawning Antidetect Chromium with dynamic ephemeral port...");

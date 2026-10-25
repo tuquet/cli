@@ -1,5 +1,5 @@
-use serde_json::Value;
 use browser::{BrowserProfile, PackReport, ProxyProbe, ProxyProbeResult};
+use serde_json::Value;
 use std::path::Path;
 
 use crate::infrastructure::cloud_reporter::{
@@ -297,9 +297,7 @@ impl CloudFleetOrchestrator {
                     "\n{} Workstation not enrolled with Cloud.",
                     badge_error("AUTH ERROR")
                 );
-                eprintln!(
-                    "Run 'tq worker enroll' or login to configure device credentials.\n"
-                );
+                eprintln!("Run 'tq worker enroll' or login to configure device credentials.\n");
                 return Err("Missing cloud device credentials".into());
             }
         };

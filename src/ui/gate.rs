@@ -19,7 +19,11 @@ pub async fn handle_readiness_gate(readiness: &WorkstationReadiness) -> Result<(
                 .first()
                 .map(|i| i.remedy.as_str())
                 .unwrap_or("run `tq doctor`");
-            eprintln!("⚠ runtime out of sync ({}) — {}", problems.join("; "), remedy);
+            eprintln!(
+                "⚠ runtime out of sync ({}) — {}",
+                problems.join("; "),
+                remedy
+            );
             std::process::exit(1);
         }
         ReadinessState::Pristine => Ok(()),

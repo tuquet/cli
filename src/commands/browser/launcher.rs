@@ -71,7 +71,10 @@ pub async fn launch_browser(
                 active.pid,
                 active.uptime_formatted()
             );
-            eprintln!("- To terminate the running instance: tq browser stop {}", profile.id);
+            eprintln!(
+                "- To terminate the running instance: tq browser stop {}",
+                profile.id
+            );
             eprintln!("- To force a concurrent instance: re-run with '--force'.");
             return Ok(());
         }
@@ -228,10 +231,7 @@ pub async fn launch_browser(
                 profile.id, pid, effective_port
             );
         } else {
-            println!(
-                "Started browser [{}] (pid: {}).",
-                profile.id, pid
-            );
+            println!("Started browser [{}] (pid: {}).", profile.id, pid);
         }
         return Ok(());
     }

@@ -157,10 +157,7 @@ pub async fn handle_profile(
                 profile.get_sandbox_dir(&base_dir).display().to_string(),
             );
             card.add_kv("Config File", meta_path.display().to_string());
-            card.with_footer(format!(
-                "Launch with: tq browser launch {}",
-                profile.id
-            ));
+            card.with_footer(format!("Launch with: tq browser launch {}", profile.id));
             println!();
             card.print();
             println!();
@@ -211,12 +208,21 @@ pub async fn handle_profile(
                 ("Name", &profile.name),
                 ("PRNG Seed", &seed_str),
                 ("Platform", &platform_str),
-                ("Brand", profile.browser_brand.as_deref().unwrap_or("Chrome")),
+                (
+                    "Brand",
+                    profile.browser_brand.as_deref().unwrap_or("Chrome"),
+                ),
                 ("Hardware", &hw_str),
                 ("Locale / Lang", profile.lang.as_deref().unwrap_or("vi-VN")),
-                ("Timezone", profile.timezone.as_deref().unwrap_or("Asia/Ho_Chi_Minh")),
+                (
+                    "Timezone",
+                    profile.timezone.as_deref().unwrap_or("Asia/Ho_Chi_Minh"),
+                ),
                 ("Proxy", proxy_str),
-                ("WebRTC Shield", profile.webrtc_mode.as_deref().unwrap_or("proxy_shielded")),
+                (
+                    "WebRTC Shield",
+                    profile.webrtc_mode.as_deref().unwrap_or("proxy_shielded"),
+                ),
                 ("Disk Footprint", &size_str),
                 ("Sandbox Path", &sandbox_str),
             ]);
@@ -233,7 +239,10 @@ pub async fn handle_profile(
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("ERROR: (tq.browser.profile.delete) Failed to delete profile [{}]: {}", id, e);
+                    eprintln!(
+                        "ERROR: (tq.browser.profile.delete) Failed to delete profile [{}]: {}",
+                        id, e
+                    );
                     Err(e.into())
                 }
             }
@@ -389,10 +398,7 @@ pub async fn handle_profile(
             if let Some(ref h) = profile.storage_hash {
                 card.add_kv("Verified SHA-256", h);
             }
-            card.with_footer(format!(
-                "Launch with: tq browser launch {}",
-                profile.id
-            ));
+            card.with_footer(format!("Launch with: tq browser launch {}", profile.id));
             println!();
             card.print();
             println!();
@@ -432,7 +438,9 @@ pub async fn handle_profile(
                         card.add_line(
                             "This profile is configured for DIRECT connection (no proxy).",
                         );
-                        card.with_footer("Set proxy with: tq browser profile create <name> --proxy socks5://...");
+                        card.with_footer(
+                            "Set proxy with: tq browser profile create <name> --proxy socks5://...",
+                        );
                         card.print();
                         println!();
                     }
@@ -516,10 +524,7 @@ async fn run_interactive_profile(
         ClackOption, clack_cancel, clack_intro, clack_note, clack_outro, clack_select, clack_text,
     };
 
-    clack_intro(
-        "tq browser profile",
-        "Antidetect Browser Profile Manager",
-    );
+    clack_intro("tq browser profile", "Antidetect Browser Profile Manager");
     let profiles = crate::core::browser::BrowserProfile::list_all(base_dir)?;
     clack_note(
         "Profile Summary",

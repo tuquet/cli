@@ -1,4 +1,4 @@
-use crate::infrastructure::gateway::{GatewayConfig, DiagnosticLevel};
+use crate::infrastructure::gateway::{DiagnosticLevel, GatewayConfig};
 use crate::ui::prompt::{
     clack_intro, clack_outro, clack_step_err, clack_step_info, clack_step_ok, clack_step_warn,
 };

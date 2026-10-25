@@ -3,9 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use super::sources::{
-    find_in_cloud, read_and_validate_file, resolve_by_path, resolve_inline_data,
-};
+use super::sources::{find_in_cloud, read_and_validate_file, resolve_by_path, resolve_inline_data};
 use super::types::{ResolvedWorkflow, WorkflowResolveError};
 use super::validator::{sanitize_workflow_data, validate_workflow_structure};
 
@@ -22,9 +20,15 @@ impl WorkflowResolver {
         workflow_data: Option<&serde_json::Value>,
         db: &Arc<Mutex<AutomationDb>>,
     ) -> Result<ResolvedWorkflow, WorkflowResolveError> {
-        let resolved =
-            Self::resolve_unvalidated(job_id, data_dir, workflow_id, workflow_path, workflow_data, db)
-                .await?;
+        let resolved = Self::resolve_unvalidated(
+            job_id,
+            data_dir,
+            workflow_id,
+            workflow_path,
+            workflow_data,
+            db,
+        )
+        .await?;
         super::validator::validate_workflow_document(&resolved.data)?;
         Ok(resolved)
     }

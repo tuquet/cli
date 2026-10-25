@@ -197,8 +197,7 @@ impl TenancyManager {
             (Some(tok), _) => tok.clone(),
             _ => {
                 return Err(
-                    "No active user session found. Please run 'tq login' to authenticate."
-                        .into(),
+                    "No active user session found. Please run 'tq login' to authenticate.".into(),
                 );
             }
         };

@@ -18,7 +18,9 @@ use crate::ui::{
 
 pub async fn handle(subcmd: Option<GatewaySubcommands>) -> Result<(), Box<dyn std::error::Error>> {
     match subcmd {
-        Some(GatewaySubcommands::Probe { url, timeout, json }) => run_probe(url, timeout, json).await?,
+        Some(GatewaySubcommands::Probe { url, timeout, json }) => {
+            run_probe(url, timeout, json).await?
+        }
         Some(GatewaySubcommands::Status { format }) => {
             let fmt = format.resolve();
             if !fmt.is_json() {

@@ -292,9 +292,7 @@ pub async fn handle_ext(
                 card.with_badge(badge_warn("NOT FOUND"));
                 card.with_min_width(64);
                 card.add_kv("ID", id);
-                card.add_line(
-                    "Extension not found in local registry. Run 'tq browser ext list'.",
-                );
+                card.add_line("Extension not found in local registry. Run 'tq browser ext list'.");
                 println!();
                 card.print();
                 println!();

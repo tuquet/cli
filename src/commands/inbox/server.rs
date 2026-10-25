@@ -307,10 +307,7 @@ pub async fn run_server(config: InboxConfig) -> Result<(), Box<dyn std::error::E
     let app = create_inbox_router(state);
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
 
-    println!(
-        "⚡ Inbox Webhook Daemon listening on http://{}",
-        addr
-    );
+    println!("⚡ Inbox Webhook Daemon listening on http://{}", addr);
     write_pid(std::process::id())?;
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

@@ -113,9 +113,7 @@ impl ConfigRegistry {
             card.add_kv(&label, format!("{}{}", entry.path.display(), status));
         }
 
-        card.with_footer(
-            "Tip: 'tq <service> config' for raw path or '--edit' to open in editor",
-        );
+        card.with_footer("Tip: 'tq <service> config' for raw path or '--edit' to open in editor");
         card.print();
         println!();
     }
@@ -135,8 +133,7 @@ impl ConfigRegistry {
                     .unwrap_or_default()
             }
             Some(crate::constants::PILLAR_FAKER) => {
-                serde_json::to_value(faker::config::FakerConfig::default())
-                    .unwrap_or_default()
+                serde_json::to_value(faker::config::FakerConfig::default()).unwrap_or_default()
             }
             Some(crate::constants::PILLAR_BROWSER) => {
                 serde_json::to_value(crate::config::BrowserConfig::default()).unwrap_or_default()
@@ -264,7 +261,10 @@ mod tests {
 
         for entry in list {
             assert!(
-                entry.path.to_string_lossy().contains(crate::constants::DEFAULT_SSOT_ROOT_DIR)
+                entry
+                    .path
+                    .to_string_lossy()
+                    .contains(crate::constants::DEFAULT_SSOT_ROOT_DIR)
                     || entry.path.to_string_lossy().contains(".tq")
             );
         }
@@ -302,7 +302,13 @@ mod tests {
     #[test]
     fn test_get_default_json_all_services() {
         for service in [
-            "gateway", "faker", "browser", "automation", "worker", "system", "inbox",
+            "gateway",
+            "faker",
+            "browser",
+            "automation",
+            "worker",
+            "system",
+            "inbox",
         ] {
             let def = ConfigRegistry::get_default_json(service);
             assert!(

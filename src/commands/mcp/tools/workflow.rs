@@ -2,7 +2,6 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use std::path::Path;
 
-
 #[derive(Serialize)]
 struct WfSummary {
     id: String,
@@ -141,8 +140,16 @@ async fn resolve_workflow_content(target: &str) -> Result<(String, String), Stri
     // Resolve from the Cloud table `automation.workflows`.
     let repo = crate::infrastructure::cloud::CloudWorkflowRepository::connect().await?;
     if let Some(wf) = repo.find(target).await? {
-        let nodes = wf.graph_data.get("nodes").cloned().unwrap_or_else(|| json!([]));
-        let edges = wf.graph_data.get("edges").cloned().unwrap_or_else(|| json!([]));
+        let nodes = wf
+            .graph_data
+            .get("nodes")
+            .cloned()
+            .unwrap_or_else(|| json!([]));
+        let edges = wf
+            .graph_data
+            .get("edges")
+            .cloned()
+            .unwrap_or_else(|| json!([]));
         let doc = serde_json::json!({
             "id": wf.id,
             "name": wf.name,

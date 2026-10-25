@@ -142,9 +142,7 @@ pub async fn handle_runtime(command: BrowserCommands) -> Result<(), Box<dyn std:
             card.with_footer("Use 'tq browser use <version>' to switch active version (e.g. '148', '144', 'lts')");
 
             if runtimes.is_empty() {
-                card.add_line(
-                    "No Antidetect Chromium runtimes found in ~/.tq/browser/runtimes/.",
-                );
+                card.add_line("No Antidetect Chromium runtimes found in ~/.tq/browser/runtimes/.");
                 card.add_line(
                     "Run 'tq browser install' to provision the recommended Golden LTS v148.",
                 );

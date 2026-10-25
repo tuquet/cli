@@ -198,9 +198,7 @@ pub async fn bootstrap(force_browser: bool) -> Result<(), Box<dyn std::error::Er
             "Pending download (tq browser install)"
         },
     );
-    card.with_footer(
-        "Next: Run 'tq doctor' to inspect dependencies or 'tq status' for dashboard.",
-    );
+    card.with_footer("Next: Run 'tq doctor' to inspect dependencies or 'tq status' for dashboard.");
     card.print();
     println!();
 

@@ -3,9 +3,7 @@ use crate::ui::{
     Card, ClackOption, Column, Table, badge_online, clack_cancel, clack_intro, clack_outro,
     clack_select, clack_step_ok, clack_text, is_interactive_tty,
 };
-use faker::{
-    generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value,
-};
+use faker::{generate_id_only, generate_users, list_nationality_metadata, to_csv, to_json_value};
 use std::fs;
 use std::path::PathBuf;
 

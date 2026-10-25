@@ -33,7 +33,8 @@ pub async fn kill_browsers(state: &mut TuiState) {
 
     state.status_message = format!("Terminating {} browser session(s)...", count);
     for session in &sessions {
-        let _ = crate::core::browser::pid_tracker::terminate_session(session, &base_dir, true).await;
+        let _ =
+            crate::core::browser::pid_tracker::terminate_session(session, &base_dir, true).await;
     }
     state.refresh().await;
     state.status_message = format!("Terminated {} browser session(s).", count);

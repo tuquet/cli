@@ -56,7 +56,9 @@ async fn run_loop(
                         let old_tab = state.active_tab;
                         match key.code {
                             KeyCode::Char('q') | KeyCode::Esc => break,
-                            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => break,
+                            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                break;
+                            }
                             KeyCode::Tab | KeyCode::Right => {
                                 state.active_tab = state.active_tab.next();
                             }

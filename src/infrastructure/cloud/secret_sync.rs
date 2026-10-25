@@ -16,7 +16,8 @@ use crate::config::AppConfig;
 use worker::core::secrets::{DeviceKeypair, aead_decrypt, aead_encrypt, unseal_box};
 
 fn decode_b64_clean(s: &str) -> Result<Vec<u8>, String> {
-    B64.decode(s.replace(['\n', '\r', ' '], "")).map_err(|e| e.to_string())
+    B64.decode(s.replace(['\n', '\r', ' '], ""))
+        .map_err(|e| e.to_string())
 }
 
 /// A secret row as exposed by the cloud (metadata only, never the plaintext).
@@ -40,9 +41,9 @@ impl SecretClient {
     /// and the local device keypair (`<store_dir>/.device_key`).
     pub async fn connect(store_dir: &Path) -> Result<Self, String> {
         let cfg = AppConfig::load();
-        let creds = CredentialStore::load(&cfg.data_dir)
-            .await
-            .ok_or_else(|| "Workstation not enrolled with Cloud. Run `tq auth login` first.".to_string())?;
+        let creds = CredentialStore::load(&cfg.data_dir).await.ok_or_else(|| {
+            "Workstation not enrolled with Cloud. Run `tq auth login` first.".to_string()
+        })?;
 
         let cloud_url = cfg
             .cloud_url
@@ -109,7 +110,9 @@ impl SecretClient {
                 serde_json::json!({ "p_public_key": self.keypair.public_b64() }),
             )
             .await?;
-        let sealed_b64 = raw.as_str().ok_or("register_device returned no sealed DEK")?;
+        let sealed_b64 = raw
+            .as_str()
+            .ok_or("register_device returned no sealed DEK")?;
         let sealed = decode_b64_clean(sealed_b64)?;
         let dek = unseal_box(&self.keypair.secret, &self.keypair.public, &sealed)
             .map_err(|e| format!("Failed to unseal DEK: {}", e))?;
@@ -157,7 +160,10 @@ impl SecretClient {
             let ct = decode_b64_clean(ct_b64)?;
             let nonce = decode_b64_clean(nonce_b64)?;
             let pt = aead_decrypt(&dek, &ct, &nonce)?;
-            map.insert(name.to_string(), String::from_utf8(pt).map_err(|e| e.to_string())?);
+            map.insert(
+                name.to_string(),
+                String::from_utf8(pt).map_err(|e| e.to_string())?,
+            );
         }
         Ok(map)
     }
@@ -169,7 +175,11 @@ impl SecretClient {
         Ok(arr
             .into_iter()
             .map(|row| RemoteSecret {
-                name: row.get("name").and_then(|v| v.as_str()).unwrap_or("?").to_string(),
+                name: row
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("?")
+                    .to_string(),
                 key_version: row.get("key_version").and_then(|v| v.as_i64()).unwrap_or(0),
             })
             .collect())

@@ -220,15 +220,13 @@ pub fn check_browser(missing_actions: &mut Vec<String>) -> (Card, bool) {
             "Profiles Sandbox",
             format!("{} profile(s) in {}", profile_count, profiles_dir.display()),
         );
-        browser_card
-            .with_footer("Manage with 'tq browser list' or 'tq browser use <version>'");
+        browser_card.with_footer("Manage with 'tq browser list' or 'tq browser use <version>'");
     } else {
         browser_card.with_badge(badge_error("MISSING ENGINE"));
         browser_card.add_line("No Antidetect Chromium runtime installed on this machine.");
         browser_card.with_footer("Run 'tq browser install 148' to install Golden LTS release");
         missing_actions.push(
-            "Browser: Run 'tq browser install 148' to install C++ Antidetect Chromium"
-                .to_string(),
+            "Browser: Run 'tq browser install 148' to install C++ Antidetect Chromium".to_string(),
         );
     }
 
@@ -379,7 +377,9 @@ pub fn check_verdict(
         for action in missing_actions {
             verdict_card.add_line(format!("  • {}", action));
         }
-        verdict_card.with_footer("Tip: Run 'tq doctor --fix' or 'tq bootstrap' to auto-remediate missing components.");
+        verdict_card.with_footer(
+            "Tip: Run 'tq doctor --fix' or 'tq bootstrap' to auto-remediate missing components.",
+        );
     }
 
     verdict_card

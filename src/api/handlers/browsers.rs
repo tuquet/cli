@@ -216,7 +216,9 @@ pub async fn get_browsers(
             let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
             let is_default = default_profile_id.as_deref() == Some(&p.id)
                 || (default_profile_id.is_none() && p.id == "default");
-            let extensions = p.extensions.unwrap_or_else(|| vec!["automation".to_string()]);
+            let extensions = p
+                .extensions
+                .unwrap_or_else(|| vec!["automation".to_string()]);
             BrowserResponse {
                 id: p.id,
                 name: p.name,
@@ -255,7 +257,9 @@ pub async fn create_browser(
 ) -> Result<Json<CreateBrowserResponse>, AutomationError> {
     let final_id = req.id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     if !is_valid_id(&final_id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
     let db = state.db.lock().await;
     let exts = req.extensions.as_deref();
@@ -311,7 +315,9 @@ pub async fn update_browser(
     Json(req): Json<UpdateBrowserRequest>,
 ) -> Result<Json<UpdateBrowserResponse>, AutomationError> {
     if !is_valid_id(&id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
     let db = state.db.lock().await;
     let name = req.name.unwrap_or_default();
@@ -365,7 +371,9 @@ pub async fn delete_browser(
     Path(id): Path<String>,
 ) -> Result<Json<DeleteBrowserResponse>, AutomationError> {
     if !is_valid_id(&id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
 
     let db = state.db.lock().await;
@@ -411,7 +419,9 @@ pub async fn get_browser_detail(
     Path(id): Path<String>,
 ) -> Result<Json<BrowserResponse>, AutomationError> {
     if !is_valid_id(&id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
     let db = state.db.lock().await;
     let browser_opt = db
@@ -434,7 +444,9 @@ pub async fn get_browser_detail(
         let is_default = default_profile_id.as_deref() == Some(&p.id)
             || (default_profile_id.is_none() && p.id == "default");
 
-        let extensions = p.extensions.unwrap_or_else(|| vec!["automation".to_string()]);
+        let extensions = p
+            .extensions
+            .unwrap_or_else(|| vec!["automation".to_string()]);
         let response = BrowserResponse {
             id: p.id,
             name: p.name,
@@ -450,7 +462,9 @@ pub async fn get_browser_detail(
 
         Ok(Json(response))
     } else {
-        Err(AutomationError::NotFound(format!("Browser '{id}' not found")))
+        Err(AutomationError::NotFound(format!(
+            "Browser '{id}' not found"
+        )))
     }
 }
 
@@ -483,7 +497,9 @@ pub async fn set_default_browser(
     Path(id): Path<String>,
 ) -> Result<Json<SetDefaultBrowserResponse>, AutomationError> {
     if !is_valid_id(&id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
 
     let db = state.db.lock().await;
@@ -595,7 +611,9 @@ pub async fn start_browser(
     body: Bytes,
 ) -> Result<Json<StartBrowserSessionResponse>, AutomationError> {
     if !is_valid_id(&browser_id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
 
     // Safely parse request body if provided, fallback to defaults if empty
@@ -745,8 +763,7 @@ pub async fn start_browser(
 
     // Edge Cases 1.1, 1.2, 2.1, 2.2: Resolve profile extension paths with JIT provisioning and safe ordering
     let profile_ext_ids = db_extensions.unwrap_or_else(|| vec!["automation".to_string()]);
-    let resolved_ext_paths =
-        browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
+    let resolved_ext_paths = browser::resolve_profile_extension_paths(&profile_ext_ids, true).await;
     let mut ext_path_strings: Vec<String> = resolved_ext_paths
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())
@@ -836,7 +853,9 @@ pub async fn stop_browser(
     Query(query): Query<StopBrowserQuery>,
 ) -> Result<Json<StopBrowserResponse>, AutomationError> {
     if !is_valid_id(&browser_id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
 
     let is_force = query.force.unwrap_or(false);
@@ -993,7 +1012,9 @@ pub async fn sideload_extension(
     Json(payload): Json<SideloadExtensionPayload>,
 ) -> Result<Json<SideloadExtensionResponse>, AutomationError> {
     if !is_valid_id(&id) {
-        return Err(AutomationError::BadRequest("Invalid browser ID".to_string()));
+        return Err(AutomationError::BadRequest(
+            "Invalid browser ID".to_string(),
+        ));
     }
 
     let ext_path = std::path::Path::new(&payload.extension_path);
@@ -1153,7 +1174,9 @@ pub async fn auto_detect_browsers(
             let is_online = online_browsers.contains(&p.id) || running_registry.contains_key(&p.id);
             let is_default = default_profile_id.as_deref() == Some(&p.id)
                 || (default_profile_id.is_none() && p.id == "default");
-            let extensions = p.extensions.unwrap_or_else(|| vec!["automation".to_string()]);
+            let extensions = p
+                .extensions
+                .unwrap_or_else(|| vec!["automation".to_string()]);
             BrowserResponse {
                 id: p.id,
                 name: p.name,
@@ -1181,7 +1204,9 @@ mod tests {
     use std::sync::Arc;
 
     fn create_test_state() -> AppState {
-        let db = Arc::new(tokio::sync::Mutex::new(AutomationDb::new_in_memory().unwrap()));
+        let db = Arc::new(tokio::sync::Mutex::new(
+            AutomationDb::new_in_memory().unwrap(),
+        ));
         let config = Arc::new(AppConfig::load());
         let (tx, _rx) = tokio::sync::broadcast::channel(100);
         let (worker_tx, _worker_rx) = tokio::sync::broadcast::channel(100);
@@ -1266,7 +1291,10 @@ mod tests {
             user_agent: Some("CustomAgent/2.0".to_string()),
             timezone: Some("Asia/Ho_Chi_Minh".to_string()),
             proxy: Some("http://proxy.local:8080".to_string()),
-            extensions: Some(vec!["automation".to_string(), "cookie-injector".to_string()]),
+            extensions: Some(vec![
+                "automation".to_string(),
+                "cookie-injector".to_string(),
+            ]),
         };
         let update_res = update_browser(
             State(state.clone()),

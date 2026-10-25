@@ -49,8 +49,12 @@ impl IntoResponse for AutomationError {
             AutomationError::ExecutionFailed(ref msg) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, msg.clone())
             }
-            AutomationError::DatabaseError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
-            AutomationError::IoError(ref err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            AutomationError::DatabaseError(ref msg) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, msg.clone())
+            }
+            AutomationError::IoError(ref err) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+            }
             AutomationError::JsonError(ref err) => (StatusCode::BAD_REQUEST, err.to_string()),
             AutomationError::Internal(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
         };

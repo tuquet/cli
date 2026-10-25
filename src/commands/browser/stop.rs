@@ -63,7 +63,7 @@ pub async fn handle_stop(
         crate::core::browser::pid_tracker::find_active_session(&target, &base_dir)
     {
         let pid = session.pid;
-                let p_id = session.profile_id.clone();
+        let p_id = session.profile_id.clone();
 
         crate::core::browser::pid_tracker::terminate_session(&session, &base_dir, force).await?;
 

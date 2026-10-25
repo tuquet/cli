@@ -1,16 +1,16 @@
 pub mod config;
 pub mod executor;
 pub mod inspector;
+pub mod store;
 pub mod studio;
 pub mod table;
-pub mod store;
 
 pub use config::manage_config;
 pub use executor::run_workflow;
 pub use inspector::inspect_workflow;
+pub use store::{delete_workflow, export_workflow, import_workflow};
 pub use studio::open_studio;
 pub use table::list_workflows;
-pub use store::{delete_workflow, export_workflow, import_workflow};
 
 use crate::cli::{AutomationSubcommands, WorkflowCommands};
 
@@ -31,16 +31,29 @@ pub async fn handle(command: AutomationSubcommands) -> Result<(), Box<dyn std::e
             let target_workflow = workflow.or(workflow_pos);
             if safe {
                 if !crate::infrastructure::gateway::probe_port(1080) {
-                    crate::ui::Notify::info("Safe mode: Gateway is offline. Auto-starting gateway...");
-                    let _ = crate::commands::gateway::start::start_gateway(crate::commands::gateway::start::GatewayStartOptions {
-                        server: None, tag: None, http: true, ssh: false, foreground: false,
-                    }).await;
+                    crate::ui::Notify::info(
+                        "Safe mode: Gateway is offline. Auto-starting gateway...",
+                    );
+                    let _ = crate::commands::gateway::start::start_gateway(
+                        crate::commands::gateway::start::GatewayStartOptions {
+                            server: None,
+                            tag: None,
+                            http: true,
+                            ssh: false,
+                            foreground: false,
+                        },
+                    )
+                    .await;
                 }
-                let probe = crate::core::browser::ProxyProbe::probe("socks5://127.0.0.1:1080", 5).await;
+                let probe =
+                    crate::core::browser::ProxyProbe::probe("socks5://127.0.0.1:1080", 5).await;
                 if !probe.alive {
                     return Err("Safe Mode: Gateway probe failed. Aborting to protect IP.".into());
                 }
-                crate::ui::Notify::success(format!("Safe mode: Egress IP verified {} (WebRTC Shielded)", probe.egress_ip.as_deref().unwrap_or("ok")));
+                crate::ui::Notify::success(format!(
+                    "Safe mode: Egress IP verified {} (WebRTC Shielded)",
+                    probe.egress_ip.as_deref().unwrap_or("ok")
+                ));
             }
             if let Some(ref target_cloud) = cloud_profile {
                 crate::infrastructure::cloud_fleet::CloudFleetOrchestrator::run_autonomous_cloud_session(

@@ -194,7 +194,10 @@ pub fn create_router(state: crate::AppState) -> Router {
         )
         // Secret Store — paths mirror the `secrets` schema / table names (SPEC-core-route-foundation §5.1)
         .route("/secrets", get(get_secrets))
-        .route("/secrets/credentials", get(list_credentials).post(set_secret))
+        .route(
+            "/secrets/credentials",
+            get(list_credentials).post(set_secret),
+        )
         .route("/secrets/credentials/{name}", delete(delete_secret))
         .route("/secrets/credentials/push", post(push_secrets))
         .route("/secrets/credentials/pull", post(pull_secrets))

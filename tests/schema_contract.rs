@@ -1,5 +1,7 @@
 use automation_core::cli::Cli;
-use automation_core::infrastructure::manifest::{find_by_route, list_by_pillar, manifest, raw_json};
+use automation_core::infrastructure::manifest::{
+    find_by_route, list_by_pillar, manifest, raw_json,
+};
 use clap::CommandFactory;
 
 #[test]
@@ -16,7 +18,14 @@ fn test_manifest_schema_and_json_validity() {
 
     // 2. Canonical pillars check (5 microservice storage pillars + execution runtimes)
     let required_pillars = [
-        "system", "automation", "browser", "gateway", "faker", "runner", "cloud", "inbox",
+        "system",
+        "automation",
+        "browser",
+        "gateway",
+        "faker",
+        "runner",
+        "cloud",
+        "inbox",
     ];
     for p in &required_pillars {
         assert!(
@@ -211,7 +220,13 @@ fn test_runtime_manifest_queries() {
 #[test]
 fn test_config_schemas_contract() {
     let services = [
-        "gateway", "browser", "automation", "worker", "faker", "system", "inbox",
+        "gateway",
+        "browser",
+        "automation",
+        "worker",
+        "faker",
+        "system",
+        "inbox",
     ];
     for s in services {
         let path = std::path::Path::new("schema/config").join(format!("{}.schema.json", s));

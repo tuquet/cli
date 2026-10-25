@@ -72,9 +72,8 @@ pub async fn handle_profile_cloud(
                 creds.tenant_id.as_deref().unwrap_or("Personal"),
             );
             header_card.add_kv("Cloud Endpoint", cloud_url);
-            header_card.with_footer(
-                "Acquire exclusive lease with: tq browser profile cloud acquire <id>",
-            );
+            header_card
+                .with_footer("Acquire exclusive lease with: tq browser profile cloud acquire <id>");
             header_card.print();
             println!();
 
@@ -566,7 +565,10 @@ pub async fn handle_profile_push(
             err_status, err_body
         );
         if json {
-            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+            println!(
+                "{}",
+                serde_json::json!({ "success": false, "error": err_msg })
+            );
         } else {
             crate::ui::Notify::error(&err_msg);
         }
@@ -574,7 +576,10 @@ pub async fn handle_profile_push(
     }
 
     // 5. Upsert metadata & integrity hash into browsers.profiles via RPC
-    let rpc_endpoint = format!("{}/rest/v1/rpc/upsert_browser_profile", cloud_url.trim_end_matches('/'));
+    let rpc_endpoint = format!(
+        "{}/rest/v1/rpc/upsert_browser_profile",
+        cloud_url.trim_end_matches('/')
+    );
     let rpc_res = client
         .post(&rpc_endpoint)
         .header("apikey", anon_key)
@@ -612,7 +617,10 @@ pub async fn handle_profile_push(
         let err_body = rpc_res.text().await.unwrap_or_default();
         let err_msg = format!("Failed to record profile in Cloud Database: {}", err_body);
         if json {
-            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+            println!(
+                "{}",
+                serde_json::json!({ "success": false, "error": err_msg })
+            );
         } else {
             crate::ui::Notify::error(&err_msg);
         }
@@ -652,7 +660,10 @@ pub async fn handle_profile_push(
     card.add_kv("Cloud Profile UUID", &profile_uuid);
     card.add_kv("Profile Name", &profile.name);
     card.add_kv("Tenant Workspace", tenant_id);
-    card.add_kv("Storage Path", format!("browser-profiles/{}", storage_rel_path));
+    card.add_kv(
+        "Storage Path",
+        format!("browser-profiles/{}", storage_rel_path),
+    );
     card.add_kv(
         "Archive Size",
         format!(
@@ -706,7 +717,10 @@ pub async fn handle_profile_pull(
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
     // 1. Fetch profile metadata from Cloud via RPC list_browsers
-    let rpc_endpoint = format!("{}/rest/v1/rpc/list_browsers", cloud_url.trim_end_matches('/'));
+    let rpc_endpoint = format!(
+        "{}/rest/v1/rpc/list_browsers",
+        cloud_url.trim_end_matches('/')
+    );
     let rpc_res = client
         .post(&rpc_endpoint)
         .header("apikey", anon_key)
@@ -723,7 +737,10 @@ pub async fn handle_profile_pull(
         let err_body = rpc_res.text().await.unwrap_or_default();
         let err_msg = format!("Failed to query profiles from Cloud: {}", err_body);
         if json {
-            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+            println!(
+                "{}",
+                serde_json::json!({ "success": false, "error": err_msg })
+            );
         } else {
             crate::ui::Notify::error(&err_msg);
         }
@@ -733,14 +750,23 @@ pub async fn handle_profile_pull(
     let profiles: Vec<serde_json::Value> = rpc_res.json().await?;
     let matched_profile = profiles.into_iter().find(|p| {
         p.get("id").and_then(|v| v.as_str()) == Some(id)
-            || p.get("name").and_then(|v| v.as_str()).map(|n| n.eq_ignore_ascii_case(id)).unwrap_or(false)
-            || p.get("metadata").and_then(|m| m.get("local_id")).and_then(|v| v.as_str()) == Some(id)
+            || p.get("name")
+                .and_then(|v| v.as_str())
+                .map(|n| n.eq_ignore_ascii_case(id))
+                .unwrap_or(false)
+            || p.get("metadata")
+                .and_then(|m| m.get("local_id"))
+                .and_then(|v| v.as_str())
+                == Some(id)
     });
 
     let profile_data = match matched_profile {
         Some(p) => p,
         None => {
-            let err = format!("No cloud profile found matching ID, alias, or name '{}'", id);
+            let err = format!(
+                "No cloud profile found matching ID, alias, or name '{}'",
+                id
+            );
             if json {
                 println!("{}", serde_json::json!({ "success": false, "error": err }));
             } else {
@@ -777,7 +803,10 @@ pub async fn handle_profile_pull(
             get_res.status()
         );
         if json {
-            println!("{}", serde_json::json!({ "success": false, "error": err_msg }));
+            println!(
+                "{}",
+                serde_json::json!({ "success": false, "error": err_msg })
+            );
         } else {
             crate::ui::Notify::error(&err_msg);
         }

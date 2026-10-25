@@ -203,7 +203,10 @@ mod contract_tests {
         // `element-change` is a real Automa block this engine does not implement.
         g["nodes"][1]["label"] = json!("element-change");
         let err = validate_workflow_document(&g).unwrap_err().to_string();
-        assert!(err.contains("does not implement"), "unexpected error: {err}");
+        assert!(
+            err.contains("does not implement"),
+            "unexpected error: {err}"
+        );
         assert!(err.contains("element-change"), "unexpected error: {err}");
     }
 
@@ -225,14 +228,20 @@ mod contract_tests {
     fn rejects_structure_violating_the_schema() {
         let g = json!({"nodes": "not-an-array"});
         let err = validate_workflow_document(&g).unwrap_err().to_string();
-        assert!(err.contains("workflow.schema.json"), "unexpected error: {err}");
+        assert!(
+            err.contains("workflow.schema.json"),
+            "unexpected error: {err}"
+        );
     }
 
     #[test]
     fn sanitize_strips_null_fields_so_our_own_output_conforms() {
         let raw = json!({"name": "x", "nodes": [], "edges": null, "settings": null});
         let clean = sanitize_workflow_data(&raw);
-        assert!(clean.get("edges").is_none(), "null fields must be dropped: {clean}");
+        assert!(
+            clean.get("edges").is_none(),
+            "null fields must be dropped: {clean}"
+        );
         assert!(validate_workflow_document(&clean).is_ok());
     }
 
@@ -252,11 +261,26 @@ mod automa_export_tests {
     use super::*;
 
     const EXPORTS: &[(&str, &str)] = &[
-        ("twitter-to-google-sheets", include_str!("../../../../fixtures/automa-export-twitter-to-google-sheets.json")),
-        ("google-search", include_str!("../../../../fixtures/automa-export-google-search.json")),
-        ("lorem-ipsum", include_str!("../../../../fixtures/automa-export-lorem-ipsum.json")),
-        ("producthunt-search", include_str!("../../../../fixtures/automa-export-producthunt-search.json")),
-        ("google-keyword-research", include_str!("../../../../fixtures/automa-export-google-keyword-research.json")),
+        (
+            "twitter-to-google-sheets",
+            include_str!("../../../../fixtures/automa-export-twitter-to-google-sheets.json"),
+        ),
+        (
+            "google-search",
+            include_str!("../../../../fixtures/automa-export-google-search.json"),
+        ),
+        (
+            "lorem-ipsum",
+            include_str!("../../../../fixtures/automa-export-lorem-ipsum.json"),
+        ),
+        (
+            "producthunt-search",
+            include_str!("../../../../fixtures/automa-export-producthunt-search.json"),
+        ),
+        (
+            "google-keyword-research",
+            include_str!("../../../../fixtures/automa-export-google-keyword-research.json"),
+        ),
     ];
 
     #[test]

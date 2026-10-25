@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
 use crate::ui::prompt::{
     ClackOption, clack_select, clack_step_ok, clack_step_warn, clack_text, is_interactive_tty,
 };
+use std::path::{Path, PathBuf};
 
 pub fn list_ssh_keys() -> Vec<PathBuf> {
     let home = std::env::var("USERPROFILE")
@@ -33,7 +33,9 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
     let mut selected_key_path = String::new();
 
     if keys.is_empty() {
-        clack_step_warn("No SSH private keys found in ~/.ssh/. You may generate one using 'ssh-keygen'.");
+        clack_step_warn(
+            "No SSH private keys found in ~/.ssh/. You may generate one using 'ssh-keygen'.",
+        );
     } else if interactive && is_interactive_tty() {
         let options: Vec<ClackOption> = keys
             .iter()
@@ -60,10 +62,16 @@ pub async fn run(interactive: bool) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         // Non-interactive / default
         if let Some(ed) = keys.iter().find(|k| k.ends_with("id_ed25519")) {
-            let fname = ed.file_name().and_then(|n| n.to_str()).unwrap_or("id_ed25519");
+            let fname = ed
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("id_ed25519");
             selected_key_path = format!("~/.ssh/{}", fname);
         } else if let Some(first) = keys.first() {
-            let fname = first.file_name().and_then(|n| n.to_str()).unwrap_or("id_rsa");
+            let fname = first
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("id_rsa");
             selected_key_path = format!("~/.ssh/{}", fname);
         }
     }

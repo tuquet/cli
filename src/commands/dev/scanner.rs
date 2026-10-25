@@ -945,11 +945,8 @@ mod tests {
     use std::fs;
 
     fn make_temp_test_dir(suffix: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "dev_scan_test_{}_{}",
-            std::process::id(),
-            suffix
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("dev_scan_test_{}_{}", std::process::id(), suffix));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir

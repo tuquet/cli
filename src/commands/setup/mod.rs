@@ -1,7 +1,7 @@
-pub mod gateway;
 pub mod browser;
 pub mod cloud;
 pub mod core;
+pub mod gateway;
 pub mod mcp;
 
 use crate::cli::{SetupArgs, SetupComponent};
@@ -91,11 +91,7 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
     let want_browser = if b_status.installed {
         false
     } else if is_interactive {
-        clack_confirm(
-            "Download Antidetect Chromium Golden LTS (~150MB)?",
-            false,
-        )?
-        .unwrap_or(false)
+        clack_confirm("Download Antidetect Chromium Golden LTS (~150MB)?", false)?.unwrap_or(false)
     } else {
         false
     };
@@ -110,8 +106,7 @@ pub async fn run(args: SetupArgs) -> Result<(), Box<dyn std::error::Error>> {
     // OPTIONAL 3: Cloud Pairing
     // ─────────────────────────────────────────────────────────────────────────────
     let want_cloud = if is_interactive {
-        clack_confirm("Pair workstation with TQ Cloud (Supabase)?", false)?
-            .unwrap_or(false)
+        clack_confirm("Pair workstation with TQ Cloud (Supabase)?", false)?.unwrap_or(false)
     } else {
         false
     };

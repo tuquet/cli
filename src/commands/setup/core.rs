@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use crate::config::canonical_ssot_dir;
 use crate::ui::prompt::clack_step_ok;
+use std::path::PathBuf;
 
 /// Result of Core provisioning
 pub struct CoreResult {

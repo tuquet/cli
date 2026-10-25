@@ -49,7 +49,9 @@ pub async fn run_probe(
         if let Some(ref err) = res.error {
             card.add_kv("Error Details", err);
         }
-        card.with_footer("Pre-flight egress check failed. Verify tunnel status with: tq gateway status");
+        card.with_footer(
+            "Pre-flight egress check failed. Verify tunnel status with: tq gateway status",
+        );
     }
 
     card.render();

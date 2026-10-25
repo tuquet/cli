@@ -10,35 +10,72 @@ use crate::ui::{
     badge_warn, clack_cancel, clack_intro, clack_outro, clack_select, colors, create_tabular_card,
 };
 
-
 // =============================================================================
 // HERMES-INSPIRED SECRET SCRUBBING & CHILD PROCESS SECURITY
 // =============================================================================
 
 /// Substrings that trigger aggressive secret scrubbing (Hermes Agent standard)
 pub const SECRET_SUBSTRINGS: &[&str] = &[
-    "KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "PASSWD",
-    "AUTH", "DSN", "WEBHOOK", "CREDS", "BEARER", "APIKEY", "COOKIE",
+    "KEY",
+    "TOKEN",
+    "SECRET",
+    "PASSWORD",
+    "CREDENTIAL",
+    "PASSWD",
+    "AUTH",
+    "DSN",
+    "WEBHOOK",
+    "CREDS",
+    "BEARER",
+    "APIKEY",
+    "COOKIE",
 ];
 
 /// Safe system environment variable prefixes allowed in subshells and sandboxes
 pub const SAFE_ENV_PREFIXES: &[&str] = &[
-    "PATH", "HOME", "USER", "LANG", "LC_", "TERM", "TMPDIR", "TMP",
-    "TEMP", "SHELL", "LOGNAME", "XDG_", "PYTHONPATH", "VIRTUAL_ENV", "CONDA",
+    "PATH",
+    "HOME",
+    "USER",
+    "LANG",
+    "LC_",
+    "TERM",
+    "TMPDIR",
+    "TMP",
+    "TEMP",
+    "SHELL",
+    "LOGNAME",
+    "XDG_",
+    "PYTHONPATH",
+    "VIRTUAL_ENV",
+    "CONDA",
 ];
 
 /// Essential Windows operating system environment variables (prevents WinSock / CRT crash)
 pub const WINDOWS_ESSENTIAL_ENV_VARS: &[&str] = &[
-    "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "COMSPEC", "PATHEXT", "OS",
-    "PROCESSOR_ARCHITECTURE", "NUMBER_OF_PROCESSORS", "PUBLIC", "ALLUSERSPROFILE",
-    "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "APPDATA", "LOCALAPPDATA",
-    "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "COMPUTERNAME",
+    "SYSTEMROOT",
+    "SYSTEMDRIVE",
+    "WINDIR",
+    "COMSPEC",
+    "PATHEXT",
+    "OS",
+    "PROCESSOR_ARCHITECTURE",
+    "NUMBER_OF_PROCESSORS",
+    "PUBLIC",
+    "ALLUSERSPROFILE",
+    "PROGRAMDATA",
+    "PROGRAMFILES",
+    "PROGRAMFILES(X86)",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "USERPROFILE",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "COMPUTERNAME",
 ];
 
 /// Non-secret Tuquet runtime environment variables that can safely ride along
-pub const TQ_ALLOWED_CONTEXT_VARS: &[&str] = &[
-    "TQ_HOME", "TQ_TENANT_ID", "TQ_SESSION_ID", "TQ_PROFILE",
-];
+pub const TQ_ALLOWED_CONTEXT_VARS: &[&str] =
+    &["TQ_HOME", "TQ_TENANT_ID", "TQ_SESSION_ID", "TQ_PROFILE"];
 
 /// Check if an environment variable name is considered secret
 pub fn is_secret_env_name(name: &str) -> bool {

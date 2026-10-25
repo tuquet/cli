@@ -50,7 +50,12 @@ pub fn print_key_values(items: &[(&str, &str)]) {
 
 /// Print a section header with optional indented key-value pairs
 pub fn print_section(title: &str, items: &[(&str, &str)]) {
-    println!("{BOLD}{CYAN}{title}{RESET}", BOLD = colors::BOLD, CYAN = colors::CYAN, RESET = colors::RESET);
+    println!(
+        "{BOLD}{CYAN}{title}{RESET}",
+        BOLD = colors::BOLD,
+        CYAN = colors::CYAN,
+        RESET = colors::RESET
+    );
     if items.is_empty() {
         return;
     }

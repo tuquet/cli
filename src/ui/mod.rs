@@ -1,8 +1,8 @@
 pub mod badges;
 pub mod banner;
 pub mod card;
-pub mod describe;
 pub mod colors;
+pub mod describe;
 pub mod format;
 pub mod gate;
 pub mod notify;
@@ -13,8 +13,8 @@ pub mod table;
 pub use badges::{badge_error, badge_offline, badge_online, badge_step, badge_warn, status_pill};
 pub use banner::{render_hero, render_update_banner};
 pub use card::Card;
-pub use describe::{print_key_values, print_section};
 pub use colors::visible_width;
+pub use describe::{print_key_values, print_section};
 pub use format::{FormatArgs, OutputFormat};
 pub use notify::Notify;
 pub use prompt::{

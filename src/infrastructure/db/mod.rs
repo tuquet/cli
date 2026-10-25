@@ -44,5 +44,4 @@ impl AutomationDb {
     pub fn settings(&self) -> SqliteSettingsRepository<'_> {
         SqliteSettingsRepository::new(&self.conn)
     }
-
 }

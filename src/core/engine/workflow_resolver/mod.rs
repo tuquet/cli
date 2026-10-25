@@ -66,14 +66,20 @@ mod tests {
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;
     }
 
-
     #[tokio::test]
     async fn debug_inline_validation() {
         let db = Arc::new(Mutex::new(AutomationDb::new_in_memory().unwrap()));
         let inline_json = r#"{"name":"Inline Str Flow","nodes":[]}"#;
-        let res = WorkflowResolver::resolve("j","/tmp",None,Some(inline_json),None,&db).await;
-        match res { Ok(r) => println!("DEBUG OK keys={:?}", r.data.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>())),
-                    Err(e) => println!("DEBUG ERR: {}", e) }
+        let res = WorkflowResolver::resolve("j", "/tmp", None, Some(inline_json), None, &db).await;
+        match res {
+            Ok(r) => println!(
+                "DEBUG OK keys={:?}",
+                r.data
+                    .as_object()
+                    .map(|o| o.keys().cloned().collect::<Vec<_>>())
+            ),
+            Err(e) => println!("DEBUG ERR: {}", e),
+        }
     }
 
     #[tokio::test]

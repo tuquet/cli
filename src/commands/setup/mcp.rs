@@ -1,7 +1,7 @@
-use serde_json::json;
-use std::path::{Path, PathBuf};
 use crate::infrastructure::gateway::tools::find_executable;
 use crate::ui::prompt::{ClackOption, clack_multiselect, clack_step_ok, is_interactive_tty};
+use serde_json::json;
+use std::path::{Path, PathBuf};
 
 pub struct AgentTarget {
     pub id: &'static str,
@@ -44,7 +44,9 @@ pub fn get_available_targets() -> Vec<AgentTarget> {
     #[cfg(windows)]
     let claude_config = {
         let appdata = std::env::var("APPDATA").unwrap_or_default();
-        PathBuf::from(appdata).join("Claude").join("claude_desktop_config.json")
+        PathBuf::from(appdata)
+            .join("Claude")
+            .join("claude_desktop_config.json")
     };
     #[cfg(target_os = "macos")]
     let claude_config = home_path
@@ -53,7 +55,10 @@ pub fn get_available_targets() -> Vec<AgentTarget> {
         .join("Claude")
         .join("claude_desktop_config.json");
     #[cfg(all(not(windows), not(target_os = "macos")))]
-    let claude_config = home_path.join(".config").join("Claude").join("claude_desktop_config.json");
+    let claude_config = home_path
+        .join(".config")
+        .join("Claude")
+        .join("claude_desktop_config.json");
 
     let claude_detected = claude_config.parent().map(|p| p.exists()).unwrap_or(false);
     targets.push(AgentTarget {
@@ -84,7 +89,9 @@ fn inject_mcp_config(config_file: &Path) -> Result<(), Box<dyn std::error::Error
 
     let mut config_val: serde_json::Value = if config_file.exists() {
         match std::fs::read_to_string(config_file) {
-            Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| json!({ "mcpServers": {} })),
+            Ok(content) => {
+                serde_json::from_str(&content).unwrap_or_else(|_| json!({ "mcpServers": {} }))
+            }
             Err(_) => json!({ "mcpServers": {} }),
         }
     } else {
@@ -110,7 +117,10 @@ fn inject_mcp_config(config_file: &Path) -> Result<(), Box<dyn std::error::Error
 
     // Set tuquet and remove old specter key if present
     config_val["mcpServers"]["tuquet"] = mcp_def.clone();
-    if let Some(servers) = config_val.get_mut("mcpServers").and_then(|v| v.as_object_mut()) {
+    if let Some(servers) = config_val
+        .get_mut("mcpServers")
+        .and_then(|v| v.as_object_mut())
+    {
         servers.remove("specter");
     }
 
@@ -167,7 +177,10 @@ pub fn run(interactive: bool) -> Result<Vec<String>, Box<dyn std::error::Error>>
                     configured.push(target.id.to_string());
                 }
                 Err(e) => {
-                    eprintln!("  Notice: Failed to write MCP config for {}: {}", target.name, e);
+                    eprintln!(
+                        "  Notice: Failed to write MCP config for {}: {}",
+                        target.name, e
+                    );
                 }
             }
         }

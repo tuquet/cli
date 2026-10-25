@@ -51,7 +51,10 @@ impl Workflow {
                 .and_then(Value::as_str)
                 .unwrap_or("1.0.0")
                 .to_string(),
-            status: row.get("status").and_then(Value::as_str).map(str::to_string),
+            status: row
+                .get("status")
+                .and_then(Value::as_str)
+                .map(str::to_string),
             graph_data: row.get("graph_data").cloned().unwrap_or_else(|| json!({})),
             settings: row.get("settings").cloned().unwrap_or_else(|| json!({})),
             updated_at: row
@@ -200,7 +203,9 @@ impl CloudWorkflowRepository {
 
     /// Soft-delete a workflow (sets `deleted_at`), matched by UUID or name.
     pub async fn delete(&self, target: &str) -> Result<bool, String> {
-        let value = self.rpc("workflow_delete", &json!({ "p_target": target })).await?;
+        let value = self
+            .rpc("workflow_delete", &json!({ "p_target": target }))
+            .await?;
         Ok(value.as_bool().unwrap_or(false))
     }
 }

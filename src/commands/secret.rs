@@ -41,9 +41,18 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
             let kp = DeviceKeypair::load_or_create(store.dir())?;
             println!("Secret Store ready.");
             println!("  dir        : {}", store.dir().display());
-            println!("  store      : {}", store.dir().join("secrets.json").display());
-            println!("  store key  : {} (0600)", store.dir().join(".secret_key").display());
-            println!("  device key : {} (0600, X25519)", store.dir().join(".device_key").display());
+            println!(
+                "  store      : {}",
+                store.dir().join("secrets.json").display()
+            );
+            println!(
+                "  store key  : {} (0600)",
+                store.dir().join(".secret_key").display()
+            );
+            println!(
+                "  device key : {} (0600, X25519)",
+                store.dir().join(".device_key").display()
+            );
             println!("  device pub : {}", B64.encode(kp.public));
             println!();
             println!("Add a secret:  tq secret set <name> <value>");
@@ -61,18 +70,25 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
             } else if names.is_empty() {
                 println!("No local secrets in {}.", store.dir().display());
             } else {
-                println!("Local Secret Store — {} entr(ies) in {}:", names.len(), store.dir().display());
+                println!(
+                    "Local Secret Store — {} entr(ies) in {}:",
+                    names.len(),
+                    store.dir().display()
+                );
                 for n in names {
                     println!("  • {}  →  ********", n);
                 }
             }
         }
         SecretSubcommands::Rm { name } => {
-            println!("{}", if store.remove(&name)? {
-                format!("Secret '{}' removed.", name)
-            } else {
-                format!("Secret '{}' not found.", name)
-            });
+            println!(
+                "{}",
+                if store.remove(&name)? {
+                    format!("Secret '{}' removed.", name)
+                } else {
+                    format!("Secret '{}' not found.", name)
+                }
+            );
         }
         SecretSubcommands::Path => println!("{}", store.dir().join("secrets.json").display()),
         SecretSubcommands::Push => {
@@ -83,7 +99,10 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
                 return Ok(());
             }
             let n = client.push(&map).await?;
-            println!("Pushed {} secret(s) — client-side encrypted (XChaCha20-Poly1305).", n);
+            println!(
+                "Pushed {} secret(s) — client-side encrypted (XChaCha20-Poly1305).",
+                n
+            );
         }
         SecretSubcommands::Pull => {
             let client = SecretClient::connect(store.dir()).await?;
@@ -94,7 +113,11 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
             }
             let count = map.len();
             store.save_all(&map)?;
-            println!("Pulled {} secret(s) from Cloud into {} (device-portable, no re-entry).", count, store.dir().display());
+            println!(
+                "Pulled {} secret(s) from Cloud into {} (device-portable, no re-entry).",
+                count,
+                store.dir().display()
+            );
         }
         SecretSubcommands::Remote => {
             let client = SecretClient::connect(store.dir()).await?;
@@ -104,14 +127,20 @@ pub async fn handle(cmd: SecretSubcommands) -> Result<(), Box<dyn std::error::Er
             } else {
                 println!("Cloud Secret Store — {} entr(ies):", rows.len());
                 for r in rows {
-                    println!("  • {}  →  ********  (key_version {})", r.name, r.key_version);
+                    println!(
+                        "  • {}  →  ********  (key_version {})",
+                        r.name, r.key_version
+                    );
                 }
             }
         }
         SecretSubcommands::Rotate => {
             let client = SecretClient::connect(store.dir()).await?;
             let n = client.rotate().await?;
-            println!("Rotated tenant DEK — re-encrypted {} value(s) and re-sealed for all devices.", n);
+            println!(
+                "Rotated tenant DEK — re-encrypted {} value(s) and re-sealed for all devices.",
+                n
+            );
         }
     }
 

@@ -134,7 +134,11 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
         ),
         TabularRow::new(
             "SQLite State",
-            format!("{} ({})", crate::constants::FILE_AUTOMATION_SQLITE, db_size_str),
+            format!(
+                "{} ({})",
+                crate::constants::FILE_AUTOMATION_SQLITE,
+                db_size_str
+            ),
             "Workflow & Job DB",
             if db_path.exists() {
                 badge_online("READY")

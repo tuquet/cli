@@ -158,9 +158,7 @@ async fn perform_in_place_self_update(
             }
 
             // Match full prefix archive (tuquet)
-            if name.starts_with(&prefix)
-                && (name.ends_with(".zip") || name.ends_with(".tar.gz"))
-            {
+            if name.starts_with(&prefix) && (name.ends_with(".zip") || name.ends_with(".tar.gz")) {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
                 break;
             }
@@ -174,10 +172,7 @@ async fn perform_in_place_self_update(
             }
             // Fallback raw binary
             if selected_asset.is_none()
-                && (name == "tq.exe"
-                    || name == "tq"
-                    || name == "tuquet.exe"
-                    || name == "tuquet")
+                && (name == "tq.exe" || name == "tq" || name == "tuquet.exe" || name == "tuquet")
             {
                 selected_asset = Some((name.to_string(), download_url.to_string(), size));
             }
@@ -281,8 +276,7 @@ async fn perform_in_place_self_update(
                 break;
             }
         }
-        extracted
-            .ok_or("Failed to locate 'tq' executable inside the downloaded tarball archive")?
+        extracted.ok_or("Failed to locate 'tq' executable inside the downloaded tarball archive")?
     } else {
         // Direct raw binary
         downloaded_bytes.to_vec()

@@ -20,8 +20,15 @@ impl TuiView {
 
         // 1. Header Bar
         crossterm::queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-        let title = format!(" [tq tui] TUQUET MISSION CONTROL v{} ", env!("CARGO_PKG_VERSION"));
-        let tick_indicator = if state.tick_count.is_multiple_of(2) { "● LIVE" } else { "○ LIVE" };
+        let title = format!(
+            " [tq tui] TUQUET MISSION CONTROL v{} ",
+            env!("CARGO_PKG_VERSION")
+        );
+        let tick_indicator = if state.tick_count.is_multiple_of(2) {
+            "● LIVE"
+        } else {
+            "○ LIVE"
+        };
         let top_right = format!(" [{} 1s] [q: Quit] ", tick_indicator);
 
         crossterm::queue!(
@@ -103,7 +110,11 @@ impl TuiView {
             stdout,
             cursor::MoveTo(0, status_row),
             terminal::Clear(terminal::ClearType::UntilNewLine),
-            SetBackgroundColor(Color::Rgb { r: 24, g: 24, b: 27 }),
+            SetBackgroundColor(Color::Rgb {
+                r: 24,
+                g: 24,
+                b: 27
+            }),
             SetForegroundColor(Color::Yellow)
         )?;
         let msg = format!(" STATUS: {}", state.status_message);
@@ -119,7 +130,11 @@ impl TuiView {
         Ok(())
     }
 
-    fn render_workflow_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_workflow_details(
+        state: &TuiState,
+        width: usize,
+        stdout: &mut io::Stdout,
+    ) -> io::Result<usize> {
         let mut count = 0;
         Self::print_box_line(stdout, width, "● WORKFLOW AUTOMATION & EXECUTION ENGINE")?;
         count += 1;
@@ -141,7 +156,10 @@ impl TuiView {
         Self::print_box_line(
             stdout,
             width,
-            &format!("  Runner RPC Endpoint : http://127.0.0.1:{}", state.runner.port),
+            &format!(
+                "  Runner RPC Endpoint : http://127.0.0.1:{}",
+                state.runner.port
+            ),
         )?;
         count += 1;
         Self::print_box_line(
@@ -173,18 +191,38 @@ impl TuiView {
             "─ COMMANDS & SHORTCUTS ────────────────────────────────────────────────────────",
         )?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • 'r' / 'R'         : Refresh live runner & workflow state")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • 'r' / 'R'         : Refresh live runner & workflow state",
+        )?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq automation run : Execute automation workflow directly")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq automation run : Execute automation workflow directly",
+        )?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq automation list: List all workflows stored in local database")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq automation list: List all workflows stored in local database",
+        )?;
         count += 1;
-        Self::print_box_line(stdout, width, "  • tq worker start   : Start background worker daemon")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "  • tq worker start   : Start background worker daemon",
+        )?;
         count += 1;
         Ok(count)
     }
 
-    fn render_browser_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_browser_details(
+        state: &TuiState,
+        width: usize,
+        stdout: &mut io::Stdout,
+    ) -> io::Result<usize> {
         let mut count = 0;
         Self::print_box_line(stdout, width, "● BROWSER RUNTIME & ANTI-DETECT FLEET")?;
         count += 1;
@@ -268,7 +306,11 @@ impl TuiView {
         Ok(count)
     }
 
-    fn render_gateway_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_gateway_details(
+        state: &TuiState,
+        width: usize,
+        stdout: &mut io::Stdout,
+    ) -> io::Result<usize> {
         let mut count = 0;
         Self::print_box_line(stdout, width, "● NETWORK GATEWAY & MULTI-VPS MESH")?;
         count += 1;
@@ -360,9 +402,17 @@ impl TuiView {
         Ok(count)
     }
 
-    fn render_auth_details(state: &TuiState, width: usize, stdout: &mut io::Stdout) -> io::Result<usize> {
+    fn render_auth_details(
+        state: &TuiState,
+        width: usize,
+        stdout: &mut io::Stdout,
+    ) -> io::Result<usize> {
         let mut count = 0;
-        Self::print_box_line(stdout, width, "● CLOUD AUTHENTICATION & MULTI-TENANT IDENTITY")?;
+        Self::print_box_line(
+            stdout,
+            width,
+            "● CLOUD AUTHENTICATION & MULTI-TENANT IDENTITY",
+        )?;
         count += 1;
         Self::print_box_line(stdout, width, "")?;
         count += 1;

@@ -12,7 +12,7 @@ pub use credential_store::{
     DeviceCredentials, TenantInfo,
 };
 pub use fingerprint::MachineFingerprint;
-pub use supabase_auth::{AuthSession, AuthUser, SupabaseAuthClient};
 pub use secret_sync::{RemoteSecret, SecretClient};
+pub use supabase_auth::{AuthSession, AuthUser, SupabaseAuthClient};
 pub use tenancy::TenancyManager;
 pub use workflow_store::{CloudWorkflowRepository, Workflow};

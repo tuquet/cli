@@ -3,8 +3,8 @@ use crate::infrastructure::gateway::{
     check_dependencies, probe_port,
 };
 use crate::ui::prompt::{
-    clack_intro, clack_outro, clack_select, clack_step_err, clack_step_ok, clack_step_warn,
-    ClackOption, ClackSpinner, is_interactive_tty,
+    ClackOption, ClackSpinner, clack_intro, clack_outro, clack_select, clack_step_err,
+    clack_step_ok, clack_step_warn, is_interactive_tty,
 };
 
 pub struct GatewayStartOptions<'a> {
@@ -15,7 +15,9 @@ pub struct GatewayStartOptions<'a> {
     pub foreground: bool,
 }
 
-pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn start_gateway(
+    mut opts: GatewayStartOptions<'_>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = GatewayConfig::load()?;
 
     if config.servers.is_empty() {
@@ -29,7 +31,11 @@ pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<
     let enabled_servers = ServerSelector::get_enabled(&config);
 
     // Interactive prompt only when on a TTY and no explicit server/tag/http options provided
-    let is_interactive = is_interactive_tty() && opts.server.is_none() && opts.tag.is_none() && !opts.http && !opts.ssh;
+    let is_interactive = is_interactive_tty()
+        && opts.server.is_none()
+        && opts.tag.is_none()
+        && !opts.http
+        && !opts.ssh;
 
     if is_interactive {
         clack_intro("tq gateway start", "Autonomous SOCKS5 & HTTP Forwarder");
@@ -41,16 +47,8 @@ pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<
                 "full",
                 "SOCKS5 (:1080) and HTTP forwarder (:8118) (default)",
             ),
-            ClackOption::new(
-                "socks5",
-                "socks5",
-                "SOCKS5 dynamic proxy only (:1080)",
-            ),
-            ClackOption::new(
-                "http",
-                "http",
-                "HTTP-to-SOCKS5 forwarder only (:8118)",
-            ),
+            ClackOption::new("socks5", "socks5", "SOCKS5 dynamic proxy only (:1080)"),
+            ClackOption::new("http", "http", "HTTP-to-SOCKS5 forwarder only (:8118)"),
         ];
 
         if let Ok(Some(idx)) = clack_select("Select gateway mode:", &mode_options, 0, 5) {
@@ -72,7 +70,11 @@ pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<
         if enabled_servers.len() > 1 {
             let mut srv_options = Vec::new();
             for (id, srv) in &enabled_servers {
-                let desc = srv.cf_hostname.as_deref().or(srv.host.as_deref()).unwrap_or("active");
+                let desc = srv
+                    .cf_hostname
+                    .as_deref()
+                    .or(srv.host.as_deref())
+                    .unwrap_or("active");
                 srv_options.push(ClackOption::new(id.as_str(), id.as_str(), desc));
             }
             srv_options.push(ClackOption::new("all", "all", "all enabled servers"));
@@ -84,7 +86,11 @@ pub async fn start_gateway(mut opts: GatewayStartOptions<'_>) -> Result<(), Box<
                 }
             }
         } else if let Some((single_id, single_srv)) = enabled_servers.first() {
-            let desc = single_srv.cf_hostname.as_deref().or(single_srv.host.as_deref()).unwrap_or("active");
+            let desc = single_srv
+                .cf_hostname
+                .as_deref()
+                .or(single_srv.host.as_deref())
+                .unwrap_or("active");
             eprintln!("Target server: {} ({})", single_id, desc);
         }
     }
@@ -227,7 +233,10 @@ async fn start_gateway_core(
                     http_active = true;
                 }
                 Err(e) => {
-                    clack_step_err(format!("Failed to start embedded HTTP gateway on port {}: {}", http_port, e));
+                    clack_step_err(format!(
+                        "Failed to start embedded HTTP gateway on port {}: {}",
+                        http_port, e
+                    ));
                 }
             }
         }
@@ -239,7 +248,9 @@ async fn start_gateway_core(
         eprintln!("  HTTP forwarder : 127.0.0.1:{}", http_port);
     }
     eprintln!("  Supervisor     : active (probe: 5s, auto-heal: enabled)");
-    eprintln!("\n[watchdog] Press Ctrl+C to detach (daemon keeps running). Run 'tq gateway stop' to terminate.\n");
+    eprintln!(
+        "\n[watchdog] Press Ctrl+C to detach (daemon keeps running). Run 'tq gateway stop' to terminate.\n"
+    );
 
     // Unified Watchdog Loop: Streams live health and detaches cleanly on Ctrl+C without killing tunnels
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));

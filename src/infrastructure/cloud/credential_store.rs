@@ -104,7 +104,9 @@ impl CredentialStore {
 
     /// Path of the local key used to encrypt the identity file at rest.
     fn key_path() -> PathBuf {
-        crate::config::canonical_dir().join("system").join(".identity_key")
+        crate::config::canonical_dir()
+            .join("system")
+            .join(".identity_key")
     }
 
     pub async fn load(data_dir: &str) -> Option<DeviceCredentials> {

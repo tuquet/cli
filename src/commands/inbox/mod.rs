@@ -566,10 +566,7 @@ pub async fn handle_status(
                 format!("http://{}:{}", config.host, config.port),
             );
         } else {
-            card.add_kv(
-                "Daemon Status",
-                "Not running (Start with 'tq inbox start')",
-            );
+            card.add_kv("Daemon Status", "Not running (Start with 'tq inbox start')");
         }
 
         card.add_kv(

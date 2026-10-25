@@ -68,7 +68,10 @@ pub async fn handle(
                             "browser",
                             "Antidetect Chromium Runtime (browser.schema.json)",
                         ),
-                        ("automation", "Workflow Automation Engine (automation.schema.json)"),
+                        (
+                            "automation",
+                            "Workflow Automation Engine (automation.schema.json)",
+                        ),
                         ("worker", "Distributed Worker Daemon (worker.schema.json)"),
                         (
                             "system",

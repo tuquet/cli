@@ -200,7 +200,11 @@ impl TuiState {
                 .as_ref()
                 .and_then(|w| w.default_server.clone())
                 .unwrap_or_else(|| "my-vps".to_string()),
-            active_servers: if git_active || ssh_active || http_active { 1 } else { 0 },
+            active_servers: if git_active || ssh_active || http_active {
+                1
+            } else {
+                0
+            },
             total_servers: gateway_cfg.servers.len(),
         };
 
@@ -264,7 +268,8 @@ impl TuiState {
         };
 
         // 4. Probe Cloud Identity
-        let cloud_creds = crate::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await;
+        let cloud_creds =
+            crate::infrastructure::cloud_reporter::CloudReporter::whoami(&config.data_dir).await;
         let hostname = std::env::var("COMPUTERNAME")
             .or_else(|_| std::env::var("HOSTNAME"))
             .unwrap_or_else(|_| "WORKSTATION".to_string());
@@ -273,7 +278,9 @@ impl TuiState {
             self.cloud = CloudState {
                 enrolled: true,
                 host_name: creds.name,
-                tenant_name: creds.tenant_id.unwrap_or_else(|| "Enterprise Corp".to_string()),
+                tenant_name: creds
+                    .tenant_id
+                    .unwrap_or_else(|| "Enterprise Corp".to_string()),
                 cloud_url: creds.cloud_url.unwrap_or_else(|| "Cloud Mesh".to_string()),
             };
         } else {

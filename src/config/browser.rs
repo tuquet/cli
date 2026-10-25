@@ -100,6 +100,10 @@ mod tests {
         assert_eq!(config.default_browser, "chromium");
         assert_eq!(config.viewport_width, 1280);
         assert!(!config.headless);
-        assert!(config.autoload_extensions.contains(&"automation".to_string()));
+        assert!(
+            config
+                .autoload_extensions
+                .contains(&"automation".to_string())
+        );
     }
 }

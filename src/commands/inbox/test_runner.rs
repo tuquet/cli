@@ -148,10 +148,7 @@ pub async fn run_acceptance_test(
     }
 
     // 4. Ingestion & Regex Extraction Test
-    let test_recipient = format!(
-        "test_mmo_{}@tuquet.local",
-        test_start.elapsed().as_millis()
-    );
+    let test_recipient = format!("test_mmo_{}@tuquet.local", test_start.elapsed().as_millis());
     let test_code = "839201";
     let t3 = Instant::now();
     let parsed = EmailParser::parse(

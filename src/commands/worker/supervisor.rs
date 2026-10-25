@@ -182,7 +182,10 @@ pub async fn stop_daemon(force: bool) -> Result<(), Box<dyn std::error::Error>> 
                 .map(|s| s.to_string_lossy())
                 .collect::<Vec<_>>()
                 .join(" ");
-            if (cmd.contains("worker") || cmd.contains("tuquet")) && cmd.contains("start") && !found_pids.contains(&p_u32) {
+            if (cmd.contains("worker") || cmd.contains("tuquet"))
+                && cmd.contains("start")
+                && !found_pids.contains(&p_u32)
+            {
                 found_pids.push(p_u32);
             }
         }
