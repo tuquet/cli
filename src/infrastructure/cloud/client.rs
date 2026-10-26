@@ -1,4 +1,4 @@
-use super::credential_store::{DEFAULT_SUPABASE_ANON_KEY, DeviceCredentials, epoch_secs_now};
+use super::credential_store::{DeviceCredentials, epoch_secs_now, resolve_supabase_anon_key};
 use super::fingerprint::MachineFingerprint;
 use tracing::info;
 
@@ -96,8 +96,7 @@ impl CloudApiClient {
             target_url
         );
 
-        let anon_key = std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY)
-            .unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let anon_key = resolve_supabase_anon_key(None)?;
         let auth_header = match bearer_token {
             Some(tok) if !tok.trim().is_empty() => format!("Bearer {}", tok.trim()),
             _ => format!("Bearer {}", anon_key),

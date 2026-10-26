@@ -14,7 +14,7 @@ pub async fn execute_status() -> Result<String, String> {
             "device_id": creds.device_id,
             "device_name": creds.name,
             "tenant_id": creds.tenant_id.as_deref().unwrap_or("Personal Workspace"),
-            "endpoint": creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co")
+            "endpoint": creds.cloud_url.as_deref().unwrap_or("(not configured)")
         })
     } else {
         json!({

@@ -60,14 +60,10 @@ pub async fn list_tenants(format: OutputFormat) -> Result<(), Box<dyn std::error
         }
     };
 
-    let cloud_url = creds
-        .cloud_url
-        .clone()
-        .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-    let api_key = creds
-        .api_key
-        .clone()
-        .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
+    let cloud_url =
+        crate::infrastructure::cloud::resolve_supabase_url(None, creds.cloud_url.as_deref())?;
+    let api_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
 
     let client = CloudApiClient::build_http_client();
 

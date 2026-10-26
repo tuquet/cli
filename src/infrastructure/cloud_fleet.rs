@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::path::Path;
 
 use crate::infrastructure::cloud_reporter::{
-    CloudReporter, DEFAULT_SUPABASE_ANON_KEY, DeviceCredentials,
+    CloudReporter, DeviceCredentials,
 };
 use crate::ui::{Card, badge_error, badge_online, badge_step};
 
@@ -302,18 +302,15 @@ impl CloudFleetOrchestrator {
             }
         };
 
-        let cloud_url = app_config
-            .cloud_url
-            .as_deref()
-            .or(creds.cloud_url.as_deref())
-            .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-        let anon_key = creds
-            .api_key
-            .as_deref()
-            .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
+        let cloud_url = crate::infrastructure::cloud::resolve_supabase_url(
+            app_config.cloud_url.as_deref(),
+            creds.cloud_url.as_deref(),
+        )?;
+        let anon_key =
+            crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
         let client = CloudReporter::build_http_client();
 
-        let cloud_id = Self::resolve_profile_id(&client, cloud_url, anon_key, &creds, id_or_name)
+        let cloud_id = Self::resolve_profile_id(&client, &cloud_url, &anon_key, &creds, id_or_name)
             .await
             .map_err(|e| format!("{}", e))?;
 
@@ -323,7 +320,7 @@ impl CloudFleetOrchestrator {
             cloud_id
         );
         let lease =
-            match Self::acquire_lease(&client, cloud_url, anon_key, &creds, &cloud_id, &base_dir)
+            match Self::acquire_lease(&client, &cloud_url, &anon_key, &creds, &cloud_id, &base_dir)
                 .await
             {
                 Ok(l) => l,
@@ -348,7 +345,7 @@ impl CloudFleetOrchestrator {
         if let Err(probe_err) = Self::preflight_proxy(lease.proxy.as_deref()).await {
             eprintln!("\n{} {}", badge_error("PRE-FLIGHT FAILED"), probe_err);
             println!("  • Aborting to prevent IP leak. Rolling back lease to IDLE...");
-            Self::abort_lease(&client, cloud_url, anon_key, &creds, &cloud_id).await;
+            Self::abort_lease(&client, &cloud_url, &anon_key, &creds, &cloud_id).await;
             return Err(format!("{}", probe_err).into());
         }
 
@@ -382,8 +379,8 @@ impl CloudFleetOrchestrator {
         );
         let report = match Self::release_lease(
             &client,
-            cloud_url,
-            anon_key,
+            &cloud_url,
+            &anon_key,
             &creds,
             &lease.profile,
             &base_dir,

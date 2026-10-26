@@ -168,14 +168,11 @@ impl TenancyManager {
             .await
             .ok_or("No active cloud session found on this machine. Run 'tq login' first.")?;
 
-        let cloud_url = creds
-            .cloud_url
-            .clone()
-            .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-        let api_key = creds
-            .api_key
-            .clone()
-            .unwrap_or_else(|| super::credential_store::DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let cloud_url = super::credential_store::resolve_supabase_url(
+            None,
+            creds.cloud_url.as_deref(),
+        )?;
+        let api_key = super::credential_store::resolve_supabase_anon_key(creds.api_key.as_deref())?;
 
         let client = CloudApiClient::build_http_client();
 

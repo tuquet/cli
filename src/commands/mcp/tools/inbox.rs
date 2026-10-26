@@ -16,7 +16,8 @@ pub async fn execute_inbox_otp(args: &Value) -> Result<String, String> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())
         .map_err(|e| format!("Failed to open local storage: {}", e))?;
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)
+        .map_err(|e| format!("Cloud config error: {}", e))?;
 
     let otp_res = if wait {
         cloud
@@ -52,7 +53,8 @@ pub async fn execute_inbox_status() -> Result<String, String> {
     let storage = InboxStorage::open(InboxConfig::sqlite_path())
         .map_err(|e| format!("Failed to open local storage: {}", e))?;
     let stats = storage.stats().unwrap_or_default();
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)
+        .map_err(|e| format!("Cloud config error: {}", e))?;
     let pid = read_pid();
 
     let out = json!({

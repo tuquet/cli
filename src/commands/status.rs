@@ -21,7 +21,7 @@ pub async fn show_dashboard(format: OutputFormat) -> Result<(), Box<dyn std::err
             creds
                 .cloud_url
                 .as_deref()
-                .unwrap_or(crate::constants::DEFAULT_DEV_SUPABASE_URL),
+                .unwrap_or("(not configured)"),
             badge_online("CONNECTED"),
         )
     } else {

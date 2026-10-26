@@ -12,10 +12,8 @@
 
 use serde_json::{Value, json};
 
-use super::credential_store::{CredentialStore, DEFAULT_SUPABASE_ANON_KEY};
+use super::credential_store::{CredentialStore, resolve_supabase_anon_key, resolve_supabase_url};
 use crate::config::AppConfig;
-
-const DEFAULT_CLOUD_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
 
 #[derive(Debug, Clone)]
 pub struct Workflow {
@@ -98,16 +96,15 @@ impl CloudWorkflowRepository {
             .tenant_id
             .clone()
             .ok_or_else(|| "No tenant bound. Run `tq auth login` again.".to_string())?;
-        let base = creds
-            .cloud_url
-            .clone()
-            .or(config.cloud_url.clone())
-            .unwrap_or_else(|| DEFAULT_CLOUD_URL.to_string());
+        let base = resolve_supabase_url(
+            config.cloud_url.as_deref(),
+            creds.cloud_url.as_deref(),
+        )?;
 
         Ok(Self {
             client: reqwest::Client::new(),
             base: base.trim_end_matches('/').to_string(),
-            api_key: DEFAULT_SUPABASE_ANON_KEY.to_string(),
+            api_key: resolve_supabase_anon_key(creds.api_key.as_deref())?,
             token,
             tenant_id,
         })

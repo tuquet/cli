@@ -1,7 +1,7 @@
 use crate::cli::CloudSubcommands;
 use crate::config::AppConfig;
 use crate::infrastructure::cloud::{
-    CloudApiClient, CredentialStore, DEFAULT_SUPABASE_ANON_KEY, SupabaseAuthClient, TenancyManager,
+    CloudApiClient, CredentialStore, SupabaseAuthClient, TenancyManager,
     TenantInfo,
 };
 use crate::infrastructure::cloud_reporter::CloudReporter;
@@ -68,14 +68,13 @@ pub async fn login(
     format: OutputFormat,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = AppConfig::load();
-    let cloud_url = url
-        .or(config.cloud_url)
-        .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
+    let cloud_url = crate::infrastructure::cloud::resolve_supabase_url(
+        config.cloud_url.as_deref(),
+        url.as_deref(),
+    )?;
 
-    let active_anon_key = api_key
-                    .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
-        .or_else(|| std::env::var("SUPABASE_ANON_KEY").ok())
-        .unwrap_or_else(|| DEFAULT_SUPABASE_ANON_KEY.to_string());
+    let active_anon_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(api_key.as_deref())?;
 
     let client = CloudApiClient::build_http_client();
     let is_tty = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
@@ -610,7 +609,7 @@ fn present_whoami(
             "tenant_name": creds.tenant_name,
             "tenant_slug": creds.tenant_slug,
             "tenant_role": creds.tenant_role,
-            "endpoint": creds.cloud_url.as_deref().unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"),
+            "endpoint": creds.cloud_url.as_deref().unwrap_or("(not configured)"),
             "token_expires_at": creds.token_expires_at,
             "enrolled_at": creds.registered_at
         });
@@ -663,7 +662,7 @@ fn present_whoami(
                 creds
                     .cloud_url
                     .as_deref()
-                    .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"),
+                    .unwrap_or("(not configured)"),
             );
 
             if let Some(exp) = creds.token_expires_at {

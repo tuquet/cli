@@ -60,7 +60,7 @@ pub struct InboxCloudClient {
 }
 
 impl InboxCloudClient {
-    pub fn new(config: &InboxConfig) -> Self {
+    pub fn new(config: &InboxConfig) -> Result<Self, String> {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
@@ -110,27 +110,31 @@ impl InboxCloudClient {
         let supabase_url = config
             .supabase_url
             .clone()
-                        .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_URL).ok())
+            .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_URL).ok())
             .or(discovered_url)
-            .unwrap_or_else(|| crate::constants::DEFAULT_DEV_SUPABASE_URL.to_string())
+            .ok_or_else(|| {
+                "SUPABASE_URL is not set (and no inbox.json config / discovered identity). Add it to your environment (see .env.example).".to_string()
+            })?
             .trim_end_matches('/')
             .to_string();
 
         let supabase_anon_key = config
             .supabase_anon_key
             .clone()
-                        .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
+            .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
             .or(discovered_key)
-            .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
+            .ok_or_else(|| {
+                "SUPABASE_ANON_KEY is not set (and no inbox.json config / discovered identity). Add it to your environment (see .env.example).".to_string()
+            })?;
 
-        Self {
+        Ok(Self {
             client,
             supabase_url,
             supabase_anon_key,
             device_id: discovered_dev_id,
             tenant_id: discovered_tenant_id,
             auto_sync: config.cloud_sync,
-        }
+        })
     }
 
     pub fn is_configured(&self) -> bool {
@@ -138,7 +142,6 @@ impl InboxCloudClient {
             && !self.supabase_url.contains("<YOUR_PROJECT_ID>")
             && !self.supabase_anon_key.is_empty()
             && !self.supabase_anon_key.contains("<YOUR_ANON_KEY>")
-            && self.supabase_anon_key != crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY
     }
 
     pub fn supabase_url(&self) -> &str {
@@ -407,13 +410,35 @@ impl InboxCloudClient {
 mod tests {
     use super::*;
 
+    static INBOX_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
-    fn test_cloud_client_initialization_defaults() {
-        let config = InboxConfig::default();
-        let client = InboxCloudClient::new(&config);
-        // Should resolve either to device identity or fallback dev default
-        assert!(!client.supabase_url().is_empty());
-        assert!(!client.supabase_anon_key().is_empty());
+    fn test_fail_fast_helpers_error_without_env_or_saved() {
+        let _guard = INBOX_ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized behind INBOX_ENV_LOCK; edition 2024 marks remove_var unsafe.
+        unsafe {
+            std::env::remove_var(crate::constants::envs::ENV_SUPABASE_URL);
+            std::env::remove_var(crate::constants::envs::ENV_SUPABASE_ANON_KEY);
+        }
+        // No saved credential, no env → fail fast with an actionable error (plan 011).
+        assert!(
+            crate::infrastructure::cloud::resolve_supabase_anon_key(None).is_err(),
+            "anon key must fail fast when nowhere configured"
+        );
+        assert!(
+            crate::infrastructure::cloud::resolve_supabase_url(None, None).is_err(),
+            "cloud url must fail fast when nowhere configured"
+        );
+        // Saved credential (or env) wins — no hardcoded fallback.
+        assert_eq!(
+            crate::infrastructure::cloud::resolve_supabase_anon_key(Some("saved-key")).unwrap(),
+            "saved-key"
+        );
+        assert_eq!(
+            crate::infrastructure::cloud::resolve_supabase_url(Some("https://c.example"), None)
+                .unwrap(),
+            "https://c.example"
+        );
     }
 
     #[test]
@@ -424,7 +449,7 @@ mod tests {
             ..Default::default()
         };
 
-        let client = InboxCloudClient::new(&config);
+        let client = InboxCloudClient::new(&config).unwrap();
         assert_eq!(client.supabase_url(), "https://custom.supabase.co");
         assert_eq!(client.supabase_anon_key(), "custom-key-123");
         assert!(client.is_configured());

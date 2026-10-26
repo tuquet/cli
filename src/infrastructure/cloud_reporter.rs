@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tracing::{info, warn};
 
 pub use super::cloud::{
-    CloudApiClient, CloudStatusInfo, CloudSyncResult, CredentialStore, DEFAULT_SUPABASE_ANON_KEY,
+    CloudApiClient, CloudStatusInfo, CloudSyncResult, CredentialStore,
     DeviceCredentials, MachineFingerprint,
 };
 
@@ -150,12 +150,25 @@ impl CloudReporter {
 
         let browsers_count = browsers_payload.len();
 
-        let env_key = std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok();
-        let anon_key = creds
-            .api_key
-            .as_deref()
-            .or(env_key.as_deref())
-            .unwrap_or(DEFAULT_SUPABASE_ANON_KEY);
+        let anon_key = match creds.api_key.as_deref() {
+            Some(k) if !k.trim().is_empty() => k.to_string(),
+            _ => match std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY) {
+                Ok(k) if !k.trim().is_empty() => k,
+                _ => {
+                    tracing::warn!(
+                        "[CloudReporter] SUPABASE_ANON_KEY is not set (and no saved login) — skipping telemetry report"
+                    );
+                    return Ok(CloudSyncResult {
+                        success: false,
+                        enrolled: false,
+                        device_id: "".to_string(),
+                        browsers_synced: 0,
+                        heartbeat_sent: false,
+                        message: "SUPABASE_ANON_KEY is not set (standalone mode)".to_string(),
+                    });
+                }
+            },
+        };
 
         // 2. Report Browser Inventory to Central Hub
         let report_url = format!(
@@ -164,7 +177,7 @@ impl CloudReporter {
         );
         let report_res = client
             .post(&report_url)
-            .header("apikey", anon_key)
+            .header("apikey", &anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
                 "p_device_id": creds.device_id,
@@ -209,7 +222,7 @@ impl CloudReporter {
         let heartbeat_url = format!("{}/rest/v1/rpc/heartbeat", cloud_url.trim_end_matches('/'));
         let heartbeat_res = client
             .post(&heartbeat_url)
-            .header("apikey", anon_key)
+            .header("apikey", &anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .json(&serde_json::json!({
                 "p_device_id": creds.device_id,

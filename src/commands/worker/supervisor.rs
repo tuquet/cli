@@ -460,7 +460,7 @@ pub async fn run_server(
             config
                 .cloud_url
                 .as_deref()
-                .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co"),
+                .unwrap_or("(not configured)"),
         );
         card.add_kv(
             "Proxy Mesh",

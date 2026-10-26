@@ -100,15 +100,37 @@ pub async fn get_tenants(State(state): State<AppState>) -> impl IntoResponse {
         }
     };
 
-    let cloud_url = creds
-        .cloud_url
-        .clone()
-        .or_else(|| state.config.cloud_url.clone())
-        .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-    let api_key = creds
-        .api_key
-        .clone()
-        .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
+    let cloud_url = match crate::infrastructure::cloud::resolve_supabase_url(
+        state.config.cloud_url.as_deref(),
+        creds.cloud_url.as_deref(),
+    ) {
+        Ok(u) => u,
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(crate::core::error::ApiErrorResponse {
+                    error: e,
+                    status: 400,
+                }),
+            )
+                .into_response()
+        }
+    };
+    let api_key = match crate::infrastructure::cloud::resolve_supabase_anon_key(
+        creds.api_key.as_deref(),
+    ) {
+        Ok(k) => k,
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(crate::core::error::ApiErrorResponse {
+                    error: e,
+                    status: 400,
+                }),
+            )
+                .into_response()
+        }
+    };
 
     let client = CloudApiClient::build_http_client();
     let user_id = creds.user_id.clone().unwrap_or_default();

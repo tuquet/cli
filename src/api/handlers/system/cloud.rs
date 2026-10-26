@@ -329,14 +329,15 @@ async fn process_desktop_auth_payload(
     if let Some(ref token) = params.token {
         let tenant_id = params.tenant_id.clone();
         let data_dir = state.config.data_dir.clone();
-        let cloud_url = state
-            .config
-            .cloud_url
-            .clone()
-            .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
+        let cloud_url = crate::infrastructure::cloud::resolve_supabase_url(
+            state.config.cloud_url.as_deref(),
+            None,
+        )
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
         let client = crate::infrastructure::cloud::CloudApiClient::build_http_client();
-        let anon_key = crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string();
+        let anon_key = crate::infrastructure::cloud::resolve_supabase_anon_key(None)
+            .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
         match crate::infrastructure::cloud::SupabaseAuthClient::validate_token(
             &client, &cloud_url, &anon_key, token,

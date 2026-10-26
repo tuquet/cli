@@ -2,7 +2,39 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use utoipa::ToSchema;
 
-pub const DEFAULT_SUPABASE_ANON_KEY: &str = "sb_publishable_8Y-l9FtldJSSuFAWhzICqg_UobFOsua";
+/// Fails fast (plan 011): resolve the Supabase publishable key. No hardcoded fallback.
+/// Order: saved credential → SUPABASE_ANON_KEY env → actionable error.
+pub fn resolve_supabase_anon_key(saved: Option<&str>) -> Result<String, String> {
+    if let Some(k) = saved
+        .map(str::trim)
+        .filter(|s| !s.is_empty() && !s.contains("<YOUR_ANON_KEY>"))
+    {
+        return Ok(k.to_string());
+    }
+    std::env::var(crate::constants::envs::ENV_SUPABASE_ANON_KEY).map_err(|_| {
+        "SUPABASE_ANON_KEY is not set (and no saved cloud login). Add it to your environment          (see .env.example) or run `tq auth login`."
+            .to_string()
+    })
+}
+
+/// Fails fast (plan 011): resolve the Supabase cloud URL. No hardcoded fallback.
+/// Order: configured (AppConfig) → saved credential → SUPABASE_URL env → actionable error.
+pub fn resolve_supabase_url(configured: Option<&str>, saved: Option<&str>) -> Result<String, String> {
+    for src in [configured, saved] {
+        if let Some(u) = src
+            .map(str::trim)
+            .filter(|s| !s.is_empty() && !s.contains("<YOUR_PROJECT_ID>"))
+        {
+            return Ok(u.trim_end_matches('/').to_string());
+        }
+    }
+    std::env::var(crate::constants::envs::ENV_SUPABASE_URL)
+        .map_err(|_| {
+            "SUPABASE_URL is not set (and no saved cloud login). Add it to your environment              (see .env.example) or run `tq auth login`."
+                .to_string()
+        })
+        .map(|u| u.trim_end_matches('/').to_string())
+}
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct TenantInfo {

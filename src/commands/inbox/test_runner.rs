@@ -64,7 +64,7 @@ pub async fn run_acceptance_test(
 
     // 2. SSOT Cloud Identity Auto-Discovery
     let t1 = Instant::now();
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)?;
     let is_configured = cloud.is_configured();
     let dev_id = cloud
         .device_id()

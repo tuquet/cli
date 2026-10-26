@@ -22,22 +22,19 @@ pub async fn run_cloud_worker(
     };
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
-    let cloud_url = config
-        .cloud_url
-        .as_deref()
-        .or(creds.cloud_url.as_deref())
-        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-    let anon_key = creds
-        .api_key
-        .as_deref()
-        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let cloud_url = crate::infrastructure::cloud::resolve_supabase_url(
+        config.cloud_url.as_deref(),
+        creds.cloud_url.as_deref(),
+    )?;
+    let anon_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
 
     let mut card = crate::ui::Card::new("AUTONOMOUS CLOUD FLEET WORKER");
     card.with_badge(crate::ui::badge_online("ONLINE"));
     card.with_min_width(74);
     card.add_kv("Device ID", &creds.device_id);
     card.add_kv("Device Name", &creds.name);
-    card.add_kv("Cloud Endpoint", cloud_url);
+    card.add_kv("Cloud Endpoint", cloud_url.clone());
     if let Some(ref p) = cloud_profile {
         card.add_kv("Target Profile", p);
     } else {
@@ -73,7 +70,7 @@ pub async fn run_cloud_worker(
         );
         let res = client
             .post(&list_url)
-            .header("apikey", anon_key)
+            .header("apikey", &anon_key)
             .header("Authorization", format!("Bearer {}", anon_key))
             .header("Content-Type", "application/json")
             .json(&serde_json::json!({

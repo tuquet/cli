@@ -11,7 +11,7 @@ use base64::engine::general_purpose::STANDARD as B64;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use super::credential_store::{CredentialStore, DEFAULT_SUPABASE_ANON_KEY};
+use super::credential_store::{CredentialStore, resolve_supabase_anon_key, resolve_supabase_url};
 use crate::config::AppConfig;
 use worker::core::secrets::{DeviceKeypair, aead_decrypt, aead_encrypt, unseal_box};
 
@@ -45,16 +45,11 @@ impl SecretClient {
             "Workstation not enrolled with Cloud. Run `tq auth login` first.".to_string()
         })?;
 
-        let cloud_url = cfg
-            .cloud_url
-            .clone()
-            .or(creds.cloud_url.clone())
-            .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
-        let anon_key = creds
-            .api_key
-            .clone()
-                        .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
-            .unwrap_or_else(|| DEFAULT_SUPABASE_ANON_KEY.to_string());
+        let cloud_url = resolve_supabase_url(
+            cfg.cloud_url.as_deref(),
+            creds.cloud_url.as_deref(),
+        )?;
+        let anon_key = resolve_supabase_anon_key(creds.api_key.as_deref())?;
         let keypair = DeviceKeypair::load_or_create(store_dir)?;
 
         Ok(Self {

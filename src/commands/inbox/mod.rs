@@ -161,7 +161,7 @@ pub async fn handle_otp(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())?;
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)?;
 
     let mark_consumed = !no_consume;
 
@@ -271,7 +271,7 @@ pub async fn handle_link(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())?;
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)?;
 
     let mut link_opt = storage.get_latest_link(recipient, link_type)?;
 
@@ -528,7 +528,7 @@ pub async fn handle_status(
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())?;
     let stats = storage.stats().unwrap_or_default();
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)?;
 
     let pid = read_pid();
     let is_running = pid.is_some();
@@ -638,7 +638,7 @@ pub async fn handle_setup_worker(
 pub async fn handle_sync(limit: usize) -> Result<(), Box<dyn std::error::Error>> {
     let config = InboxConfig::load();
     let storage = InboxStorage::open(InboxConfig::sqlite_path())?;
-    let cloud = InboxCloudClient::new(&config);
+    let cloud = InboxCloudClient::new(&config)?;
 
     if !cloud.is_configured() {
         return Err("Supabase cloud not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY in ~/.tq/inbox/inbox.json".into());

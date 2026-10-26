@@ -18,14 +18,10 @@ pub async fn handle_profile_cloud(
         }
     };
 
-    let cloud_url = creds
-        .cloud_url
-        .as_deref()
-        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-    let anon_key = creds
-        .api_key
-        .as_deref()
-        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let cloud_url =
+        crate::infrastructure::cloud::resolve_supabase_url(None, creds.cloud_url.as_deref())?;
+    let anon_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
 
@@ -37,7 +33,7 @@ pub async fn handle_profile_cloud(
             );
             let res = client
                 .post(&rpc_url)
-                .header("apikey", anon_key)
+                .header("apikey", &anon_key)
                 .header("Authorization", format!("Bearer {}", anon_key))
                 .header("Content-Type", "application/json")
                 .json(&serde_json::json!({
@@ -178,7 +174,7 @@ pub async fn handle_profile_cloud(
             );
             let res = client
                 .post(&rpc_url)
-                .header("apikey", anon_key)
+                .header("apikey", &anon_key)
                 .header("Authorization", format!("Bearer {}", anon_key))
                 .header("Content-Type", "application/json")
                 .json(&serde_json::json!({
@@ -359,7 +355,7 @@ pub async fn handle_profile_cloud(
             );
             let res = client
                 .post(&rpc_url)
-                .header("apikey", anon_key)
+                .header("apikey", &anon_key)
                 .header("Authorization", format!("Bearer {}", anon_key))
                 .header("Content-Type", "application/json")
                 .json(&serde_json::json!({
@@ -524,14 +520,10 @@ pub async fn handle_profile_push(
         }
     };
 
-    let cloud_url = creds
-        .cloud_url
-        .as_deref()
-        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-    let anon_key = creds
-        .api_key
-        .as_deref()
-        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let cloud_url =
+        crate::infrastructure::cloud::resolve_supabase_url(None, creds.cloud_url.as_deref())?;
+    let anon_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
     let tenant_id = creds.tenant_id.as_deref().unwrap_or("default");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
@@ -549,7 +541,7 @@ pub async fn handle_profile_push(
 
     let put_res = client
         .post(&storage_upload_endpoint)
-        .header("apikey", anon_key)
+        .header("apikey", &anon_key)
         .header("Authorization", format!("Bearer {}", anon_key))
         .header("x-upsert", "true")
         .header("Content-Type", "application/octet-stream")
@@ -582,7 +574,7 @@ pub async fn handle_profile_push(
     );
     let rpc_res = client
         .post(&rpc_endpoint)
-        .header("apikey", anon_key)
+        .header("apikey", &anon_key)
         .header("Authorization", format!("Bearer {}", anon_key))
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
@@ -704,14 +696,10 @@ pub async fn handle_profile_pull(
         }
     };
 
-    let cloud_url = creds
-        .cloud_url
-        .as_deref()
-        .unwrap_or("https://dswhacsoaxgpfnkaxnhz.supabase.co");
-    let anon_key = creds
-        .api_key
-        .as_deref()
-        .unwrap_or(crate::infrastructure::cloud_reporter::DEFAULT_SUPABASE_ANON_KEY);
+    let cloud_url =
+        crate::infrastructure::cloud::resolve_supabase_url(None, creds.cloud_url.as_deref())?;
+    let anon_key =
+        crate::infrastructure::cloud::resolve_supabase_anon_key(creds.api_key.as_deref())?;
     let tenant_id = creds.tenant_id.as_deref().unwrap_or("default");
 
     let client = crate::infrastructure::cloud_reporter::CloudReporter::build_http_client();
@@ -723,7 +711,7 @@ pub async fn handle_profile_pull(
     );
     let rpc_res = client
         .post(&rpc_endpoint)
-        .header("apikey", anon_key)
+        .header("apikey", &anon_key)
         .header("Authorization", format!("Bearer {}", anon_key))
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({
@@ -792,7 +780,7 @@ pub async fn handle_profile_pull(
 
     let get_res = client
         .get(&download_endpoint)
-        .header("apikey", anon_key)
+        .header("apikey", &anon_key)
         .header("Authorization", format!("Bearer {}", anon_key))
         .send()
         .await?;

@@ -73,7 +73,6 @@ pub mod envs {
 pub mod endpoints {
     pub const DEFAULT_HOST: &str = "127.0.0.1";
     pub const DEFAULT_CLOUD_URL: &str = "https://cloud.tq.dev";
-    pub const DEFAULT_DEV_SUPABASE_URL: &str = "https://dswhacsoaxgpfnkaxnhz.supabase.co";
     pub const DEFAULT_AUTOMATION_STUDIO_URL: &str = "https://automation-studio.vercel.app";
     pub const DEFAULT_DOCS_URL: &str = "https://docs.tuquet.com/en/cli";
     pub const DEFAULT_UPDATE_CHANNEL: &str = "stable";
