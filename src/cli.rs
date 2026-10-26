@@ -1146,7 +1146,7 @@ pub enum ProfileCommands {
         /// Profile ID or name
         id: String,
 
-        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        /// Storage Hub URL (defaults to env STORAGE_URL or http://127.0.0.1:8080)
         #[arg(long)]
         storage_url: Option<String>,
 
@@ -1161,7 +1161,7 @@ pub enum ProfileCommands {
         /// Profile ID or name
         id: String,
 
-        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        /// Storage Hub URL (defaults to env STORAGE_URL or http://127.0.0.1:8080)
         #[arg(long)]
         storage_url: Option<String>,
 
@@ -1216,7 +1216,7 @@ pub enum ProfileCloudSubcommands {
         /// Target Profile ID or name
         id: String,
 
-        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        /// Storage Hub URL (defaults to env STORAGE_URL or http://127.0.0.1:8080)
         #[arg(long)]
         storage_url: Option<String>,
 
@@ -1231,7 +1231,7 @@ pub enum ProfileCloudSubcommands {
         /// Target Profile ID or name
         id: String,
 
-        /// Storage Hub URL (defaults to env SPECTER_STORAGE_URL or http://127.0.0.1:8080)
+        /// Storage Hub URL (defaults to env STORAGE_URL or http://127.0.0.1:8080)
         #[arg(long)]
         storage_url: Option<String>,
 

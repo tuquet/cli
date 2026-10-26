@@ -373,17 +373,17 @@ mod tests {
     #[test]
     fn test_env_expander_basic_and_fallback() {
         unsafe {
-            std::env::set_var("SPECTER_TEST_HOST", "vps.example.com");
+            std::env::set_var("TEST_HOST", "vps.example.com");
         }
 
-        let input = "Server at ${SPECTER_TEST_HOST} with port ${SPECTER_UNSET_PORT:-1080} and fallback ${SPECTER_FALLBACK:-cdn.local}";
+        let input = "Server at ${TEST_HOST} with port ${UNSET_PORT:-1080} and fallback ${FALLBACK:-cdn.local}";
         let output = EnvExpander::expand(input);
         assert_eq!(
             output,
             "Server at vps.example.com with port 1080 and fallback cdn.local"
         );
 
-        let input_unset = "Missing ${SPECTER_COMPLETELY_UNSET} variable";
+        let input_unset = "Missing ${COMPLETELY_UNSET} variable";
         let output_unset = EnvExpander::expand(input_unset);
         assert_eq!(output_unset, "Missing  variable");
     }

@@ -110,8 +110,7 @@ impl InboxCloudClient {
         let supabase_url = config
             .supabase_url
             .clone()
-            .or_else(|| std::env::var("TUQUET_CLOUD_URL").or_else(|_| std::env::var("TQ_CLOUD_URL")).or_else(|_| std::env::var("SPECTER_CLOUD_URL")).ok())
-            .or_else(|| std::env::var("SUPABASE_URL").ok())
+                        .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_URL).ok())
             .or(discovered_url)
             .unwrap_or_else(|| crate::constants::DEFAULT_DEV_SUPABASE_URL.to_string())
             .trim_end_matches('/')
@@ -120,8 +119,7 @@ impl InboxCloudClient {
         let supabase_anon_key = config
             .supabase_anon_key
             .clone()
-            .or_else(|| std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY")).ok())
-            .or_else(|| std::env::var("SUPABASE_ANON_KEY").ok())
+                        .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
             .or(discovered_key)
             .unwrap_or_else(|| crate::infrastructure::cloud::DEFAULT_SUPABASE_ANON_KEY.to_string());
 

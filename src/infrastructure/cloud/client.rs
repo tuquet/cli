@@ -96,7 +96,7 @@ impl CloudApiClient {
             target_url
         );
 
-        let anon_key = std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY"))
+        let anon_key = std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY)
             .unwrap_or_else(|_| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let auth_header = match bearer_token {
             Some(tok) if !tok.trim().is_empty() => format!("Bearer {}", tok.trim()),

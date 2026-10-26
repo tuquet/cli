@@ -73,7 +73,7 @@ pub async fn login(
         .unwrap_or_else(|| "https://dswhacsoaxgpfnkaxnhz.supabase.co".to_string());
 
     let active_anon_key = api_key
-        .or_else(|| std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY")).ok())
+                    .or_else(|| std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok())
         .or_else(|| std::env::var("SUPABASE_ANON_KEY").ok())
         .unwrap_or_else(|| DEFAULT_SUPABASE_ANON_KEY.to_string());
 

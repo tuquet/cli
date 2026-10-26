@@ -150,7 +150,7 @@ impl CloudReporter {
 
         let browsers_count = browsers_payload.len();
 
-        let env_key = std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY")).ok();
+        let env_key = std::env::var(crate::constants::ENV_SUPABASE_ANON_KEY).ok();
         let anon_key = creds
             .api_key
             .as_deref()
@@ -264,7 +264,7 @@ impl CloudReporter {
 
             if active_url.is_none() {
                 info!(
-                    "[CloudReporter] No SPECTER_CLOUD_URL or saved login found. Running in offline/standalone mode."
+                    "[CloudReporter] No SUPABASE_URL or saved login found. Running in offline/standalone mode."
                 );
                 return;
             }

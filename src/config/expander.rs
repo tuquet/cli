@@ -45,11 +45,9 @@ impl EnvExpander {
 
 pub use crate::constants::DEFAULT_SSOT_ROOT_DIR as DEFAULT_SSOT_DIR_NAME;
 
-/// Resolves the canonical SSOT root directory (~/.tq/ or $TQ_HOME)
+/// Resolves the canonical SSOT root directory (~/.tq/ or $DATA_DIR)
 pub fn canonical_ssot_dir() -> std::path::PathBuf {
-    if let Ok(dir) = std::env::var(crate::constants::envs::ENV_TUQUET_HOME)
-        .or_else(|_| std::env::var(crate::constants::envs::ENV_TQ_HOME))
-        .or_else(|_| std::env::var(crate::constants::envs::ENV_SPECTER_HOME))
+    if let Ok(dir) = std::env::var(crate::constants::envs::ENV_DATA_DIR)
     {
         if !dir.trim().is_empty() {
             return std::path::PathBuf::from(dir);

@@ -35,9 +35,9 @@ pub async fn handle(command: WorkerSubcommands) -> Result<(), Box<dyn std::error
         WorkerSubcommands::Restart { detach } => restart_daemon(detach).await,
         WorkerSubcommands::Status { url, format } => {
             let target_url = url.unwrap_or_else(|| {
-                let host = std::env::var(crate::constants::ENV_AUTOMATION_HOST)
+                let host = std::env::var(crate::constants::ENV_DAEMON_HOST)
                     .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
-                let port = std::env::var(crate::constants::ENV_AUTOMATION_PORT)
+                let port = std::env::var(crate::constants::ENV_DAEMON_PORT)
                     .unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string());
                 format!("http://{}:{}", host, port)
             });

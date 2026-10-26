@@ -226,9 +226,9 @@ impl TuiState {
 
         // 3. Probe Runner & Automation
         let config = crate::config::AppConfig::load();
-        let host = std::env::var(crate::constants::ENV_AUTOMATION_HOST)
+        let host = std::env::var(crate::constants::ENV_DAEMON_HOST)
             .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
-        let port = std::env::var(crate::constants::ENV_AUTOMATION_PORT)
+        let port = std::env::var(crate::constants::ENV_DAEMON_PORT)
             .unwrap_or_else(|_| config.server_port.to_string());
         let port_u16 = port.parse::<u16>().unwrap_or(8765);
         let health_url = format!("http://{}:{}/api/v1/health", host, port);

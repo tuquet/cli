@@ -436,7 +436,7 @@ pub async fn run_server(
 
     let app = crate::api::routes::create_router(state.clone());
 
-    // Start background Cloud Telemetry & Inventory Reporter (runs if SPECTER_CLOUD_URL is configured)
+    // Start background Cloud Telemetry & Inventory Reporter (runs if SUPABASE_URL is configured)
     let _reporter_handle =
         crate::infrastructure::cloud_reporter::CloudReporter::start_background_loop(state.clone());
 

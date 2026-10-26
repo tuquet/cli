@@ -50,48 +50,21 @@ pub mod pillars {
 }
 
 pub mod envs {
-    // Canonical Tuquet Ecosystem Environment Variables (SSOT)
-    pub const ENV_TUQUET_HOME: &str = "TUQUET_HOME";
-    pub const ENV_TUQUET_ENV: &str = "TUQUET_ENV";
-    pub const ENV_TUQUET_CLOUD_URL: &str = "TUQUET_CLOUD_URL";
-    pub const ENV_TUQUET_API_KEY: &str = "TUQUET_API_KEY";
-    pub const ENV_TUQUET_ENROLLMENT_TOKEN: &str = "TUQUET_ENROLLMENT_TOKEN";
-    pub const ENV_TUQUET_HOST: &str = "TUQUET_HOST";
-    pub const ENV_TUQUET_PORT: &str = "TUQUET_PORT";
-    pub const ENV_TUQUET_LOG_LEVEL: &str = "TUQUET_LOG_LEVEL";
-    pub const ENV_TUQUET_DATA_DIR: &str = "TUQUET_DATA_DIR";
-    pub const ENV_TUQUET_FORCE_NO_SANDBOX: &str = "TUQUET_FORCE_NO_SANDBOX";
-    pub const ENV_TUQUET_EXTENSION_PATH: &str = "TUQUET_EXTENSION_PATH";
-    pub const ENV_TUQUET_BUGSINK_DSN: &str = "TUQUET_BUGSINK_DSN";
-
-    // Legacy Fallbacks (Maintained for Backward Compatibility)
-    pub const ENV_TQ_HOME: &str = "TQ_HOME";
-    pub const ENV_TQ_HOST: &str = "TQ_HOST";
-    pub const ENV_TQ_PORT: &str = "TQ_PORT";
-    pub const ENV_TQ_CLOUD_URL: &str = "TQ_CLOUD_URL";
-    pub const ENV_TQ_API_KEY: &str = "TQ_API_KEY";
-    pub const ENV_TQ_LOG_LEVEL: &str = "TQ_LOG_LEVEL";
-
-    pub const ENV_SPECTER_HOME: &str = "SPECTER_HOME";
-    pub const ENV_SPECTER_ENV: &str = "SPECTER_ENV";
-    pub const ENV_SPECTER_CLOUD_URL: &str = "SPECTER_CLOUD_URL";
-    pub const ENV_SPECTER_API_KEY: &str = "SPECTER_API_KEY";
-    pub const ENV_SPECTER_ENROLLMENT_TOKEN: &str = "SPECTER_ENROLLMENT_TOKEN";
-    pub const ENV_SPECTER_HOST: &str = "SPECTER_HOST";
-    pub const ENV_SPECTER_PORT: &str = "SPECTER_PORT";
-    pub const ENV_SPECTER_LOG_LEVEL: &str = "SPECTER_LOG_LEVEL";
-    pub const ENV_SPECTER_DATA_DIR: &str = "SPECTER_DATA_DIR";
-    pub const ENV_SPECTER_FORCE_NO_SANDBOX: &str = "SPECTER_FORCE_NO_SANDBOX";
-    pub const ENV_SPECTER_EXTENSION_PATH: &str = "SPECTER_EXTENSION_PATH";
-
-    pub const ENV_AUTOMATION_HOST: &str = "AUTOMATION_HOST";
-    pub const ENV_AUTOMATION_PORT: &str = "AUTOMATION_PORT";
-    pub const ENV_AUTOMATION_DATA_DIR: &str = "AUTOMATION_DATA_DIR";
-    pub const ENV_AUTOMATION_ENV: &str = "AUTOMATION_ENV";
-    pub const ENV_AUTOMATION_LOG_LEVEL: &str = "AUTOMATION_LOG_LEVEL";
-    pub const ENV_AUTOMATION_CLOUD_URL: &str = "AUTOMATION_CLOUD_URL";
-    pub const ENV_AUTOMATION_ENROLLMENT_TOKEN: &str = "AUTOMATION_ENROLLMENT_TOKEN";
-    pub const ENV_AUTOMATION_HEARTBEAT_INTERVAL: &str = "AUTOMATION_HEARTBEAT_INTERVAL";
+    // Canonical Tuquet Ecosystem Environment Variables (SSOT) — techstack naming (plan 011).
+    // No brand prefixes (TQ_/TUQUET_/SPECTER_/AUTOMA_ are banned). One name per variable,
+    // no fallback chains — missing required values fail fast at the call site.
+    pub const ENV_DATA_DIR: &str = "DATA_DIR";
+    pub const ENV_APP_ENV: &str = "APP_ENV";
+    pub const ENV_SUPABASE_URL: &str = "SUPABASE_URL";
+    pub const ENV_SUPABASE_ANON_KEY: &str = "SUPABASE_ANON_KEY";
+    pub const ENV_ENROLLMENT_TOKEN: &str = "ENROLLMENT_TOKEN";
+    pub const ENV_DAEMON_HOST: &str = "DAEMON_HOST";
+    pub const ENV_DAEMON_PORT: &str = "DAEMON_PORT";
+    pub const ENV_RUST_LOG: &str = "RUST_LOG";
+    pub const ENV_CHROME_NO_SANDBOX: &str = "CHROME_NO_SANDBOX";
+    pub const ENV_EXTENSION_PATH: &str = "EXTENSION_PATH";
+    pub const ENV_SENTRY_DSN: &str = "SENTRY_DSN";
+    pub const ENV_HEARTBEAT_INTERVAL: &str = "HEARTBEAT_INTERVAL";
 
     pub const ENV_ALL_PROXY: &str = "ALL_PROXY";
     pub const ENV_HTTP_PROXY: &str = "HTTP_PROXY";

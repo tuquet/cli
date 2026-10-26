@@ -74,8 +74,8 @@ pub const WINDOWS_ESSENTIAL_ENV_VARS: &[&str] = &[
 ];
 
 /// Non-secret Tuquet runtime environment variables that can safely ride along
-pub const TQ_ALLOWED_CONTEXT_VARS: &[&str] =
-    &["TQ_HOME", "TQ_TENANT_ID", "TQ_SESSION_ID", "TQ_PROFILE"];
+pub const CONTEXT_VARS: &[&str] =
+    &["DATA_DIR", "TENANT_ID", "SESSION_ID", "PROFILE"];
 
 /// Check if an environment variable name is considered secret
 pub fn is_secret_env_name(name: &str) -> bool {
@@ -109,7 +109,7 @@ where
         }
 
         // 3. Allowed Tuquet context vars: pass through
-        if TQ_ALLOWED_CONTEXT_VARS.contains(&upper_key.as_str()) {
+        if CONTEXT_VARS.contains(&upper_key.as_str()) {
             clean_env.insert(key.to_string(), val.to_string());
             continue;
         }
@@ -760,7 +760,7 @@ mod tests {
             ("DATABASE_PASSWORD", "db_pwd_123"),
             ("TELEGRAM_BOT_TOKEN", "bot_12345"),
             ("TEMP", "C:\\Temp"),
-            ("TQ_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
+            ("TENANT_ID", "00000000-0000-0000-0000-000000000001"),
             ("USER_DEFINED_SECRET", "should_be_dropped"),
             ("NODE_AUTH_TOKEN", "should_be_dropped"),
         ];
@@ -777,7 +777,7 @@ mod tests {
         // Safe variables must remain
         assert!(clean.contains_key("PATH"));
         assert!(clean.contains_key("TEMP"));
-        assert!(clean.contains_key("TQ_TENANT_ID"));
+        assert!(clean.contains_key("TENANT_ID"));
     }
 
     #[test]
