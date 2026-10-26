@@ -150,7 +150,7 @@ impl CloudReporter {
 
         let browsers_count = browsers_payload.len();
 
-        let env_key = std::env::var("SPECTER_API_KEY").ok();
+        let env_key = std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY")).ok();
         let anon_key = creds
             .api_key
             .as_deref()

@@ -33,11 +33,15 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn load() -> Self {
-        let mut server_host = env::var(crate::constants::ENV_SPECTER_HOST)
+        let mut server_host = env::var(crate::constants::ENV_TUQUET_HOST)
+            .or_else(|_| env::var(crate::constants::ENV_TQ_HOST))
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_HOST))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_HOST))
             .unwrap_or_else(|_| crate::constants::DEFAULT_HOST.to_string());
 
-        let mut server_port = env::var(crate::constants::ENV_SPECTER_PORT)
+        let mut server_port = env::var(crate::constants::ENV_TUQUET_PORT)
+            .or_else(|_| env::var(crate::constants::ENV_TQ_PORT))
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_PORT))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_PORT))
             .unwrap_or_else(|_| crate::constants::DEFAULT_RUNNER_PORT.to_string())
             .parse()
@@ -57,22 +61,29 @@ impl AppConfig {
             }
         }
 
-        let environment = env::var(crate::constants::ENV_SPECTER_ENV)
+        let environment = env::var(crate::constants::ENV_TUQUET_ENV)
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_ENV))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_ENV))
             .unwrap_or_else(|_| "development".to_string());
 
-        let log_level = env::var(crate::constants::ENV_SPECTER_LOG_LEVEL)
+        let log_level = env::var(crate::constants::ENV_TUQUET_LOG_LEVEL)
+            .or_else(|_| env::var(crate::constants::ENV_TQ_LOG_LEVEL))
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_LOG_LEVEL))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_LOG_LEVEL))
             .unwrap_or_else(|_| "info".to_string());
 
-        let data_dir = env::var(crate::constants::ENV_SPECTER_DATA_DIR).unwrap_or_else(|_| {
+        let data_dir = env::var(crate::constants::ENV_TUQUET_DATA_DIR)
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_DATA_DIR))
+            .unwrap_or_else(|_| {
             canonical_ssot_dir()
                 .join(crate::constants::PILLAR_AUTOMATION)
                 .to_string_lossy()
                 .to_string()
         });
 
-        let mut cloud_url = env::var(crate::constants::ENV_SPECTER_CLOUD_URL)
+        let mut cloud_url = env::var(crate::constants::ENV_TUQUET_CLOUD_URL)
+            .or_else(|_| env::var(crate::constants::ENV_TQ_CLOUD_URL))
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_CLOUD_URL))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_CLOUD_URL))
             .ok()
             .filter(|s| !s.trim().is_empty());
@@ -97,7 +108,8 @@ impl AppConfig {
             }
         }
 
-        let cloud_enrollment_token = env::var(crate::constants::ENV_SPECTER_ENROLLMENT_TOKEN)
+        let cloud_enrollment_token = env::var(crate::constants::ENV_TUQUET_ENROLLMENT_TOKEN)
+            .or_else(|_| env::var(crate::constants::ENV_SPECTER_ENROLLMENT_TOKEN))
             .or_else(|_| env::var(crate::constants::ENV_AUTOMATION_ENROLLMENT_TOKEN))
             .ok()
             .filter(|s| !s.trim().is_empty());

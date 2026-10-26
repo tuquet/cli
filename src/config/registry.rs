@@ -265,7 +265,7 @@ mod tests {
                     .path
                     .to_string_lossy()
                     .contains(crate::constants::DEFAULT_SSOT_ROOT_DIR)
-                    || entry.path.to_string_lossy().contains(".tq")
+                    || entry.path.to_string_lossy().contains(".tq") || entry.path.to_string_lossy().contains(".tuquet")
             );
         }
     }

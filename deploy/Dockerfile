@@ -22,10 +22,12 @@ COPY cli ./cli
 
 WORKDIR /usr/src/tuquet/cli
 
-# Configure cargo to use git fetcher / disable strict revocation
+# Use git sparse registry to bypass index.crates.io config.json SSL verification error on corporate proxy
 RUN mkdir -p /root/.cargo && \
     echo '[http]' > /root/.cargo/config.toml && \
     echo 'check-revoke = false' >> /root/.cargo/config.toml && \
+    echo '[registries.crates-io]' >> /root/.cargo/config.toml && \
+    echo 'protocol = "sparse"' >> /root/.cargo/config.toml && \
     echo '[net]' >> /root/.cargo/config.toml && \
     echo 'git-fetch-with-cli = true' >> /root/.cargo/config.toml
 
@@ -57,9 +59,10 @@ COPY --from=builder /usr/local/bin/tq /usr/local/bin/tq
 USER tuquet
 WORKDIR /home/tuquet
 
-ENV TQ_HOME="/home/tuquet/.tq"
-ENV TQ_HOST="0.0.0.0"
-ENV TQ_PORT="8765"
+# Canonical Tuquet Platform Environment Variables
+ENV TUQUET_HOME="/home/tuquet/.tq"
+ENV TUQUET_HOST="0.0.0.0"
+ENV TUQUET_PORT="8765"
 
 EXPOSE 8765
 

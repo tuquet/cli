@@ -47,7 +47,8 @@ pub use crate::constants::DEFAULT_SSOT_ROOT_DIR as DEFAULT_SSOT_DIR_NAME;
 
 /// Resolves the canonical SSOT root directory (~/.tq/ or $TQ_HOME)
 pub fn canonical_ssot_dir() -> std::path::PathBuf {
-    if let Ok(dir) = std::env::var(crate::constants::envs::ENV_TQ_HOME)
+    if let Ok(dir) = std::env::var(crate::constants::envs::ENV_TUQUET_HOME)
+        .or_else(|_| std::env::var(crate::constants::envs::ENV_TQ_HOME))
         .or_else(|_| std::env::var(crate::constants::envs::ENV_SPECTER_HOME))
     {
         if !dir.trim().is_empty() {
@@ -90,6 +91,6 @@ mod tests {
     #[test]
     fn test_canonical_ssot_dir() {
         let dir = canonical_ssot_dir();
-        assert!(dir.to_string_lossy().contains(".tq") || dir.to_string_lossy().contains(".tq"));
+        assert!(dir.to_string_lossy().contains(".tuquet") || dir.to_string_lossy().contains(".tq"));
     }
 }

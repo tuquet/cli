@@ -53,7 +53,7 @@ impl SecretClient {
         let anon_key = creds
             .api_key
             .clone()
-            .or_else(|| std::env::var("SPECTER_API_KEY").ok())
+            .or_else(|| std::env::var("TUQUET_API_KEY").or_else(|_| std::env::var("TQ_API_KEY")).or_else(|_| std::env::var("SPECTER_API_KEY")).ok())
             .unwrap_or_else(|| DEFAULT_SUPABASE_ANON_KEY.to_string());
         let keypair = DeviceKeypair::load_or_create(store_dir)?;
 
