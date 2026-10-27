@@ -59,10 +59,10 @@ COPY --from=builder /usr/local/bin/tq /usr/local/bin/tq
 USER tuquet
 WORKDIR /home/tuquet
 
-# Canonical Tuquet Platform Environment Variables
-ENV TUQUET_HOME="/home/tuquet/.tq"
-ENV TUQUET_HOST="0.0.0.0"
-ENV TUQUET_PORT="8765"
+# Canonical Platform Environment Variables (Techstack Naming SSOT)
+ENV DATA_DIR="/home/tuquet/.tq"
+ENV DAEMON_HOST="0.0.0.0"
+ENV DAEMON_PORT="8765"
 
 EXPOSE 8765
 
